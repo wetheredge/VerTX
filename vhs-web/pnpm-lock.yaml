@@ -13,7 +13,7 @@ dependencies:
     version: 1.2.1(solid-js@1.8.14)
   autoprefixer:
     specifier: ^10.4.17
-    version: 10.4.17(postcss@8.4.34)
+    version: 10.4.17(postcss@8.4.35)
   class-variance-authority:
     specifier: ^0.7.0
     version: 0.7.0
@@ -44,14 +44,14 @@ devDependencies:
     specifier: ^5.2.2
     version: 5.3.3
   vite:
-    specifier: ^5.0.8
-    version: 5.0.12
+    specifier: ^5.1.1
+    version: 5.1.1
   vite-plugin-solid:
     specifier: ^2.8.0
-    version: 2.9.1(solid-js@1.8.14)(vite@5.0.12)
+    version: 2.9.1(solid-js@1.8.14)(vite@5.1.1)
   vite-tsconfig-paths:
     specifier: ^4.3.1
-    version: 4.3.1(typescript@5.3.3)(vite@5.0.12)
+    version: 4.3.1(typescript@5.3.3)(vite@5.1.1)
 
 packages:
 
@@ -903,7 +903,7 @@ packages:
     resolution: {integrity: sha512-PYjyFOLKQ9y57JvQ6QLo8dAgNqswh8M1RMJYdQduT6xbWSgK36P/Z/v+p888pM69jMMfS8Xd8F6I1kQ/I9HUGg==}
     dev: false
 
-  /autoprefixer@10.4.17(postcss@8.4.34):
+  /autoprefixer@10.4.17(postcss@8.4.35):
     resolution: {integrity: sha512-/cpVNRLSfhOtcGflT13P2794gVSgmPgTR+erw5ifnMLZb0UnSlkK4tquLmkd3BhA+nLo5tX8Cu0upUsGKvKbmg==}
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
@@ -915,7 +915,7 @@ packages:
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.0.0
-      postcss: 8.4.34
+      postcss: 8.4.35
       postcss-value-parser: 4.2.0
     dev: false
 
@@ -1521,6 +1521,15 @@ packages:
       nanoid: 3.3.7
       picocolors: 1.0.0
       source-map-js: 1.0.2
+    dev: false
+
+  /postcss@8.4.35:
+    resolution: {integrity: sha512-u5U8qYpBCpN13BsiEB0CbR1Hhh4Gc0zLFuedrHJKMctHCHAGrMdG0PRM/KErzAL3CU6/eckEtmHNB3x6e3c0vA==}
+    engines: {node: ^10 || ^12 || >=14}
+    dependencies:
+      nanoid: 3.3.7
+      picocolors: 1.0.0
+      source-map-js: 1.0.2
 
   /prettier@3.2.5:
     resolution: {integrity: sha512-3/GWa9aOC0YeD7LUfvOG2NiDyhOWRvt1k+rcKhOuYnMY24iiCphgneUfJDyFXd6rZCAnuLBv6UeAULtrhT/F4A==}
@@ -1829,7 +1838,7 @@ packages:
     resolution: {integrity: sha512-hGdgQozCsQJMyfK5urgFcWEqsSSrK63Awe0t/IMR0bZ0QMtnuaiHzThW81guu3qx9abLi99NEuiaN6P9gVYsNg==}
     dev: true
 
-  /vite-plugin-solid@2.9.1(solid-js@1.8.14)(vite@5.0.12):
+  /vite-plugin-solid@2.9.1(solid-js@1.8.14)(vite@5.1.1):
     resolution: {integrity: sha512-RC4hj+lbvljw57BbMGDApvEOPEh14lwrr/GeXRLNQLcR1qnOdzOwwTSFy13Gj/6FNIZpBEl0bWPU+VYFawrqUw==}
     peerDependencies:
       '@testing-library/jest-dom': ^5.16.6 || ^5.17.0 || ^6.*
@@ -1845,13 +1854,13 @@ packages:
       merge-anything: 5.1.7
       solid-js: 1.8.14
       solid-refresh: 0.6.3(solid-js@1.8.14)
-      vite: 5.0.12
-      vitefu: 0.2.5(vite@5.0.12)
+      vite: 5.1.1
+      vitefu: 0.2.5(vite@5.1.1)
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /vite-tsconfig-paths@4.3.1(typescript@5.3.3)(vite@5.0.12):
+  /vite-tsconfig-paths@4.3.1(typescript@5.3.3)(vite@5.1.1):
     resolution: {integrity: sha512-cfgJwcGOsIxXOLU/nELPny2/LUD/lcf1IbfyeKTv2bsupVbTH/xpFtdQlBmIP1GEK2CjjLxYhFfB+QODFAx5aw==}
     peerDependencies:
       vite: '*'
@@ -1862,14 +1871,14 @@ packages:
       debug: 4.3.4
       globrex: 0.1.2
       tsconfck: 3.0.1(typescript@5.3.3)
-      vite: 5.0.12
+      vite: 5.1.1
     transitivePeerDependencies:
       - supports-color
       - typescript
     dev: true
 
-  /vite@5.0.12:
-    resolution: {integrity: sha512-4hsnEkG3q0N4Tzf1+t6NdN9dg/L3BM+q8SWgbSPnJvrgH2kgdyzfVJwbR1ic69/4uMJJ/3dqDZZE5/WwqW8U1w==}
+  /vite@5.1.1:
+    resolution: {integrity: sha512-wclpAgY3F1tR7t9LL5CcHC41YPkQIpKUGeIuT8MdNwNZr6OqOTLs7JX5vIHAtzqLWXts0T+GDrh9pN2arneKqg==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
@@ -1897,13 +1906,13 @@ packages:
         optional: true
     dependencies:
       esbuild: 0.19.12
-      postcss: 8.4.34
+      postcss: 8.4.35
       rollup: 4.9.6
     optionalDependencies:
       fsevents: 2.3.3
     dev: true
 
-  /vitefu@0.2.5(vite@5.0.12):
+  /vitefu@0.2.5(vite@5.1.1):
     resolution: {integrity: sha512-SgHtMLoqaeeGnd2evZ849ZbACbnwQCIwRH57t18FxcXoZop0uQu0uzlIhJBlF/eWVzuce0sHeqPcDo+evVcg8Q==}
     peerDependencies:
       vite: ^3.0.0 || ^4.0.0 || ^5.0.0
@@ -1911,7 +1920,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 5.0.12
+      vite: 5.1.1
     dev: true
 
   /which@2.0.2:
