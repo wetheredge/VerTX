@@ -1,0 +1,25 @@
+[package]
+name = "vhs-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+embassy = ["picoserve/embassy", "dep:embassy-net"]
+tokio = ["picoserve/tokio", "dep:tokio"]
+
+[dependencies]
+bincode = { version = "2.0.0-rc.3", features = ["derive"], default-features = false }
+embassy-futures = "0.1.1"
+embassy-net = { workspace = true, optional = true, features = ["tcp"] }
+log = "0.4.20"
+picoserve = "0.8.1"
+tokio = { version = "1.36.0", optional = true, features = ["macros", "net", "rt", "sync", "time"] }
+
+[[bin]]
+name = "dev-server"
+required-features = ["tokio"]

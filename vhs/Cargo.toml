@@ -1,0 +1,43 @@
+[package]
+name = "vhs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+embassy-executor = { version = "0.5.0", features = ["nightly"] }
+embassy-futures = "0.1.1"
+embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-hostname"] }
+embassy-sync = "0.5.0"
+embassy-time = "0.3.0"
+embedded-io = { workspace = true }
+embedded-svc = { version = "0.27.0", default-features = false, features = [] }
+esp-alloc = { version = "0.3.0" }
+esp-backtrace = { version = "0.10.0", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "print-uart"] }
+esp-hal-smartled = { version = "0.8.0", features = ["esp32s3"] }
+esp-println = { version = "0.8.0", features = ["esp32s3", "log"] }
+esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
+log = { version = "0.4.20" }
+picoserve = "0.7.1"
+smart-leds = "0.4.0"
+static_cell = { version = "2.0.0", features = ["nightly"] }
+vhs-crsf = { workspace = true }
+vhs-server = { workspace = true, features = ["embassy"] }
+
+[dependencies.hal]
+package = "esp32s3-hal"
+version = "0.15.0"
+features = [
+  "opsram-8m",
+  "embassy",
+  "embassy-executor-thread",
+  "embassy-time-timg0",
+  "embedded-io",
+]
+
+[build-dependencies]
+cargo_toml = "0.19.1"
