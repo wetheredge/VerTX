@@ -604,7 +604,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0b0597e7f5d09d1431fb5a788f6fd794a4e1d7de2179e165c868ddb2804c78c"
 dependencies = [
  "defmt",
- "esp-println",
+ "esp-println 0.8.0",
 ]
 
 [[package]]
@@ -742,6 +742,12 @@ name = "esp-println"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e4c46223e9f05304d2733f935bf3c50af108b2ca24ff53a7aba21584d5bbbb9"
+
+[[package]]
+name = "esp-println"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e090867a191aaaa0645f8a7f03c51ab57cee82e2adba5525940dc9ff1c07511"
 dependencies = [
  "critical-section",
  "log",
@@ -1898,7 +1904,7 @@ dependencies = [
  "esp-alloc",
  "esp-backtrace",
  "esp-hal-smartled",
- "esp-println",
+ "esp-println 0.9.0",
  "esp-wifi",
  "esp32s3-hal",
  "log",
