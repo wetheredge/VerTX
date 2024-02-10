@@ -1337,22 +1337,6 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "picoserve"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d1c26b410473d88c905461695b84e1e298c2a3562092e1fd8e083c6bd489c6a"
-dependencies = [
- "data-encoding",
- "embedded-io-async",
- "futures-util",
- "heapless 0.8.0",
- "lhash",
- "log",
- "ryu",
- "serde",
-]
-
-[[package]]
-name = "picoserve"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "912e6e8713f815d30bb77fa052cc8036a2b6429dc436969311fad47705fe0f2a"
@@ -1918,7 +1902,7 @@ dependencies = [
  "esp-wifi",
  "esp32s3-hal",
  "log",
- "picoserve 0.7.1",
+ "picoserve",
  "smart-leds",
  "static_cell",
  "vhs-crsf",
@@ -1942,7 +1926,7 @@ dependencies = [
  "embassy-futures",
  "embassy-net",
  "log",
- "picoserve 0.8.1",
+ "picoserve",
  "tokio",
 ]
 
