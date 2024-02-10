@@ -1,6 +1,6 @@
-pub const VERSION_MAJOR: u8 = 0;
-pub const VERSION_MINOR: u8 = 0;
-pub const PROTOCOL_NAME: &str = "v0";
+pub(crate) const VERSION_MAJOR: u8 = 0;
+pub(crate) const VERSION_MINOR: u8 = 0;
+pub(crate) const NAME: &str = "v0";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, bincode::Decode)]
 pub enum Request {

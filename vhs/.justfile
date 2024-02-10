@@ -20,4 +20,4 @@ flash:
     espflash flash --monitor {{`cat ../target/last_build`}}
 
 _last-build name:
-    @echo "../target/xtensa-esp32s3-none-elf/{{ name }}/vhs" > target/last_build
+    @echo "../target/xtensa-esp32s3-none-elf/{{ name }}/vhs" > ../target/last_build

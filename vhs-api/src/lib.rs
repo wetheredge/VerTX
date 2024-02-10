@@ -1,14 +1,26 @@
+#![no_std]
+#![cfg_attr(not(any(feature = "embassy", feature = "tokio")), allow(unused))]
+
+mod protocol;
+
+use core::future::Future;
+
 use embassy_futures::select;
 use picoserve::extract::FromRequest;
 use picoserve::io;
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
 use picoserve::routing::MethodHandler;
 
-use crate::api::{Response, PROTOCOL_NAME};
-use crate::State;
+pub use self::protocol::{Request, Response};
+
+pub trait State {
+    fn handle_request(&self, request: protocol::Request) -> Option<protocol::Response>;
+    fn next_response(&self) -> impl Future<Output = protocol::Response>;
+}
 
 const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
 
+#[derive(Debug)]
 pub struct UpgradeHandler;
 
 impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandler {
@@ -26,12 +38,12 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
 
         let valid_protocol = upgrade
             .protocols()
-            .is_some_and(|mut protocols| protocols.any(|p| p == PROTOCOL_NAME));
+            .is_some_and(|mut protocols| protocols.any(|p| p == protocol::NAME));
 
         if valid_protocol {
             upgrade
                 .on_upgrade(Handler::new(state))
-                .with_protocol(PROTOCOL_NAME)
+                .with_protocol(protocol::NAME)
                 .write_to(response_writer)
                 .await
         } else {
@@ -42,6 +54,7 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
     }
 }
 
+#[derive(Debug)]
 pub struct Handler<'a, S> {
     response_buffer: [u8; 20],
     state: &'a S,

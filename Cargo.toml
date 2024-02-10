@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["vhs", "vhs-crsf", "vhs-server"]
+members = ["vhs", "vhs-api", "vhs-crsf"]
 
 [workspace.package]
 authors = ["W Etheredge <me@wetheredge.com>"]
@@ -11,8 +11,9 @@ license = "MPL-2.0"
 [workspace.dependencies]
 embassy-net = "0.4.0"
 embedded-io = "0.6.1"
+picoserve = "0.8.1"
+vhs-api.path = "vhs-api"
 vhs-crsf.path = "vhs-crsf"
-vhs-server.path = "vhs-server"
 
 [profile.dev.package.esp-wifi]
 opt-level = 3

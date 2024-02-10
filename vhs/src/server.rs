@@ -1,14 +1,18 @@
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel};
+use embassy_time::Duration;
+use picoserve::routing::{get, PathRouter};
+use picoserve::{self, Config};
 use static_cell::make_static;
-use vhs_server::api::{Request, Response};
-use vhs_server::picoserve;
+use vhs_api::{Request, Response};
 
 pub const TASKS: usize = 8;
 const TCP_BUFFER: usize = 1024;
 const HTTP_BUFFER: usize = 2048;
 const RESPONSE_CHANNEL_SIZE: usize = 10;
+
+include!(concat!(env!("OUT_DIR"), "/router.rs"));
 
 pub type ApiResponseChannel =
     channel::Channel<CriticalSectionRawMutex, Response, RESPONSE_CHANNEL_SIZE>;
@@ -17,10 +21,22 @@ type ApiResponseReceiver<'ch> =
 
 type Stack<'d> = embassy_net::Stack<esp_wifi::wifi::WifiDevice<'d, esp_wifi::wifi::WifiStaDevice>>;
 
-type Router = picoserve::Router<impl picoserve::routing::PathRouter<State>, State>;
+type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
-    vhs_server::router::<State>().route("/update", crate::ota::HttpHandler)
+    router! {
+        "/update" => crate::ota::HttpHandler
+        "/ws" => vhs_api::UpgradeHandler
+    }
 }
+
+static CONFIG: Config<Duration> = Config {
+    timeouts: picoserve::Timeouts {
+        start_read_request: Some(Duration::from_secs(5)),
+        read_request: Some(Duration::from_secs(1)),
+        write: Some(Duration::from_secs(1)),
+    },
+    connection: picoserve::KeepAlive::KeepAlive,
+};
 
 pub fn run(
     spawner: &Spawner,
@@ -29,12 +45,11 @@ pub fn run(
     responses: ApiResponseReceiver<'static>,
 ) {
     let app = make_static!(router());
-    let config = make_static!(vhs_server::CONFIG);
     let state = make_static!(State::new(responses));
 
     let mut status = Some(status);
     for id in 0..TASKS {
-        spawner.must_spawn(worker(id, stack, app, config, state, status.take()));
+        spawner.must_spawn(worker(id, stack, app, &CONFIG, state, status.take()));
     }
 }
 
@@ -43,7 +58,7 @@ async fn worker(
     id: usize,
     stack: &'static Stack<'static>,
     router: &'static Router,
-    config: &'static vhs_server::Config,
+    config: &'static Config<Duration>,
     state: &'static State,
     status: Option<crate::status::Publisher<'static>>,
 ) -> ! {
@@ -64,30 +79,13 @@ async fn worker(
             continue;
         }
 
-        if let Err(err) = vhs_server::serve::<HTTP_BUFFER, _>(router, config, tcp, state).await {
+        if let Err(err) =
+            picoserve::serve_with_state(router, config, &mut [0; HTTP_BUFFER], tcp, state).await
+        {
             log::error!("server({id}): Error: {err:?}");
         }
     }
 }
-
-// mod build_info {
-//     // include!(concat!(env!("OUT_DIR"), "/shadow.rs"));
-//     include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
-//
-//     pub(super) const RESPONSE: super::Response = super::Response::BuildInfo {
-//         major: VERSION_MAJOR,
-//         minor: VERSION_MINOR,
-//         patch: VERSION_PATCH,
-//         suffix: VERSION_SUFFIX,
-//         official: false,
-//         debug: cfg!(debug_assertions),
-//         date: env!("VERGEN_BUILD_TIMESTAMP"),
-//         git_branch: env!("VERGEN_GIT_BRANCH"),
-//         git_commit: env!("VERGEN_GIT_SHA"),
-//         git_dirty: true,
-//         rustc: "",
-//     };
-// }
 
 struct State {
     responses: ApiResponseReceiver<'static>,
@@ -99,11 +97,8 @@ impl State {
     }
 }
 
-impl vhs_server::State for State {
-    fn handle_request(
-        &self,
-        request: vhs_server::api::Request,
-    ) -> Option<vhs_server::api::Response> {
+impl vhs_api::State for State {
+    fn handle_request(&self, request: vhs_api::Request) -> Option<vhs_api::Response> {
         match request {
             Request::ProtocolVersion => return Some(Response::protocol_version()),
             Request::BuildInfo => {
@@ -119,7 +114,7 @@ impl vhs_server::State for State {
         None
     }
 
-    async fn next_response(&self) -> vhs_server::api::Response {
+    async fn next_response(&self) -> vhs_api::Response {
         self.responses.receive().await
     }
 }

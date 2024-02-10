@@ -1,10 +1,11 @@
 use std::process;
 
+use picoserve::Config;
 use tokio::sync::mpsc;
 use tokio::time::Duration;
 use tokio::{net::TcpListener, sync::Mutex};
 use tokio::{task, time};
-use vhs_server::api::{Request, Response};
+use vhs_api::{Request, Response};
 
 #[derive(Debug)]
 struct State {
@@ -19,7 +20,7 @@ impl State {
     }
 }
 
-impl vhs_server::State for State {
+impl vhs_api::State for State {
     fn handle_request(&self, request: Request) -> Option<Response> {
         match request {
             Request::ProtocolVersion => todo!(),
@@ -28,8 +29,11 @@ impl vhs_server::State for State {
                     major: 0,
                     minor: 0,
                     patch: 0,
-                    commit: "abcdef",
-                    dirty: true,
+                    suffix: "",
+                    debug: true,
+                    git_branch: "main",
+                    git_commit: "0000000",
+                    git_dirty: true,
                 });
             }
             Request::PowerOff => {
@@ -48,10 +52,19 @@ impl vhs_server::State for State {
         None
     }
 
-    async fn next_response(&self) -> vhs_server::api::Response {
+    async fn next_response(&self) -> vhs_api::Response {
         (self.responses.lock().await.recv().await).unwrap()
     }
 }
+
+static CONFIG: Config<Duration> = picoserve::Config {
+    timeouts: picoserve::Timeouts {
+        start_read_request: Some(Duration::from_secs(5)),
+        read_request: Some(Duration::from_secs(1)),
+        write: Some(Duration::from_secs(1)),
+    },
+    connection: picoserve::KeepAlive::KeepAlive,
+};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -78,8 +91,8 @@ async fn main() {
             });
 
             let serve = task::spawn_local(async move {
-                let router = vhs_server::router::<State>();
-                let config = vhs_server::CONFIG;
+                let router = picoserve::Router::new().route("/ws", vhs_api::UpgradeHandler);
+
                 let state = State::new(response_rx);
                 let socket = TcpListener::bind(addr).await.unwrap();
                 println!("Listening on http://{addr}/");
@@ -87,8 +100,14 @@ async fn main() {
                     let (stream, remote) = socket.accept().await.unwrap();
                     println!("Got connection from {remote}");
 
-                    if let Err(err) =
-                        vhs_server::serve::<2048, _>(&router, &config, stream, &state).await
+                    if let Err(err) = picoserve::serve_with_state(
+                        &router,
+                        &CONFIG,
+                        &mut [0; 2048],
+                        stream,
+                        &state,
+                    )
+                    .await
                     {
                         eprintln!("Error: {err:?}");
                     }

@@ -1,5 +1,3 @@
-use vhs_server::picoserve;
-
 pub struct HttpHandler;
 
 impl<State, PathParameters> picoserve::routing::MethodHandler<State, PathParameters>

@@ -22,10 +22,11 @@ esp-hal-smartled = { version = "0.8.0", features = ["esp32s3"] }
 esp-println = { version = "0.9.0", features = ["esp32s3", "log"] }
 esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
 log = { version = "0.4.20" }
+picoserve = { workspace = true, features = ["embassy"] }
 smart-leds = "0.4.0"
 static_cell = { version = "2.0.0", features = ["nightly"] }
+vhs-api = { workspace = true }
 vhs-crsf = { workspace = true }
-vhs-server = { workspace = true, features = ["embassy"] }
 
 [dependencies.hal]
 package = "esp32s3-hal"
@@ -40,3 +41,4 @@ features = [
 
 [build-dependencies]
 cargo_toml = "0.19.1"
+walkdir = "2.4.0"
