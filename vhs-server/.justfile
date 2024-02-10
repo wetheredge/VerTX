@@ -4,8 +4,8 @@ _default:
 fmt:
 	cargo +nightly fmt
 
-check:
-	cargo clippy
+check *args='':
+	cargo clippy {{ args }}
 
 # Run a local dev server. vhs-web does need to have been built, even if using its dev server
 dev:

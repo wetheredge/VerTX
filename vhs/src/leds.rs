@@ -227,7 +227,7 @@ pub async fn run(
 
         let new_status = if let Some(new_next) = new_timer {
             match select::select(Timer::after(new_next), status.next()).await {
-                select::Either::First(_) => continue,
+                select::Either::First(()) => continue,
                 select::Either::Second(effect) => effect,
             }
         } else {

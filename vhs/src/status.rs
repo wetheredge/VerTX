@@ -19,11 +19,11 @@ impl Channel {
         Self(PubSubChannel::new())
     }
 
-    pub fn publisher<'a>(&'a self) -> Publisher<'a> {
+    pub fn publisher(&self) -> Publisher<'_> {
         Publisher(self.0.immediate_publisher())
     }
 
-    pub fn subscriber<'a>(&'a self) -> Option<Subscriber<'a>> {
+    pub fn subscriber(&self) -> Option<Subscriber<'_>> {
         self.0.subscriber().ok().map(Subscriber)
     }
 }
@@ -32,7 +32,7 @@ pub struct Publisher<'a>(pubsub::ImmediatePublisher<'a, NoopRawMutex, Status, 1,
 
 impl Publisher<'_> {
     pub fn publish(&self, status: Status) {
-        self.0.publish_immediate(status)
+        self.0.publish_immediate(status);
     }
 }
 

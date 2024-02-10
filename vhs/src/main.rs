@@ -41,18 +41,23 @@ const LOG_LEVEL: LevelFilter = LevelFilter::Info;
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
-fn init_heap() {
+/// Initialize the heap
+///
+/// # Safety
+///
+/// Must be called exactly once
+unsafe fn init_heap() {
     const HEAP_SIZE: usize = 32 * 1024;
     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
 
-    unsafe {
-        ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
-    }
+    ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
 }
 
 #[main]
 async fn main(spawner: Spawner) {
-    init_heap();
+    // SAFETY: main() will only run once
+    unsafe { init_heap() };
+
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::max(system.clock_control).freeze();
@@ -91,7 +96,7 @@ async fn main(spawner: Spawner) {
         let init = esp_wifi::initialize(
             EspWifiInitFor::Wifi,
             timer,
-            rng.clone(),
+            rng,
             system.radio_clock_control,
             &clocks,
         )
@@ -108,7 +113,7 @@ async fn main(spawner: Spawner) {
             wifi_interface,
             dhcp,
             make_static!(embassy_net::StackResources::<{ server::TASKS + 1 }>::new()),
-            ((rng.random() as u64) << 32) | (rng.random() as u64),
+            (u64::from(rng.random()) << 32) | u64::from(rng.random()),
         ));
 
         spawner.must_spawn(connection(controller));

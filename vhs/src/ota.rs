@@ -9,8 +9,8 @@ impl<State, PathParameters> picoserve::routing::MethodHandler<State, PathParamet
         &self,
         _state: &State,
         _path_parameters: PathParameters,
-        request: picoserve::request::Request<'_>,
-        response_writer: W,
+        _request: picoserve::request::Request<'_>,
+        _response_writer: W,
     ) -> Result<picoserve::ResponseSent, W::Error> {
         todo!()
     }

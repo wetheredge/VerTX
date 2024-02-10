@@ -7,8 +7,8 @@ _default:
 fmt:
 	cargo +nightly fmt
 
-check:
-	cargo clippy
+check *args='':
+	cargo clippy {{ args }}
 
 build: && (_last-build 'debug')
 	cargo build

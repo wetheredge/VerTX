@@ -4,8 +4,8 @@ _default:
 fmt:
 	cargo +nightly fmt
 
-check:
-	cargo clippy
+check *args='':
+	cargo clippy {{ args }}
 
 test:
     cargo nextest run --status-level=leak
