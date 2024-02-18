@@ -9,18 +9,14 @@ mod leds;
 mod ota;
 mod server;
 mod status;
+mod wifi;
 
-use core::convert::identity;
 use core::mem::MaybeUninit;
 
 use embassy_executor::{task, Spawner};
-use embassy_net::Stack;
 use embassy_time::Timer;
-use embedded_svc::wifi::Wifi;
 use esp_backtrace as _;
 use esp_hal_smartled::SmartLedsAdapter;
-use esp_wifi::wifi::{WifiController, WifiDevice, WifiEvent, WifiStaDevice};
-use esp_wifi::{wifi, EspWifiInitFor};
 use hal::clock::ClockControl;
 use hal::peripherals::Peripherals;
 use hal::prelude::*;
@@ -31,10 +27,6 @@ use log::LevelFilter;
 use static_cell::make_static;
 
 pub use crate::status::Status;
-
-const WIFI_SSID: &str = env!("SSID");
-const WIFI_PASSWORD: &str = env!("PASSWORD");
-const HOSTNAME: &str = "vhs";
 
 const LOG_LEVEL: LevelFilter = LevelFilter::Info;
 
@@ -88,36 +80,18 @@ async fn main(spawner: Spawner) {
 
     // WiFi init
     {
-        status_publisher.publish(Status::PreWiFi);
-
-        let mut rng = Rng::new(peripherals.RNG);
-
+        let rng = Rng::new(peripherals.RNG);
         let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
-        let init = esp_wifi::initialize(
-            EspWifiInitFor::Wifi,
+
+        let stack = wifi::run(
+            &spawner,
+            &clocks,
             timer,
             rng,
+            peripherals.WIFI,
             system.radio_clock_control,
-            &clocks,
-        )
-        .unwrap();
-
-        let (wifi_interface, controller) =
-            wifi::new_with_mode(&init, peripherals.WIFI, WifiStaDevice).unwrap();
-
-        let mut dhcp_config = embassy_net::DhcpConfig::default();
-        dhcp_config.hostname = Some(HOSTNAME.try_into().unwrap());
-
-        let dhcp = embassy_net::Config::dhcpv4(dhcp_config);
-        let stack = &*make_static!(embassy_net::Stack::new(
-            wifi_interface,
-            dhcp,
-            make_static!(embassy_net::StackResources::<{ server::TASKS + 1 }>::new()),
-            (u64::from(rng.random()) << 32) | u64::from(rng.random()),
-        ));
-
-        spawner.must_spawn(connection(controller));
-        spawner.must_spawn(network(stack));
+            status.publisher(),
+        );
 
         server::run(
             &spawner,
@@ -125,9 +99,6 @@ async fn main(spawner: Spawner) {
             status.publisher(),
             api_responses.receiver(),
         );
-
-        stack.wait_config_up().await;
-        Timer::after_secs(2).await;
     }
 
     // spawner.must_spawn(simulate_arming(status_signal));
@@ -141,49 +112,4 @@ async fn simulate_arming(status: &'static status::Publisher<'static>) {
         Timer::after_secs(2).await;
         status.publish(Status::Ok);
     }
-}
-
-#[task]
-async fn connection(mut controller: WifiController<'static>) -> ! {
-    use embedded_svc::wifi;
-
-    log::info!("Starting connection()");
-
-    loop {
-        // If connected, wait for disconnect
-        if controller.is_connected().is_ok_and(identity) {
-            controller.wait_for_event(WifiEvent::StaDisconnected).await;
-            log::info!("WiFi disconnected");
-            Timer::after_secs(1).await;
-        }
-
-        if !matches!(controller.is_started(), Ok(true)) {
-            let config = wifi::Configuration::Client(wifi::ClientConfiguration {
-                ssid: WIFI_SSID.try_into().unwrap(),
-                bssid: None,
-                auth_method: wifi::AuthMethod::WPA2Personal,
-                password: WIFI_PASSWORD.try_into().unwrap(),
-                channel: None,
-            });
-
-            controller.set_configuration(&config).unwrap();
-            log::info!("Starting WiFi");
-            controller.start().await.unwrap();
-            log::info!("WiFi started");
-        }
-
-        log::info!("Connecting...");
-        match controller.connect().await {
-            Ok(()) => log::info!("WiFi connected"),
-            Err(err) => {
-                log::info!("WiFi connection failed: {err:?}");
-                Timer::after_secs(5).await;
-            }
-        }
-    }
-}
-
-#[task]
-async fn network(stack: &'static Stack<WifiDevice<'static, WifiStaDevice>>) -> ! {
-    stack.run().await
 }

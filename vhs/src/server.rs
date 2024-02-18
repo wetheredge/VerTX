@@ -19,8 +19,6 @@ pub type ApiResponseChannel =
 type ApiResponseReceiver<'ch> =
     channel::Receiver<'ch, CriticalSectionRawMutex, Response, RESPONSE_CHANNEL_SIZE>;
 
-type Stack<'d> = embassy_net::Stack<esp_wifi::wifi::WifiDevice<'d, esp_wifi::wifi::WifiStaDevice>>;
-
 type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
     router! {
@@ -40,7 +38,7 @@ static CONFIG: Config<Duration> = Config {
 
 pub fn run(
     spawner: &Spawner,
-    stack: &'static Stack<'static>,
+    stack: &'static crate::wifi::Stack<'static>,
     status: crate::status::Publisher<'static>,
     responses: ApiResponseReceiver<'static>,
 ) {
@@ -56,7 +54,7 @@ pub fn run(
 #[task(pool_size = TASKS)]
 async fn worker(
     id: usize,
-    stack: &'static Stack<'static>,
+    stack: &'static crate::wifi::Stack<'static>,
     router: &'static Router,
     config: &'static Config<Duration>,
     state: &'static State,
