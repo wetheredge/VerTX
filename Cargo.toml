@@ -22,6 +22,10 @@ opt-level = 3
 [profile.dev.package.esp-wifi]
 opt-level = 3
 
+[profile.release]
+lto = true
+
+
 [patch.crates-io]
 esp-hal-common = { package = "esp-hal", git = "https://github.com/wetheredge/esp-hal.git", branch = "fixes" }
 esp-hal-procmacros = { git = "https://github.com/wetheredge/esp-hal.git", branch = "fixes" }
