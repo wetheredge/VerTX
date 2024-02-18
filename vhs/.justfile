@@ -1,5 +1,4 @@
 set dotenv-load
-set dotenv-path := "../.env"
 
 _default:
 	@just --list --unsorted
@@ -8,16 +7,24 @@ fmt:
 	cargo +nightly fmt
 
 check *args='':
-	cargo clippy {{ args }}
+	cargo +esp clippy {{ args }}
 
-build: && (_last-build 'debug')
-	cargo build
+build:
+	cargo +esp build
+	cp ../target/xtensa-esp32s3-none-elf/debug/vhs ../target/vhs
 
-build-release: && (_last-build 'release')
-	cargo build --release
+build-release:
+	cargo +esp build --release
+	cp ../target/xtensa-esp32s3-none-elf/release/vhs ../target/vhs
+
+erase-config:
+	espflash erase-parts --partition-table partitions.csv config
 
 flash:
-    espflash flash --monitor {{`cat ../target/last_build`}}
+    espflash flash --partition-table partitions.csv --baud 460800 --monitor ../target/vhs
 
-_last-build name:
-    @echo "../target/xtensa-esp32s3-none-elf/{{ name }}/vhs" > ../target/last_build
+monitor:
+    espflash monitor
+
+cargo *args:
+	cargo +esp {{ args }}

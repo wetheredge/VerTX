@@ -29,4 +29,7 @@ build-release:
 
 # Flash the most recently built firmware over USB using espflash and open the serial monitor
 flash:
-    @just vhs/flash
+    just vhs/flash
+
+monitor:
+    espflash monitor

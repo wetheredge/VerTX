@@ -84,7 +84,9 @@ fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
         }
     }
 
-    let web = fs::canonicalize(format!("{root}/../vhs-web/dist")).unwrap();
+    let Ok(web) = fs::canonicalize(format!("{root}/../vhs-web/dist")) else {
+        panic!("vhs-web must be built first")
+    };
     let web = web.to_str().unwrap();
     println!("cargo:rerun-if-changed={web}");
 
