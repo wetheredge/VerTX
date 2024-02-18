@@ -616,7 +616,7 @@ dependencies = [
 [[package]]
 name = "esp-hal"
 version = "0.15.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=smartled-runtime-clocks#672d0c2430b1e854152f307601cff900a28d748d"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
 dependencies = [
  "basic-toml",
  "bitfield",
@@ -636,13 +636,12 @@ dependencies = [
  "embedded-io",
  "embedded-io-async",
  "enumset",
- "esp-hal-procmacros 0.8.0 (git+https://github.com/wetheredge/esp-hal.git?branch=smartled-runtime-clocks)",
+ "esp-hal-procmacros",
  "esp-synopsys-usb-otg",
- "esp32",
- "esp32s2",
+ "esp32 0.28.0 (git+https://github.com/esp-rs/esp-pacs?rev=55f9f6c)",
+ "esp32s2 0.19.0 (git+https://github.com/esp-rs/esp-pacs?rev=55f9f6c)",
  "esp32s3",
  "fugit",
- "heapless 0.8.0",
  "log",
  "nb 1.1.0",
  "paste",
@@ -679,14 +678,14 @@ dependencies = [
  "embedded-io",
  "embedded-io-async",
  "enumset",
- "esp-hal-procmacros 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "esp-hal-procmacros",
  "esp-synopsys-usb-otg",
- "esp32",
+ "esp32 0.28.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "esp32c2",
  "esp32c3",
  "esp32c6",
  "esp32h2",
- "esp32s2",
+ "esp32s2 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "fugit",
  "heapless 0.8.0",
  "log",
@@ -705,25 +704,10 @@ dependencies = [
 [[package]]
 name = "esp-hal-procmacros"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d4614e76646736f8adf18133d82d51f0da2b8899f38efb0a703b996a252b15e"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
 dependencies = [
  "darling",
- "litrs",
- "object",
- "proc-macro-crate",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 2.0.48",
-]
-
-[[package]]
-name = "esp-hal-procmacros"
-version = "0.8.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=smartled-runtime-clocks#672d0c2430b1e854152f307601cff900a28d748d"
-dependencies = [
- "darling",
+ "document-features",
  "litrs",
  "object",
  "proc-macro-crate",
@@ -736,8 +720,9 @@ dependencies = [
 [[package]]
 name = "esp-hal-smartled"
 version = "0.8.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=smartled-runtime-clocks#672d0c2430b1e854152f307601cff900a28d748d"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
 dependencies = [
+ "document-features",
  "esp-hal",
  "fugit",
  "smart-leds-trait",
@@ -832,6 +817,16 @@ name = "esp32"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc2fc55374d01cd02af1ce27c75cd0607294aaa7b2ea67f1ff5f81a8924a2348"
+dependencies = [
+ "critical-section",
+ "vcell",
+ "xtensa-lx",
+]
+
+[[package]]
+name = "esp32"
+version = "0.28.0"
+source = "git+https://github.com/esp-rs/esp-pacs?rev=55f9f6c#55f9f6cdaff679a379b4f4f9f59b62b08deffdf2"
 dependencies = [
  "critical-section",
  "vcell",
@@ -935,6 +930,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "esp32s2"
+version = "0.19.0"
+source = "git+https://github.com/esp-rs/esp-pacs?rev=55f9f6c#55f9f6cdaff679a379b4f4f9f59b62b08deffdf2"
+dependencies = [
+ "critical-section",
+ "vcell",
+ "xtensa-lx",
+]
+
+[[package]]
 name = "esp32s2-hal"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -946,8 +951,7 @@ dependencies = [
 [[package]]
 name = "esp32s3"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5227feb6445b9eb8482f0a3eca3a0891df21a18b3d1c6e45fa6f09a5267b9711"
+source = "git+https://github.com/esp-rs/esp-pacs?rev=55f9f6c#55f9f6cdaff679a379b4f4f9f59b62b08deffdf2"
 dependencies = [
  "critical-section",
  "vcell",
@@ -957,7 +961,7 @@ dependencies = [
 [[package]]
 name = "esp32s3-hal"
 version = "0.15.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=smartled-runtime-clocks#672d0c2430b1e854152f307601cff900a28d748d"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
 dependencies = [
  "document-features",
  "embassy-time-driver",

@@ -23,9 +23,10 @@ opt-level = 3
 opt-level = 3
 
 [patch.crates-io]
-esp-hal-common = { package = "esp-hal", git = "https://github.com/wetheredge/esp-hal.git", branch = "smartled-runtime-clocks" }
-esp32s3-hal = { git = "https://github.com/wetheredge/esp-hal.git", branch = "smartled-runtime-clocks" }
-esp-hal-smartled = { git = "https://github.com/wetheredge/esp-hal.git", branch = "smartled-runtime-clocks" }
+esp-hal-common = { package = "esp-hal", git = "https://github.com/wetheredge/esp-hal.git", branch = "fixes" }
+esp-hal-procmacros = { git = "https://github.com/wetheredge/esp-hal.git", branch = "fixes" }
+esp-hal-smartled = { git = "https://github.com/wetheredge/esp-hal.git", branch = "fixes" }
+esp32s3-hal = { git = "https://github.com/wetheredge/esp-hal.git", branch = "fixes" }
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"
