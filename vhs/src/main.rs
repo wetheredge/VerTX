@@ -4,6 +4,7 @@
 
 extern crate alloc;
 
+mod config;
 mod crsf;
 mod leds;
 mod ota;
@@ -26,6 +27,7 @@ use hal::{embassy, Rng, IO};
 use log::LevelFilter;
 use static_cell::make_static;
 
+pub use crate::config::Config;
 pub use crate::status::Status;
 
 const LOG_LEVEL: LevelFilter = LevelFilter::Info;
@@ -63,7 +65,6 @@ async fn main(spawner: Spawner) {
     let rmt = Rmt::new(peripherals.RMT, 80_u32.MHz(), &clocks).unwrap();
 
     let status = &*make_static!(status::Channel::new());
-    let status_publisher = status.publisher();
 
     let api_responses = &*make_static!(server::ApiResponseChannel::new());
 
@@ -78,13 +79,16 @@ async fn main(spawner: Spawner) {
         spawner.must_spawn(leds::run(leds, status.subscriber().unwrap()));
     }
 
+    let config = &*make_static!(Config::load());
+
     // WiFi init
-    {
+    if config.wifi.enable {
         let rng = Rng::new(peripherals.RNG);
         let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
 
         let stack = wifi::run(
             &spawner,
+            config,
             &clocks,
             timer,
             rng,

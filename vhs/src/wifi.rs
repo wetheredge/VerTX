@@ -1,4 +1,7 @@
 use core::convert::identity;
+use core::fmt;
+
+use alloc::string::String;
 
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;
@@ -9,17 +12,50 @@ use esp_wifi::{wifi, EspWifiInitFor};
 use hal::clock::Clocks;
 use hal::peripheral::Peripheral;
 use hal::{peripherals, timer};
+use serde::{Deserialize, Serialize};
 use static_cell::make_static;
 
-const WIFI_SSID: &str = env!("WIFI_SSID");
-const WIFI_PASSWORD: &str = env!("WIFI_PASSWORD");
-const HOSTNAME: &str = "vhs";
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    pub enable: bool,
+    hostname: String,
+    credentials: Credentials,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Credentials {
+    ssid: String,
+    password: String,
+}
+
+impl fmt::Debug for Credentials {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Credentials")
+            .field("ssid", &"***")
+            .field("password", &"***")
+            .finish()
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            enable: true,
+            hostname: String::from("vhs"),
+            credentials: Credentials {
+                ssid: String::from(env!("WIFI_SSID")),
+                password: String::from(env!("WIFI_PASSWORD")),
+            },
+        }
+    }
+}
 
 pub type Stack<'d> =
     embassy_net::Stack<esp_wifi::wifi::WifiDevice<'d, esp_wifi::wifi::WifiStaDevice>>;
 
 pub fn run(
     spawner: &Spawner,
+    config: &'static crate::Config,
     clocks: &Clocks,
     timer: timer::Timer<timer::Timer0<peripherals::TIMG1>>,
     mut rng: hal::Rng,
@@ -35,7 +71,7 @@ pub fn run(
     let (wifi_interface, controller) = wifi::new_with_mode(&init, device, WifiStaDevice).unwrap();
 
     let mut dhcp_config = embassy_net::DhcpConfig::default();
-    dhcp_config.hostname = Some(HOSTNAME.try_into().unwrap());
+    dhcp_config.hostname = Some(config.wifi.hostname.as_str().try_into().unwrap());
 
     let dhcp = embassy_net::Config::dhcpv4(dhcp_config);
     let stack = &*make_static!(embassy_net::Stack::new(
@@ -45,14 +81,17 @@ pub fn run(
         (u64::from(rng.random()) << 32) | u64::from(rng.random()),
     ));
 
-    spawner.must_spawn(connection(controller));
+    spawner.must_spawn(connection(controller, &config.wifi.credentials));
     spawner.must_spawn(network(stack));
 
     stack
 }
 
 #[task]
-async fn connection(mut controller: WifiController<'static>) -> ! {
+async fn connection(
+    mut controller: WifiController<'static>,
+    credentials: &'static Credentials,
+) -> ! {
     use embedded_svc::wifi;
 
     log::info!("Starting connection()");
@@ -67,10 +106,10 @@ async fn connection(mut controller: WifiController<'static>) -> ! {
 
         if !matches!(controller.is_started(), Ok(true)) {
             let config = wifi::Configuration::Client(wifi::ClientConfiguration {
-                ssid: WIFI_SSID.try_into().unwrap(),
+                ssid: credentials.ssid.as_str().try_into().unwrap(),
                 bssid: None,
                 auth_method: wifi::AuthMethod::WPA2Personal,
-                password: WIFI_PASSWORD.try_into().unwrap(),
+                password: credentials.password.as_str().try_into().unwrap(),
                 channel: None,
             });
 

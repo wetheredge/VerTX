@@ -15,6 +15,10 @@ picoserve = "0.8.1"
 vhs-api.path = "vhs-api"
 vhs-crsf.path = "vhs-crsf"
 
+
+[profile.dev.package.esp-storage]
+opt-level = 3
+
 [profile.dev.package.esp-wifi]
 opt-level = 3
 

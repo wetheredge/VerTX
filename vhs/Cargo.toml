@@ -15,14 +15,18 @@ embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-ho
 embassy-sync = "0.5.0"
 embassy-time = "0.3.0"
 embedded-io = { workspace = true }
-embedded-svc = { version = "0.27.0", default-features = false, features = [] }
+embedded-storage = "0.3.1"
+embedded-svc = { version = "0.27.0", default-features = false }
 esp-alloc = { version = "0.3.0" }
 esp-backtrace = { version = "0.10.0", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "print-uart"] }
 esp-hal-smartled = { version = "0.8.0", features = ["esp32s3"] }
 esp-println = { version = "0.9.0", features = ["esp32s3", "log"] }
+esp-storage = { version = "0.3.0", default-features = false, features = ["esp32s3", "low-level", "storage"] }
 esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
 log = { version = "0.4.20" }
 picoserve = { workspace = true, features = ["embassy"] }
+serde = { version = "1.0.196", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0.113", default-features = false, features = ["alloc"] }
 smart-leds = "0.4.0"
 static_cell = { version = "2.0.0", features = ["nightly"] }
 vhs-api = { workspace = true }

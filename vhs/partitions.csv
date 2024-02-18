@@ -1,0 +1,6 @@
+# Name,  Type, SubType,  Offset,  Size, Flags
+config,  0x40, 0,        0x9000,   20k,
+otadata, data, ota,      ,          8k,
+# TODO: expand ota* to use full flash
+ota0,    app,  ota_0,    ,       8160k,
+ota1,    app,  ota_1,    ,       8160k,
