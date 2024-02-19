@@ -1368,9 +1368,9 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "picoserve"
-version = "0.8.1"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "912e6e8713f815d30bb77fa052cc8036a2b6429dc436969311fad47705fe0f2a"
+checksum = "cd3ceb3eca5daba8196dac5195fe57b719e3cfe499c14f59cc8bcbf76e699e7c"
 dependencies = [
  "const-sha1",
  "data-encoding",

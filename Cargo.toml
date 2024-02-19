@@ -11,7 +11,7 @@ license = "MPL-2.0"
 [workspace.dependencies]
 embassy-net = "0.4.0"
 embedded-io = "0.6.1"
-picoserve = "0.8.1"
+picoserve = "0.9.1"
 vhs-api.path = "vhs-api"
 vhs-crsf.path = "vhs-crsf"
 
