@@ -66,7 +66,6 @@ impl Config {
         let mut data = encoded.len().to_ne_bytes().to_vec();
         data.extend_from_slice(&encoded);
         data.extend(iter::repeat(0).take(4 - (data.len() % 4)));
-        esp_println::dbg!(&data);
 
         let res = unsafe {
             esp_storage::ll::spiflash_unlock().unwrap();
@@ -74,6 +73,5 @@ impl Config {
                 .unwrap();
             esp_storage::ll::spiflash_write(FLASH_START, data.as_ptr().cast(), data.len() as u32)
         };
-        esp_println::dbg!(res).unwrap();
     }
 }
