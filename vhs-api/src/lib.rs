@@ -24,31 +24,41 @@ const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard
 pub struct UpgradeHandler;
 
 impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandler {
-    async fn call_method_handler<W: picoserve::response::ResponseWriter>(
+    async fn call_method_handler<
+        R: io::Read,
+        W: picoserve::response::ResponseWriter<Error = R::Error>,
+    >(
         &self,
         state: &S,
         _path_parameters: PathParameters,
-        request: picoserve::request::Request<'_>,
+        mut request: picoserve::request::Request<'_, R>,
         response_writer: W,
     ) -> Result<picoserve::ResponseSent, W::Error> {
-        let upgrade = match ws::WebSocketUpgrade::from_request(state, &request).await {
+        let body = request.body.body();
+
+        let upgrade = match ws::WebSocketUpgrade::from_request(state, request.parts, body).await {
             Ok(upgrade) => upgrade,
-            Err(rejection) => return rejection.write_to(response_writer).await,
+            Err(rejection) => {
+                return rejection
+                    .write_to(request.body.finalize().await?, response_writer)
+                    .await
+            }
         };
 
         let valid_protocol = upgrade
             .protocols()
             .is_some_and(|mut protocols| protocols.any(|p| p == protocol::NAME));
 
+        let connection = request.body.finalize().await?;
         if valid_protocol {
             upgrade
                 .on_upgrade(Handler::new(state))
                 .with_protocol(protocol::NAME)
-                .write_to(response_writer)
+                .write_to(connection, response_writer)
                 .await
         } else {
             HttpResponse::new(StatusCode::new(400), "Invalid protocol")
-                .write_to(response_writer)
+                .write_to(connection, response_writer)
                 .await
         }
     }

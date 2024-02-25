@@ -16,4 +16,4 @@ picoserve = { workspace = true }
 
 [dev-dependencies]
 tokio = { version = "1.36.0", features = ["macros", "net", "rt", "sync", "time"] }
-picoserve = { version = "*", features = ["tokio"] }
+picoserve = { workspace = true, features = ["tokio"] }
