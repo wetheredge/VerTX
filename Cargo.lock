@@ -543,9 +543,9 @@ checksum = "a21dea9854beb860f3062d10228ce9b976da520a73474aed3171ec276bc0c032"
 
 [[package]]
 name = "embedded-svc"
-version = "0.27.0"
+version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21535485b1b86b9780ac583f26277011623ae014f6485e3a042eb1249ce50237"
+checksum = "ac6f87e7654f28018340aa55f933803017aefabaa5417820a3b2f808033c7bbc"
 dependencies = [
  "embedded-io",
  "embedded-io-async",

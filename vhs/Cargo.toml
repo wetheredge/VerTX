@@ -16,7 +16,7 @@ embassy-sync = "0.5.0"
 embassy-time = "0.3.0"
 embedded-io = { workspace = true }
 embedded-storage = "0.3.1"
-embedded-svc = { version = "0.27.0", default-features = false }
+embedded-svc = { version = "0.27.1", default-features = false }
 esp-alloc = { version = "0.3.0" }
 esp-backtrace = { version = "0.10.0", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "print-uart"] }
 esp-hal-smartled = { version = "0.8.0", features = ["esp32s3"] }
