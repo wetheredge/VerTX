@@ -26,7 +26,7 @@ esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
 log = { version = "0.4.20" }
 picoserve = { workspace = true, features = ["embassy"] }
 serde = { version = "1.0.196", default-features = false, features = ["derive", "alloc"] }
-serde_json = { version = "1.0.113", default-features = false, features = ["alloc"] }
+serde_json = { version = "1.0.114", default-features = false, features = ["alloc"] }
 smart-leds = "0.4.0"
 static_cell = { version = "2.0.0", features = ["nightly"] }
 vhs-api = { workspace = true }
