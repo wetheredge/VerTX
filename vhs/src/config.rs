@@ -1,77 +1,72 @@
 #![allow(clippy::host_endian_bytes)]
 #![warn(clippy::big_endian_bytes, clippy::little_endian_bytes)]
 
-use core::iter;
+use core::ops::Deref;
 
 use alloc::string::String;
 use alloc::vec;
+use alloc::vec::Vec;
 
-use esp_storage::FlashStorage;
 use serde::{Deserialize, Serialize};
 
+use crate::flash::Partition;
 use crate::wifi::Config as WifiConfig;
 
-const FLASH_START: u32 = 0x9000;
+#[derive(Debug)]
+pub struct ConfigManager {
+    partition: Partition,
+    config: Config,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
+impl Deref for ConfigManager {
+    type Target = Config;
+
+    fn deref(&self) -> &Self::Target {
+        &self.config
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
     pub name: String,
     pub wifi: WifiConfig,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            name: String::from("VHS"),
-            wifi: WifiConfig::default(),
-        }
-    }
-}
-
 impl Config {
-    pub fn load() -> Self {
-        const LENGTH_BYTES: u32 = usize::BITS / 8;
-        let mut length = 0;
-        unsafe { esp_storage::ll::spiflash_read(FLASH_START, &mut length, LENGTH_BYTES) }.unwrap();
+    pub fn load(partitions: &mut Vec<Partition>) -> ConfigManager {
+        let partition = partitions.iter().position(Partition::is_config).unwrap();
+        let partition = partitions.swap_remove(partition);
+
+        let mut length = [0; 1];
+        partition.read_into(0, &mut length).unwrap();
+        let [length] = length;
 
         let config = if length == u32::MAX {
-            log::info!("Initializing config");
-
-            let config = Config::default();
-            config.save();
-            config
+            Config::default()
         } else {
-            let mut config = vec![0_u8; length as usize];
-            unsafe {
-                esp_storage::ll::spiflash_read(
-                    FLASH_START + LENGTH_BYTES,
-                    config.as_mut_ptr().cast(),
-                    length,
-                )
-            }
-            .unwrap();
+            let mut config = vec![0; length as usize / 4];
+            partition.read_into(1, &mut config).unwrap();
+            let config_bytes = bytemuck::cast_slice(&config);
 
-            serde_json::from_slice(&config).unwrap()
+            serde_json::from_slice(config_bytes).unwrap()
         };
 
         log::info!("config = {:?}", config);
 
-        config
+        ConfigManager { partition, config }
     }
+}
 
-    fn save(&self) {
-        let encoded = serde_json::to_vec(self).unwrap();
+impl ConfigManager {
+    #[allow(unused)]
+    fn save(&mut self) {
+        let encoded = serde_json::to_vec(&self.config).unwrap();
 
-        let mut data = encoded.len().to_ne_bytes().to_vec();
-        data.extend_from_slice(&encoded);
-        data.extend(iter::repeat(0).take(4 - (data.len() % 4)));
+        let mut data = vec![0; 1 + encoded.len().div_ceil(4)];
+        data[0] = encoded.len() as u32;
+        bytemuck::cast_slice_mut(&mut data)[4..(4 + encoded.len())].copy_from_slice(&encoded);
 
-        let res = unsafe {
-            esp_storage::ll::spiflash_unlock().unwrap();
-            esp_storage::ll::spiflash_erase_sector(FLASH_START / FlashStorage::SECTOR_SIZE)
-                .unwrap();
-            esp_storage::ll::spiflash_write(FLASH_START, data.as_ptr().cast(), data.len() as u32)
-        };
+        self.partition.erase_and_write(0, &data).unwrap();
     }
 }

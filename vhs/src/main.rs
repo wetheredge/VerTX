@@ -6,6 +6,7 @@ extern crate alloc;
 
 mod config;
 mod crsf;
+mod flash;
 mod leds;
 mod ota;
 mod server;
@@ -14,6 +15,7 @@ mod wifi;
 
 use core::mem::MaybeUninit;
 
+use alloc::vec::Vec;
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;
 use esp_backtrace as _;
@@ -79,7 +81,12 @@ async fn main(spawner: Spawner) {
         spawner.must_spawn(leds::run(leds, status.subscriber().unwrap()));
     }
 
-    let config = &*make_static!(Config::load());
+    flash::unlock().unwrap();
+    let mut partitions = flash::read_partition_table()
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    let config = &*make_static!(Config::load(&mut partitions));
 
     // WiFi init
     if config.wifi.enable {
