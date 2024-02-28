@@ -142,7 +142,8 @@ pub enum Packet {
     Heartbeat {
         origin: Address,
     },
-    /// Signal information. uplink/downlink RSSI, SNR, link quality (LQ), RF mode, transmit power
+    /// Signal information. uplink/downlink RSSI, SNR, link quality (LQ), RF
+    /// mode, transmit power
     LinkStatistics {
         /// RX→TX RSSI for antenna 1 in negative dBm
         up_rssi1: u8,
@@ -181,7 +182,8 @@ pub enum Packet {
         to: Address,
         from: Address,
     },
-    /// Device name, firmware version, hardware version, serial number (`Ping` response)
+    /// Device name, firmware version, hardware version, serial number (`Ping`
+    /// response)
     DeviceInfo,
     /// Configuration item data chunk
     ParameterSettingsEntry,

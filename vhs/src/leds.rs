@@ -5,12 +5,8 @@ use embassy_futures::select;
 use embassy_time::{Duration, Timer};
 use esp_hal_smartled::SmartLedsAdapter;
 use hal::rmt::Channel;
-
-use smart_leds::{
-    colors,
-    hsv::{hsv2rgb, Hsv},
-    SmartLedsWrite, RGB8,
-};
+use smart_leds::hsv::{hsv2rgb, Hsv};
+use smart_leds::{colors, SmartLedsWrite, RGB8};
 
 use crate::Status;
 

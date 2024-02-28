@@ -13,9 +13,9 @@ mod server;
 mod status;
 mod wifi;
 
+use alloc::vec::Vec;
 use core::mem::MaybeUninit;
 
-use alloc::vec::Vec;
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;
 use esp_backtrace as _;

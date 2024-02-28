@@ -1,6 +1,7 @@
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel};
+use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_sync::channel;
 use embassy_time::Duration;
 use picoserve::routing::{get, PathRouter};
 use picoserve::{self, Config};

@@ -1,7 +1,6 @@
+use alloc::string::String;
 use core::convert::identity;
 use core::fmt;
-
-use alloc::string::String;
 
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;

@@ -1,11 +1,10 @@
 #![allow(clippy::host_endian_bytes)]
 #![warn(clippy::big_endian_bytes, clippy::little_endian_bytes)]
 
-use core::ops::Deref;
-
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 

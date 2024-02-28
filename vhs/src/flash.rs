@@ -25,7 +25,9 @@ pub fn unlock() -> Result<(), i32> {
 pub fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
     let mut table = [0_u32; SECTOR_WORDS];
     // SAFETY:
-    // - Cannot overflow as long as `PARTITION_TABLE_ADDRESS` and `SECTOR_WORDS` correct, since the partition table will always be exactly 1 sector fully contained in memory
+    // - Cannot overflow as long as `PARTITION_TABLE_ADDRESS` and `SECTOR_WORDS`
+    //   correct, since the partition table will always be exactly 1 sector fully
+    //   contained in memory
     // - `table` is guaranteed to be word aligned since it is a word array
     unsafe {
         esp_storage::ll::spiflash_read(
@@ -81,7 +83,7 @@ impl Partition {
 
         match type_ {
             PartitionKind::Data(DataPartitionKind::Ota) if size < 0x2000 => {
-                return Err(PartitionError::UndersizedOtaData)
+                return Err(PartitionError::UndersizedOtaData);
             }
             _ => {}
         }
@@ -181,8 +183,8 @@ pub enum PartitionKind {
 }
 
 impl PartitionKind {
-    const CUSTOM_MIN: u8 = 0x40;
     const CUSTOM_MAX: u8 = 0xFE;
+    const CUSTOM_MIN: u8 = 0x40;
 
     pub const fn new_custom(type_: u8, sub_type: u8) -> Option<Self> {
         match type_ {

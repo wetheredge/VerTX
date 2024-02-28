@@ -41,7 +41,7 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
             Err(rejection) => {
                 return rejection
                     .write_to(request.body.finalize().await?, response_writer)
-                    .await
+                    .await;
             }
         };
 

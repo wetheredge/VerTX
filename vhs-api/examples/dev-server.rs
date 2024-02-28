@@ -1,9 +1,9 @@
 use std::process;
 
 use picoserve::Config;
-use tokio::sync::mpsc;
+use tokio::net::TcpListener;
+use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
-use tokio::{net::TcpListener, sync::Mutex};
 use tokio::{task, time};
 use vhs_api::{Request, Response};
 
