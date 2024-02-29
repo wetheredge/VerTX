@@ -66,9 +66,9 @@ async fn main(spawner: Spawner) {
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
     let rmt = Rmt::new(peripherals.RMT, 80_u32.MHz(), &clocks).unwrap();
 
-    let status = &*make_static!(status::Channel::new());
+    let status = make_static!(status::Channel::new());
 
-    let api_responses = &*make_static!(server::ApiResponseChannel::new());
+    let api_responses = make_static!(server::ApiResponseChannel::new());
 
     // Leds init
     {
@@ -86,7 +86,7 @@ async fn main(spawner: Spawner) {
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
-    let config = &*make_static!(Config::load(&mut partitions));
+    let config = make_static!(Config::load(&mut partitions));
 
     // WiFi init
     if config.wifi.enable {
