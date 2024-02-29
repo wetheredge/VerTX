@@ -21,7 +21,7 @@ erase-config:
     espflash erase-parts --partition-table partitions.csv config
 
 flash:
-    espflash flash --partition-table partitions.csv --baud 460800 --monitor ../target/vhs
+    espflash flash --partition-table partitions.csv --flash-size 16mb --baud 460800 --monitor ../target/vhs
 
 monitor:
     espflash monitor
