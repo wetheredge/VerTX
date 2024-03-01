@@ -4,7 +4,7 @@
 	"version": "0.0.0",
 	"type": "module",
 	"dependencies": {
-		"@kobalte/core": "^0.12.1",
+		"@kobalte/core": "^0.12.2",
 		"@solid-primitives/websocket": "^1.2.1",
 		"autoprefixer": "^10.4.17",
 		"class-variance-authority": "^0.7.0",
