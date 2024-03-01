@@ -25,7 +25,7 @@ esp-println = { version = "0.9.0", features = ["esp32s3", "log"] }
 esp-storage = { version = "0.3.0", default-features = false, features = ["esp32s3", "low-level", "storage", "critical-section"] }
 esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
 heapless = "0.8.0"
-log = { version = "0.4.20" }
+log = { version = "0.4.21" }
 picoserve = { workspace = true, features = ["embassy"] }
 serde = { version = "1.0.197", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0.114", default-features = false, features = ["alloc"] }
