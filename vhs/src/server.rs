@@ -32,7 +32,7 @@ static CONFIG: Config<Duration> = Config {
     timeouts: picoserve::Timeouts {
         start_read_request: Some(Duration::from_secs(5)),
         read_request: Some(Duration::from_secs(1)),
-        write: Some(Duration::from_secs(1)),
+        write: Some(Duration::from_secs(2)),
     },
     connection: picoserve::KeepAlive::KeepAlive,
 };
