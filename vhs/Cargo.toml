@@ -27,6 +27,7 @@ esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
 heapless = "0.8.0"
 log = { version = "0.4.21" }
 picoserve = { workspace = true, features = ["embassy"] }
+portable-atomic = { version = "1.6.0", default-features = false }
 serde = { version = "1.0.197", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0.114", default-features = false, features = ["alloc"] }
 smart-leds = "0.4.0"

@@ -22,9 +22,11 @@ pub fn unlock() -> Result<(), i32> {
     unsafe { esp_storage::ll::spiflash_unlock() }
 }
 
+#[allow(clippy::assertions_on_constants)]
 pub fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
     let mut table = [0_u32; PARTITION_TABLE_SIZE / 4];
     const _: () = assert!(PARTITION_TABLE_ADDRESS % SECTOR_BYTES == 0);
+    const _: () = assert!(PARTITION_TABLE_SIZE <= SECTOR_BYTES as usize);
 
     // SAFETY:
     // - Cannot overflow as long as `PARTITION_TABLE_ADDRESS` and `…_SIZE` are

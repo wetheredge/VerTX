@@ -616,7 +616,7 @@ dependencies = [
 [[package]]
 name = "esp-hal"
 version = "0.15.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#cbb5e90619a22b60d50237f41d0f58529fce4c55"
 dependencies = [
  "basic-toml",
  "bitfield",
@@ -704,7 +704,7 @@ dependencies = [
 [[package]]
 name = "esp-hal-procmacros"
 version = "0.8.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#cbb5e90619a22b60d50237f41d0f58529fce4c55"
 dependencies = [
  "darling",
  "document-features",
@@ -720,7 +720,7 @@ dependencies = [
 [[package]]
 name = "esp-hal-smartled"
 version = "0.8.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#cbb5e90619a22b60d50237f41d0f58529fce4c55"
 dependencies = [
  "document-features",
  "esp-hal",
@@ -962,7 +962,7 @@ dependencies = [
 [[package]]
 name = "esp32s3-hal"
 version = "0.15.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#74bf78e2d1839bfa4d5cc581c432cb7c7544c487"
+source = "git+https://github.com/wetheredge/esp-hal.git?branch=fixes#cbb5e90619a22b60d50237f41d0f58529fce4c55"
 dependencies = [
  "document-features",
  "embassy-time-driver",
@@ -1959,6 +1959,7 @@ dependencies = [
  "heapless 0.8.0",
  "log",
  "picoserve",
+ "portable-atomic",
  "serde",
  "serde_json",
  "smart-leds",
