@@ -9,7 +9,7 @@ publish = false
 workspace = true
 
 [dependencies]
-bytemuck = "1.14.3"
+bytemuck = { version = "1.14.3", features = ["min_const_generics"] }
 embassy-executor = { version = "0.5.0", features = ["nightly"] }
 embassy-futures = "0.1.1"
 embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-hostname"] }

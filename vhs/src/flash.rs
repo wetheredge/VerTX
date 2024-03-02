@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 pub const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
 const SECTOR_WORDS: usize = SECTOR_BYTES as usize / 4;
 const PARTITION_TABLE_ADDRESS: u32 = 0x8000;
-const PARTITION_TABLE_SIZE: u32 = 0xC00;
+const PARTITION_TABLE_SIZE: usize = 0xC00;
 
 const CUSTOM_TYPE_CONFIG: PartitionKind = if let Some(config) = PartitionKind::new_custom(0x40, 0) {
     config
@@ -23,11 +23,12 @@ pub fn unlock() -> Result<(), i32> {
 }
 
 pub fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
-    let mut table = [0_u32; SECTOR_WORDS];
+    let mut table = [0_u32; PARTITION_TABLE_SIZE / 4];
+    const _: () = assert!(PARTITION_TABLE_ADDRESS % SECTOR_BYTES == 0);
+
     // SAFETY:
-    // - Cannot overflow as long as `PARTITION_TABLE_ADDRESS` and `SECTOR_WORDS`
-    //   correct, since the partition table will always be exactly 1 sector fully
-    //   contained in memory
+    // - Cannot overflow as long as `PARTITION_TABLE_ADDRESS` and `…_SIZE` are
+    //   correct. The asserts guarantee it is sector aligned and fits in one sector.
     // - `table` is guaranteed to be word aligned since it is a word array
     unsafe {
         esp_storage::ll::spiflash_read(
@@ -38,7 +39,7 @@ pub fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
     }
     .unwrap();
 
-    let table: &[u8; SECTOR_BYTES as usize] = bytemuck::cast_ref(&table);
+    let table: &[u8; PARTITION_TABLE_SIZE] = bytemuck::cast_ref(&table);
 
     table
         .chunks_exact(32)
