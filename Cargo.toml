@@ -22,6 +22,9 @@ opt-level = 3
 [profile.dev.package.esp-wifi]
 opt-level = 3
 
+[profile.dev]
+opt-level = 1
+
 [profile.release]
 lto = true
 
