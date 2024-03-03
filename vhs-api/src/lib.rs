@@ -15,8 +15,11 @@ use picoserve::routing::MethodHandler;
 pub use self::protocol::{response, Request, Response};
 
 pub trait State {
-    fn handle_request(&self, request: protocol::Request) -> Option<protocol::Response>;
-    fn next_response(&self) -> impl Future<Output = protocol::Response>;
+    const BUILD_INFO: response::BuildInfo;
+
+    fn status(&self) -> impl Future<Output = response::Status>;
+    fn power_off(&self) -> !;
+    fn reboot(&self) -> !;
 }
 
 const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
@@ -109,11 +112,11 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
         let mut req_buffer = [0; 20];
 
         loop {
-            let response = self.state.next_response();
+            let status = self.state.status();
             let request = rx.next_message(&mut req_buffer);
 
-            let sent = match select::select(response, request).await {
-                select::Either::First(response) => self.send::<W>(response, &mut tx).await,
+            match select::select(status, request).await {
+                select::Either::First(status) => self.send::<W>(status.into(), &mut tx).await?,
 
                 select::Either::Second(request) => match request {
                     Ok(Message::Binary(request)) => {
@@ -125,25 +128,31 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                             }
                         };
 
-                        if let Some(response) = self.state.handle_request(request) {
-                            self.send::<W>(response, &mut tx).await
-                        } else {
-                            continue;
-                        }
+                        log::debug!("Received api request: {request:?}");
+
+                        let response = match request {
+                            Request::ProtocolVersion => Response::PROTOCOL_VERSION,
+                            Request::BuildInfo => S::BUILD_INFO.into(),
+                            Request::PowerOff => self.state.power_off(),
+                            Request::Reboot => self.state.reboot(),
+                            Request::CheckForUpdate => todo!(),
+                            Request::StreamInputs => todo!(),
+                            Request::StreamMixer => todo!(),
+                        };
+
+                        self.send::<W>(response, &mut tx).await?;
                     }
 
-                    Ok(Message::Ping(payload)) => tx.send_pong(payload).await,
+                    Ok(Message::Ping(payload)) => tx.send_pong(payload).await?,
                     Ok(Message::Close(close)) => break tx.close(close).await,
 
                     Ok(Message::Text(_)) | Ok(Message::Pong(_)) => continue,
                     Err(err) => {
-                        log::debug!("WebSocket error: {err:?}");
+                        log::error!("WebSocket error: {err:?}");
                         continue;
                     }
                 },
-            };
-
-            sent?;
+            }
         }
     }
 }

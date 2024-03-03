@@ -87,23 +87,17 @@ struct State {
 }
 
 impl vhs_api::State for State {
-    fn handle_request(&self, request: vhs_api::Request) -> Option<vhs_api::Response> {
-        match request {
-            Request::ProtocolVersion => return Some(Response::PROTOCOL_VERSION),
-            Request::BuildInfo => {
-                return Some(include!(concat!(env!("OUT_DIR"), "/build_info.rs")));
-            }
-            Request::PowerOff => todo!(),
-            Request::Reboot => todo!(),
-            Request::CheckForUpdate => todo!(),
-            Request::StreamInputs => todo!(),
-            Request::StreamMixer => todo!(),
-        }
+    const BUILD_INFO: response::BuildInfo = include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
 
-        None
+    async fn status(&self) -> response::Status {
+        self.status.wait().await
     }
 
-    async fn next_response(&self) -> vhs_api::Response {
-        self.status.wait().await.into()
+    fn power_off(&self) -> ! {
+        todo!()
+    }
+
+    fn reboot(&self) -> ! {
+        todo!()
     }
 }

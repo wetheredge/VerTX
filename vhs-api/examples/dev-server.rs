@@ -7,55 +7,45 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 use tokio::{task, time};
 use tracing_subscriber::prelude::*;
-use vhs_api::{Request, Response};
+use vhs_api::response;
 
 #[derive(Debug)]
 struct State {
-    responses: Mutex<mpsc::Receiver<Response>>,
+    status: Mutex<mpsc::Receiver<response::Status>>,
 }
 
 impl State {
-    fn new(responses: mpsc::Receiver<Response>) -> Self {
+    fn new(status: mpsc::Receiver<response::Status>) -> Self {
         Self {
-            responses: Mutex::new(responses),
+            status: Mutex::new(status),
         }
     }
 }
 
 impl vhs_api::State for State {
-    fn handle_request(&self, request: Request) -> Option<Response> {
-        match request {
-            Request::ProtocolVersion => todo!(),
-            Request::BuildInfo => {
-                return Some(Response::BuildInfo {
-                    major: 0,
-                    minor: 0,
-                    patch: 0,
-                    suffix: "",
-                    debug: true,
-                    git_branch: "main",
-                    git_commit: "0000000",
-                    git_dirty: true,
-                });
-            }
-            Request::PowerOff => {
-                println!("Powering off");
-                process::exit(0)
-            }
-            Request::Reboot => {
-                println!("Rebooting");
-                process::exit(0);
-            }
-            Request::CheckForUpdate => todo!(),
-            Request::StreamInputs => todo!(),
-            Request::StreamMixer => todo!(),
-        }
+    const BUILD_INFO: response::BuildInfo = response::BuildInfo {
+        major: 0,
+        minor: 0,
+        patch: 0,
+        suffix: "",
+        debug: true,
+        git_branch: "main",
+        git_commit: "0000000",
+        git_dirty: true,
+    };
 
-        None
+    async fn status(&self) -> response::Status {
+        (self.status.lock().await.recv().await).unwrap()
     }
 
-    async fn next_response(&self) -> vhs_api::Response {
-        (self.responses.lock().await.recv().await).unwrap()
+    fn power_off(&self) -> ! {
+        log::info!("Powering off");
+        process::exit(0)
+    }
+
+    fn reboot(&self) -> ! {
+        log::info!("Rebooting");
+        process::exit(0)
     }
 }
 
@@ -79,19 +69,19 @@ async fn main() {
         .init();
 
     let addr = "localhost:8080";
-    let (response_tx, response_rx) = mpsc::channel(10);
+    let (status_tx, status_rx) = mpsc::channel(1);
 
     let _ = task::LocalSet::new()
         .run_until(async {
             let status = task::spawn_local({
-                let response_tx = response_tx.clone();
+                let status_tx = status_tx.clone();
                 async move {
                     let mut interval = time::interval(Duration::from_secs(10));
 
                     loop {
                         interval.tick().await;
-                        response_tx
-                            .send(Response::Status {
+                        status_tx
+                            .send(response::Status {
                                 battery_voltage: 390,
                                 idle_time: rand::thread_rng().gen_range(0.1..1.0),
                                 timing_drift: rand::thread_rng().gen_range(-0.01..=0.01),
@@ -105,7 +95,7 @@ async fn main() {
             let serve = task::spawn_local(async move {
                 let router = picoserve::Router::new().route("/ws", vhs_api::UpgradeHandler);
 
-                let state = State::new(response_rx);
+                let state = State::new(status_rx);
                 let socket = TcpListener::bind(addr).await.unwrap();
                 log::info!("Listening on http://{addr}/");
                 loop {

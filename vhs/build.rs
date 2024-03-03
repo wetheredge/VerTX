@@ -33,7 +33,7 @@ fn build_info(out_dir: &str, root: &str) -> io::Result<()> {
     let git_dirty = !git(&["status", "--porcelain"]).is_empty();
 
     let mut out = File::create(format!("{out_dir}/build_info.rs"))?;
-    writeln!(&mut out, "Response::BuildInfo {{")?;
+    writeln!(&mut out, "response::BuildInfo {{")?;
     writeln!(&mut out, "    major: {major},")?;
     writeln!(&mut out, "    minor: {minor},")?;
     writeln!(&mut out, "    patch: {patch},")?;
