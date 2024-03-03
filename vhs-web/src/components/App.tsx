@@ -18,7 +18,8 @@ export default function App() {
 				break;
 			case ResponseKind.BuildInfo:
 				setVersion(
-					`v${payload.major}.${payload.minor}.${payload.patch}`,
+					`v${payload.major}.${payload.minor}.${payload.patch}` +
+						(payload.suffix ? `-${payload.suffix}` : ''),
 				);
 				break;
 			case ResponseKind.Status:

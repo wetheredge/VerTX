@@ -27,7 +27,7 @@ impl vhs_api::State for State {
         major: 0,
         minor: 0,
         patch: 0,
-        suffix: "",
+        suffix: "local",
         debug: true,
         git_branch: "main",
         git_commit: "0000000",

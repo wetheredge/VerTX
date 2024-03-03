@@ -70,14 +70,14 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
 
 #[derive(Debug)]
 pub struct Handler<'a, S> {
-    response_buffer: [u8; 20],
+    response_buffer: [u8; 64],
     state: &'a S,
 }
 
 impl<'a, S> Handler<'a, S> {
     pub fn new(state: &'a S) -> Self {
         Self {
-            response_buffer: Default::default(),
+            response_buffer: core::array::from_fn(|_| 0),
             state,
         }
     }
