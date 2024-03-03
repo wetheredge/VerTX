@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["vhs", "vhs-api", "vhs-crsf"]
+members = ["vhs", "vhs-crsf"]
 
 [workspace.package]
 authors = ["W Etheredge <me@wetheredge.com>"]

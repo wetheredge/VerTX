@@ -9,6 +9,7 @@ publish = false
 workspace = true
 
 [dependencies]
+bincode = { version = "2.0.0-rc.3", features = ["derive"], default-features = false }
 bytemuck = { version = "1.14.3", features = ["min_const_generics"] }
 embassy-executor = { version = "0.5.0", features = ["nightly"] }
 embassy-futures = "0.1.1"
@@ -18,21 +19,20 @@ embassy-time = "0.3.0"
 embedded-io = { workspace = true }
 embedded-storage = "0.3.1"
 embedded-svc = { version = "0.27.1", default-features = false }
-esp-alloc = { version = "0.3.0" }
+esp-alloc = "0.3.0"
 esp-backtrace = { version = "0.10.0", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "print-uart"] }
 esp-hal-smartled = { version = "0.8.0", features = ["esp32s3"] }
 esp-println = { version = "0.9.0", features = ["esp32s3", "log"] }
 esp-storage = { version = "0.3.0", default-features = false, features = ["esp32s3", "low-level", "storage", "critical-section"] }
 esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
 heapless = "0.8.0"
-log = { version = "0.4.21" }
+log = "0.4.21"
 picoserve = { workspace = true, features = ["embassy"] }
 portable-atomic = { version = "1.6.0", default-features = false }
 serde = { version = "1.0.197", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0.114", default-features = false, features = ["alloc"] }
 smart-leds = "0.4.0"
 static_cell = { version = "2.0.0", features = ["nightly"] }
-vhs-api = { workspace = true }
 vhs-crsf = { workspace = true }
 
 [dependencies.hal]

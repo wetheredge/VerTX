@@ -1,9 +1,4 @@
-#![no_std]
-#![cfg_attr(not(any(feature = "embassy", feature = "tokio")), allow(unused))]
-
 mod protocol;
-
-use core::future::Future;
 
 use embassy_futures::select;
 use picoserve::extract::FromRequest;
@@ -12,24 +7,20 @@ use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode
 use picoserve::routing::MethodHandler;
 
 pub use self::protocol::{Request, Response};
-
-pub trait State {
-    fn handle_request(&self, request: protocol::Request) -> Option<protocol::Response>;
-    fn next_response(&self) -> impl Future<Output = protocol::Response>;
-}
+use super::State;
 
 const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
 
 #[derive(Debug)]
 pub struct UpgradeHandler;
 
-impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandler {
+impl<PathParameters> MethodHandler<State, PathParameters> for UpgradeHandler {
     async fn call_method_handler<
         R: io::Read,
         W: picoserve::response::ResponseWriter<Error = R::Error>,
     >(
         &self,
-        state: &S,
+        state: &State,
         _path_parameters: PathParameters,
         mut request: picoserve::request::Request<'_, R>,
         response_writer: W,
@@ -64,22 +55,19 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
     }
 }
 
-#[derive(Debug)]
-pub struct Handler<'a, S> {
+pub struct Handler<'a> {
     response_buffer: [u8; 20],
-    state: &'a S,
+    state: &'a State,
 }
 
-impl<'a, S> Handler<'a, S> {
-    pub fn new(state: &'a S) -> Self {
+impl<'a> Handler<'a> {
+    pub fn new(state: &'a State) -> Self {
         Self {
             response_buffer: Default::default(),
             state,
         }
     }
-}
 
-impl<S> Handler<'_, S> {
     async fn send<R: io::Read, W: io::Write<Error = R::Error>>(
         &mut self,
         response: Response,
@@ -92,7 +80,7 @@ impl<S> Handler<'_, S> {
     }
 }
 
-impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
+impl ws::WebSocketCallback for Handler<'_> {
     async fn run<R: io::Read, W: io::Write<Error = R::Error>>(
         mut self,
         mut rx: ws::SocketRx<R>,
@@ -103,11 +91,11 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
         let mut req_buffer = [0; 20];
 
         loop {
-            let response = self.state.next_response();
+            let response = self.state.responses.receive();
             let request = rx.next_message(&mut req_buffer);
 
-            let sent = match select::select(response, request).await {
-                select::Either::First(response) => self.send::<R, W>(response, &mut tx).await,
+            match select::select(response, request).await {
+                select::Either::First(response) => self.send::<R, W>(response, &mut tx).await?,
 
                 select::Either::Second(request) => match request {
                     Ok(Message::Binary(request)) => {
@@ -119,14 +107,22 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                             }
                         };
 
-                        if let Some(response) = self.state.handle_request(request) {
-                            self.send::<R, W>(response, &mut tx).await
-                        } else {
-                            continue;
-                        }
+                        let response = match request {
+                            Request::ProtocolVersion => Response::protocol_version(),
+                            Request::BuildInfo => {
+                                include!(concat!(env!("OUT_DIR"), "/build_info.rs"))
+                            }
+                            Request::PowerOff => todo!(),
+                            Request::Reboot => todo!(),
+                            Request::CheckForUpdate => todo!(),
+                            Request::StreamInputs => todo!(),
+                            Request::StreamMixer => todo!(),
+                        };
+
+                        self.send::<R, W>(response, &mut tx).await?;
                     }
 
-                    Ok(Message::Ping(payload)) => tx.send_pong(payload).await,
+                    Ok(Message::Ping(payload)) => tx.send_pong(payload).await?,
                     Ok(Message::Close(close)) => break tx.close(close).await,
 
                     Ok(Message::Text(_)) | Ok(Message::Pong(_)) => continue,
@@ -135,9 +131,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                         continue;
                     }
                 },
-            };
-
-            sent?;
+            }
         }
     }
 }
