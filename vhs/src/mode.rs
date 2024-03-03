@@ -4,7 +4,7 @@ use embassy_sync::pubsub::{self, PubSubChannel};
 const SUBS: usize = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Status {
+pub enum Mode {
     Ok,
     Armed,
     PreWiFi,
@@ -12,7 +12,7 @@ pub enum Status {
     Updating,
 }
 
-pub struct Channel(PubSubChannel<NoopRawMutex, Status, 1, SUBS, 0>);
+pub struct Channel(PubSubChannel<NoopRawMutex, Mode, 1, SUBS, 0>);
 
 impl Channel {
     pub const fn new() -> Self {
@@ -28,22 +28,22 @@ impl Channel {
     }
 }
 
-pub struct Publisher<'a>(pubsub::ImmediatePublisher<'a, NoopRawMutex, Status, 1, SUBS, 0>);
+pub struct Publisher<'a>(pubsub::ImmediatePublisher<'a, NoopRawMutex, Mode, 1, SUBS, 0>);
 
 impl Publisher<'_> {
-    pub fn publish(&self, status: Status) {
-        self.0.publish_immediate(status);
+    pub fn publish(&self, mode: Mode) {
+        self.0.publish_immediate(mode);
     }
 }
 
-pub struct Subscriber<'a>(pubsub::Subscriber<'a, NoopRawMutex, Status, 1, SUBS, 0>);
+pub struct Subscriber<'a>(pubsub::Subscriber<'a, NoopRawMutex, Mode, 1, SUBS, 0>);
 
 impl Subscriber<'_> {
-    pub async fn next(&mut self) -> Status {
+    pub async fn next(&mut self) -> Mode {
         self.0.next_message_pure().await
     }
 
-    pub fn try_next(&mut self) -> Option<Status> {
+    pub fn try_next(&mut self) -> Option<Mode> {
         self.0.try_next_message_pure()
     }
 }

@@ -8,9 +8,9 @@ mod config;
 mod crsf;
 mod flash;
 mod leds;
+mod mode;
 mod ota;
 mod server;
-mod status;
 mod wifi;
 
 use alloc::vec::Vec;
@@ -33,7 +33,7 @@ use portable_atomic::{AtomicU32, Ordering};
 use static_cell::make_static;
 
 pub use crate::config::Config;
-pub use crate::status::Status;
+pub use crate::mode::Mode;
 
 const LOG_LEVEL: LevelFilter = LevelFilter::Info;
 
@@ -76,7 +76,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
     let rmt = Rmt::new(peripherals.RMT, 80_u32.MHz(), &clocks).unwrap();
 
-    let status = make_static!(status::Channel::new());
+    let mode = make_static!(mode::Channel::new());
 
     let api_responses = make_static!(server::ApiResponseChannel::new());
 
@@ -88,7 +88,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             [0; leds::BUFFER_SIZE],
             &clocks,
         );
-        spawner.must_spawn(leds::run(leds, status.subscriber().unwrap()));
+        spawner.must_spawn(leds::run(leds, mode.subscriber().unwrap()));
     }
 
     flash::unlock().unwrap();
@@ -111,27 +111,22 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             rng,
             peripherals.WIFI,
             system.radio_clock_control,
-            status.publisher(),
+            mode.publisher(),
         );
 
-        server::run(
-            &spawner,
-            stack,
-            status.publisher(),
-            api_responses.receiver(),
-        );
+        server::run(&spawner, stack, mode.publisher(), api_responses.receiver());
     }
 
-    // spawner.must_spawn(simulate_arming(status_signal));
+    // spawner.must_spawn(simulate_arming(mode));
 }
 
 #[task]
-async fn simulate_arming(status: &'static status::Publisher<'static>) {
+async fn simulate_arming(mode: &'static mode::Publisher<'static>) {
     loop {
         Timer::after_secs(1).await;
-        status.publish(Status::Armed);
+        mode.publish(Mode::Armed);
         Timer::after_secs(2).await;
-        status.publish(Status::Ok);
+        mode.publish(Mode::Ok);
     }
 }
 

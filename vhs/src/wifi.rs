@@ -60,9 +60,9 @@ pub fn run(
     mut rng: hal::Rng,
     device: impl Peripheral<P = peripherals::WIFI> + 'static,
     radio_clocks: hal::system::RadioClockControl,
-    status: crate::status::Publisher<'static>,
+    mode: crate::mode::Publisher<'static>,
 ) -> &'static Stack<'static> {
-    status.publish(crate::Status::PreWiFi);
+    mode.publish(crate::Mode::PreWiFi);
 
     let init =
         esp_wifi::initialize(EspWifiInitFor::Wifi, timer, rng, radio_clocks, clocks).unwrap();

@@ -40,15 +40,15 @@ static CONFIG: Config<Duration> = Config {
 pub fn run(
     spawner: &Spawner,
     stack: &'static crate::wifi::Stack<'static>,
-    status: crate::status::Publisher<'static>,
+    mode: crate::mode::Publisher<'static>,
     responses: ApiResponseReceiver<'static>,
 ) {
     let app = make_static!(router());
     let state = make_static!(State::new(responses));
 
-    let mut status = Some(status);
+    let mut mode = Some(mode);
     for id in 0..TASKS {
-        spawner.must_spawn(worker(id, stack, app, &CONFIG, state, status.take()));
+        spawner.must_spawn(worker(id, stack, app, &CONFIG, state, mode.take()));
     }
 }
 
@@ -59,12 +59,12 @@ async fn worker(
     router: &'static Router,
     config: &'static Config<Duration>,
     state: &'static State,
-    status: Option<crate::status::Publisher<'static>>,
+    mode: Option<crate::mode::Publisher<'static>>,
 ) -> ! {
     stack.wait_config_up().await;
 
-    if let Some(status) = status {
-        status.publish(crate::Status::WiFi);
+    if let Some(mode) = mode {
+        mode.publish(crate::Mode::WiFi);
     }
 
     let mut rx_buffer = [0; TCP_BUFFER];

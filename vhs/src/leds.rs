@@ -8,7 +8,7 @@ use hal::rmt::Channel;
 use smart_leds::hsv::{hsv2rgb, Hsv};
 use smart_leds::{colors, SmartLedsWrite, RGB8};
 
-use crate::Status;
+use crate::Mode;
 
 pub const MAX_LEDS: usize = 1;
 // 3 channels * 8 bits + 1 stop byte
@@ -110,7 +110,7 @@ static RAINBOW: [RGB8; 90] = [
 ];
 
 #[derive(Debug)]
-pub enum LedEffect {
+enum Effect {
     Solid(RGB8),
     Blink {
         color1: RGB8,
@@ -125,30 +125,30 @@ pub enum LedEffect {
     },
 }
 
-impl Default for LedEffect {
+impl Default for Effect {
     fn default() -> Self {
-        LedEffect::Solid(colors::BLACK)
+        Effect::Solid(colors::BLACK)
     }
 }
 
-impl From<Status> for LedEffect {
-    fn from(status: Status) -> Self {
-        match status {
-            Status::Ok => LedEffect::Solid(colors::GREEN),
-            Status::Armed => LedEffect::Solid(colors::BLUE),
-            Status::PreWiFi => LedEffect::blink(
+impl From<Mode> for Effect {
+    fn from(mode: Mode) -> Self {
+        match mode {
+            Mode::Ok => Effect::Solid(colors::GREEN),
+            Mode::Armed => Effect::Solid(colors::BLUE),
+            Mode::PreWiFi => Effect::blink(
                 colors::MEDIUM_PURPLE,
                 Duration::from_millis(500),
                 colors::BLACK,
                 Duration::from_millis(500),
             ),
-            Status::WiFi => LedEffect::Solid(colors::MEDIUM_PURPLE),
-            Status::Updating => LedEffect::rainbow(),
+            Mode::WiFi => Effect::Solid(colors::MEDIUM_PURPLE),
+            Mode::Updating => Effect::rainbow(),
         }
     }
 }
 
-impl LedEffect {
+impl Effect {
     fn blink(color1: RGB8, time1: Duration, color2: RGB8, time2: Duration) -> Self {
         Self::Blink {
             color1,
@@ -206,11 +206,11 @@ impl LedEffect {
 #[task]
 pub async fn run(
     mut leds: SmartLedsAdapter<Channel<0>, { BUFFER_SIZE }>,
-    mut status: crate::status::Subscriber<'static>,
+    mut mode: crate::mode::Subscriber<'static>,
 ) -> ! {
     log::info!("Starting leds()");
 
-    let mut effect = LedEffect::default();
+    let mut effect = Effect::default();
 
     loop {
         let (color, new_timer) = effect.next();
@@ -221,15 +221,15 @@ pub async fn run(
         ))
         .unwrap();
 
-        let new_status = if let Some(new_next) = new_timer {
-            match select::select(Timer::after(new_next), status.next()).await {
+        let new_mode = if let Some(new_next) = new_timer {
+            match select::select(Timer::after(new_next), mode.next()).await {
                 select::Either::First(()) => continue,
                 select::Either::Second(effect) => effect,
             }
         } else {
-            status.next().await
+            mode.next().await
         };
 
-        effect = new_status.into();
+        effect = new_mode.into();
     }
 }
