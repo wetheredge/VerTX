@@ -5,6 +5,7 @@ mod protocol;
 
 use core::future::Future;
 
+use bincode::error::EncodeError;
 use embassy_futures::select;
 use picoserve::extract::FromRequest;
 use picoserve::io;
@@ -80,15 +81,20 @@ impl<'a, S> Handler<'a, S> {
 }
 
 impl<S> Handler<'_, S> {
-    async fn send<R: io::Read, W: io::Write<Error = R::Error>>(
+    async fn send<W: io::Write>(
         &mut self,
         response: Response,
         tx: &mut ws::SocketTx<W>,
     ) -> Result<(), W::Error> {
         let buffer = &mut self.response_buffer;
 
-        let len = bincode::encode_into_slice(response, buffer, BINCODE_CONFIG).unwrap();
-        tx.send_binary(&buffer[0..len]).await
+        match bincode::encode_into_slice(response, buffer, BINCODE_CONFIG) {
+            Ok(len) => tx.send_binary(&buffer[0..len]).await,
+            Err(err) => {
+                log::error!("Failed to encode api response: {err}");
+                Ok(())
+            }
+        }
     }
 }
 
@@ -107,7 +113,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
             let request = rx.next_message(&mut req_buffer);
 
             let sent = match select::select(response, request).await {
-                select::Either::First(response) => self.send::<R, W>(response, &mut tx).await,
+                select::Either::First(response) => self.send::<W>(response, &mut tx).await,
 
                 select::Either::Second(request) => match request {
                     Ok(Message::Binary(request)) => {
@@ -120,7 +126,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                         };
 
                         if let Some(response) = self.state.handle_request(request) {
-                            self.send::<R, W>(response, &mut tx).await
+                            self.send::<W>(response, &mut tx).await
                         } else {
                             continue;
                         }

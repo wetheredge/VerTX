@@ -18,3 +18,4 @@ picoserve = { workspace = true }
 picoserve = { workspace = true, features = ["tokio"] }
 rand = "0.8.5"
 tokio = { version = "1.36.0", features = ["macros", "net", "rt", "sync", "time"] }
+tracing-subscriber = "0.3.18"

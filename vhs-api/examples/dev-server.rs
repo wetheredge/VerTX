@@ -6,6 +6,7 @@ use tokio::net::TcpListener;
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 use tokio::{task, time};
+use tracing_subscriber::prelude::*;
 use vhs_api::{Request, Response};
 
 #[derive(Debug)]
@@ -69,6 +70,14 @@ static CONFIG: Config<Duration> = picoserve::Config {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .pretty()
+                .with_filter(tracing_subscriber::filter::filter_fn(|_| true)),
+        )
+        .init();
+
     let addr = "localhost:8080";
     let (response_tx, response_rx) = mpsc::channel(10);
 
@@ -98,10 +107,10 @@ async fn main() {
 
                 let state = State::new(response_rx);
                 let socket = TcpListener::bind(addr).await.unwrap();
-                println!("Listening on http://{addr}/");
+                log::info!("Listening on http://{addr}/");
                 loop {
                     let (stream, remote) = socket.accept().await.unwrap();
-                    println!("Got connection from {remote}");
+                    log::debug!("Got connection from {remote}");
 
                     if let Err(err) = picoserve::serve_with_state(
                         &router,
@@ -112,7 +121,7 @@ async fn main() {
                     )
                     .await
                     {
-                        eprintln!("Error: {err:?}");
+                        log::error!("Error: {err:?}");
                     }
                 }
             });
