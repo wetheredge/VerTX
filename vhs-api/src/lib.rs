@@ -11,7 +11,7 @@ use picoserve::io;
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
 use picoserve::routing::MethodHandler;
 
-pub use self::protocol::{Request, Response};
+pub use self::protocol::{response, Request, Response};
 
 pub trait State {
     fn handle_request(&self, request: protocol::Request) -> Option<protocol::Response>;

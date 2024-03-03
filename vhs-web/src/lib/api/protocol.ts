@@ -77,6 +77,8 @@ export type Response =
 			kind: ResponseKind.Status;
 			payload: {
 				batteryVoltage: number;
+				idleTime: number;
+				timingDrift: number;
 			};
 	  };
 
@@ -107,7 +109,14 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 				},
 			};
 		case ResponseKind.Status:
-			return { kind, payload: { batteryVoltage: reader.varint() / 100 } };
+			return {
+				kind,
+				payload: {
+					batteryVoltage: reader.varint() / 100,
+					idleTime: reader.f32() * 100,
+					timingDrift: reader.f32() * 100,
+				},
+			};
 
 		default:
 			throw new Error(`Invalid response kind: ${kind}`);

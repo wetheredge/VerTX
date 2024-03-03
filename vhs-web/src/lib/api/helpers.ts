@@ -23,6 +23,12 @@ export class DataReader {
 		return this.#view.getUint8(this.#index++);
 	}
 
+	f32(): number {
+		const float = this.#view.getFloat32(this.#index, true);
+		this.#index += 4;
+		return float;
+	}
+
 	varint(): number {
 		const byte = this.u8();
 		switch (byte) {

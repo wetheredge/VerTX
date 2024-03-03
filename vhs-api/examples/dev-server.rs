@@ -1,6 +1,7 @@
 use std::process;
 
 use picoserve::Config;
+use rand::Rng;
 use tokio::net::TcpListener;
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
@@ -83,6 +84,8 @@ async fn main() {
                         response_tx
                             .send(Response::Status {
                                 battery_voltage: 390,
+                                idle_time: rand::thread_rng().gen_range(0.1..1.0),
+                                timing_drift: rand::thread_rng().gen_range(-0.01..=0.01),
                             })
                             .await
                             .unwrap();

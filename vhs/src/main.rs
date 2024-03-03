@@ -71,14 +71,13 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
     embassy::init(&clocks, TimerGroup::new(peripherals.TIMG0, &clocks));
 
-    spawner.must_spawn(status(idle_cycles));
+    let status_signal = make_static!(server::StatusSignal::new());
+    spawner.must_spawn(status(idle_cycles, status_signal));
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
     let rmt = Rmt::new(peripherals.RMT, 80_u32.MHz(), &clocks).unwrap();
 
     let mode = make_static!(mode::Channel::new());
-
-    let api_responses = make_static!(server::ApiResponseChannel::new());
 
     // Leds init
     {
@@ -114,7 +113,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             mode.publisher(),
         );
 
-        server::run(&spawner, stack, mode.publisher(), api_responses.receiver());
+        server::run(&spawner, stack, mode.publisher(), status_signal);
     }
 
     // spawner.must_spawn(simulate_arming(mode));
@@ -131,7 +130,7 @@ async fn simulate_arming(mode: &'static mode::Publisher<'static>) {
 }
 
 #[task]
-async fn status(idle_cycles: &'static AtomicU32) {
+async fn status(idle_cycles: &'static AtomicU32, status: &'static server::StatusSignal) {
     log::info!("Starting status()");
 
     let mut ticker = Ticker::every(Duration::from_secs(1));
@@ -144,15 +143,24 @@ async fn status(idle_cycles: &'static AtomicU32) {
 
         let total = end.wrapping_sub(start) as f32;
 
-        let idle_percent = 100.0 * idle_cycles / total;
-        let accuracy = 100.0 * (total - 24e7) / 24e7;
+        let idle_time = idle_cycles / total;
+        let timing_drift = (total - 24e7) / 24e7;
 
-        #[cfg(debug_assertions)]
-        if accuracy < f32::EPSILON {
-            log::info!("Idle = {idle_percent:.02}%; Accuracy = 0%");
-        } else {
-            log::info!("Idle = {idle_percent:.02}%; Accuracy = {accuracy:+.04}%");
+        if cfg!(debug_assertions) {
+            let idle_time = idle_time * 100.0;
+            let timing_drift = timing_drift * 100.0;
+            if timing_drift < f32::EPSILON {
+                log::info!("Idle = {idle_time:.02}%; Drift = 0%");
+            } else {
+                log::info!("Idle = {idle_time:.02}%; Drift = {timing_drift:+.04}%");
+            }
         }
+
+        status.signal(vhs_api::response::Status {
+            battery_voltage: 0,
+            idle_time,
+            timing_drift,
+        });
 
         start = end;
     }

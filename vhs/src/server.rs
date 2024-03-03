@@ -1,24 +1,20 @@
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-use embassy_sync::channel;
+use embassy_sync::signal::Signal;
 use embassy_time::Duration;
 use picoserve::routing::{get, PathRouter};
 use picoserve::{self, Config};
 use static_cell::make_static;
-use vhs_api::{Request, Response};
+use vhs_api::{response, Request, Response};
 
 pub const TASKS: usize = 8;
 const TCP_BUFFER: usize = 1024;
 const HTTP_BUFFER: usize = 2048;
-const RESPONSE_CHANNEL_SIZE: usize = 10;
 
 include!(concat!(env!("OUT_DIR"), "/router.rs"));
 
-pub type ApiResponseChannel =
-    channel::Channel<CriticalSectionRawMutex, Response, RESPONSE_CHANNEL_SIZE>;
-type ApiResponseReceiver<'ch> =
-    channel::Receiver<'ch, CriticalSectionRawMutex, Response, RESPONSE_CHANNEL_SIZE>;
+pub type StatusSignal = Signal<CriticalSectionRawMutex, response::Status>;
 
 type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
@@ -41,10 +37,10 @@ pub fn run(
     spawner: &Spawner,
     stack: &'static crate::wifi::Stack<'static>,
     mode: crate::mode::Publisher<'static>,
-    responses: ApiResponseReceiver<'static>,
+    status: &'static StatusSignal,
 ) {
     let app = make_static!(router());
-    let state = make_static!(State::new(responses));
+    let state = make_static!(State { status });
 
     let mut mode = Some(mode);
     for id in 0..TASKS {
@@ -87,19 +83,13 @@ async fn worker(
 }
 
 struct State {
-    responses: ApiResponseReceiver<'static>,
-}
-
-impl State {
-    fn new(responses: ApiResponseReceiver<'static>) -> Self {
-        Self { responses }
-    }
+    status: &'static StatusSignal,
 }
 
 impl vhs_api::State for State {
     fn handle_request(&self, request: vhs_api::Request) -> Option<vhs_api::Response> {
         match request {
-            Request::ProtocolVersion => return Some(Response::protocol_version()),
+            Request::ProtocolVersion => return Some(Response::PROTOCOL_VERSION),
             Request::BuildInfo => {
                 return Some(include!(concat!(env!("OUT_DIR"), "/build_info.rs")));
             }
@@ -114,8 +104,6 @@ impl vhs_api::State for State {
     }
 
     async fn next_response(&self) -> vhs_api::Response {
-        self.responses.receive().await
+        self.status.wait().await.into()
     }
 }
-
-mod build_info {}
