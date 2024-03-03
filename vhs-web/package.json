@@ -6,7 +6,7 @@
 	"dependencies": {
 		"@kobalte/core": "^0.12.2",
 		"@solid-primitives/websocket": "^1.2.1",
-		"autoprefixer": "^10.4.17",
+		"autoprefixer": "^10.4.18",
 		"class-variance-authority": "^0.7.0",
 		"clsx": "^2.1.0",
 		"solid-icons": "^1.1.0",
