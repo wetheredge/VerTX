@@ -33,8 +33,10 @@
   },
   "forwardPorts": [
     5173,
-    4173
+    4173,
+    8080
   ],
+  "onCreateCommand": "cd vhs-web && pnpm install && just build",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/esp/vhs,type=bind,consistency=cached",
   "workspaceFolder": "/home/esp/vhs"
 }

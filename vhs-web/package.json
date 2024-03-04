@@ -16,6 +16,7 @@
 		"tailwindcss-animate": "^1.0.7"
 	},
 	"devDependencies": {
+		"@types/node": "^20.11.24",
 		"prettier": "^3.2.5",
 		"typescript": "^5.2.2",
 		"vite": "^5.1.4",

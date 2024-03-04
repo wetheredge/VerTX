@@ -6,7 +6,12 @@ import { Button } from './ui/button';
 import { Toaster } from './ui/toast';
 import { RequestKind, ResponseKind } from '~/lib/api';
 
-const API_HOST = import.meta.env.DEV ? 'localhost:8080' : location.host;
+const DEV_API_PORT = 8080;
+const API_HOST = import.meta.env.PROD
+	? location.host
+	: import.meta.env.CODESPACE_NAME
+		? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
+		: `localhost:${DEV_API_PORT}`;
 
 export default function App() {
 	const [version, setVersion] = createSignal<string>();
