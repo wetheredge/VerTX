@@ -48,4 +48,5 @@ features = [
 
 [build-dependencies]
 cargo_toml = "0.19.1"
+flate2 = "1.0.28"
 walkdir = "2.4.0"
