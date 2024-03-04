@@ -82,6 +82,11 @@ export type Response =
 			};
 	  };
 
+export type ResponsePayload<Kind extends ResponseKind> = Extract<
+	Response,
+	{ kind: Kind }
+>['payload'];
+
 export function parseResponse(buffer: ArrayBuffer): Response {
 	const reader = new DataReader(buffer);
 
@@ -113,8 +118,8 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 				kind,
 				payload: {
 					batteryVoltage: reader.varint() / 100,
-					idleTime: reader.f32() * 100,
-					timingDrift: reader.f32() * 100,
+					idleTime: reader.f32(),
+					timingDrift: reader.f32(),
 				},
 			};
 

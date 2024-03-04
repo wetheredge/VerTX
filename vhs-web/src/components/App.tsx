@@ -1,10 +1,12 @@
 import { createSignal } from 'solid-js';
 
-import createApi from '~/lib/api';
+import createApi, {
+	ResponsePayload,
+	RequestKind,
+	ResponseKind,
+} from '~/lib/api';
 import { unreachable } from '~/lib/utils';
-import { Button } from './ui/button';
-import { Toaster } from './ui/toast';
-import { RequestKind, ResponseKind } from '~/lib/api';
+import StatusBar from './StatusBar';
 
 const DEV_API_PORT = 8080;
 const API_HOST = import.meta.env.PROD
@@ -14,7 +16,10 @@ const API_HOST = import.meta.env.PROD
 		: `localhost:${DEV_API_PORT}`;
 
 export default function App() {
-	const [version, setVersion] = createSignal<string>();
+	const [build, setBuild] =
+		createSignal<ResponsePayload<ResponseKind.BuildInfo>>();
+	const [status, setStatus] =
+		createSignal<ResponsePayload<ResponseKind.Status>>();
 
 	const api = createApi(API_HOST, ({ kind, payload }) => {
 		switch (kind) {
@@ -22,13 +27,10 @@ export default function App() {
 				console.log(ResponseKind[kind], payload);
 				break;
 			case ResponseKind.BuildInfo:
-				setVersion(
-					`v${payload.major}.${payload.minor}.${payload.patch}` +
-						(payload.suffix ? `-${payload.suffix}` : ''),
-				);
+				setBuild(payload);
 				break;
 			case ResponseKind.Status:
-				console.log(ResponseKind[kind], payload);
+				setStatus(payload);
 				break;
 
 			default:
@@ -40,16 +42,11 @@ export default function App() {
 
 	return (
 		<>
-			<h1>VHS {version()}</h1>
-
-			<Button onClick={() => api.request({ kind: RequestKind.Reboot })}>
-				Reboot
-			</Button>
-			<Button onClick={() => api.request({ kind: RequestKind.PowerOff })}>
-				PowerOff
-			</Button>
-
-			<Toaster />
+			<StatusBar
+				build={build()}
+				status={status()}
+				apiStatus={api.status()}
+			/>
 		</>
 	);
 }

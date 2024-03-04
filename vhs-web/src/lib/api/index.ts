@@ -1,7 +1,6 @@
 import { makeReconnectingWS } from '@solid-primitives/websocket';
 import { Accessor, createSignal, onCleanup } from 'solid-js';
 
-import { dismissToast, showToast } from '~/components/ui/toast';
 import {
 	type Request,
 	parseResponse,
@@ -12,12 +11,19 @@ import {
 export {
 	type Request,
 	type Response,
+	type ResponsePayload,
 	ResponseKind,
 	RequestKind,
 } from './protocol';
 
+export const enum ApiStatus {
+	Connecting,
+	Connected,
+	LostConnection,
+}
+
 export type Api = {
-	isConnected: Accessor<boolean>;
+	status: Accessor<ApiStatus>;
 	request: (request: Request) => void;
 };
 
@@ -25,9 +31,7 @@ export default function createApi(
 	host: string,
 	onResponse: (resp: Response) => void,
 ): Api {
-	const [isConnected, setIsConnected] = createSignal(false);
-	let connectionToast: number | undefined;
-	let everConnected = false;
+	const [status, setStatus] = createSignal(ApiStatus.Connecting);
 
 	const socket = makeReconnectingWS(`ws://${host}/ws`, 'v0', {
 		delay: 15_000,
@@ -35,42 +39,16 @@ export default function createApi(
 	});
 
 	onCleanup(() => {
-		if (connectionToast != null) {
-			dismissToast(connectionToast);
-			socket.close();
-		}
+		socket.close();
 	});
 
 	socket.addEventListener('open', () => {
-		everConnected = true;
-		if (connectionToast != null) dismissToast(connectionToast);
-		showToast({
-			priority: 'low',
-			title: 'Handset connected',
-			duration: 3000,
-		});
-		setIsConnected(true);
+		setStatus(ApiStatus.Connected);
 	});
 
 	socket.addEventListener('close', () => {
-		if (everConnected && connectionToast == null)
-			connectionToast = showToast({
-				priority: 'low',
-				title: 'Handset connection lost',
-				description: 'Attempting to reconnect...',
-				persistent: true,
-			});
+		setStatus(ApiStatus.LostConnection);
 	});
-
-	setTimeout(() => {
-		if (!everConnected && connectionToast == null) {
-			connectionToast = showToast({
-				priority: 'low',
-				title: 'Connecting...',
-				persistent: true,
-			});
-		}
-	}, 300);
 
 	socket.addEventListener(
 		'message',
@@ -82,7 +60,7 @@ export default function createApi(
 	);
 
 	return {
-		isConnected,
+		status,
 		request(request) {
 			socket.send(encodeRequest(request));
 		},
