@@ -5,7 +5,6 @@ use embassy_futures::select;
 use embassy_time::{Duration, Timer};
 use esp_hal_smartled::SmartLedsAdapter;
 use hal::rmt::Channel;
-use smart_leds::hsv::{hsv2rgb, Hsv};
 use smart_leds::{colors, SmartLedsWrite, RGB8};
 
 use crate::Mode;
@@ -16,98 +15,31 @@ pub const BUFFER_SIZE: usize = MAX_LEDS * 3 * 8 + 1;
 
 const MAX_BRIGHTNESS: u8 = 10;
 
-static RAINBOW: [RGB8; 90] = [
-    RGB8::new(220, 127, 155),
-    RGB8::new(222, 126, 150),
-    RGB8::new(223, 127, 144),
-    RGB8::new(224, 127, 138),
-    RGB8::new(224, 127, 133),
-    RGB8::new(225, 128, 127),
-    RGB8::new(225, 129, 121),
-    RGB8::new(225, 129, 116),
-    RGB8::new(224, 130, 110),
-    RGB8::new(223, 132, 105),
-    RGB8::new(222, 133, 100),
-    RGB8::new(221, 134, 94),
-    RGB8::new(220, 136, 89),
-    RGB8::new(218, 138, 85),
-    RGB8::new(216, 139, 80),
-    RGB8::new(213, 141, 76),
-    RGB8::new(211, 143, 72),
-    RGB8::new(208, 145, 68),
-    RGB8::new(205, 147, 65),
-    RGB8::new(201, 149, 62),
-    RGB8::new(198, 151, 61),
-    RGB8::new(194, 153, 59),
-    RGB8::new(190, 155, 59),
-    RGB8::new(186, 158, 59),
-    RGB8::new(181, 160, 61),
-    RGB8::new(176, 162, 62),
-    RGB8::new(171, 164, 65),
-    RGB8::new(166, 166, 68),
-    RGB8::new(160, 167, 72),
-    RGB8::new(155, 169, 76),
-    RGB8::new(149, 171, 80),
-    RGB8::new(143, 173, 85),
-    RGB8::new(136, 174, 90),
-    RGB8::new(130, 176, 95),
-    RGB8::new(123, 177, 101),
-    RGB8::new(116, 178, 106),
-    RGB8::new(109, 179, 112),
-    RGB8::new(102, 180, 118),
-    RGB8::new(95, 181, 124),
-    RGB8::new(87, 182, 129),
-    RGB8::new(79, 183, 135),
-    RGB8::new(71, 183, 141),
-    RGB8::new(63, 184, 147),
-    RGB8::new(55, 184, 153),
-    RGB8::new(46, 184, 158),
-    RGB8::new(37, 184, 164),
-    RGB8::new(27, 184, 170),
-    RGB8::new(17, 183, 175),
-    RGB8::new(6, 183, 180),
-    RGB8::new(0, 182, 185),
-    RGB8::new(0, 181, 190),
-    RGB8::new(3, 181, 195),
-    RGB8::new(13, 180, 200),
-    RGB8::new(23, 179, 204),
-    RGB8::new(33, 177, 208),
-    RGB8::new(42, 176, 212),
-    RGB8::new(50, 175, 216),
-    RGB8::new(59, 173, 219),
-    RGB8::new(67, 172, 222),
-    RGB8::new(74, 170, 225),
-    RGB8::new(82, 169, 227),
-    RGB8::new(89, 167, 229),
-    RGB8::new(96, 165, 231),
-    RGB8::new(103, 163, 233),
-    RGB8::new(110, 161, 234),
-    RGB8::new(117, 160, 234),
-    RGB8::new(123, 158, 235),
-    RGB8::new(129, 156, 235),
-    RGB8::new(135, 154, 234),
-    RGB8::new(141, 152, 234),
-    RGB8::new(147, 150, 233),
-    RGB8::new(152, 148, 231),
-    RGB8::new(158, 147, 230),
-    RGB8::new(163, 145, 228),
-    RGB8::new(168, 143, 225),
-    RGB8::new(173, 141, 223),
-    RGB8::new(177, 140, 220),
-    RGB8::new(182, 138, 216),
-    RGB8::new(186, 137, 213),
-    RGB8::new(190, 135, 209),
-    RGB8::new(194, 134, 205),
-    RGB8::new(197, 133, 201),
-    RGB8::new(201, 132, 196),
-    RGB8::new(204, 131, 192),
-    RGB8::new(207, 130, 187),
-    RGB8::new(210, 129, 182),
-    RGB8::new(212, 128, 177),
-    RGB8::new(215, 128, 172),
-    RGB8::new(217, 127, 166),
-    RGB8::new(219, 127, 161),
-];
+macro_rules! color_array {
+    (static $name:ident = [ $(($r:expr, $g:expr, $b:expr)),* $(,)? ]) => {
+        static $name: [RGB8; { $(1 + $r - $r +)* 0 }] = [$(RGB8::new($r, $g, $b)),*];
+    };
+}
+
+color_array! {
+    static RAINBOW = [
+        (242, 138, 170), (244, 138, 161), (245, 139, 152), (246, 139, 142),
+        (247, 141, 133), (246, 142, 124), (245, 144, 115), (243, 146, 106),
+        (241, 149,  97), (238, 151,  89), (234, 154,  82), (230, 158,  75),
+        (225, 161,  70), (219, 164,  66), (213, 168,  64), (206, 171,  63),
+        (198, 175,  65), (190, 178,  68), (182, 181,  73), (173, 185,  80),
+        (163, 187,  87), (153, 190,  95), (142, 193, 104), (131, 195, 113),
+        (119, 197, 122), (107, 198, 132), ( 95, 200, 142), ( 81, 201, 151),
+        ( 67, 201, 161), ( 52, 202, 170), ( 36, 201, 180), ( 15, 201, 189),
+        (  0, 200, 197), (  0, 199, 206), (  0, 198, 214), (  8, 196, 222),
+        ( 31, 195, 228), ( 47, 192, 235), ( 62, 190, 240), ( 76, 187, 245),
+        ( 89, 185, 249), (101, 182, 253), (113, 179, 255), (125, 176, 255),
+        (136, 173, 255), (146, 170, 255), (155, 167, 255), (164, 164, 255),
+        (173, 161, 252), (181, 158, 249), (189, 155, 244), (197, 152, 239),
+        (204, 150, 234), (210, 147, 227), (217, 145, 220), (222, 143, 213),
+        (227, 142, 205), (232, 141, 197), (236, 139, 188), (239, 139, 179),
+    ]
+}
 
 #[derive(Debug)]
 enum Effect {
@@ -120,8 +52,7 @@ enum Effect {
         state: bool,
     },
     Rainbow {
-        hue: u8,
-        // step: usize,
+        step: usize,
     },
 }
 
@@ -160,10 +91,9 @@ impl Effect {
     }
 
     fn rainbow() -> Self {
-        Self::Rainbow { hue: 255 }
-        // Self::Rainbow {
-        //     step: RAINBOW.len(),
-        // }
+        Self::Rainbow {
+            step: RAINBOW.len(),
+        }
     }
 
     fn next(&mut self) -> (RGB8, Option<Duration>) {
@@ -183,22 +113,10 @@ impl Effect {
                     (*color2, Some(*time2))
                 }
             }
-
-            Self::Rainbow { ref mut hue } => {
-                *hue = hue.wrapping_add(1);
-
-                (
-                    hsv2rgb(Hsv {
-                        hue: *hue,
-                        sat: 255,
-                        val: 255,
-                    }),
-                    Some(Duration::from_secs(3) / 256),
-                )
-            } // Self::Rainbow { ref mut step } => {
-              //     *step = (*step + 1) % RAINBOW.len();
-              //     (RAINBOW[*step], Some(Duration::from_hz(30)))
-              // }
+            Self::Rainbow { ref mut step } => {
+                *step = (*step + 1) % RAINBOW.len();
+                (RAINBOW[*step], Some(Duration::from_hz(30)))
+            }
         }
     }
 }
