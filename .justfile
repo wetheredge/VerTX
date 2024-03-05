@@ -34,4 +34,15 @@ flash:
     just vhs/flash
 
 monitor:
-    espflash monitor
+    cargo bin espflash monitor
+
+setup:
+    cargo bin --install
+    cargo bin --sync-aliases
+    cd vhs-web && pnpm install
+    @echo
+    @echo "Make sure the latest esp toolchain is installed with the esp32s3 target."
+    @echo "See <https://github.com/esp-rs/espup/#installation>"
+    @echo
+    @echo "The WIFI_SSID & WIFI_PASSWORD environment variables are required at build time."
+    @echo "They will be automatically loaded from .env in the project root, if present."

@@ -1,3 +1,5 @@
 target/
 .pnpm-store/
 .env
+.bin/
+/.cargo/

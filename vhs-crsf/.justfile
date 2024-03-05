@@ -8,4 +8,4 @@ check *args='':
     cargo clippy {{ args }}
 
 test:
-    cargo nextest run --status-level=leak
+    cargo bin cargo-nextest run --status-level=leak

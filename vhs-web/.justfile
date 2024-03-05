@@ -6,7 +6,7 @@ clean:
 
 fmt:
     pnpm biome format --write .
-    dprint fmt
+    cargo bin dprint fmt
 
 check:
     pnpm biome ci .
