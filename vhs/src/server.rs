@@ -6,7 +6,7 @@ use embassy_time::Duration;
 use picoserve::routing::{get, PathRouter};
 use picoserve::{self, Config};
 use static_cell::make_static;
-use vhs_api::{response, Request, Response};
+use vhs_api::response;
 
 pub const TASKS: usize = 8;
 const TCP_BUFFER: usize = 1024;

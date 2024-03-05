@@ -52,6 +52,7 @@ impl Default for Config {
 pub type Stack<'d> =
     embassy_net::Stack<esp_wifi::wifi::WifiDevice<'d, esp_wifi::wifi::WifiStaDevice>>;
 
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     spawner: &Spawner,
     config: &'static crate::Config,

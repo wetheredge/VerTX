@@ -1,7 +1,6 @@
 use alloc::vec::Vec;
 
 pub const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
-const SECTOR_WORDS: usize = SECTOR_BYTES as usize / 4;
 const PARTITION_TABLE_ADDRESS: u32 = 0x8000;
 const PARTITION_TABLE_SIZE: usize = 0xC00;
 

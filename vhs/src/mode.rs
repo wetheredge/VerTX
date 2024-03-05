@@ -42,8 +42,4 @@ impl Subscriber<'_> {
     pub async fn next(&mut self) -> Mode {
         self.0.next_message_pure().await
     }
-
-    pub fn try_next(&mut self) -> Option<Mode> {
-        self.0.try_next_message_pure()
-    }
 }
