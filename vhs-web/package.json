@@ -11,13 +11,12 @@
 		"solid-js": "^1.8.15"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "1.5.3",
 		"@types/node": "^20.11.24",
 		"@vanilla-extract/css": "^1.14.1",
 		"@vanilla-extract/vite-plugin": "^4.0.4",
-		"prettier": "^3.2.5",
 		"typescript": "^5.2.2",
 		"vite": "^5.1.4",
-		"vite-plugin-solid": "^2.10.1",
-		"vite-tsconfig-paths": "^4.3.1"
+		"vite-plugin-solid": "^2.10.1"
 	}
 }

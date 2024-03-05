@@ -1,21 +1,20 @@
 import { createSignal } from 'solid-js';
-
 import createApi, {
 	ResponsePayload,
 	RequestKind,
 	ResponseKind,
-} from '~/lib/api';
-import { unreachable } from '~/lib/utils';
-import StatusBar from './StatusBar';
+} from '../lib/api';
+import { unreachable } from '../lib/utils';
+import { StatusBar } from './StatusBar';
 
 const DEV_API_PORT = 8080;
 const API_HOST = import.meta.env.PROD
 	? location.host
 	: import.meta.env.CODESPACE_NAME
-		? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
-		: `localhost:${DEV_API_PORT}`;
+	  ? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
+	  : `localhost:${DEV_API_PORT}`;
 
-export default function App() {
+export function App() {
 	const [build, setBuild] =
 		createSignal<ResponsePayload<ResponseKind.BuildInfo>>();
 	const [status, setStatus] =

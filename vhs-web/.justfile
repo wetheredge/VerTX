@@ -5,9 +5,10 @@ clean:
     rm -r dist
 
 fmt:
-    pnpm prettier --write .
+    pnpm biome format --write .
 
 check:
+    pnpm biome ci .
     pnpm tsc
 
 # Run a local dev server. Needs the vhs-server dev server running

@@ -13,7 +13,7 @@ clean:
 fmt:
     cargo +nightly fmt --all
     @echo
-    cd vhs-web && just fmt
+    cd vhs-web && pnpm biome format --write .
 
 # Complete debug build
 build:

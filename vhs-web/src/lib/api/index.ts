@@ -1,11 +1,10 @@
 import { makeReconnectingWS } from '@solid-primitives/websocket';
 import { Accessor, createSignal, onCleanup } from 'solid-js';
-
 import {
 	type Request,
-	parseResponse,
-	encodeRequest,
 	type Response,
+	encodeRequest,
+	parseResponse,
 } from './protocol';
 
 export {

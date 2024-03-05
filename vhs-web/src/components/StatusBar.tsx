@@ -1,6 +1,5 @@
-import { ApiStatus, ResponseKind, ResponsePayload } from '~/lib/api';
+import { ApiStatus, ResponseKind, ResponsePayload } from '../lib/api';
 import * as styles from './StatusBar.css';
-import { Show } from 'solid-js';
 
 const connectionMessage = {
 	[ApiStatus.Connected]: 'Connected',
@@ -8,17 +7,15 @@ const connectionMessage = {
 	[ApiStatus.LostConnection]: 'Lost connection',
 };
 
-export default function StatusBar(props: {
+export function StatusBar(props: {
 	build?: ResponsePayload<ResponseKind.BuildInfo>;
 	status?: ResponsePayload<ResponseKind.Status>;
 	apiStatus: ApiStatus;
 }) {
-	const cpuUsage = () => props.status
-		? (100 * (1 - props.status.idleTime)).toFixed(1)
-		: '--';
-	const voltage = () => props.status
-		? props.status.batteryVoltage.toFixed(2)
-		: '-.--';
+	const cpuUsage = () =>
+		props.status ? (100 * (1 - props.status.idleTime)).toFixed(1) : '--';
+	const voltage = () =>
+		props.status ? props.status.batteryVoltage.toFixed(2) : '-.--';
 
 	return (
 		<div class={styles.root}>
@@ -26,10 +23,10 @@ export default function StatusBar(props: {
 			<span class={styles.apiStatus[props.apiStatus]}>
 				{connectionMessage[props.apiStatus]}
 			</span>
-				<span class={styles.right}>
-					<span>{cpuUsage()}%</span>
-					<span>{voltage()}V</span>
-				</span>
+			<span class={styles.right}>
+				<span>{cpuUsage()}%</span>
+				<span>{voltage()}V</span>
+			</span>
 		</div>
 	);
 }
