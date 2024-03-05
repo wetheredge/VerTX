@@ -6,6 +6,7 @@ clean:
 
 fmt:
     pnpm biome format --write .
+    dprint fmt
 
 check:
     pnpm biome ci .

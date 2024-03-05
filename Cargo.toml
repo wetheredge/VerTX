@@ -3,8 +3,8 @@ resolver = "2"
 members = ["vhs", "vhs-api", "vhs-crsf"]
 
 [workspace.package]
-authors = ["W Etheredge <me@wetheredge.com>"]
 version = "0.0.0"
+authors = ["W Etheredge <me@wetheredge.com>"]
 edition = "2021"
 license = "MPL-2.0"
 
@@ -15,6 +15,12 @@ picoserve = "0.9.1"
 vhs-api.path = "vhs-api"
 vhs-crsf.path = "vhs-crsf"
 
+[workspace.metadata.bin]
+cargo-machete = { version = "0.6.1", locked = true }
+cargo-nextest = { version = "0.9.57", locked = true }
+dprint = { version = "0.45.0", locked = true }
+espflash = { version = "3.0.0-rc.2", locked = true }
+typos-cli = { version = "1.19.0", locked = true, bins = ["typos"] }
 
 [profile.dev.package.esp-storage]
 opt-level = 3
@@ -27,7 +33,6 @@ opt-level = 1
 
 [profile.release]
 lto = true
-
 
 [patch.crates-io]
 esp-hal-common = { package = "esp-hal", git = "https://github.com/wetheredge/esp-hal.git", branch = "fixes", commit = "276565cd82dd03e5926c8bc454d0165b609062ff" }
@@ -54,10 +59,10 @@ explicit_iter_loop = "warn"
 flat_map_option = "warn"
 host_endian_bytes = "warn"
 if_not_else = "warn"
-if_then_some_else_none= "warn"
+if_then_some_else_none = "warn"
 ignored_unit_patterns = "warn"
 implicit_clone = "warn"
-inconsistent_struct_constructor= "warn"
+inconsistent_struct_constructor = "warn"
 manual_let_else = "warn"
 match_same_arms = "warn"
 mismatching_type_param_order = "warn"

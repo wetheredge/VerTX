@@ -9,9 +9,11 @@ clean:
     cargo clean
     cd vhs-web && rm -r dist
 
-# Format all code
+# Format everything
 fmt:
     cargo +nightly fmt --all
+    @echo
+    cargo bin dprint fmt
     @echo
     cd vhs-web && pnpm biome format --write .
 

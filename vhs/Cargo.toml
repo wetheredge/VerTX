@@ -39,11 +39,11 @@ vhs-crsf = { workspace = true }
 package = "esp32s3-hal"
 version = "0.15.0"
 features = [
-  "opsram-8m",
-  "embassy",
-  "embassy-executor-thread",
-  "embassy-time-timg0",
-  "embedded-io",
+    "opsram-8m",
+    "embassy",
+    "embassy-executor-thread",
+    "embassy-time-timg0",
+    "embedded-io",
 ]
 
 [build-dependencies]
