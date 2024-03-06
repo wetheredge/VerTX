@@ -17,7 +17,7 @@ dev:
     pnpm vite
 
 build: check
-    pnpm vite build
+    pnpm tsx build.ts
 
 # Run a local server from the latest build artifacts. Needs the vhs-server dev server running
 preview:
