@@ -20,6 +20,7 @@ const BASIC_CRC: Crc<u8> = Crc::<u8>::new(&crc::Algorithm {
     residue: 0x00,
 });
 
+#[allow(unused)]
 const EXTENDED_CRC: Crc<u8> = Crc::<u8>::new(&crc::Algorithm {
     width: 8,
     poly: 0xD5,

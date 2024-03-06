@@ -18,6 +18,7 @@ pub enum PartitionError {
 
 pub fn unlock() -> Result<(), i32> {
     // TODO: What exactly does this do?
+    // SAFETY: TODO -- no safety docs...
     unsafe { esp_storage::ll::spiflash_unlock() }
 }
 

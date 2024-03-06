@@ -2072,8 +2072,6 @@ dependencies = [
  "embassy-net",
  "embassy-sync",
  "embassy-time",
- "embedded-io",
- "embedded-storage",
  "embedded-svc",
  "esp-alloc",
  "esp-backtrace",

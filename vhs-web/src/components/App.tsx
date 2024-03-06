@@ -23,7 +23,7 @@ export function App() {
 	const api = createApi(API_HOST, ({ kind, payload }) => {
 		switch (kind) {
 			case ResponseKind.ProtocolVersion:
-				console.log(ResponseKind[kind], payload);
+				console.debug(ResponseKind[kind], payload);
 				break;
 			case ResponseKind.BuildInfo:
 				setBuild(payload);
