@@ -1,0 +1,64 @@
+{
+	"name": "vhs",
+	"build": {
+		"dockerfile": "./Dockerfile"
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {},
+		"ghcr.io/devcontainers-contrib/features/pnpm:2": {}
+	},
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"editor.formatOnSave": true,
+				"editor.formatOnSaveMode": "file",
+				"lldb.executable": "/usr/bin/lldb",
+				"files.watcherExclude": {
+					"**/target/**": true
+				},
+				"biome.lspBin": "vhs-web/node_modules/.bin/biome",
+				"rust-analyzer.checkOnSave.command": "clippy",
+				"rust-analyzer.checkOnSave.allTargets": false,
+				"[rust]": {
+					"editor.defaultFormatter": "rust-lang.rust-analyzer"
+				},
+				"[javascript]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[typescript]": {
+					"editor.defaultFormatter": "biomejs.biome"
+				},
+				"[json]": {
+					"editor.defaultFormatter": "dprint.dprint"
+				}
+			},
+			"extensions": [
+				"rust-lang.rust-analyzer",
+				"tamasfe.even-better-toml",
+				"serayuzgur.crates",
+				"mutantdino.resourcemonitor",
+				"yzhang.markdown-all-in-one",
+				"biomejs.biome",
+				"dprint.dprint"
+			]
+		}
+	},
+	"forwardPorts": [
+		5173,
+		4173,
+		8080
+	],
+	"portsAttributes": {
+		"5173": {
+			"label": "Vite dev"
+		},
+		"4173": {
+			"label": "Vite preview"
+		},
+		"8080": {
+			"label": "API dev server"
+		}
+	},
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/esp/vhs,type=bind,consistency=cached",
+	"workspaceFolder": "/home/esp/vhs"
+}
