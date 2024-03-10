@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-// use hal::uart;
+// use esp_hal::uart;
 
 // pub struct CrsfPhy<'d, T> {
 //     uart: uart::Uart<'d, T>,

@@ -4,13 +4,12 @@ use core::fmt;
 
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;
-use embedded_svc::wifi::Wifi;
 use esp_backtrace as _;
+use esp_hal::clock::Clocks;
+use esp_hal::peripheral::Peripheral;
+use esp_hal::{peripherals, timer};
 use esp_wifi::wifi::{WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::{wifi, EspWifiInitFor};
-use hal::clock::Clocks;
-use hal::peripheral::Peripheral;
-use hal::{peripherals, timer};
 use serde::{Deserialize, Serialize};
 use static_cell::make_static;
 
@@ -58,9 +57,9 @@ pub fn run(
     config: &'static crate::Config,
     clocks: &Clocks,
     timer: timer::Timer<timer::Timer0<peripherals::TIMG1>>,
-    mut rng: hal::Rng,
+    mut rng: esp_hal::Rng,
     device: impl Peripheral<P = peripherals::WIFI> + 'static,
-    radio_clocks: hal::system::RadioClockControl,
+    radio_clocks: esp_hal::system::RadioClockControl,
     mode: crate::mode::Publisher<'static>,
 ) -> &'static Stack<'static> {
     mode.publish(crate::Mode::PreWiFi);
@@ -92,8 +91,6 @@ async fn connection(
     mut controller: WifiController<'static>,
     credentials: &'static Credentials,
 ) -> ! {
-    use embedded_svc::wifi;
-
     log::info!("Starting connection()");
 
     loop {

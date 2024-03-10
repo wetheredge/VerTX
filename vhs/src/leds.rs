@@ -3,8 +3,8 @@ use core::iter;
 use embassy_executor::task;
 use embassy_futures::select;
 use embassy_time::{Duration, Timer};
+use esp_hal::rmt::Channel;
 use esp_hal_smartled::SmartLedsAdapter;
-use hal::rmt::Channel;
 use smart_leds::{colors, SmartLedsWrite, RGB8};
 
 use crate::Mode;
