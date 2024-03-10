@@ -117,8 +117,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: biomejs/setup-biome@v2
+        with:
+          working-dir: vhs-web
         env:
           GITHUB_TOKEN: null
+      - run: biome version
       - run: biome ci --error-on-warnings .
 
   dprint:
