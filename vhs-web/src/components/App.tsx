@@ -8,11 +8,12 @@ import { unreachable } from '../lib/utils';
 import { StatusBar } from './StatusBar';
 
 const DEV_API_PORT = 8080;
-const API_HOST = import.meta.env.PROD
-	? location.host
-	: import.meta.env.CODESPACE_NAME
-	  ? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
-	  : `localhost:${DEV_API_PORT}`;
+const API_HOST =
+	import.meta.env.MODE === 'production'
+		? location.host
+		: import.meta.env.CODESPACE_NAME
+		  ? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
+		  : `localhost:${DEV_API_PORT}`;
 
 export function App() {
 	const [build, setBuild] =
