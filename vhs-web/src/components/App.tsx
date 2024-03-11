@@ -1,6 +1,6 @@
 import { createSignal } from 'solid-js';
 import createApi, {
-	ResponsePayload,
+	type ResponsePayload,
 	RequestKind,
 	ResponseKind,
 } from '../lib/api';

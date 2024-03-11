@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+	"$schema": "https://biomejs.dev/schemas/1.6.0/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -23,7 +23,23 @@
 				"noParameterProperties": "warn",
 				"useBlockStatements": "warn",
 				"useCollapsedElseIf": "warn",
+				"useConsistentArrayType": {
+					"level": "warn",
+					"options": {
+						"syntax": "generic"
+					}
+				},
 				"useEnumInitializers": "off",
+				"useFilenamingConvention": {
+					"level": "error",
+					"options": {
+						"filenameCases": [
+							"PascalCase",
+							"kebab-case"
+						]
+					}
+				},
+				"useForOf": "warn",
 				"useNamingConvention": "warn",
 				"useShorthandAssign": "warn"
 			},
@@ -31,7 +47,9 @@
 				"noApproximativeNumericConstant": "warn",
 				"noConsoleLog": "warn",
 				"noConstEnum": "off",
-				"noMisrefactoredShorthandAssign": "warn"
+				"noEmptyBlockStatements": "warn",
+				"noMisrefactoredShorthandAssign": "warn",
+				"useAwait": "warn"
 			}
 		}
 	},

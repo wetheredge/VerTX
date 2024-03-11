@@ -12,6 +12,9 @@ check:
     pnpm biome ci .
     pnpm tsc
 
+fix *args='.':
+    pnpm biome lint --apply {{ args }}
+
 # Run a local dev server. Needs the vhs-server dev server running
 dev:
     pnpm vite

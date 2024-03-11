@@ -1,4 +1,4 @@
-import { ApiStatus, ResponseKind, ResponsePayload } from '../lib/api';
+import { ApiStatus, type ResponseKind, type ResponsePayload } from '../lib/api';
 import * as styles from './StatusBar.css';
 
 const connectionMessage = {
