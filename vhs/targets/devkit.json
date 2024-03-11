@@ -1,0 +1,12 @@
+{
+	"pins": {
+		"leds": 38,
+		"roll": 4,
+		"pitch": 5,
+		"yaw": 6,
+		"throttle": 7,
+		"switches": [
+			11
+		]
+	}
+}

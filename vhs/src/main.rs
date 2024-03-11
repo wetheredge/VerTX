@@ -4,6 +4,12 @@
 
 extern crate alloc;
 
+mod pins {
+    include!(concat!(env!("OUT_DIR"), "/pins.rs"));
+
+    pub(crate) use {pins, Pins};
+}
+
 mod config;
 mod crsf;
 mod flash;
@@ -34,6 +40,8 @@ use static_cell::make_static;
 
 pub use crate::config::Config;
 pub use crate::mode::Mode;
+use crate::pins::pins;
+pub(crate) use crate::pins::Pins;
 
 const LOG_LEVEL: LevelFilter = LevelFilter::Info;
 
@@ -83,7 +91,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     {
         let leds = SmartLedsAdapter::new(
             rmt.channel0,
-            io.pins.gpio38,
+            pins!(io.pins, leds),
             [0; leds::BUFFER_SIZE],
             &clocks,
         );

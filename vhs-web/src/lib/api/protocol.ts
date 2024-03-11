@@ -61,6 +61,7 @@ export type Response =
 	| {
 			kind: ResponseKind.BuildInfo;
 			payload: {
+				target: string;
 				major: number;
 				minor: number;
 				patch: number;
@@ -101,6 +102,7 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 			return {
 				kind,
 				payload: {
+					target: reader.string(),
 					major: reader.u8(),
 					minor: reader.u8(),
 					patch: reader.u8(),

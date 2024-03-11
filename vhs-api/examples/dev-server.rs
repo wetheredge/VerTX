@@ -24,6 +24,7 @@ impl State {
 
 impl vhs_api::State for State {
     const BUILD_INFO: response::BuildInfo = response::BuildInfo {
+        target: "dev-server",
         major: 0,
         minor: 0,
         patch: 0,

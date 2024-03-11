@@ -1,19 +1,21 @@
 set dotenv-load := true
 
+export VHS_TARGET := "devkit"
+
 _default:
     @just --list --unsorted
 
 fmt:
     cargo +nightly fmt
 
-check *args='':
+check $VHS_TARGET='devkit' *args='':
     cargo +esp clippy {{ args }}
 
-build:
+build $VHS_TARGET:
     cargo +esp build
     cp ../target/xtensa-esp32s3-none-elf/debug/vhs ../target/vhs
 
-build-release:
+build-release $VHS_TARGET:
     cargo +esp build --release
     cp ../target/xtensa-esp32s3-none-elf/release/vhs ../target/vhs
 

@@ -55,6 +55,7 @@ response! {
         minor: u8,
     },
     BuildInfo {
+        target: &'static str,
         major: u8,
         minor: u8,
         patch: u8,
