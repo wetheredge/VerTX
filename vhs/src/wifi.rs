@@ -1,4 +1,5 @@
 use alloc::string::String;
+use core::cell::UnsafeCell;
 use core::convert::identity;
 use core::fmt;
 use core::mem::MaybeUninit;
@@ -32,8 +33,14 @@ impl IsEnabled {
             panic!("Cannot run wifi::Enabled::new() multiple times");
         }
 
+        // TODO: replace this with SyncUnsafeCell when it is stabilized
+        struct Raw(UnsafeCell<MaybeUninit<AtomicBool>>);
+        // SAFETY: the IS_SINGLETON check guarantees this only runs once and this is
+        // never actually seen by multiple threads
+        unsafe impl Sync for Raw {}
+
         #[ram(rtc_fast, uninitialized)]
-        static mut RAW: MaybeUninit<AtomicBool> = MaybeUninit::<AtomicBool>::uninit();
+        static RAW: Raw = Raw(UnsafeCell::new(MaybeUninit::uninit()));
 
         // Initialize on any reset other than user requested ones
         if !matches!(
@@ -44,11 +51,15 @@ impl IsEnabled {
         ) {
             // SAFETY: IS_SINGLETON guarantees this can only run once, therefore this
             // mutable reference is always unique
-            unsafe { RAW.write(AtomicBool::new(false)) };
+            unsafe { (*RAW.0.get()).write(AtomicBool::new(false)) };
         }
 
+        // SAFETY: IS_SINGLETON check guarantees this only runs once. The previous
+        // &mut is contained in the scope of the if, leaving this the sole reference
+        let raw = unsafe { &*RAW.0.get() };
+
         // SAFETY: already been initialized by the if above, or on a previous boot
-        let enabled = unsafe { RAW.assume_init_ref() };
+        let enabled = unsafe { raw.assume_init_ref() };
 
         Self { enabled }
     }
