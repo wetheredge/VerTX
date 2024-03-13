@@ -1,21 +1,69 @@
 use alloc::string::String;
 use core::convert::identity;
 use core::fmt;
+use core::mem::MaybeUninit;
+use core::sync::atomic::{AtomicBool, Ordering};
 
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;
+use embedded_hal_async::digital::Wait;
 use esp_backtrace as _;
 use esp_hal::clock::Clocks;
+use esp_hal::gpio::{self, AnyPin};
+use esp_hal::macros::ram;
 use esp_hal::peripheral::Peripheral;
+use esp_hal::rtc_cntl::SocResetReason;
 use esp_hal::{peripherals, timer};
 use esp_wifi::wifi::{WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::{wifi, EspWifiInitFor};
 use serde::{Deserialize, Serialize};
 use static_cell::make_static;
 
+#[derive(Debug, Clone, Copy)]
+pub struct IsEnabled {
+    enabled: &'static AtomicBool,
+}
+
+impl IsEnabled {
+    pub fn new() -> Self {
+        static IS_SINGLETON: AtomicBool = AtomicBool::new(true);
+
+        if !IS_SINGLETON.swap(false, Ordering::AcqRel) {
+            panic!("Cannot run wifi::Enabled::new() multiple times");
+        }
+
+        #[ram(rtc_fast, uninitialized)]
+        static mut RAW: MaybeUninit<AtomicBool> = MaybeUninit::<AtomicBool>::uninit();
+
+        // Initialize on any reset other than user requested ones
+        if !matches!(
+            esp_hal::reset::get_reset_reason(),
+            Some(
+                SocResetReason::CoreSw | SocResetReason::CoreUsbUart | SocResetReason::CoreUsbJtag
+            )
+        ) {
+            // SAFETY: IS_SINGLETON guarantees this can only run once, therefore this
+            // mutable reference is always unique
+            unsafe { RAW.write(AtomicBool::new(false)) };
+        }
+
+        // SAFETY: already been initialized by the if above, or on a previous boot
+        let enabled = unsafe { RAW.assume_init_ref() };
+
+        Self { enabled }
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        self.enabled.load(Ordering::Acquire)
+    }
+
+    pub fn toggle(&self) {
+        self.enabled.fetch_xor(true, Ordering::AcqRel);
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    pub enable: bool,
     hostname: String,
     credentials: Credentials,
 }
@@ -38,7 +86,6 @@ impl fmt::Debug for Credentials {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            enable: true,
             hostname: String::from("vhs"),
             credentials: Credentials {
                 ssid: String::from(env!("WIFI_SSID")),
@@ -130,4 +177,11 @@ async fn connection(
 #[task]
 async fn network(stack: &'static Stack<'static>) -> ! {
     stack.run().await
+}
+
+#[task]
+pub async fn toggle_button(mut button: AnyPin<gpio::Input<gpio::PullUp>>, enabled: IsEnabled) {
+    button.wait_for_falling_edge().await.unwrap();
+    enabled.toggle();
+    esp_hal::reset::software_reset();
 }

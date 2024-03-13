@@ -106,8 +106,14 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         .unwrap();
     let config = make_static!(Config::load(&mut partitions));
 
+    let wifi_enabled = wifi::IsEnabled::new();
+    spawner.must_spawn(wifi::toggle_button(
+        pins!(io.pins, wifi).into_pull_up_input().into(),
+        wifi_enabled,
+    ));
+
     // WiFi init
-    if config.wifi.enable {
+    if wifi_enabled.is_enabled() {
         let rng = Rng::new(peripherals.RNG);
         let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
 
