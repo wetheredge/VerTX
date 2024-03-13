@@ -19,15 +19,15 @@ fmt:
 
 # Complete debug build
 build:
-    cd vhs-web && just build
+    just vhs-web/build
     @echo
-    cd vhs && just build
+    just vhs/build
 
 # Complete release build
 build-release:
-    cd vhs-web && just build
+    just vhs-web/build
     @echo
-    cd vhs && just build-release
+    just vhs/build-release
 
 # Flash the most recently built firmware over USB using espflash and open the serial monitor
 flash:
