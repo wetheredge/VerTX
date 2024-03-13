@@ -15,6 +15,7 @@ mod crsf;
 mod flash;
 mod leds;
 mod mode;
+mod mutex;
 mod ota;
 mod server;
 mod wifi;

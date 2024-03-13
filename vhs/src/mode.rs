@@ -1,4 +1,3 @@
-use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::pubsub::{self, PubSubChannel};
 
 const SUBS: usize = 1;
@@ -12,7 +11,7 @@ pub enum Mode {
     Updating,
 }
 
-pub struct Channel(PubSubChannel<NoopRawMutex, Mode, 1, SUBS, 0>);
+pub struct Channel(PubSubChannel<crate::mutex::MultiCore, Mode, 1, SUBS, 0>);
 
 impl Channel {
     pub const fn new() -> Self {
@@ -28,7 +27,7 @@ impl Channel {
     }
 }
 
-pub struct Publisher<'a>(pubsub::ImmediatePublisher<'a, NoopRawMutex, Mode, 1, SUBS, 0>);
+pub struct Publisher<'a>(pubsub::ImmediatePublisher<'a, crate::mutex::MultiCore, Mode, 1, SUBS, 0>);
 
 impl Publisher<'_> {
     pub fn publish(&self, mode: Mode) {
@@ -36,7 +35,7 @@ impl Publisher<'_> {
     }
 }
 
-pub struct Subscriber<'a>(pubsub::Subscriber<'a, NoopRawMutex, Mode, 1, SUBS, 0>);
+pub struct Subscriber<'a>(pubsub::Subscriber<'a, crate::mutex::MultiCore, Mode, 1, SUBS, 0>);
 
 impl Subscriber<'_> {
     pub async fn next(&mut self) -> Mode {

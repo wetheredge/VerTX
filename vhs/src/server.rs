@@ -1,6 +1,5 @@
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::signal::Signal;
 use embassy_time::Duration;
 use picoserve::routing::{get, PathRouter};
@@ -14,7 +13,7 @@ const HTTP_BUFFER: usize = 2048;
 
 include!(concat!(env!("OUT_DIR"), "/router.rs"));
 
-pub type StatusSignal = Signal<CriticalSectionRawMutex, response::Status>;
+pub type StatusSignal = Signal<crate::mutex::SingleCore, response::Status>;
 
 type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
