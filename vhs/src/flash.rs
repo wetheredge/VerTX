@@ -24,7 +24,7 @@ pub fn unlock() -> Result<(), i32> {
 
 #[allow(clippy::assertions_on_constants)]
 pub fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
-    let mut table = [0_u32; PARTITION_TABLE_SIZE / 4];
+    let mut table = [0u32; PARTITION_TABLE_SIZE / 4];
     const _: () = assert!(PARTITION_TABLE_ADDRESS % SECTOR_BYTES == 0);
     const _: () = assert!(PARTITION_TABLE_SIZE <= SECTOR_BYTES as usize);
 

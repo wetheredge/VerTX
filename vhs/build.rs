@@ -4,6 +4,7 @@ use std::fs::{self, File};
 use std::io::{self, BufWriter, Write};
 use std::process::Command;
 
+use quote::{format_ident, quote};
 use serde::Deserialize;
 
 fn main() -> io::Result<()> {
@@ -18,6 +19,16 @@ fn main() -> io::Result<()> {
     web_assets(&out_dir, &root)?;
 
     Ok(())
+}
+
+// Written as a macro to avoid needing to name the private output type of
+// quote!()
+macro_rules! out_file {
+    ($out:expr, $tokens:expr) => {{
+        let parsed = syn::parse2($tokens).unwrap();
+        let formatted = prettyplease::unparse(&parsed);
+        fs::write($out, formatted)
+    }};
 }
 
 fn build_info(out_dir: &str, root: &str, target_name: &str) -> io::Result<()> {
@@ -70,47 +81,46 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
 
     let path = format!("{root}/targets/{target}.json");
     println!("cargo:rerun-if-changed={path}");
+
     let target = fs::read_to_string(path)?;
     let target: Target = serde_json::from_str(&target).unwrap();
 
-    let out = format!("{out_dir}/pins.rs");
-    let out = File::create(out)?;
-    let mut out = BufWriter::new(out);
-
-    writeln!(&mut out, "macro_rules! pins {{")?;
-    for (name, spec) in &target.pins {
-        let get_pin = |pin| format!("$pins.gpio{pin}");
-
+    let pins_arms = target.pins.iter().map(|(name, spec)| {
+        let name = format_ident!("{name}");
         match spec {
             PinSpec::Single(pin) => {
-                writeln!(&mut out, "($pins:expr, {name}) => {{ {} }};", get_pin(pin))?;
+                let gpio = format_ident!("gpio{pin}");
+                quote!( ($pins:expr, #name $(,)?) => { $pins.#gpio }; )
             }
             PinSpec::Multiple(pins) => {
-                write!(
-                    &mut out,
-                    "($pins:expr, {name} $(. $method:ident ())* $(,)?) => {{ ["
-                )?;
-                for pin in pins {
-                    write!(&mut out, "{} $(.$method())*", get_pin(pin))?;
-                }
-                writeln!(&mut out, "] }};")?;
+                let gpios = pins.iter().map(|pin| format_ident!("gpio{pin}"));
+                quote!( ($pins:expr, #name $(. $method:ident ())* $(,)?) => { [#($pins.#gpios $(.$method())*)*] }; )
             }
         }
-    }
-    writeln!(&mut out, "}}")?;
+    });
 
-    writeln!(&mut out, "macro_rules! Pins {{")?;
-    for (name, spec) in &target.pins {
+    let pins_type_arms = target.pins.iter().map(|(name, spec)| {
+        let name = format_ident!("{name}");
         match spec {
-            PinSpec::Single(pin) => {
-                writeln!(&mut out, "({name}) => {{ {pin} }};")?;
-            }
+            PinSpec::Single(pin) => quote!( (#name) => { #pin }; ),
             PinSpec::Multiple(pins) => {
-                writeln!(&mut out, "({name} count) => {{ {} }};", pins.len())?;
+                let count = pins.len();
+                quote!( (#name count) => { #count }; )
             }
         }
-    }
-    writeln!(&mut out, "}}")
+    });
+
+    let tokens = quote! {
+        macro_rules! pins {
+            #(#pins_arms)*
+        }
+
+        macro_rules! Pins {
+            #(#pins_type_arms)*
+        }
+    };
+
+    out_file!(format!("{out_dir}/pins.rs"), tokens)
 }
 
 fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
@@ -130,37 +140,37 @@ fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
     let assets = fs::read_to_string(web.join("assets.json"))?;
     let assets: Vec<Asset> = serde_json::from_str(&assets).unwrap();
 
-    let out = format!("{out_dir}/router.rs");
-    let out = File::create(out)?;
-    let mut out = BufWriter::new(out);
-    writeln!(&mut out, "macro_rules! router {{")?;
-    writeln!(&mut out, "    ($($route:literal => $handler:expr)*) => {{")?;
-    writeln!(&mut out, "    ::picoserve::Router::new()")?;
-    for Asset {
-        route,
-        file,
-        mime,
-        gzip,
-    } in assets
-    {
-        let headers = if gzip {
-            r#"("Content-Encoding", "gzip")"#
-        } else {
-            ""
-        };
+    let assets = assets.into_iter().map(
+        |Asset {
+             route,
+             file,
+             mime,
+             gzip,
+         }| {
+            let headers = gzip.then(|| quote!(("Content-Encoding", "gzip")));
+            let path = web.join(file).display().to_string();
+            quote! {
+                .route(
+                    #route,
+                    get(|| ::picoserve::response::fs::File::with_content_type_and_headers(
+                        #mime,
+                        include_bytes!(#path),
+                        &[#headers],
+                    ))
+                )
+            }
+        },
+    );
 
-        let path = web.join(file);
+    let tokens = quote! {
+        macro_rules! router {
+            ($($route:literal => $handler:expr)*) => {
+                ::picoserve::Router::new()
+                    #(#assets)*
+                    $( .route($route, $handler) )*
+            }
+        }
+    };
 
-        writeln!(
-            &mut out,
-            "        .route({route:?}, get(|| \
-             ::picoserve::response::fs::File::with_content_type_and_headers({mime:?}, \
-             include_bytes!({path:?}), &[{headers}])))"
-        )?;
-    }
-    writeln!(&mut out, "        $( .route($route, $handler) )*")?;
-    writeln!(&mut out, "    }};")?;
-    writeln!(&mut out, "}}")?;
-
-    Ok(())
+    out_file!(format!("{out_dir}/router.rs"), tokens)
 }

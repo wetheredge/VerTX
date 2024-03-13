@@ -83,7 +83,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     spawner.must_spawn(status(idle_cycles, status_signal));
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-    let rmt = Rmt::new(peripherals.RMT, 80_u32.MHz(), &clocks).unwrap();
+    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks).unwrap();
 
     let mode = make_static!(mode::Channel::new());
 
