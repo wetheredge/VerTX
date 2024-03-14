@@ -34,7 +34,7 @@ static CONFIG: Config<Duration> = Config {
 
 pub fn run(
     spawner: &Spawner,
-    stack: &'static crate::wifi::Stack<'static>,
+    stack: &'static super::wifi::Stack<'static>,
     mode: crate::mode::Publisher<'static>,
     status: &'static StatusSignal,
 ) {
@@ -50,7 +50,7 @@ pub fn run(
 #[task(pool_size = TASKS)]
 async fn worker(
     id: usize,
-    stack: &'static crate::wifi::Stack<'static>,
+    stack: &'static super::wifi::Stack<'static>,
     router: &'static Router,
     config: &'static Config<Duration>,
     state: &'static State,
@@ -59,7 +59,7 @@ async fn worker(
     stack.wait_config_up().await;
 
     if let Some(mode) = mode {
-        mode.publish(crate::Mode::WiFi);
+        mode.publish(crate::Mode::Configurator);
     }
 
     let mut rx_buffer = [0; TCP_BUFFER];

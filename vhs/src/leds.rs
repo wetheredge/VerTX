@@ -67,13 +67,13 @@ impl From<Mode> for Effect {
         match mode {
             Mode::Ok => Effect::Solid(colors::GREEN),
             Mode::Armed => Effect::Solid(colors::BLUE),
-            Mode::PreWiFi => Effect::blink(
+            Mode::PreConfigurator => Effect::blink(
                 colors::MEDIUM_PURPLE,
                 Duration::from_millis(500),
                 colors::BLACK,
                 Duration::from_millis(500),
             ),
-            Mode::WiFi => Effect::Solid(colors::MEDIUM_PURPLE),
+            Mode::Configurator => Effect::Solid(colors::MEDIUM_PURPLE),
             Mode::Updating => Effect::rainbow(),
         }
     }

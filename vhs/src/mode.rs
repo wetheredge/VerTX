@@ -6,8 +6,8 @@ const SUBS: usize = 1;
 pub enum Mode {
     Ok,
     Armed,
-    PreWiFi,
-    WiFi,
+    PreConfigurator,
+    Configurator,
     Updating,
 }
 
@@ -24,6 +24,10 @@ impl Channel {
 
     pub fn subscriber(&self) -> Option<Subscriber<'_>> {
         self.0.subscriber().ok().map(Subscriber)
+    }
+
+    pub fn publish(&self, mode: Mode) {
+        self.0.immediate_publisher().publish_immediate(mode);
     }
 }
 

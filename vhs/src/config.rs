@@ -8,8 +8,8 @@ use core::ops::Deref;
 
 use serde::{Deserialize, Serialize};
 
+use crate::configurator::WifiConfig;
 use crate::flash::Partition;
-use crate::wifi::Config as WifiConfig;
 
 #[derive(Debug)]
 pub struct ConfigManager {

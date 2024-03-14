@@ -1,6 +1,6 @@
 {
 	"pins": {
-		"wifi": 0,
+		"configurator": 0,
 		"leds": 38,
 		"roll": 4,
 		"pitch": 5,

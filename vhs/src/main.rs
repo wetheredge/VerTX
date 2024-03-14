@@ -11,20 +11,19 @@ mod pins {
 }
 
 mod config;
+mod configurator;
 mod crsf;
 mod flash;
 mod leds;
 mod mode;
 mod mutex;
 mod ota;
-mod server;
-mod wifi;
 
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
 
 use embassy_executor::{task, Spawner};
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::{Duration, Ticker};
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
 use esp_hal::embassy::executor::Executor;
@@ -80,7 +79,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
     embassy::init(&clocks, TimerGroup::new(peripherals.TIMG0, &clocks));
 
-    let status_signal = make_static!(server::StatusSignal::new());
+    let status_signal = make_static!(configurator::server::StatusSignal::new());
     spawner.must_spawn(status(idle_cycles, status_signal));
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
@@ -106,18 +105,20 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         .unwrap();
     let config = make_static!(Config::load(&mut partitions));
 
-    let wifi_enabled = wifi::IsEnabled::new();
-    spawner.must_spawn(wifi::toggle_button(
-        pins!(io.pins, wifi).into_pull_up_input().into(),
-        wifi_enabled,
+    let configurator_enabled = configurator::IsEnabled::new();
+    spawner.must_spawn(configurator::toggle_button(
+        pins!(io.pins, configurator).into_pull_up_input().into(),
+        configurator_enabled,
     ));
 
-    // WiFi init
-    if wifi_enabled.is_enabled() {
+    if configurator_enabled.is_enabled() {
+        log::info!("Configurator enabled");
+        mode.publish(crate::Mode::PreConfigurator);
+
         let rng = Rng::new(peripherals.RNG);
         let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
 
-        let stack = wifi::run(
+        let stack = configurator::wifi::run(
             &spawner,
             config,
             &clocks,
@@ -125,27 +126,20 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             rng,
             peripherals.WIFI,
             system.radio_clock_control,
-            mode.publisher(),
         );
 
-        server::run(&spawner, stack, mode.publisher(), status_signal);
-    }
-
-    // spawner.must_spawn(simulate_arming(mode));
-}
-
-#[task]
-async fn simulate_arming(mode: &'static mode::Publisher<'static>) {
-    loop {
-        Timer::after_secs(1).await;
-        mode.publish(Mode::Armed);
-        Timer::after_secs(2).await;
-        mode.publish(Mode::Ok);
+        configurator::server::run(&spawner, stack, mode.publisher(), status_signal);
+    } else {
+        log::info!("Configurator disabled");
+        mode.publish(crate::Mode::Ok);
     }
 }
 
 #[task]
-async fn status(idle_cycles: &'static AtomicU32, status: &'static server::StatusSignal) {
+async fn status(
+    idle_cycles: &'static AtomicU32,
+    status: &'static configurator::server::StatusSignal,
+) {
     log::info!("Starting status()");
 
     let mut ticker = Ticker::every(Duration::from_secs(1));
