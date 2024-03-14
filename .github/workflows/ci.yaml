@@ -90,6 +90,7 @@ jobs:
       - run: cargo clippy -- -D warnings
         working-directory: vhs
         env:
+          VHS_TARGET: devkit
           WIFI_SSID: CI
           WIFI_PASSWORD: password
 

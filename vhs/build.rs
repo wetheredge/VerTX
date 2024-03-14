@@ -10,12 +10,12 @@ use serde::Deserialize;
 fn main() -> io::Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
     let root = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let target_name = env::var("VHS_TARGET").unwrap();
+    let target_name = env!("VHS_TARGET");
 
     println!("cargo:rerun-if-env-changed=VHS_TARGET");
 
-    build_info(&out_dir, &root, &target_name)?;
-    pins(&out_dir, &root, &target_name)?;
+    build_info(&out_dir, &root, target_name)?;
+    pins(&out_dir, &root, target_name)?;
     web_assets(&out_dir, &root)?;
 
     Ok(())
