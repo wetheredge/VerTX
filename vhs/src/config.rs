@@ -4,36 +4,28 @@
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
-use core::ops::Deref;
 
+use embassy_sync::mutex::{Mutex, MutexGuard};
 use serde::{Deserialize, Serialize};
 
 use crate::configurator::WifiConfig;
 use crate::flash::Partition;
 
-#[derive(Debug)]
-pub struct ConfigManager {
+pub struct Manager {
     partition: Partition,
-    config: Config,
+    config: Mutex<crate::mutex::MultiCore, Config>,
+    boot_config: Config,
 }
 
-impl Deref for ConfigManager {
-    type Target = Config;
-
-    fn deref(&self) -> &Self::Target {
-        &self.config
-    }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
     pub name: String,
     pub wifi: WifiConfig,
 }
 
-impl Config {
-    pub fn load(partitions: &mut Vec<Partition>) -> ConfigManager {
+impl Manager {
+    pub fn new(partitions: &mut Vec<Partition>) -> Manager {
         let partition = partitions.iter().position(Partition::is_config).unwrap();
         let partition = partitions.swap_remove(partition);
 
@@ -53,19 +45,32 @@ impl Config {
 
         log::info!("config = {:?}", config);
 
-        ConfigManager { partition, config }
+        Self {
+            partition,
+            config: Mutex::new(config.clone()),
+            boot_config: config,
+        }
     }
-}
 
-impl ConfigManager {
     #[allow(unused)]
-    fn save(&mut self) {
-        let encoded = serde_json::to_vec(&self.config).unwrap();
+    pub async fn save(&mut self) {
+        let encoded = {
+            let config = self.config().await;
+            serde_json::to_vec(&*config).unwrap()
+        };
 
         let mut data = vec![0; 1 + encoded.len().div_ceil(4)];
         data[0] = encoded.len() as u32;
         bytemuck::cast_slice_mut(&mut data)[4..(4 + encoded.len())].copy_from_slice(&encoded);
 
         self.partition.erase_and_write(0, &data).unwrap();
+    }
+
+    pub async fn config(&mut self) -> MutexGuard<'_, crate::mutex::MultiCore, Config> {
+        self.config.lock().await
+    }
+
+    pub fn boot_config(&self) -> &Config {
+        &self.boot_config
     }
 }

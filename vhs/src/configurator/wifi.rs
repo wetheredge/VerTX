@@ -13,13 +13,13 @@ use esp_wifi::{wifi, EspWifiInitFor};
 use serde::{Deserialize, Serialize};
 use static_cell::make_static;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     hostname: String,
     credentials: Credentials,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct Credentials {
     ssid: String,
     password: String,

@@ -112,6 +112,7 @@ impl Partition {
         self.size / 4
     }
 
+    #[allow(unused)]
     pub const fn sectors(&self) -> u32 {
         self.size / SECTOR_BYTES
     }
@@ -120,6 +121,7 @@ impl Partition {
         matches!(self.kind, CUSTOM_TYPE_CONFIG)
     }
 
+    #[allow(unused)]
     pub const fn is_ota(&self) -> bool {
         match self.kind {
             PartitionKind::App(partition) => partition.is_ota(),
@@ -139,12 +141,14 @@ impl Partition {
         }
     }
 
+    #[allow(unused)]
     pub fn erase_sector(&mut self, sector: u32) -> Result<(), i32> {
         assert!(sector < self.sectors());
         // SAFETY: `assert!` prevents overflowing flash
         unsafe { esp_storage::ll::spiflash_erase_sector(sector) }
     }
 
+    #[allow(unused)]
     pub fn write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;
@@ -155,6 +159,7 @@ impl Partition {
         unsafe { esp_storage::ll::spiflash_write(start, data.as_ptr(), data.len() as u32 * 4) }
     }
 
+    #[allow(unused)]
     pub fn erase_and_write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;

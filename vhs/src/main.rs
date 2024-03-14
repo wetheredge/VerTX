@@ -103,7 +103,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
-    let config = make_static!(Config::load(&mut partitions));
+    let config = make_static!(config::Manager::new(&mut partitions));
 
     let configurator_enabled = configurator::IsEnabled::new();
     spawner.must_spawn(configurator::toggle_button(
@@ -120,7 +120,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
         let stack = configurator::wifi::run(
             &spawner,
-            config,
+            config.boot_config(),
             &clocks,
             timer,
             rng,
