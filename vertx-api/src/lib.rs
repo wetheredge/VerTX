@@ -1,12 +1,15 @@
 #![no_std]
 #![cfg_attr(not(any(feature = "embassy", feature = "tokio")), allow(unused))]
 
+extern crate alloc;
+
 mod protocol;
 
-use core::future::Future;
+use alloc::vec::Vec;
+use core::future::{self, Future};
 
 use bincode::error::EncodeError;
-use embassy_futures::select;
+use embassy_futures::select::{select4, Either4};
 use picoserve::extract::FromRequest;
 use picoserve::io;
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
@@ -18,6 +21,8 @@ pub trait State {
     const BUILD_INFO: response::BuildInfo;
 
     fn status(&self) -> impl Future<Output = response::Status>;
+    fn inputs(&self) -> impl Future<Output = Vec<u16>>;
+    fn outputs(&self) -> impl Future<Output = [u16; 16]>;
     fn power_off(&self) -> !;
     fn reboot(&self) -> !;
 }
@@ -72,6 +77,9 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
 pub struct Handler<'a, S> {
     response_buffer: [u8; 64],
     state: &'a S,
+
+    stream_inputs: bool,
+    stream_outputs: bool,
 }
 
 impl<'a, S> Handler<'a, S> {
@@ -79,6 +87,31 @@ impl<'a, S> Handler<'a, S> {
         Self {
             response_buffer: core::array::from_fn(|_| 0),
             state,
+
+            stream_inputs: false,
+            stream_outputs: false,
+        }
+    }
+}
+
+impl<S: State> Handler<'_, S> {
+    async fn maybe_inputs(&self) -> Response {
+        if self.stream_inputs {
+            Response::Inputs {
+                inputs: self.state.inputs().await,
+            }
+        } else {
+            future::pending().await
+        }
+    }
+
+    async fn maybe_outputs(&self) -> Response {
+        if self.stream_outputs {
+            Response::Outputs {
+                outputs: self.state.outputs().await,
+            }
+        } else {
+            future::pending().await
         }
     }
 }
@@ -113,12 +146,16 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
 
         loop {
             let status = self.state.status();
+            let inputs = self.maybe_inputs();
+            let outputs = self.maybe_outputs();
             let request = rx.next_message(&mut req_buffer);
 
-            match select::select(status, request).await {
-                select::Either::First(status) => self.send::<W>(status.into(), &mut tx).await?,
+            match select4(status, inputs, outputs, request).await {
+                Either4::First(status) => self.send::<W>(status.into(), &mut tx).await?,
+                Either4::Second(inputs) => self.send::<W>(inputs, &mut tx).await?,
+                Either4::Third(outputs) => self.send::<W>(outputs, &mut tx).await?,
 
-                select::Either::Second(request) => match request {
+                Either4::Fourth(request) => match request {
                     Ok(Message::Binary(request)) => {
                         let request = match bincode::decode_from_slice(request, BINCODE_CONFIG) {
                             Ok((request, _)) => request,
@@ -136,8 +173,14 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                             Request::PowerOff => self.state.power_off(),
                             Request::Reboot => self.state.reboot(),
                             Request::CheckForUpdate => todo!(),
-                            Request::StreamInputs => todo!(),
-                            Request::StreamMixer => todo!(),
+                            Request::StreamInputs(enable) => {
+                                self.stream_inputs = enable;
+                                continue;
+                            }
+                            Request::StreamOutputs(enable) => {
+                                self.stream_outputs = enable;
+                                continue;
+                            }
                         };
 
                         self.send::<W>(response, &mut tx).await?;

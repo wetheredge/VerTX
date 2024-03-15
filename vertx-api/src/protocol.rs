@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 pub(crate) const VERSION_MAJOR: u8 = 0;
 pub(crate) const VERSION_MINOR: u8 = 0;
 pub(crate) const NAME: &str = "v0";
@@ -9,8 +11,8 @@ pub enum Request {
     PowerOff,
     Reboot,
     CheckForUpdate,
-    StreamInputs,
-    StreamMixer,
+    StreamInputs(bool),
+    StreamOutputs(bool),
 }
 
 macro_rules! response {
@@ -32,6 +34,8 @@ macro_rules! response {
         ),*}
 
         pub mod response { $($(
+            use super::*;
+
             #[derive(Debug, Clone)]
             pub struct $variant {
                 $( $(#[$fattr])* pub $field : $type ),*
@@ -71,8 +75,12 @@ response! {
         idle_time: f32,
         timing_drift: f32,
     },
-    // Inputs,
-    // Mixer,
+    Inputs {
+        inputs: Vec<u16>,
+    },
+    Outputs {
+        outputs: [u16; 16],
+    },
 }
 
 impl Response {

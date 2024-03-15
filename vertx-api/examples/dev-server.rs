@@ -12,12 +12,20 @@ use vertx_api::response;
 #[derive(Debug)]
 struct State {
     status: Mutex<mpsc::Receiver<response::Status>>,
+    inputs: Mutex<mpsc::Receiver<Vec<u16>>>,
+    outputs: Mutex<mpsc::Receiver<[u16; 16]>>,
 }
 
 impl State {
-    fn new(status: mpsc::Receiver<response::Status>) -> Self {
+    fn new(
+        status: mpsc::Receiver<response::Status>,
+        inputs: mpsc::Receiver<Vec<u16>>,
+        outputs: mpsc::Receiver<[u16; 16]>,
+    ) -> Self {
         Self {
             status: Mutex::new(status),
+            inputs: Mutex::new(inputs),
+            outputs: Mutex::new(outputs),
         }
     }
 }
@@ -36,7 +44,15 @@ impl vertx_api::State for State {
     };
 
     async fn status(&self) -> response::Status {
-        (self.status.lock().await.recv().await).unwrap()
+        self.status.lock().await.recv().await.unwrap()
+    }
+
+    async fn inputs(&self) -> Vec<u16> {
+        self.inputs.lock().await.recv().await.unwrap()
+    }
+
+    async fn outputs(&self) -> [u16; 16] {
+        self.outputs.lock().await.recv().await.unwrap()
     }
 
     fn power_off(&self) -> ! {
@@ -70,33 +86,25 @@ async fn main() {
         .init();
 
     let addr = "localhost:8080";
-    let (status_tx, status_rx) = mpsc::channel(1);
 
     let _ = task::LocalSet::new()
         .run_until(async {
-            let status = task::spawn_local({
-                let status_tx = status_tx.clone();
-                async move {
-                    let mut interval = time::interval(Duration::from_secs(10));
-
-                    loop {
-                        interval.tick().await;
-                        status_tx
-                            .send(response::Status {
-                                battery_voltage: 390,
-                                idle_time: rand::thread_rng().gen_range(0.1..1.0),
-                                timing_drift: rand::thread_rng().gen_range(-0.01..=0.01),
-                            })
-                            .await
-                            .unwrap();
-                    }
-                }
-            });
+            let (status_rx, status) = send_periodically(
+                response::Status {
+                    battery_voltage: 390,
+                    idle_time: rand::thread_rng().gen_range(0.1..1.0),
+                    timing_drift: rand::thread_rng().gen_range(-0.01..=0.01),
+                },
+                Duration::from_secs(10),
+            );
+            let (inputs_rx, inputs) = send_periodically(vec![], Duration::from_secs(1));
+            let (outputs_rx, outputs) =
+                send_periodically(std::array::from_fn(|_| 0), Duration::from_secs(1));
 
             let serve = task::spawn_local(async move {
                 let router = picoserve::Router::new().route("/ws", vertx_api::UpgradeHandler);
 
-                let state = State::new(status_rx);
+                let state = State::new(status_rx, inputs_rx, outputs_rx);
                 let socket = TcpListener::bind(addr).await.unwrap();
                 log::info!("Listening on http://{addr}/");
                 loop {
@@ -117,7 +125,24 @@ async fn main() {
                 }
             });
 
-            tokio::join!(status, serve)
+            tokio::join!(serve, status, inputs, outputs)
         })
         .await;
+}
+
+fn send_periodically<T: Clone + 'static>(
+    item: T,
+    period: Duration,
+) -> (mpsc::Receiver<T>, task::JoinHandle<()>) {
+    let (tx, rx) = mpsc::channel(1);
+    let mut interval = time::interval(period);
+
+    let handle = task::spawn_local(async move {
+        loop {
+            interval.tick().await;
+            tx.send(item.clone()).await.unwrap();
+        }
+    });
+
+    (rx, handle)
 }

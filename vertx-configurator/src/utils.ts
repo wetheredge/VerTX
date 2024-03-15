@@ -4,6 +4,9 @@ export async function asyncTimeout(timeout: number): Promise<void> {
 	});
 }
 
-export function unreachable(value: never): never {
-	throw new Error(`Unreachable: ${value}`);
+export function unreachable(
+	value: never,
+	message = `Unreachable: ${value}`,
+): never {
+	throw new Error(message);
 }

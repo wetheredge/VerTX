@@ -2,7 +2,7 @@ import { unreachable } from '../utils';
 import { DataReader, DataWriter } from './helpers';
 
 export const PROTOCOL: string = 'v0';
-const REQUEST_BUFFER_SIZE = 1;
+const REQUEST_BUFFER_SIZE = 2;
 
 export const enum RequestKind {
 	ProtocolVersion,
@@ -11,7 +11,7 @@ export const enum RequestKind {
 	Reboot,
 	CheckForUpdate,
 	StreamInputs,
-	StreamMixer,
+	StreamOutputs,
 }
 
 export type Request =
@@ -20,25 +20,27 @@ export type Request =
 	| { kind: RequestKind.PowerOff }
 	| { kind: RequestKind.Reboot }
 	| { kind: RequestKind.CheckForUpdate }
-	| { kind: RequestKind.StreamInputs }
-	| { kind: RequestKind.StreamMixer };
+	| { kind: RequestKind.StreamInputs; payload: boolean }
+	| { kind: RequestKind.StreamOutputs; payload: boolean };
 
-export function encodeRequest({ kind }: Request): ArrayBuffer | DataView {
+export function encodeRequest(request: Request): ArrayBuffer | DataView {
 	const writer = new DataWriter(REQUEST_BUFFER_SIZE);
 
-	writer.varint(kind);
-	switch (kind) {
+	writer.varint(request.kind);
+	switch (request.kind) {
 		case RequestKind.ProtocolVersion:
 		case RequestKind.BuildInfo:
 		case RequestKind.PowerOff:
 		case RequestKind.Reboot:
 		case RequestKind.CheckForUpdate:
+			break;
 		case RequestKind.StreamInputs:
-		case RequestKind.StreamMixer:
+		case RequestKind.StreamOutputs:
+			writer.boolean(request.payload);
 			break;
 
 		default:
-			unreachable(kind);
+			unreachable(request);
 	}
 
 	return writer.done();
@@ -48,6 +50,8 @@ export enum ResponseKind {
 	ProtocolVersion,
 	BuildInfo,
 	Status,
+	Inputs,
+	Outputs,
 }
 
 export type Response =
@@ -81,6 +85,14 @@ export type Response =
 				idleTime: number;
 				timingDrift: number;
 			};
+	  }
+	| {
+			kind: ResponseKind.Inputs;
+			payload: Array<number>;
+	  }
+	| {
+			kind: ResponseKind.Outputs;
+			payload: Array<number>;
 	  };
 
 export type ResponsePayload<Kind extends ResponseKind> = Extract<
@@ -91,7 +103,7 @@ export type ResponsePayload<Kind extends ResponseKind> = Extract<
 export function parseResponse(buffer: ArrayBuffer): Response {
 	const reader = new DataReader(buffer);
 
-	const kind = reader.u8();
+	const kind = reader.u8() as ResponseKind;
 	switch (kind) {
 		case ResponseKind.ProtocolVersion:
 			return {
@@ -124,9 +136,21 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 					timingDrift: reader.f32(),
 				},
 			};
+		case ResponseKind.Inputs:
+			return {
+				kind,
+				payload: Array.from({ length: reader.varint() }).map(() =>
+					reader.varint(),
+				),
+			};
+		case ResponseKind.Outputs:
+			return {
+				kind,
+				payload: Array.from({ length: 16 }).map(() => reader.varint()),
+			};
 
 		default:
-			throw new Error(`Invalid response kind: ${kind}`);
+			unreachable(kind, `Invalid response kind: ${kind}`);
 	}
 }
 

@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js';
+import { createSignal, onMount } from 'solid-js';
 import { StatusBar } from './StatusBar';
 import createApi, {
 	type ResponsePayload,
@@ -32,6 +32,12 @@ export function App() {
 			case ResponseKind.Status:
 				setStatus(payload);
 				break;
+			case ResponseKind.Inputs:
+				console.debug('inputs', payload);
+				break;
+			case ResponseKind.Outputs:
+				console.debug('outputs', payload);
+				break;
 
 			default:
 				unreachable(kind);
@@ -39,6 +45,15 @@ export function App() {
 	});
 
 	api.request({ kind: RequestKind.BuildInfo });
+
+	onMount(() => {
+		// @ts-ignore
+		globalThis.streamInputs = (payload: boolean) =>
+			api.request({ kind: RequestKind.StreamInputs, payload });
+		// @ts-ignore
+		globalThis.streamOutputs = (payload: boolean) =>
+			api.request({ kind: RequestKind.StreamOutputs, payload });
+	});
 
 	return (
 		<>

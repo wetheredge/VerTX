@@ -92,6 +92,14 @@ impl vertx_api::State for State {
         self.status.wait().await
     }
 
+    async fn inputs(&self) -> Vec<u16> {
+        todo!()
+    }
+
+    async fn outputs(&self) -> [u16; 16] {
+        todo!()
+    }
+
     fn power_off(&self) -> ! {
         todo!()
     }
