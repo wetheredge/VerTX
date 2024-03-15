@@ -1,6 +1,6 @@
 import { style, styleVariants } from '@vanilla-extract/css';
-import { borderRadius, space, vars } from '../index.css';
-import { ApiStatus } from '../lib/api';
+import { ApiStatus } from './api';
+import { borderRadius, space, vars } from './index.css';
 
 export const root = style({
 	display: 'grid',

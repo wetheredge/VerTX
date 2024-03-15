@@ -1,11 +1,11 @@
 import { createSignal } from 'solid-js';
+import { StatusBar } from './StatusBar';
 import createApi, {
 	type ResponsePayload,
 	RequestKind,
 	ResponseKind,
-} from '../lib/api';
-import { unreachable } from '../lib/utils';
-import { StatusBar } from './StatusBar';
+} from './api';
+import { unreachable } from './utils';
 
 const DEV_API_PORT = 8080;
 const API_HOST =

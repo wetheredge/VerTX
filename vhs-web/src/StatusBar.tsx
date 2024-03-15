@@ -1,5 +1,5 @@
-import { ApiStatus, type ResponseKind, type ResponsePayload } from '../lib/api';
 import * as styles from './StatusBar.css';
+import { ApiStatus, type ResponseKind, type ResponsePayload } from './api';
 
 const connectionMessage = {
 	[ApiStatus.Connected]: 'Connected',
