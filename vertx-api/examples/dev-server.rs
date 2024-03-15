@@ -7,10 +7,11 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 use tokio::{task, time};
 use tracing_subscriber::prelude::*;
-use vertx_api::response;
+use vertx_api::{response, ApiState};
 
 #[derive(Debug)]
 struct State {
+    api_state: ApiState,
     status: Mutex<mpsc::Receiver<response::Status>>,
     inputs: Mutex<mpsc::Receiver<Vec<u16>>>,
     outputs: Mutex<mpsc::Receiver<[u16; 16]>>,
@@ -23,6 +24,7 @@ impl State {
         outputs: mpsc::Receiver<[u16; 16]>,
     ) -> Self {
         Self {
+            api_state: ApiState::new(),
             status: Mutex::new(status),
             inputs: Mutex::new(inputs),
             outputs: Mutex::new(outputs),
@@ -42,6 +44,10 @@ impl vertx_api::State for State {
         git_commit: "0000000",
         git_dirty: true,
     };
+
+    fn api_state(&self) -> &ApiState {
+        &self.api_state
+    }
 
     async fn status(&self) -> response::Status {
         self.status.lock().await.recv().await.unwrap()

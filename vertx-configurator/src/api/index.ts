@@ -45,7 +45,11 @@ export default function createApi(
 		setStatus(ApiStatus.Connected);
 	});
 
-	socket.addEventListener('close', () => {
+	socket.addEventListener('close', ({ code }) => {
+		if (code === 4000) {
+			console.error('API in use');
+		}
+
 		setStatus(ApiStatus.LostConnection);
 	});
 

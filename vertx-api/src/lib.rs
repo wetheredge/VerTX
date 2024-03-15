@@ -7,6 +7,8 @@ mod protocol;
 
 use alloc::vec::Vec;
 use core::future::{self, Future};
+use core::ops::Deref;
+use core::sync::atomic::{AtomicBool, Ordering};
 
 use bincode::error::EncodeError;
 use embassy_futures::select::{select4, Either4};
@@ -17,14 +19,45 @@ use picoserve::routing::MethodHandler;
 
 pub use self::protocol::{response, Request, Response};
 
+pub const ERROR_CODE_IN_USE: u16 = 4000;
+
 pub trait State {
     const BUILD_INFO: response::BuildInfo;
+
+    fn api_state(&self) -> &ApiState;
 
     fn status(&self) -> impl Future<Output = response::Status>;
     fn inputs(&self) -> impl Future<Output = Vec<u16>>;
     fn outputs(&self) -> impl Future<Output = [u16; 16]>;
     fn power_off(&self) -> !;
     fn reboot(&self) -> !;
+}
+
+#[derive(Debug)]
+pub struct ApiState {
+    locked: AtomicBool,
+}
+
+impl ApiState {
+    pub const fn new() -> Self {
+        Self {
+            locked: AtomicBool::new(false),
+        }
+    }
+
+    fn lock(&self) -> bool {
+        !self.locked.swap(true, Ordering::AcqRel)
+    }
+
+    fn unlock(&self) {
+        self.locked.store(false, Ordering::Release);
+    }
+}
+
+impl Default for ApiState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
@@ -60,16 +93,38 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
 
         let connection = request.body.finalize().await?;
         if valid_protocol {
-            upgrade
-                .on_upgrade(Handler::new(state))
-                .with_protocol(protocol::NAME)
-                .write_to(connection, response_writer)
-                .await
+            if state.api_state().lock() {
+                upgrade
+                    .on_upgrade(Handler::new(state))
+                    .with_protocol(protocol::NAME)
+                    .write_to(connection, response_writer)
+                    .await
+            } else {
+                upgrade
+                    .on_upgrade(InUseHandler)
+                    .with_protocol(protocol::NAME)
+                    .write_to(connection, response_writer)
+                    .await
+            }
         } else {
             HttpResponse::new(StatusCode::new(400), "Invalid protocol")
                 .write_to(connection, response_writer)
                 .await
         }
+    }
+}
+
+#[derive(Debug)]
+struct InUseHandler;
+
+impl ws::WebSocketCallback for InUseHandler {
+    async fn run<R: io::Read, W: io::Write<Error = R::Error>>(
+        self,
+        rx: ws::SocketRx<R>,
+        tx: ws::SocketTx<W>,
+    ) -> Result<(), W::Error> {
+        log::warn!("Got api connection api is in use");
+        tx.close((ERROR_CODE_IN_USE, "in use")).await
     }
 }
 
@@ -187,7 +242,11 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                     }
 
                     Ok(Message::Ping(payload)) => tx.send_pong(payload).await?,
-                    Ok(Message::Close(close)) => break tx.close(close).await,
+                    Ok(Message::Close(close)) => {
+                        let result = tx.close(close).await;
+                        self.state.api_state().unlock();
+                        return result;
+                    }
 
                     Ok(Message::Text(_)) | Ok(Message::Pong(_)) => continue,
                     Err(err) => {

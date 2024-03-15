@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
 use embassy_sync::signal::Signal;
@@ -5,7 +7,7 @@ use embassy_time::Duration;
 use picoserve::routing::{get, PathRouter};
 use picoserve::{self, Config};
 use static_cell::make_static;
-use vertx_api::response;
+use vertx_api::{response, ApiState};
 
 pub const TASKS: usize = 8;
 const TCP_BUFFER: usize = 1024;
@@ -39,7 +41,10 @@ pub fn run(
     status: &'static StatusSignal,
 ) {
     let app = make_static!(router());
-    let state = make_static!(State { status });
+    let state = make_static!(State {
+        api_state: ApiState::new(),
+        status,
+    });
 
     let mut mode = Some(mode);
     for id in 0..TASKS {
@@ -82,11 +87,16 @@ async fn worker(
 }
 
 struct State {
+    api_state: ApiState,
     status: &'static StatusSignal,
 }
 
 impl vertx_api::State for State {
     const BUILD_INFO: response::BuildInfo = include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
+
+    fn api_state(&self) -> &ApiState {
+        &self.api_state
+    }
 
     async fn status(&self) -> response::Status {
         self.status.wait().await
