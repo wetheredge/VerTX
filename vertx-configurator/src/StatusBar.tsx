@@ -19,7 +19,7 @@ export function StatusBar(props: {
 
 	return (
 		<div class={styles.root}>
-			<span>VHS {props.build && version(props.build)}</span>
+			<span>VerTX {props.build && version(props.build)}</span>
 			<span class={styles.apiStatus[props.apiStatus]}>
 				{connectionMessage[props.apiStatus]}
 			</span>

@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [vhs-api, vhs-crsf]
+        crate: [vertx-api, vertx-crsf]
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
@@ -49,30 +49,30 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
         working-directory: ${{ matrix.crate }}
 
-  build-ui:
-    name: Build vhs-web
+  build-configurator:
+    name: Build vertx-configurator
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3.0.0
         with:
           run_install: |
-            cwd: vhs-web
+            cwd: vertx-configurator
             args: [--frozen-lockfile]
-          package_json_file: vhs-web/package.json
+          package_json_file: vertx-configurator/package.json
       - run: pnpm tsx build.ts
-        working-directory: vhs-web
+        working-directory: vertx-configurator
       - uses: actions/upload-artifact@v4
         with:
-          name: vhs-web
-          path: vhs-web/dist/
+          name: vertx-configurator
+          path: vertx-configurator/dist/
           compression-level: 1
           if-no-files-found: error
 
-  clippy-vhs:
-    name: Rust lints (vhs)
+  clippy-vertx:
+    name: Rust lints (vertx)
     runs-on: ubuntu-latest
-    needs: build-ui
+    needs: build-configurator
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain (esp)
@@ -82,15 +82,15 @@ jobs:
           buildtargets: esp32s3
           ldproxy: false
       - uses: Swatinem/rust-cache@v2
-      - name: Get pre-built vhs-web
+      - name: Get pre-built vertx-configurator
         uses: actions/download-artifact@v4
         with:
-          name: vhs-web
-          path: vhs-web/dist
+          name: vertx-configurator
+          path: vertx-configurator/dist
       - run: cargo clippy -- -D warnings
-        working-directory: vhs
+        working-directory: vertx
         env:
-          VHS_TARGET: devkit
+          VERTX_TARGET: devkit
           WIFI_SSID: CI
           WIFI_PASSWORD: password
 
@@ -107,19 +107,19 @@ jobs:
         with:
           # Sync with /Cargo.toml
           tool: nextest@0.9.57
-      - run: cargo nextest run -p vhs-crsf
+      - run: cargo nextest run -p vertx-crsf
 
   biome:
     name: Lint & format frontend
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: vhs-web
+        working-directory: vertx-configurator
     steps:
       - uses: actions/checkout@v4
       - uses: biomejs/setup-biome@v2
         with:
-          working-dir: vhs-web
+          working-dir: vertx-configurator
         env:
           GITHUB_TOKEN: null
       - run: biome version

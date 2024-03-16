@@ -5,7 +5,7 @@ use embassy_time::Duration;
 use picoserve::routing::{get, PathRouter};
 use picoserve::{self, Config};
 use static_cell::make_static;
-use vhs_api::response;
+use vertx_api::response;
 
 pub const TASKS: usize = 8;
 const TCP_BUFFER: usize = 1024;
@@ -19,7 +19,7 @@ type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
     router! {
         "/update" => crate::ota::HttpHandler
-        "/ws" => vhs_api::UpgradeHandler
+        "/ws" => vertx_api::UpgradeHandler
     }
 }
 
@@ -85,7 +85,7 @@ struct State {
     status: &'static StatusSignal,
 }
 
-impl vhs_api::State for State {
+impl vertx_api::State for State {
     const BUILD_INFO: response::BuildInfo = include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
 
     async fn status(&self) -> response::Status {
