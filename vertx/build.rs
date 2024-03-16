@@ -115,6 +115,7 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
             #(#pins_arms)*
         }
 
+        #[allow(unused)]
         macro_rules! Pins {
             #(#pins_type_arms)*
         }

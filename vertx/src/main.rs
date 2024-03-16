@@ -7,6 +7,7 @@ extern crate alloc;
 mod pins {
     include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 
+    #[allow(unused)]
     pub(crate) use {pins, Pins};
 }
 
@@ -41,7 +42,6 @@ use static_cell::make_static;
 pub use crate::config::Config;
 pub use crate::mode::Mode;
 use crate::pins::pins;
-pub(crate) use crate::pins::Pins;
 
 const LOG_LEVEL: LevelFilter = LevelFilter::Info;
 
