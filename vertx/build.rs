@@ -10,9 +10,9 @@ use serde::Deserialize;
 fn main() -> io::Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
     let root = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let target_name = env!("VHS_TARGET");
+    let target_name = env!("VERTX_TARGET");
 
-    println!("cargo:rerun-if-env-changed=VHS_TARGET");
+    println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
     build_info(&out_dir, &root, target_name)?;
     pins(&out_dir, &root, target_name)?;
@@ -132,8 +132,8 @@ fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
         gzip: bool,
     }
 
-    let Ok(web) = fs::canonicalize(format!("{root}/../vhs-web/dist")) else {
-        panic!("vhs-web must be built first")
+    let Ok(web) = fs::canonicalize(format!("{root}/../vertx-configurator/dist")) else {
+        panic!("vertx-configurator must be built first")
     };
     println!("cargo:rerun-if-changed={}", web.display());
 

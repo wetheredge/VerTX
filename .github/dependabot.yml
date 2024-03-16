@@ -8,7 +8,7 @@ updates:
       development:
         dependency-type: development
   - package-ecosystem: npm
-    directory: 'vhs-web/'
+    directory: 'vertx-configurator/'
     schedule:
       interval: monthly
     groups:

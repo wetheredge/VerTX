@@ -1901,7 +1901,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
-name = "vhs"
+name = "vertx"
 version = "0.0.0"
 dependencies = [
  "bytemuck",
@@ -1930,11 +1930,11 @@ dependencies = [
  "smart-leds",
  "static_cell",
  "syn 2.0.52",
- "vhs-api",
+ "vertx-api",
 ]
 
 [[package]]
-name = "vhs-api"
+name = "vertx-api"
 version = "0.0.0"
 dependencies = [
  "bincode",
@@ -1947,7 +1947,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "vhs-crsf"
+name = "vertx-crsf"
 version = "0.0.0"
 dependencies = [
  "bitfield",

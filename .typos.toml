@@ -3,3 +3,6 @@ extend-exclude = ["**/pnpm-lock.yaml"]
 
 [default]
 locale = "en-us"
+
+[default.extend-words]
+vertx = "vertx"

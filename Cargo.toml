@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["vhs", "vhs-api", "vhs-crsf"]
+members = ["vertx", "vertx-api", "vertx-crsf"]
 
 [workspace.package]
 version = "0.0.0"
@@ -12,8 +12,8 @@ license = "MPL-2.0"
 embassy-net = "0.4.0"
 embedded-io = "0.6.1"
 picoserve = "0.9.1"
-vhs-api.path = "vhs-api"
-vhs-crsf.path = "vhs-crsf"
+vertx-api.path = "vertx-api"
+vertx-crsf.path = "vertx-crsf"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "0.6.1", locked = true }

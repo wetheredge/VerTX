@@ -1,5 +1,5 @@
 {
-	"name": "vhs",
+	"name": "VerTX",
 	"build": {
 		"dockerfile": "./Dockerfile"
 	},
@@ -16,7 +16,7 @@
 				"files.watcherExclude": {
 					"**/target/**": true
 				},
-				"biome.lspBin": "vhs-web/node_modules/.bin/biome",
+				"biome.lspBin": "vertx-configurator/node_modules/.bin/biome",
 				"rust-analyzer.checkOnSave.command": "clippy",
 				"rust-analyzer.checkOnSave.allTargets": false,
 				"[rust]": {
@@ -59,6 +59,6 @@
 			"label": "API dev server"
 		}
 	},
-	"workspaceMount": "source=${localWorkspaceFolder},target=/home/esp/vhs,type=bind,consistency=cached",
-	"workspaceFolder": "/home/esp/vhs"
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/esp/vertx,type=bind,consistency=cached",
+	"workspaceFolder": "/home/esp/vertx"
 }

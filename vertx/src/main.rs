@@ -165,7 +165,7 @@ async fn status(
             }
         }
 
-        status.signal(vhs_api::response::Status {
+        status.signal(vertx_api::response::Status {
             battery_voltage: 0,
             idle_time,
             timing_drift,

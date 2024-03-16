@@ -7,7 +7,7 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::time::Duration;
 use tokio::{task, time};
 use tracing_subscriber::prelude::*;
-use vhs_api::response;
+use vertx_api::response;
 
 #[derive(Debug)]
 struct State {
@@ -22,7 +22,7 @@ impl State {
     }
 }
 
-impl vhs_api::State for State {
+impl vertx_api::State for State {
     const BUILD_INFO: response::BuildInfo = response::BuildInfo {
         target: "dev-server",
         major: 0,
@@ -94,7 +94,7 @@ async fn main() {
             });
 
             let serve = task::spawn_local(async move {
-                let router = picoserve::Router::new().route("/ws", vhs_api::UpgradeHandler);
+                let router = picoserve::Router::new().route("/ws", vertx_api::UpgradeHandler);
 
                 let state = State::new(status_rx);
                 let socket = TcpListener::bind(addr).await.unwrap();

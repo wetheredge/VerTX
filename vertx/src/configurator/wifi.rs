@@ -37,7 +37,7 @@ impl fmt::Debug for Credentials {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            hostname: String::from("vhs"),
+            hostname: String::from("vertx"),
             credentials: Credentials {
                 ssid: String::from(env!("WIFI_SSID")),
                 password: String::from(env!("WIFI_PASSWORD")),
