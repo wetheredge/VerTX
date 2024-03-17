@@ -30,7 +30,7 @@ const assets: Array<{
 
 const mimes: Record<string, string> = {
 	css: 'text/css',
-	html: 'text/html; charset=UTF-8',
+	html: 'text/html',
 	js: 'text/javascript',
 	svg: 'image/svg+xml',
 };
