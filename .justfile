@@ -17,6 +17,13 @@ fmt:
     @echo
     cd vertx-configurator && pnpm biome format --write .
 
+# Check all subprojects
+check:
+    just vertx/check
+    just vertx-api/check
+    just vertx-crsf/check
+    just vertx-configurator/check
+
 # Complete debug build
 build:
     just vertx-configurator/build
