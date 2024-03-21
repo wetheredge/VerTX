@@ -1,6 +1,9 @@
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
+
+mod decoder;
+mod encoder;
 
 use alloc::ffi::CString;
 use alloc::vec;
@@ -8,20 +11,13 @@ use core::fmt;
 
 use crc::Crc;
 
+pub use self::decoder::DecodeError;
+use self::decoder::Decoder;
+pub use self::encoder::EncodeError;
+use self::encoder::Encoder;
+
 // TODO: benchmark lookup table options
 const BASIC_CRC: Crc<u8> = Crc::<u8>::new(&crc::Algorithm {
-    width: 8,
-    poly: 0xD5,
-    init: 0x00,
-    refin: false,
-    refout: false,
-    xorout: 0x00,
-    check: 0x00,
-    residue: 0x00,
-});
-
-#[allow(unused)]
-const EXTENDED_CRC: Crc<u8> = Crc::<u8>::new(&crc::Algorithm {
     width: 8,
     poly: 0xD5,
     init: 0x00,
@@ -52,6 +48,12 @@ macro_rules! enum_repr {
                 match raw {
                     $( $value => Some(Self::$variant), )*
                     _ => None,
+                }
+            }
+
+            fn into_raw(self) -> $repr {
+                match self {
+                    $( Self::$variant => $value, )*
                 }
             }
         }
@@ -167,7 +169,7 @@ pub enum Packet {
         down_snr: i8,
     },
     /// Channel data (both handset to TX and RX to flight controller)
-    RcChannelsPacked(RcChannelsPacked<[u8; 22]>),
+    RcChannelsPacked(RcChannelsPacked),
     /// Channels subset data **(CRSFv3 only)**
     SubsetRcChannelsPacked,
     /// Receiver RSSI percent, power?
@@ -185,7 +187,16 @@ pub enum Packet {
     },
     /// Device name, firmware version, hardware version, serial number (`Ping`
     /// response)
-    DeviceInfo,
+    DeviceInfo {
+        to: Address,
+        from: Address,
+        name: CString,
+        serial: u32,
+        hardware_version: u32,
+        software_version: u32,
+        config_parameters: u8,
+        config_protocol: u8,
+    },
     /// Configuration item data chunk
     ParameterSettingsEntry,
     /// Configuration item read request
@@ -244,9 +255,13 @@ impl fmt::Debug for TxPower {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct RcChannelsPacked(RcChannelsPackedInner<[u8; 22]>);
+
 bitfield::bitfield! {
-    #[derive(Debug, Clone, PartialEq)]
-    pub struct RcChannelsPacked([u8]);
+    #[derive(Clone, PartialEq)]
+    struct RcChannelsPackedInner([u8]);
+    impl Debug;
     u16;
     channel0, set_channel0: 10, 0;
     channel1, set_channel1: 21, 11;
@@ -266,122 +281,125 @@ bitfield::bitfield! {
     channel15, set_channel15: 175, 165;
 }
 
-impl RcChannelsPacked<[u8; 22]> {
-    pub fn unpack(&self) -> [u16; 16] {
-        [
-            self.channel0(),
-            self.channel1(),
-            self.channel2(),
-            self.channel3(),
-            self.channel4(),
-            self.channel5(),
-            self.channel6(),
-            self.channel7(),
-            self.channel8(),
-            self.channel9(),
-            self.channel10(),
-            self.channel11(),
-            self.channel12(),
-            self.channel13(),
-            self.channel14(),
-            self.channel15(),
-        ]
-    }
-}
-
-#[derive(Debug)]
-pub enum PacketError<E> {
-    ReadError(E),
-    UnexpectedEof,
-    InvalidSyncByte(u8),
-    InvalidPacketKind(u8),
-    BadCrc,
-}
-
-impl<E> From<embedded_io::ReadExactError<E>> for PacketError<E> {
-    fn from(err: embedded_io::ReadExactError<E>) -> Self {
-        match err {
-            embedded_io::ReadExactError::UnexpectedEof => Self::UnexpectedEof,
-            embedded_io::ReadExactError::Other(err) => Self::ReadError(err),
+macro_rules! impl_rc_channels_packed {
+    ($($channel:ident),*) => {
+        pub fn unpack(&self) -> [u16; 16] {
+            [$(self.$channel()),*]
         }
+
+        $(
+            #[inline(always)]
+            pub fn $channel(&self) -> u16 {
+                self.0.$channel()
+            }
+        )*
+};
+}
+
+impl RcChannelsPacked {
+    impl_rc_channels_packed!(
+        channel0, channel1, channel2, channel3, channel4, channel5, channel6, channel7, channel8,
+        channel9, channel10, channel11, channel12, channel13, channel14, channel15
+    );
+
+    pub fn new(channels: [u16; 16]) -> Self {
+        let mut inner = RcChannelsPackedInner([0; 22]);
+        inner.set_channel0(channels[0]);
+        inner.set_channel1(channels[1]);
+        inner.set_channel2(channels[2]);
+        inner.set_channel3(channels[3]);
+        inner.set_channel4(channels[4]);
+        inner.set_channel5(channels[5]);
+        inner.set_channel6(channels[6]);
+        inner.set_channel7(channels[7]);
+        inner.set_channel8(channels[8]);
+        inner.set_channel9(channels[9]);
+        inner.set_channel10(channels[10]);
+        inner.set_channel11(channels[11]);
+        inner.set_channel12(channels[12]);
+        inner.set_channel13(channels[13]);
+        inner.set_channel14(channels[14]);
+        inner.set_channel15(channels[15]);
+        Self(inner)
     }
 }
 
 impl Packet {
-    pub fn read<R: embedded_io::Read<Error = E>, E>(raw: &mut R) -> Result<Self, PacketError<E>> {
-        let mut reader = PacketReader::new(raw)?;
+    #[allow(clippy::match_same_arms)]
+    pub fn decode(raw: &[u8]) -> Result<(Self, usize), DecodeError> {
+        let mut decoder = Decoder::new(raw)?;
 
-        let packet = if reader.packet_type < 0x28 {
-            match reader.packet_type {
+        let packet = if decoder.packet_type() < 0x28 {
+            match decoder.packet_type() {
                 // CRSF_FRAMETYPE_GPS
                 0x02 => Self::Gps {
-                    latitude: reader.i32(),
-                    longitude: reader.i32(),
-                    speed: reader.i16(),
-                    heading: reader.i16(),
-                    altitude: i32::from(reader.u16()) - 1000,
-                    satellites: reader.u8(),
+                    latitude: decoder.i32(),
+                    longitude: decoder.i32(),
+                    speed: decoder.i16(),
+                    heading: decoder.i16(),
+                    altitude: i32::from(decoder.u16()) - 1000,
+                    satellites: decoder.u8(),
                 },
                 // CRSF_FRAMETYPE_VARIO
                 0x07 => Self::Vario {
-                    vertical_speed: reader.i16(),
+                    vertical_speed: decoder.i16(),
                 },
                 // CRSF_FRAMETYPE_BATTERY_SENSOR
                 0x08 => Self::BatterySensor {
-                    voltage: reader.i16(),
-                    current: reader.i16(),
-                    used: reader.i24(),
-                    remaining: reader.i8(),
+                    voltage: decoder.i16(),
+                    current: decoder.i16(),
+                    used: decoder.i24(),
+                    remaining: decoder.i8(),
                 },
                 // CRSF_FRAMETYPE_BARO_ALTITUDE
                 0x09 => Self::BarometricAltitude {
-                    altitude: convert_barometric_altitude(reader.i16()),
-                    vertical_speed: (reader.payload_length == 2).then(|| reader.i16()),
+                    altitude: convert_barometric_altitude(decoder.i16()),
+                    vertical_speed: (decoder.payload_len() == 2).then(|| decoder.i16()),
                 },
                 // CRSF_FRAMETYPE_HEARTBEAT
                 0x0B => {
                     // FIXME
-                    let origin = Address::from_u16(reader.u16()).unwrap();
+                    let origin = Address::from_u16(decoder.u16()).unwrap();
 
                     Self::Heartbeat { origin }
                 }
                 // CRSF_FRAMETYPE_LINK_STATISTICS
                 0x14 => {
                     Self::LinkStatistics {
-                        up_rssi1: reader.u8(),
-                        up_rssi2: reader.u8(),
-                        up_lq: reader.u8(),
-                        up_snr: reader.i8(),
-                        active_antenna: reader.u8(),
-                        mode: reader.u8(),
+                        up_rssi1: decoder.u8(),
+                        up_rssi2: decoder.u8(),
+                        up_lq: decoder.u8(),
+                        up_snr: decoder.i8(),
+                        active_antenna: decoder.u8(),
+                        mode: decoder.u8(),
                         // FIXME
-                        tx_power: TxPower::from_raw(reader.u8()).unwrap(),
-                        down_rssi: reader.u8(),
-                        down_lq: reader.u8(),
-                        down_snr: reader.i8(),
+                        tx_power: TxPower::from_raw(decoder.u8()).unwrap(),
+                        down_rssi: decoder.u8(),
+                        down_lq: decoder.u8(),
+                        down_snr: decoder.i8(),
                     }
                 }
                 // CRSF_FRAMETYPE_RC_CHANNELS_PACKED
                 0x16 => {
                     // FIXME
                     let mut channels = [0; 22];
-                    channels.clone_from_slice(reader.payload());
-                    Self::RcChannelsPacked(RcChannelsPacked(channels))
+                    channels.clone_from_slice(decoder.payload());
+                    Self::RcChannelsPacked(RcChannelsPacked(RcChannelsPackedInner(channels)))
                 }
                 // CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED
-                0x17 => todo!(),
+                0x17 => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_LINK_RX_ID
-                0x1C => todo!(),
+                0x1C => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_LINK_TX_ID
-                0x1D => todo!(),
+                0x1D => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_ATTITUDE
-                0x1E => todo!(),
+                0x1E => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_FLIGHT_MODE
                 0x21 => {
-                    let length = reader.payload_length.into();
+                    let length = decoder.payload_len();
                     // FIXME
                     let mut data = vec![0; length];
-                    data.clone_from_slice(reader.payload());
+                    data.clone_from_slice(decoder.payload());
                     // Strip trailing 0
                     data.truncate(length - 1);
 
@@ -390,51 +408,159 @@ impl Packet {
                     Self::FlightMode(mode)
                 }
 
-                kind => return Err(PacketError::InvalidPacketKind(kind)),
+                kind => return Err(DecodeError::InvalidPacketKind(kind)),
             }
         } else {
-            let reader = reader.extended()?;
+            let mut decoder = decoder.extended()?;
 
-            match reader.packet_type() {
+            match decoder.packet_type() {
                 // CRSF_FRAMETYPE_DEVICE_PING
                 0x28 => Self::DevicePing {
-                    to: reader.to,
-                    from: reader.from,
+                    to: decoder.to(),
+                    from: decoder.from(),
                 },
                 // CRSF_FRAMETYPE_DEVICE_INFO
-                0x29 => todo!(), // extended
+                0x29 => Self::DeviceInfo {
+                    to: decoder.to(),
+                    from: decoder.from(),
+                    name: decoder.string(),
+                    serial: decoder.u32(),
+                    hardware_version: decoder.u32(),
+                    software_version: decoder.u32(),
+                    config_parameters: decoder.u8(),
+                    config_protocol: decoder.u8(),
+                },
                 // CRSF_FRAMETYPE_PARAMETER_SETTINGS_ENTRY
-                0x2B => todo!(), // extended
+                0x2B => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_PARAMETER_READ
-                0x2C => todo!(), // extended
+                0x2C => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_PARAMETER_WRITE
-                0x2D => todo!(), // extended
+                0x2D => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_ELRS_STATUS
-                0x2E => todo!(), // extended
+                0x2E => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_COMMAND
-                0x32 => todo!(), // extended
+                0x32 => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_RADIO_ID
-                0x3A => todo!(), // extended
+                0x3A => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_KISS_REQ
-                0x78 => todo!(), // extended
+                0x78 => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_KISS_RESP
-                0x79 => todo!(), // extended
+                0x79 => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_MSP_REQ
-                0x7A => todo!(), // extended
+                0x7A => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_MSP_RESP
-                0x7B => todo!(), // extended
+                0x7B => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_MSP_WRITE
-                0x7C => todo!(), // extended
+                0x7C => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_DISPLAYPORT_CMD
-                0x7D => todo!(), // extended
+                0x7D => return Err(DecodeError::UnsupportedPacket),
                 // CRSF_FRAMETYPE_ARDUPILOT_RESP
-                0x80 => todo!(), // extended
+                0x80 => return Err(DecodeError::UnsupportedPacket),
 
-                kind => return Err(PacketError::InvalidPacketKind(kind)),
+                kind => return Err(DecodeError::InvalidPacketKind(kind)),
             }
         };
 
-        Ok(packet)
+        Ok((packet, decoder.len()))
+    }
+
+    #[allow(clippy::match_same_arms)]
+    pub fn encode(&self, buffer: &mut [u8]) -> Result<usize, EncodeError> {
+        let mut encoder = Encoder::new(buffer)?;
+
+        match self {
+            Self::Gps { .. } => Err(EncodeError::UnsupportedPacket),
+            Self::Vario { .. } => Err(EncodeError::UnsupportedPacket),
+            Self::BatterySensor {
+                voltage,
+                current,
+                used,
+                remaining,
+            } => {
+                encoder.i16(*voltage)?;
+                encoder.i16(*current)?;
+                encoder.i24(*used)?;
+                encoder.i8(*remaining)?;
+                encoder.finish(0x08)
+            }
+            Self::BarometricAltitude { .. } => Err(EncodeError::UnsupportedPacket),
+            Self::Heartbeat { origin } => {
+                encoder.u8(origin.into_raw())?;
+                encoder.finish(0x0B)
+            }
+            Self::LinkStatistics {
+                up_rssi1,
+                up_rssi2,
+                up_lq,
+                up_snr,
+                active_antenna,
+                mode,
+                tx_power,
+                down_rssi,
+                down_lq,
+                down_snr,
+            } => {
+                encoder.u8(*up_rssi1)?;
+                encoder.u8(*up_rssi2)?;
+                encoder.u8(*up_lq)?;
+                encoder.i8(*up_snr)?;
+                encoder.u8(*active_antenna)?;
+                encoder.u8(*mode)?;
+                encoder.u8(tx_power.into_raw())?;
+                encoder.u8(*down_rssi)?;
+                encoder.u8(*down_lq)?;
+                encoder.i8(*down_snr)?;
+                encoder.finish(0x14)
+            }
+            Self::RcChannelsPacked(channels) => {
+                encoder.slice(&(channels.0).0)?;
+                encoder.finish(0x18)
+            }
+            Self::SubsetRcChannelsPacked => Err(EncodeError::UnsupportedPacket),
+            Self::LinkRxId => Err(EncodeError::UnsupportedPacket),
+            Self::LinkTxId => Err(EncodeError::UnsupportedPacket),
+            Self::Attitude => Err(EncodeError::UnsupportedPacket),
+            Self::FlightMode(mode) => {
+                encoder.string(mode)?;
+                encoder.finish(0x21)
+            }
+            Self::DevicePing { to, from } => {
+                encoder.extended(*to, *from)?;
+                encoder.finish(0x28)
+            }
+            Self::DeviceInfo {
+                to,
+                from,
+                name,
+                serial,
+                hardware_version,
+                software_version,
+                config_parameters,
+                config_protocol,
+            } => {
+                encoder.extended(*to, *from)?;
+                encoder.string(name)?;
+                encoder.u32(*serial)?;
+                encoder.u32(*hardware_version)?;
+                encoder.u32(*software_version)?;
+                encoder.u8(*config_parameters)?;
+                encoder.u8(*config_protocol)?;
+                encoder.finish(0x29)
+            }
+            Self::ParameterSettingsEntry => Err(EncodeError::UnsupportedPacket),
+            Self::ParameterRead => Err(EncodeError::UnsupportedPacket),
+            Self::ParameterWrite => Err(EncodeError::UnsupportedPacket),
+            Self::ElrsStatus => Err(EncodeError::UnsupportedPacket),
+            Self::Command => Err(EncodeError::UnsupportedPacket),
+            Self::RadioId => Err(EncodeError::UnsupportedPacket),
+            Self::KissRequest => Err(EncodeError::UnsupportedPacket),
+            Self::KissResponse => Err(EncodeError::UnsupportedPacket),
+            Self::MspRequest => Err(EncodeError::UnsupportedPacket),
+            Self::MspResponse => Err(EncodeError::UnsupportedPacket),
+            Self::MspWrite => Err(EncodeError::UnsupportedPacket),
+            Self::DisplayportCommand => Err(EncodeError::UnsupportedPacket),
+            Self::ArdupilotResponse => Err(EncodeError::UnsupportedPacket),
+        }
     }
 }
 
@@ -446,171 +572,69 @@ fn convert_barometric_altitude(altitude: i16) -> i32 {
     }
 }
 
-#[derive(Debug)]
-struct PacketReader {
-    /// Max packet size excluding sync, length, and type bytes
-    payload: [u8; 61],
-    /// Next byte index to read from
-    next: usize,
-    /// Actual packet size excluding sync, length, type, and crc bytes
-    payload_length: u8,
-    packet_type: u8,
-}
-
-impl PacketReader {
-    fn new<R, E>(reader: &mut R) -> Result<Self, PacketError<E>>
-    where
-        R: embedded_io::Read<Error = E>,
-    {
-        let mut buffer = [0; 3];
-        reader.read_exact(&mut buffer)?;
-        let [sync, length, packet_type] = buffer;
-
-        if sync != 0xC8 {
-            return Err(PacketError::InvalidSyncByte(sync));
-        }
-
-        // Exclude type and crc bytes
-        let payload_length = length - 2;
-
-        let mut payload = [0; 61];
-        reader.read_exact(&mut payload[0..payload_length as usize])?;
-
-        let mut checksum = [0];
-        reader.read_exact(&mut checksum)?;
-        let [checksum] = checksum;
-
-        let mut crc = BASIC_CRC.digest();
-        crc.update(&[packet_type]);
-        crc.update(&payload[0..payload_length.into()]);
-
-        if crc.finalize() != checksum {
-            return Err(PacketError::BadCrc);
-        }
-
-        Ok(Self {
-            payload,
-            next: 0,
-            payload_length,
-            packet_type,
-        })
-    }
-
-    fn extended<E>(&mut self) -> Result<ExtendedPacketReader<'_>, PacketError<E>> {
-        ExtendedPacketReader::new(self)
-    }
-
-    fn payload(&mut self) -> &[u8] {
-        let rest = &self.payload[self.next..self.payload_length.into()];
-        self.next = self.payload_length.into();
-        rest
-    }
-
-    fn u8(&mut self) -> u8 {
-        let x = u8::from_be(self.payload[self.next]);
-        self.next += 1;
-        x
-    }
-
-    fn i8(&mut self) -> i8 {
-        self.u8() as i8
-    }
-
-    fn u16(&mut self) -> u16 {
-        let bytes = [self.payload[self.next], self.payload[self.next + 1]];
-        self.next += 2;
-        u16::from_be_bytes(bytes)
-    }
-
-    fn i16(&mut self) -> i16 {
-        self.u16() as i16
-    }
-
-    fn i24(&mut self) -> i32 {
-        let b1 = self.payload[self.next];
-        let b2 = self.payload[self.next + 1];
-        let b3 = self.payload[self.next + 2];
-        let b4 = if b3.leading_ones() > 0 { 0xFF } else { 0x00 };
-        self.next += 3;
-
-        i32::from_be_bytes([b1, b2, b3, b4])
-    }
-
-    fn u32(&mut self) -> u32 {
-        let bytes = [
-            self.payload[self.next],
-            self.payload[self.next + 1],
-            self.payload[self.next + 2],
-            self.payload[self.next + 3],
-        ];
-        self.next += 4;
-        u32::from_be_bytes(bytes)
-    }
-
-    fn i32(&mut self) -> i32 {
-        self.u32() as i32
-    }
-}
-
-impl Drop for PacketReader {
-    fn drop(&mut self) {
-        if cfg!(debug_assertions) && self.next != self.payload_length.into() {
-            panic!(
-                "Expected to read {} bytes. Actually read {} bytes",
-                self.payload_length, self.next
-            );
-        }
-    }
-}
-
-#[derive(Debug)]
-struct ExtendedPacketReader<'a> {
-    reader: &'a mut PacketReader,
-    to: Address,
-    from: Address,
-}
-
-impl<'a> ExtendedPacketReader<'a> {
-    fn new<E>(reader: &'a mut PacketReader) -> Result<Self, PacketError<E>> {
-        // FIXME: return error
-        let to = Address::from_raw(reader.u8()).unwrap();
-        let from = Address::from_raw(reader.u8()).unwrap();
-
-        Ok(Self { reader, to, from })
-    }
-
-    fn packet_type(&self) -> u8 {
-        self.reader.packet_type
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn packet_rc_channels_packed_all_1500() {
-        let mut raw: &[u8] = &[
-            0xC8, 0x18, 0x16, 0xE0, 0x03, 0x1F, 0xF8, 0xC0, 0x07, 0x3E, 0xF0, 0x81, 0x0F, 0x7C,
-            0xE0, 0x03, 0x1F, 0xF8, 0xC0, 0x07, 0x3E, 0xF0, 0x81, 0x0F, 0x7C, 0xAD,
-        ];
+    macro_rules! test_pair {
+        (enc: $encode:ident,dec: $decode:ident,packet: $packet:expr,raw: $raw:expr,) => {
+            #[test]
+            fn $encode() {
+                let expected: &[u8] = $raw;
+                let mut encoded = vec![0; expected.len()];
+                $packet.encode(&mut encoded).unwrap();
+                assert_eq!(expected, encoded);
+            }
 
-        let Packet::RcChannelsPacked(channels) = Packet::read(&mut raw).unwrap() else {
-            panic!()
+            #[test]
+            fn $decode() {
+                let raw: &[u8] = $raw;
+                let packet = Packet::decode(raw).unwrap();
+                assert_eq!(($packet, raw.len()), packet);
+            }
         };
-
-        assert!(channels.unpack().into_iter().all(|ch| ch == 992));
     }
 
     #[test]
-    fn packet_link_statistics() {
-        let mut raw: &[u8] = &[
-            0xC8, 0x0C, 0x14, 0x24, 0x00, 0x64, 0x0A, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
-            0x39,
-            // 0xC8, 0x0C, 0x14, 0x6C, 0x00, 0x00, 0x0B, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x88,
+    fn decode_rc_channels_packed() {
+        let raw: &[u8] = &[
+            0xC8, 0x18, 0x16, 0xE3, 0xEB, 0x5E, 0x2B, 0xC8, 0xD7, 0x8A, 0x56, 0xB4, 0x02, 0x7C,
+            0xE0, 0x03, 0x1F, 0xF8, 0xC0, 0x07, 0x3E, 0xF0, 0x81, 0x0F, 0x7C, 0xB3,
         ];
 
-        let expected = Packet::LinkStatistics {
+        let decoded = [
+            995, 989, 173, 996, 173, 173, 173, 992, 992, 992, 992, 992, 992, 992, 992, 992,
+        ];
+
+        let (Packet::RcChannelsPacked(channels), _) = Packet::decode(&raw).unwrap() else {
+            panic!()
+        };
+
+        assert_eq!(decoded, channels.unpack());
+    }
+
+    #[test]
+    fn encode_rc_channels_packed() {
+        let raw: &[u8] = &[
+            0xC8, 0x18, 0x16, 0xE3, 0xEB, 0x5E, 0x2B, 0xC8, 0xD7, 0x8A, 0x56, 0xB4, 0x02, 0x7C,
+            0xE0, 0x03, 0x1F, 0xF8, 0xC0, 0x07, 0x3E, 0xF0, 0x81, 0x0F, 0x7C, 0xB3,
+        ];
+
+        let decoded = [
+            995, 989, 173, 996, 173, 173, 173, 992, 992, 992, 992, 992, 992, 992, 992, 992,
+        ];
+
+        let (Packet::RcChannelsPacked(channels), _) = Packet::decode(&raw).unwrap() else {
+            panic!()
+        };
+
+        assert_eq!(decoded, channels.unpack());
+    }
+
+    test_pair! {
+        enc: encode_link_statistics,
+        dec: decode_link_statistics,
+        packet: Packet::LinkStatistics {
             up_rssi1: 36,
             up_rssi2: 0,
             up_lq: 100,
@@ -621,20 +645,40 @@ mod tests {
             down_rssi: 0,
             down_lq: 0,
             down_snr: 0,
-        };
-
-        assert_eq!(expected, Packet::read(&mut raw).unwrap());
+        },
+        raw: &[0xC8, 0x0C, 0x14, 0x24, 0x00, 0x64, 0x0A, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x39],
     }
 
-    #[test]
-    fn packet_flight_mode() {
-        let mut raw: &[u8] = &[
-            0xC8, 0x10, 0x21, 0x4C, 0x69, 0x74, 0x68, 0x6F, 0x62, 0x72, 0x61, 0x6B, 0x69, 0x6E,
-            0x67, 0x21, 0x00, 0x46,
-        ];
+    test_pair! {
+        enc: encode_flight_mode,
+        dec: decode_flight_mode,
+        packet: Packet::FlightMode(c"Lithobraking!".to_owned()),
+        raw: &[0xC8, 0x10, 0x21, 0x4C, 0x69, 0x74, 0x68, 0x6F, 0x62, 0x72, 0x61, 0x6B, 0x69, 0x6E, 0x67, 0x21, 0x00, 0x46],
+    }
 
-        let expected = Packet::FlightMode(CString::new("Lithobraking!").unwrap());
+    test_pair! {
+        enc: encode_device_ping,
+        dec: decode_device_ping,
+        packet: Packet::DevicePing {
+            to: Address::Broadcast,
+            from: Address::Handset,
+        },
+        raw: &[0xC8, 0x04, 0x28, 0x00, 0xEA, 0x54],
+    }
 
-        assert_eq!(expected, Packet::read(&mut raw).unwrap());
+    test_pair! {
+        enc: encode_device_info,
+        dec: decode_device_info,
+        packet: Packet::DeviceInfo {
+            to: Address::Handset,
+            from: Address::Transmitter,
+            name: c"TEST".to_owned(),
+            serial: u32::MAX,
+            hardware_version: 1,
+            software_version: 2,
+            config_parameters: 19,
+            config_protocol: 0,
+        },
+        raw: &[0xC8, 0x17, 0x29, 0xEA, 0xEE, 0x54, 0x45, 0x53, 0x54, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x13, 0x00, 0x8B],
     }
 }
