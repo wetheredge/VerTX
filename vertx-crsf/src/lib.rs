@@ -652,7 +652,7 @@ mod tests {
     test_pair! {
         enc: encode_flight_mode,
         dec: decode_flight_mode,
-        packet: Packet::FlightMode(c"Lithobraking!".to_owned()),
+        packet: Packet::FlightMode(CString::new("Lithobraking!").unwrap()),
         raw: &[0xC8, 0x10, 0x21, 0x4C, 0x69, 0x74, 0x68, 0x6F, 0x62, 0x72, 0x61, 0x6B, 0x69, 0x6E, 0x67, 0x21, 0x00, 0x46],
     }
 
@@ -672,7 +672,7 @@ mod tests {
         packet: Packet::DeviceInfo {
             to: Address::Handset,
             from: Address::Transmitter,
-            name: c"TEST".to_owned(),
+            name: CString::new("TEST").unwrap(),
             serial: u32::MAX,
             hardware_version: 1,
             software_version: 2,
