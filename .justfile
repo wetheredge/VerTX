@@ -24,25 +24,6 @@ check:
     just vertx-crsf/check
     just vertx-configurator/check
 
-# Complete debug build
-build:
-    just vertx-configurator/build
-    @echo
-    just vertx/build
-
-# Complete release build
-build-release:
-    just vertx-configurator/build
-    @echo
-    just vertx/build-release
-
-# Flash the most recently built firmware over USB using espflash and open the serial monitor
-flash:
-    just vertx/flash
-
-monitor:
-    cargo bin espflash monitor
-
 setup:
     cargo bin --install
     cargo bin --sync-aliases
