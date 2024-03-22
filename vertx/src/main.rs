@@ -14,6 +14,7 @@ mod pins {
 mod config;
 mod configurator;
 mod crsf;
+mod elrs;
 mod flash;
 mod leds;
 mod mode;
@@ -105,6 +106,20 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         .unwrap();
     let config = make_static!(config::Manager::new(&mut partitions));
 
+    let elrs_rc = make_static!(elrs::RcSignal::new());
+    let elrs_tx = make_static!(elrs::TxChannel::new());
+    let elrs_rx = make_static!(elrs::TxChannel::new());
+    elrs::run(
+        &spawner,
+        peripherals.UART1,
+        pins!(io.pins, elrs_tx),
+        pins!(io.pins, elrs_rx),
+        elrs_rc,
+        elrs_tx.receiver(),
+        elrs_rx.sender(),
+        &clocks,
+    );
+
     let configurator_enabled = configurator::IsEnabled::new();
     spawner.must_spawn(configurator::toggle_button(
         pins!(io.pins, configurator).into_pull_up_input().into(),
@@ -131,6 +146,8 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         configurator::server::run(&spawner, stack, mode.publisher(), status_signal);
     } else {
         log::info!("Configurator disabled");
+        spawner.must_spawn(dummy_mixer(elrs_rc));
+        spawner.must_spawn(ping(elrs_tx.sender()));
         mode.publish(crate::Mode::Ok);
     }
 }
@@ -172,5 +189,28 @@ async fn status(
         });
 
         start = end;
+    }
+}
+
+#[task]
+async fn dummy_mixer(signal: &'static elrs::RcSignal) {
+    let mut ticker = Ticker::every(Duration::from_millis(100));
+    loop {
+        signal.signal([1500; 16]);
+        ticker.next().await;
+    }
+}
+
+#[task]
+async fn ping(tx: elrs::TxChannelSender) {
+    use vertx_crsf::{Address, Packet};
+    let mut ticker = Ticker::every(Duration::from_millis(250));
+    loop {
+        tx.send(Packet::DevicePing {
+            to: Address::Transmitter,
+            from: Address::Handset,
+        })
+        .await;
+        ticker.next().await;
     }
 }

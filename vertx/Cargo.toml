@@ -16,6 +16,7 @@ embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-ho
 embassy-sync = "0.5.0"
 embassy-time = { version = "0.3.0", features = ["generic-queue-8"] }
 embedded-hal-async = "1.0.0"
+embedded-io-async = "0.6.1"
 esp-alloc = { version = "0.3.0" }
 esp-backtrace = { version = "0.10.0", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "print-uart"] }
 esp-hal-smartled = { version = "0.9.0", features = ["esp32s3"] }
@@ -31,7 +32,7 @@ serde_json = { version = "1.0.114", default-features = false, features = ["alloc
 smart-leds = "0.4.0"
 static_cell = { version = "2.0.0", features = ["nightly"] }
 vertx-api = { workspace = true }
-# vertx-crsf = { workspace = true }
+vertx-crsf = { workspace = true }
 
 [dependencies.esp-hal]
 version = "0.16.0"

@@ -1912,6 +1912,7 @@ dependencies = [
  "embassy-sync",
  "embassy-time",
  "embedded-hal-async",
+ "embedded-io-async",
  "esp-alloc",
  "esp-backtrace",
  "esp-hal",
@@ -1931,6 +1932,7 @@ dependencies = [
  "static_cell",
  "syn 2.0.52",
  "vertx-api",
+ "vertx-crsf",
 ]
 
 [[package]]

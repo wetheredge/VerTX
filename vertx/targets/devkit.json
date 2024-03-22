@@ -8,6 +8,8 @@
 		"throttle": 7,
 		"switches": [
 			11
-		]
+		],
+		"elrs_tx": 17,
+		"elrs_rx": 18
 	}
 }
