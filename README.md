@@ -35,7 +35,7 @@ exclusively for the ELRS transmitter module.
   `rustup toolchain install nightly --component rustfmt --profile minimal`
 - Latest Rust esp toolchain with the esp32s3 target:
   <https://github.com/esp-rs/espup#installation>
-- [`just`](https://github.com/casey/just#installation)
+- [`just`](https://github.com/casey/just#installation) v1.17.0 or newer
 - [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall#installation)
   (optional)
 - [`cargo-run-bin`](https://github.com/dustinblackman/cargo-run-bin#install)
