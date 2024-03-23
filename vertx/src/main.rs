@@ -4,11 +4,9 @@
 
 extern crate alloc;
 
-mod pins {
-    include!(concat!(env!("OUT_DIR"), "/pins.rs"));
-
-    #[allow(unused)]
-    pub(crate) use {pins, Pins};
+#[allow(dead_code)]
+mod target {
+    include!(concat!(env!("OUT_DIR"), "/target_info.rs"));
 }
 
 mod config;
@@ -41,7 +39,6 @@ use static_cell::make_static;
 
 pub use crate::config::Config;
 pub use crate::mode::Mode;
-use crate::pins::pins;
 
 const LOG_LEVEL: LevelFilter = LevelFilter::Info;
 
@@ -91,7 +88,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     {
         let leds = SmartLedsAdapter::new(
             rmt.channel0,
-            pins!(io.pins, leds),
+            target::pins!(io.pins, leds),
             [0; leds::BUFFER_SIZE],
             &clocks,
         );
@@ -107,7 +104,9 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
     let configurator_enabled = configurator::IsEnabled::new();
     spawner.must_spawn(configurator::toggle_button(
-        pins!(io.pins, configurator).into_pull_up_input().into(),
+        target::pins!(io.pins, configurator)
+            .into_pull_up_input()
+            .into(),
         configurator_enabled,
     ));
 

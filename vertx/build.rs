@@ -15,7 +15,7 @@ fn main() -> io::Result<()> {
     println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
     build_info(&out_dir, &root, target_name)?;
-    pins(&out_dir, &root, target_name)?;
+    target(&out_dir, &root, target_name)?;
     web_assets(&out_dir, &root)?;
 
     Ok(())
@@ -66,11 +66,8 @@ fn build_info(out_dir: &str, root: &str, target_name: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
-    #[derive(Debug, Deserialize)]
-    struct Target {
-        pins: HashMap<String, PinSpec>,
-    }
+fn target(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
+    use heck::ToShoutySnakeCase;
 
     #[derive(Debug, Deserialize)]
     #[serde(untagged)]
@@ -83,45 +80,45 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     println!("cargo:rerun-if-changed={path}");
 
     let target = fs::read_to_string(path)?;
-    let target: Target = serde_json::from_str(&target).unwrap();
+    let target: HashMap<String, PinSpec> = serde_json::from_str(&target).unwrap();
 
-    let pins_arms = target.pins.iter().map(|(name, spec)| {
+    let macro_arms = target.iter().map(|(name, spec)| {
         let name = format_ident!("{name}");
+        let gpio_ident = |pin| format_ident!("gpio{pin}");
         match spec {
             PinSpec::Single(pin) => {
-                let gpio = format_ident!("gpio{pin}");
+                let gpio = gpio_ident(pin);
                 quote!( ($pins:expr, #name $(,)?) => { $pins.#gpio }; )
             }
             PinSpec::Multiple(pins) => {
-                let gpios = pins.iter().map(|pin| format_ident!("gpio{pin}"));
-                quote!( ($pins:expr, #name $(. $method:ident ())* $(,)?) => { [#($pins.#gpios $(.$method())*)*] }; )
+                let gpios = pins.iter().map(gpio_ident);
+                quote!( ($pins:expr, #name $(. $method:ident () )* $(,)?) => { [#($pins.#gpios $(.$method())*)*] }; )
             }
         }
     });
 
-    let pins_type_arms = target.pins.iter().map(|(name, spec)| {
-        let name = format_ident!("{name}");
-        match spec {
-            PinSpec::Single(pin) => quote!( (#name) => { #pin }; ),
-            PinSpec::Multiple(pins) => {
-                let count = pins.len();
-                quote!( (#name count) => { #count }; )
-            }
+    let constants = target.iter().map(|(name, spec)| match spec {
+        PinSpec::Single(pin) => {
+            let name = format_ident!("{}", name.to_shouty_snake_case());
+            quote!( const #name: u8 = #pin; )
+        }
+        PinSpec::Multiple(pins) => {
+            let len = pins.len();
+            let name = format_ident!("{}_COUNT", name.to_shouty_snake_case());
+            quote!( const #name: usize = #len; )
         }
     });
 
     let tokens = quote! {
         macro_rules! pins {
-            #(#pins_arms)*
+            #(#macro_arms)*
         }
+        pub(crate) use pins;
 
-        #[allow(unused)]
-        macro_rules! Pins {
-            #(#pins_type_arms)*
-        }
+        #(pub(crate) #constants)*
     };
 
-    out_file!(format!("{out_dir}/pins.rs"), tokens)
+    out_file!(format!("{out_dir}/target_info.rs"), tokens)
 }
 
 fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
