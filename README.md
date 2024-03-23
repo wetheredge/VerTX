@@ -21,6 +21,8 @@ Non-goals:
 - RC links other than [ExpressLRS]
 - External transmitter modules (at least for the foreseeable future)
 - Complicated custom mixing for large planes without flight controllers
+- Lua scripts
+  - ExpressLRS configuration will be implemented natively
 
 [^1]: This project uses the term _handset_ to mean the hardware & software
 responsible for reading the control inputs, mixing, etc and _transmitter_
