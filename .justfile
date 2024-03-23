@@ -1,7 +1,5 @@
 _default:
     @just --list --unsorted
-    @echo
-    @echo 'See DEVELOPMENT.md in the project root for details'
 
 # Delete all build artifacts
 [confirm]
@@ -28,9 +26,6 @@ setup:
     cargo bin --install
     cargo bin --sync-aliases
     cd vertx-configurator && pnpm install
-    @echo
-    @echo "Make sure the latest esp toolchain is installed with the esp32s3 target."
-    @echo "See <https://github.com/esp-rs/espup/#installation>"
     @echo
     @echo "The WIFI_SSID & WIFI_PASSWORD environment variables are required at build time."
     @echo "They will be automatically loaded from .env in the project root, if present."
