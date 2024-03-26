@@ -1,4 +1,7 @@
-import { createSignal } from 'solid-js';
+import { type JSX, createSignal, onCleanup, onMount } from 'solid-js';
+import './App.css';
+import { MenuState, closeMenu, isOpen as mobileNavIsOpen } from './MenuButton';
+import { Navigation } from './Navigation';
 import { StatusBar } from './StatusBar';
 import createApi, {
 	type ResponsePayload,
@@ -15,7 +18,7 @@ const API_HOST =
 			? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
 			: `localhost:${DEV_API_PORT}`;
 
-export function App() {
+export function App(props: { children?: JSX.Element }) {
 	const [build, setBuild] =
 		createSignal<ResponsePayload<ResponseKind.BuildInfo>>();
 	const [status, setStatus] =
@@ -40,13 +43,31 @@ export function App() {
 
 	api.request({ kind: RequestKind.BuildInfo });
 
+	let main!: HTMLElement;
+	let container: HTMLElement | null;
+	const handler = ({ target }: MouseEvent) => {
+		if (target === container) {
+			closeMenu();
+		}
+	};
+	onMount(() => {
+		container = main.parentElement;
+		container?.addEventListener('click', handler);
+	});
+	onCleanup(() => container?.removeEventListener('click', handler));
+
 	return (
 		<>
+			<MenuState />
 			<StatusBar
 				build={build()}
 				status={status()}
 				apiStatus={api.status()}
 			/>
+			<Navigation />
+			<main inert={mobileNavIsOpen()} ref={main}>
+				{props.children}
+			</main>
 		</>
 	);
 }

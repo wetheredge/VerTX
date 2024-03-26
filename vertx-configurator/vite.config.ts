@@ -2,6 +2,7 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 
+// biome-ignore lint/style/noDefaultExport: Required by Vite
 export default defineConfig({
 	build: {
 		rollupOptions: {
