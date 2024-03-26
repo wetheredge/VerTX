@@ -20,7 +20,8 @@ dev:
     pnpm vite
 
 build: check
-    NODE_ENV=production pnpm tsx build.ts
+    NODE_ENV=production pnpm vite build
+    pnpm tsx compress.ts
 
 # Run a local server from the latest build artifacts. Needs the vertx-api dev server running
 preview:
