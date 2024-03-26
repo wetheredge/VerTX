@@ -52,6 +52,9 @@ jobs:
   build-configurator:
     name: Build vertx-configurator
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vertx-configurator
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3.0.0
@@ -60,8 +63,8 @@ jobs:
             cwd: vertx-configurator
             args: [--frozen-lockfile]
           package_json_file: vertx-configurator/package.json
-      - run: pnpm tsx build.ts
-        working-directory: vertx-configurator
+      - run: pnpm vite build
+      - run: pnpm tsx compress.ts
       - uses: actions/upload-artifact@v4
         with:
           name: vertx-configurator
