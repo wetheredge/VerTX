@@ -14,6 +14,8 @@ updates:
     groups:
       development:
         dependency-type: development
+        exclude-patterns:
+          - "@biomejs/biome"
   - package-ecosystem: devcontainers
     directory: '/'
     schedule:
