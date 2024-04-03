@@ -3,6 +3,15 @@ import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 
 export default defineConfig({
+	build: {
+		rollupOptions: {
+			output: {
+				assetFileNames: '[hash].[ext]',
+				chunkFileNames: '[hash].js',
+				entryFileNames: '[hash].js',
+			},
+		},
+	},
 	plugins: [solid(), vanillaExtractPlugin()],
 	define: {
 		'import.meta.env.CODESPACE_NAME': JSON.stringify(
