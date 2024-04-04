@@ -1,7 +1,7 @@
 export class DataReader {
 	readonly #view: DataView;
+	readonly #textDecoder = new TextDecoder();
 	#index = 0;
-	#textDecoder = new TextDecoder();
 
 	constructor(buffer: ArrayBuffer) {
 		this.#view = new DataView(buffer);
@@ -64,17 +64,16 @@ export class DataReader {
 }
 
 export class DataWriter {
-	readonly #buffer: ArrayBuffer;
 	readonly #view: DataView;
 	#index = 0;
 
 	constructor(bytes: number) {
-		this.#buffer = new ArrayBuffer(bytes);
-		this.#view = new DataView(this.#buffer);
+		const buffer = new ArrayBuffer(bytes);
+		this.#view = new DataView(buffer);
 	}
 
-	done(): DataView {
-		return new DataView(this.#buffer, 0, this.#index);
+	done(): ArrayBuffer {
+		return this.#view.buffer.slice(0, this.#index);
 	}
 
 	varint(x: number) {

@@ -23,7 +23,7 @@ export type Request =
 	| { kind: RequestKind.StreamInputs }
 	| { kind: RequestKind.StreamMixer };
 
-export function encodeRequest({ kind }: Request): ArrayBuffer | DataView {
+export function encodeRequest({ kind }: Request): ArrayBuffer {
 	const writer = new DataWriter(REQUEST_BUFFER_SIZE);
 
 	writer.varint(kind);
@@ -44,7 +44,7 @@ export function encodeRequest({ kind }: Request): ArrayBuffer | DataView {
 	return writer.done();
 }
 
-export enum ResponseKind {
+export const enum ResponseKind {
 	ProtocolVersion,
 	BuildInfo,
 	Status,
