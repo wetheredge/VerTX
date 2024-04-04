@@ -1,14 +1,9 @@
-import { type JSX, createSignal, onCleanup, onMount } from 'solid-js';
+import { type JSX, onCleanup, onMount } from 'solid-js';
 import './App.css';
 import { MenuState, closeMenu, isOpen as mobileNavIsOpen } from './MenuButton';
 import { Navigation } from './Navigation';
 import { StatusBar } from './StatusBar';
-import createApi, {
-	type ResponsePayload,
-	RequestKind,
-	ResponseKind,
-} from './api';
-import { unreachable } from './utils';
+import { RequestKind, initApi, request } from './api';
 
 const DEV_API_PORT = 8080;
 const API_HOST =
@@ -19,29 +14,8 @@ const API_HOST =
 			: `localhost:${DEV_API_PORT}`;
 
 export function App(props: { children?: JSX.Element }) {
-	const [build, setBuild] =
-		createSignal<ResponsePayload<ResponseKind.BuildInfo>>();
-	const [status, setStatus] =
-		createSignal<ResponsePayload<ResponseKind.Status>>();
-
-	const api = createApi(API_HOST, ({ kind, payload }) => {
-		switch (kind) {
-			case ResponseKind.ProtocolVersion:
-				console.debug('ProtocolVersion', payload);
-				break;
-			case ResponseKind.BuildInfo:
-				setBuild(payload);
-				break;
-			case ResponseKind.Status:
-				setStatus(payload);
-				break;
-
-			default:
-				unreachable(kind);
-		}
-	});
-
-	api.request({ kind: RequestKind.BuildInfo });
+	initApi(API_HOST);
+	request({ kind: RequestKind.BuildInfo });
 
 	let main!: HTMLElement;
 	let container: HTMLElement | null;
@@ -59,11 +33,7 @@ export function App(props: { children?: JSX.Element }) {
 	return (
 		<>
 			<MenuState />
-			<StatusBar
-				build={build()}
-				status={status()}
-				apiStatus={api.status()}
-			/>
+			<StatusBar />
 			<Navigation />
 			<main inert={mobileNavIsOpen()} ref={main}>
 				{props.children}

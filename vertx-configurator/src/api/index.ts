@@ -1,8 +1,10 @@
 import { makeReconnectingWS } from '@solid-primitives/websocket';
-import { type Accessor, createSignal, onCleanup } from 'solid-js';
+import { onCleanup } from 'solid-js';
+import { createStore } from 'solid-js/store';
 import {
 	type Request,
-	type Response,
+	type ResponseKind,
+	type ResponsePayload,
 	encodeRequest,
 	parseResponse,
 } from './protocol';
@@ -21,47 +23,36 @@ export const enum ApiStatus {
 	LostConnection,
 }
 
-export type Api = {
-	status: Accessor<ApiStatus>;
-	request: (request: Request) => void;
+type State = { status: ApiStatus } & {
+	[Kind in ResponseKind]?: ResponsePayload<Kind>;
 };
 
-export default function createApi(
-	host: string,
-	onResponse: (resp: Response) => void,
-): Api {
-	const [status, setStatus] = createSignal(ApiStatus.Connecting);
+let socket!: WebSocket;
+const [state, setState] = createStore<State>({ status: ApiStatus.Connecting });
+const setStatus = (status: ApiStatus) => setState('status', status);
 
-	const socket = makeReconnectingWS(`ws://${host}/ws`, 'v0', {
+export { state as api };
+export const request = (request: Request) =>
+	socket.send(encodeRequest(request));
+
+export function initApi(host: string) {
+	socket = makeReconnectingWS(`ws://${host}/ws`, 'v0', {
 		delay: 15_000,
 		retries: 5,
 	});
 
-	onCleanup(() => {
-		socket.close();
-	});
+	onCleanup(() => socket.close());
 
-	socket.addEventListener('open', () => {
-		setStatus(ApiStatus.Connected);
-	});
-
-	socket.addEventListener('close', () => {
-		setStatus(ApiStatus.LostConnection);
-	});
+	socket.addEventListener('open', () => setStatus(ApiStatus.Connected));
+	socket.addEventListener('close', () => setStatus(ApiStatus.LostConnection));
 
 	socket.addEventListener(
 		'message',
 		async ({ data }: MessageEvent<string | Blob>) => {
 			if (data instanceof Blob) {
-				onResponse(parseResponse(await data.arrayBuffer()));
+				const response = parseResponse(await data.arrayBuffer());
+				setState(response.kind, response.payload);
 			}
 		},
 	);
-
-	return {
-		status,
-		request(request) {
-			socket.send(encodeRequest(request));
-		},
-	};
 }
