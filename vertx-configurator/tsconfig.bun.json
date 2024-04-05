@@ -1,0 +1,14 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "@tsconfig/bun/tsconfig.json",
+	"compilerOptions": {
+		"allowJs": false,
+		"composite": true,
+		"noEmit": false,
+		"noPropertyAccessFromIndexSignature": false
+	},
+	"files": [
+		"compress.ts",
+		"vite.config.ts"
+	]
+}

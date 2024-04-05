@@ -13,7 +13,7 @@ fmt:
     @echo
     cargo bin dprint fmt
     @echo
-    cd vertx-configurator && pnpm biome format --write .
+    cd vertx-configurator && bun run -b biome format --write .
 
 # Check all subprojects
 check:
@@ -25,7 +25,7 @@ check:
 setup:
     cargo bin --install
     cargo bin --sync-aliases
-    cd vertx-configurator && pnpm install
+    cd vertx-configurator && bun install
     @echo
     @echo "The WIFI_SSID & WIFI_PASSWORD environment variables are required at build time."
     @echo "They will be automatically loaded from .env in the project root, if present."

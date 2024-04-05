@@ -57,14 +57,14 @@ jobs:
         working-directory: vertx-configurator
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3.0.0
-        with:
-          run_install: |
-            cwd: vertx-configurator
-            args: [--frozen-lockfile]
-          package_json_file: vertx-configurator/package.json
-      - run: pnpm vite build
-      - run: pnpm tsx compress.ts
+      - uses: asdf-vm/actions/setup@v3
+      - name: Install Bun
+        run: |
+          asdf plugin add bun https://github.com/cometkim/asdf-bun
+          asdf install bun
+      - run: bun install
+      - run: bun run -b vite build
+      - run: bun run compress.ts
       - uses: actions/upload-artifact@v4
         with:
           name: vertx-configurator
@@ -113,7 +113,7 @@ jobs:
       - run: cargo nextest run -p vertx-crsf
 
   biome:
-    name: Lint & format frontend
+    name: Lint & format configurator
     runs-on: ubuntu-latest
     defaults:
       run:
