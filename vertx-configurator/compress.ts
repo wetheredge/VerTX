@@ -1,16 +1,4 @@
-import { createReadStream, createWriteStream } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
-import { pipeline } from 'node:stream/promises';
-import { createGzip } from 'node:zlib';
-import glob from 'fast-glob';
 import { resolveConfig } from 'vite';
-
-const mimes: Record<string, string> = {
-	css: 'text/css',
-	html: 'text/html; charset=UTF-8',
-	js: 'text/javascript',
-	svg: 'image/svg+xml',
-};
 
 const viteConfig = await resolveConfig({}, 'build');
 const { outDir } = viteConfig.build;
@@ -22,35 +10,26 @@ const assets: Array<{
 	gzip: boolean;
 }> = [];
 
-for (const route of glob.sync('**', { dot: true, cwd: outDir })) {
+for await (const route of new Bun.Glob('**').scan({ dot: true, cwd: outDir })) {
 	const rawPath = `${outDir}/${route}`;
 	const compressedPath = `${rawPath}.gz`;
 
-	const reader = createReadStream(rawPath);
-	const gzip = createGzip();
-	const writer = createWriteStream(compressedPath);
+	const raw = Bun.file(rawPath);
+	const compressed = Bun.gzipSync(await raw.arrayBuffer());
 
-	await pipeline(reader, gzip, writer);
-
-	const useGzip = writer.bytesWritten < reader.bytesRead;
-
-	writer.close();
-	gzip.close();
-	reader.close();
-
-	const mime = mimes[route.split('.').at(-1)];
-	if (!mime) {
-		throw new Error(`unknown mime: '${route}'`);
+	const useGzip = compressed.byteLength < raw.size;
+	if (useGzip) {
+		await Bun.write(compressedPath, compressed);
 	}
 
 	const asset = {
 		route: `/${route.replace(/(index)?\.html$/, '')}`,
 		file: useGzip ? `${route}.gz` : route,
-		mime,
+		mime: raw.type,
 		gzip: useGzip,
 	};
 
 	assets.push(asset);
 }
 
-await writeFile(`${outDir}/assets.json`, JSON.stringify(assets));
+await Bun.write(`${outDir}/assets.json`, JSON.stringify(assets));

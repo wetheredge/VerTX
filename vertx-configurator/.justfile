@@ -5,24 +5,24 @@ clean:
     rm -r dist
 
 fmt:
-    pnpm biome format --write .
+    bun run -b biome format --write .
     cargo bin dprint fmt
 
 check:
-    pnpm biome ci .
-    pnpm tsc
+    bun run -b biome ci .
+    bun run -b tsc
 
 fix *args='.':
-    pnpm biome lint --apply {{ args }}
+    bun run -b biome lint --apply {{ args }}
 
 # Run a local dev server. Needs the vertx-api dev server running
 dev:
-    pnpm vite
+    bun run -b vite
 
 build: check
-    NODE_ENV=production pnpm vite build
-    pnpm tsx compress.ts
+    NODE_ENV=production bun run -b vite build
+    bun run compress.ts
 
 # Run a local server from the latest build artifacts. Needs the vertx-api dev server running
 preview:
-    pnpm vite preview
+    bun run -b vite preview
