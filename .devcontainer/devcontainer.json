@@ -36,7 +36,8 @@
 				"mutantdino.resourcemonitor",
 				"yzhang.markdown-all-in-one",
 				"biomejs.biome",
-				"dprint.dprint"
+				"dprint.dprint",
+				"ms-azuretools.vscode-docker"
 			]
 		}
 	},
