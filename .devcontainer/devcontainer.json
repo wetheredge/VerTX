@@ -13,7 +13,7 @@
 				"files.watcherExclude": {
 					"**/target/**": true
 				},
-				"biome.lspBin": "vertx-configurator/node_modules/.bin/biome",
+				"biome.lspBin": "vertx-configurator/scripts/biome-bun.sh",
 				"rust-analyzer.checkOnSave.command": "clippy",
 				"rust-analyzer.checkOnSave.allTargets": false,
 				"[rust]": {
