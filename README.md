@@ -32,16 +32,34 @@ exclusively for the ELRS transmitter module.
 
 ### Pre-requisites
 
-- Latest stable Rust toolchain: <https://rustup.rs/>
-- Nightly rustfmt:
-  `rustup toolchain install nightly --component rustfmt --profile minimal`
-- Latest Rust esp toolchain with the esp32s3 target:
-  <https://github.com/esp-rs/espup#installation>
-- [`just`](https://github.com/casey/just#installation) v1.17.0 or newer
+- [`rustup`](https://rustup.rs/)
+- [`espup`](https://github.com/esp-rs/espup#installation) with the latest Rust
+  esp toolchain and the esp32s3 target
 - [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall#installation)
-  (optional)
+  (optional, for faster installs)
 - [`cargo-run-bin`](https://github.com/dustinblackman/cargo-run-bin#install)
-- Node.js and [pnpm](https://pnpm.io/installation)
+- [`asdf`](https://asdf-vm.com/guide/getting-started.html)
+
+After installing the above list:
+
+```shell
+# Install/update nightly rustfmt
+$ rustup toolchain install nightly --component rustfmt --profile minimal
+
+# Install Rust esp toolchain
+$ espup install -t esp32s3
+
+# Install asdf plugins if necessary
+$ asdf plugin add bun https://github.com/cometkim/asdf-bun
+$ asdf plugin add just https://github.com/olofvndrhr/asdf-just
+$ asdf plugin add typos https://github.com/aschiavon91/asdf-typos
+
+$ asdf install
+$ just setup
+
+# On Linux, remember to load the esp toolchain environment before building vertx
+$ . ~/export-esp.sh
+```
 
 #### Or, use the devcontainer
 
