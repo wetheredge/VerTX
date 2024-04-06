@@ -1,0 +1,45 @@
+name: "Dependabot: update bun.lockb"
+
+on:
+  pull_request:
+    branches:
+      - 'dependabot/npm_and_yarn/**'
+
+permissions: none
+
+defaults:
+  run:
+    working-directory: vertx-configurator
+
+jobs:
+  update:
+    name: Update bun.lockb
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: asdf-vm/actions/setup@v3
+      - name: Install Bun
+        run: |
+          asdf plugin add bun https://github.com/cometkim/asdf-bun
+          asdf install bun
+      - run: bun install
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bun.lockb
+          path: vertx-configurator/bun.lockb
+
+  commit:
+    name: Commit & push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: bun.lockb
+          path: vertx-configurator/
+      - run: git commit --amend --no-edit -- bun.lockb
+      - run: git push --force
