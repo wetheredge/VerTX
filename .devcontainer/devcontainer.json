@@ -3,10 +3,7 @@
 	"build": {
 		"dockerfile": "./Dockerfile"
 	},
-	"features": {
-		"ghcr.io/devcontainers/features/node:1": {},
-		"ghcr.io/devcontainers-contrib/features/pnpm:2": {}
-	},
+	"onCreateCommand": "bash -ic 'asdf install && just setup'",
 	"customizations": {
 		"vscode": {
 			"settings": {
