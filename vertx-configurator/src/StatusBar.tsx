@@ -1,6 +1,7 @@
 import { MenuButton } from './MenuButton';
 import * as styles from './StatusBar.css';
 import { ApiStatus, ResponseKind, type ResponsePayload, api } from './api';
+import { formatVersion } from './utils';
 
 const connectionMessage = {
 	[ApiStatus.Connected]: 'Connected',
@@ -21,7 +22,7 @@ export function StatusBar() {
 			<span>
 				<MenuButton />
 				<span class={styles.vertxWithVersion}>
-					VerTX {version(api[ResponseKind.BuildInfo])}
+					VerTX {formatVersion(api[ResponseKind.BuildInfo])}
 				</span>
 				<span class={styles.vertxWithoutVersion}>VerTX</span>
 			</span>
@@ -34,16 +35,4 @@ export function StatusBar() {
 			</span>
 		</div>
 	);
-}
-
-function version(
-	build?: ResponsePayload<ResponseKind.BuildInfo>,
-): string | undefined {
-	if (!build) {
-		return;
-	}
-
-	// Unicode hyphen to avoid Inter's tnum feature making it into a minus sign
-	const suffix = build.suffix ? `\u{2011}${build.suffix}` : '';
-	return `v${build.major}.${build.minor}.${build.patch}${suffix}`;
 }
