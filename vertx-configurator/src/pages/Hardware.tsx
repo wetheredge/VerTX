@@ -1,3 +1,7 @@
 export default function Hardware() {
-	return 'TODO: hardware';
+	return (
+		<>
+			<h1>Hardware</h1>
+		</>
+	);
 }

@@ -1,3 +1,7 @@
 export default function Updates() {
-	return 'TODO: updates';
+	return (
+		<>
+			<h1>Updates</h1>
+		</>
+	);
 }

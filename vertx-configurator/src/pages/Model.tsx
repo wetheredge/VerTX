@@ -1,3 +1,7 @@
 export default function Model(props: { params: { id: string } }) {
-	return <>TODO: model {props.params.id}</>;
+	return (
+		<>
+			<h1>Model {props.params.id}</h1>
+		</>
+	);
 }

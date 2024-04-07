@@ -41,7 +41,7 @@ export const space = {
 export const fontSize = {
 	small: '0.875rem',
 	normal: '1rem',
-	large: '2rem',
+	heading: ['1.75rem', '1.5rem', '1.25rem'],
 } as const;
 
 export const transition = {
@@ -60,8 +60,10 @@ export const vars = createGlobalThemeContract(
 	{
 		colors: {
 			fg: null,
+			fgDim: null,
 			bgRoot: null,
 			bgSurface: null,
+			bgInput: null,
 			bgHover: null,
 			border: null,
 			borderFocus: null,
@@ -87,8 +89,10 @@ export const vars = createGlobalThemeContract(
 createGlobalTheme(':root', vars, {
 	colors: {
 		fg: 'black',
+		fgDim: 'black',
 		bgRoot: 'oklch(95% 0 0)',
 		bgSurface: 'white',
+		bgInput: 'oklch(99% 0 0)',
 		bgHover: 'oklch(0% 0 0 / 8%)',
 		border: 'oklch(80% 0 0)',
 		borderFocus: `oklch(55% ${vars.colors.raw.lightness} ${hues.blue})`,
@@ -114,8 +118,10 @@ globalStyle(':root', {
 		'(prefers-color-scheme: dark)': {
 			vars: {
 				[vars.colors.fg]: 'white',
+				[vars.colors.fgDim]: 'oklch(90% 0 0)',
 				[vars.colors.bgRoot]: 'black',
 				[vars.colors.bgSurface]: 'oklch(19% 0 0)',
+				[vars.colors.bgInput]: 'oklch(25% 0 0)',
 				[vars.colors.bgHover]: 'oklch(100% 0 0 / 13%)',
 				[vars.colors.border]: 'oklch(40% 0 0)',
 
