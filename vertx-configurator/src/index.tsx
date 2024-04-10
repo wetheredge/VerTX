@@ -2,10 +2,10 @@
 import { render } from 'solid-js/web';
 
 import { Navigate, Route, Router } from '@solidjs/router';
-import 'modern-normalize';
 import { type Component, lazy } from 'solid-js';
 import { App } from './App';
 import './index.css.ts';
+import './reset.css';
 
 // biome-ignore lint/style/noNonNullAssertion: #root is in the index.html template
 const root = document.getElementById('root')!;
