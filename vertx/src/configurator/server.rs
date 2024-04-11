@@ -2,7 +2,7 @@ use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
 use embassy_sync::signal::Signal;
 use embassy_time::Duration;
-use picoserve::routing::{get, PathRouter};
+use picoserve::routing::{get_service, PathRouter};
 use picoserve::{self, Config};
 use static_cell::make_static;
 use vertx_api::response;
@@ -18,8 +18,7 @@ pub type StatusSignal = Signal<crate::mutex::SingleCore, response::Status>;
 type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
     router! {
-        "/update" => crate::ota::HttpHandler
-        "/ws" => vertx_api::UpgradeHandler
+        "/ws" => get_service(vertx_api::UpgradeHandler)
     }
 }
 
@@ -30,6 +29,7 @@ static CONFIG: Config<Duration> = Config {
         write: Some(Duration::from_secs(2)),
     },
     connection: picoserve::KeepAlive::KeepAlive,
+    shutdown_method: picoserve::ShutdownMethod::Abort,
 };
 
 pub fn run(

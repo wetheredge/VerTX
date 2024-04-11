@@ -1,5 +1,6 @@
 use std::process;
 
+use picoserve::routing::get_service;
 use picoserve::Config;
 use rand::Rng;
 use tokio::net::TcpListener;
@@ -57,6 +58,7 @@ static CONFIG: Config<Duration> = picoserve::Config {
         write: Some(Duration::from_secs(1)),
     },
     connection: picoserve::KeepAlive::KeepAlive,
+    shutdown_method: picoserve::ShutdownMethod::Shutdown,
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -94,7 +96,8 @@ async fn main() {
             });
 
             let serve = task::spawn_local(async move {
-                let router = picoserve::Router::new().route("/ws", vertx_api::UpgradeHandler);
+                let router =
+                    picoserve::Router::new().route("/ws", get_service(vertx_api::UpgradeHandler));
 
                 let state = State::new(status_rx);
                 let socket = TcpListener::bind(addr).await.unwrap();

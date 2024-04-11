@@ -10,7 +10,7 @@ use embassy_futures::select;
 use picoserve::extract::FromRequest;
 use picoserve::io;
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
-use picoserve::routing::MethodHandler;
+use picoserve::routing::RequestHandlerService;
 
 pub use self::protocol::{response, Request, Response};
 
@@ -27,24 +27,24 @@ const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard
 #[derive(Debug)]
 pub struct UpgradeHandler;
 
-impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandler {
-    async fn call_method_handler<
+impl<S: State> RequestHandlerService<S> for UpgradeHandler {
+    async fn call_request_handler_service<
         R: io::Read,
         W: picoserve::response::ResponseWriter<Error = R::Error>,
     >(
         &self,
         state: &S,
-        _path_parameters: PathParameters,
+        _path_parameters: (),
         mut request: picoserve::request::Request<'_, R>,
         response_writer: W,
     ) -> Result<picoserve::ResponseSent, W::Error> {
-        let body = request.body.body();
+        let body = request.body_connection.body();
 
         let upgrade = match ws::WebSocketUpgrade::from_request(state, request.parts, body).await {
             Ok(upgrade) => upgrade,
             Err(rejection) => {
                 return rejection
-                    .write_to(request.body.finalize().await?, response_writer)
+                    .write_to(request.body_connection.finalize().await?, response_writer)
                     .await;
             }
         };
@@ -53,7 +53,7 @@ impl<S: State, PathParameters> MethodHandler<S, PathParameters> for UpgradeHandl
             .protocols()
             .is_some_and(|mut protocols| protocols.any(|p| p == protocol::NAME));
 
-        let connection = request.body.finalize().await?;
+        let connection = request.body_connection.finalize().await?;
         if valid_protocol {
             upgrade
                 .on_upgrade(Handler::new(state))
