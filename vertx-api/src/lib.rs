@@ -5,12 +5,12 @@ mod protocol;
 
 use core::future::Future;
 
-use bincode::error::EncodeError;
 use embassy_futures::select;
 use picoserve::extract::FromRequest;
 use picoserve::io;
+use picoserve::request::{Path, Request as HttpRequest};
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
-use picoserve::routing::RequestHandlerService;
+use picoserve::routing::PathRouterService;
 
 pub use self::protocol::{response, Request, Response};
 
@@ -27,7 +27,7 @@ const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard
 #[derive(Debug)]
 pub struct UpgradeHandler;
 
-impl<S: State> RequestHandlerService<S> for UpgradeHandler {
+impl<S: State> PathRouterService<S> for UpgradeHandler {
     async fn call_request_handler_service<
         R: io::Read,
         W: picoserve::response::ResponseWriter<Error = R::Error>,
@@ -35,35 +35,47 @@ impl<S: State> RequestHandlerService<S> for UpgradeHandler {
         &self,
         state: &S,
         _path_parameters: (),
-        mut request: picoserve::request::Request<'_, R>,
+        path: Path<'_>,
+        mut request: HttpRequest<'_, R>,
         response_writer: W,
     ) -> Result<picoserve::ResponseSent, W::Error> {
-        let body = request.body_connection.body();
+        match path.encoded() {
+            "" | "/" => {
+                let body = request.body_connection.body();
+                let upgrade = match ws::WebSocketUpgrade::from_request(state, request.parts, body)
+                    .await
+                {
+                    Ok(upgrade) => upgrade,
+                    Err(rejection) => {
+                        return rejection
+                            .write_to(request.body_connection.finalize().await?, response_writer)
+                            .await;
+                    }
+                };
 
-        let upgrade = match ws::WebSocketUpgrade::from_request(state, request.parts, body).await {
-            Ok(upgrade) => upgrade,
-            Err(rejection) => {
-                return rejection
-                    .write_to(request.body_connection.finalize().await?, response_writer)
-                    .await;
+                let valid_protocol = upgrade
+                    .protocols()
+                    .is_some_and(|mut protocols| protocols.any(|p| p == protocol::NAME));
+
+                let connection = request.body_connection.finalize().await?;
+                if valid_protocol {
+                    upgrade
+                        .on_upgrade(Handler::new(state))
+                        .with_protocol(protocol::NAME)
+                        .write_to(connection, response_writer)
+                        .await
+                } else {
+                    HttpResponse::new(StatusCode::BAD_REQUEST, "Invalid protocol")
+                        .write_to(connection, response_writer)
+                        .await
+                }
             }
-        };
-
-        let valid_protocol = upgrade
-            .protocols()
-            .is_some_and(|mut protocols| protocols.any(|p| p == protocol::NAME));
-
-        let connection = request.body_connection.finalize().await?;
-        if valid_protocol {
-            upgrade
-                .on_upgrade(Handler::new(state))
-                .with_protocol(protocol::NAME)
-                .write_to(connection, response_writer)
-                .await
-        } else {
-            HttpResponse::new(StatusCode::new(400), "Invalid protocol")
-                .write_to(connection, response_writer)
-                .await
+            _ => {
+                let connection = request.body_connection.finalize().await?;
+                HttpResponse::new(StatusCode::NOT_FOUND, "Not Found")
+                    .write_to(connection, response_writer)
+                    .await
+            }
         }
     }
 }

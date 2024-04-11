@@ -36,7 +36,7 @@ export const request = (request: Request) =>
 	socket.send(encodeRequest(request));
 
 export function initApi(host: string) {
-	socket = makeReconnectingWS(`ws://${host}/ws`, 'v0', {
+	socket = makeReconnectingWS(`ws://${host}/api`, 'v0', {
 		delay: 15_000,
 		retries: 5,
 	});

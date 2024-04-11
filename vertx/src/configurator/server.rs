@@ -18,7 +18,9 @@ include!(concat!(env!("OUT_DIR"), "/configurator.rs"));
 
 type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
-    picoserve::Router::new().nest_service("", AssetsRouter)
+    picoserve::Router::new()
+        .nest_service("", AssetsRouter)
+        .nest_service("/api", vertx_api::UpgradeHandler)
 }
 
 struct AssetsRouter;
@@ -35,14 +37,6 @@ impl PathRouterService<State> for AssetsRouter {
         response_writer: W,
     ) -> Result<ResponseSent, W::Error> {
         let path = path.encoded();
-
-        if path == "/ws" {
-            return vertx_api::UpgradeHandler
-                .call_request_handler_service(state, (), request, response_writer)
-                .await;
-        }
-
-        log::info!("path = {path:?}");
         let file = if let Ok(asset) = ASSETS.binary_search_by_key(&path, |(route, _)| route) {
             &ASSETS[asset].1
         } else {
