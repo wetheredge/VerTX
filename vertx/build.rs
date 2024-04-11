@@ -153,7 +153,7 @@ fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
             quote! {
                 .route(
                     #route,
-                    get(|| ::picoserve::response::fs::File::with_content_type_and_headers(
+                    ::picoserve::routing::get(|| ::picoserve::response::fs::File::with_content_type_and_headers(
                         #mime,
                         include_bytes!(#path),
                         &[#headers],

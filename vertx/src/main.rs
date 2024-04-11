@@ -18,7 +18,6 @@ mod flash;
 mod leds;
 mod mode;
 mod mutex;
-mod ota;
 
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
