@@ -2,8 +2,9 @@ use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
 use embassy_sync::signal::Signal;
 use embassy_time::Duration;
-use picoserve::routing::{get_service, PathRouter};
-use picoserve::{self, Config};
+use picoserve::response::ResponseWriter;
+use picoserve::routing::{PathRouter, PathRouterService, RequestHandlerService};
+use picoserve::{self, Config, ResponseSent};
 use static_cell::make_static;
 use vertx_api::response;
 
@@ -11,14 +12,44 @@ pub const TASKS: usize = 8;
 const TCP_BUFFER: usize = 1024;
 const HTTP_BUFFER: usize = 2048;
 
-include!(concat!(env!("OUT_DIR"), "/router.rs"));
-
 pub type StatusSignal = Signal<crate::mutex::SingleCore, response::Status>;
+
+include!(concat!(env!("OUT_DIR"), "/configurator.rs"));
 
 type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
-    router! {
-        "/ws" => get_service(vertx_api::UpgradeHandler)
+    picoserve::Router::new().nest_service("", AssetsRouter)
+}
+
+struct AssetsRouter;
+impl PathRouterService<State> for AssetsRouter {
+    async fn call_request_handler_service<
+        R: picoserve::io::Read,
+        W: ResponseWriter<Error = R::Error>,
+    >(
+        &self,
+        state: &State,
+        _current_path_parameters: (),
+        path: picoserve::request::Path<'_>,
+        request: picoserve::request::Request<'_, R>,
+        response_writer: W,
+    ) -> Result<ResponseSent, W::Error> {
+        let path = path.encoded();
+
+        if path == "/ws" {
+            return vertx_api::UpgradeHandler
+                .call_request_handler_service(state, (), request, response_writer)
+                .await;
+        }
+
+        log::info!("path = {path:?}");
+        let file = if let Ok(asset) = ASSETS.binary_search_by_key(&path, |(route, _)| route) {
+            &ASSETS[asset].1
+        } else {
+            &INDEX
+        };
+        file.call_request_handler_service(state, (), request, response_writer)
+            .await
     }
 }
 

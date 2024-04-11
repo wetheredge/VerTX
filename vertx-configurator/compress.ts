@@ -3,12 +3,16 @@ import { resolveConfig } from 'vite';
 const viteConfig = await resolveConfig({}, 'build');
 const { outDir } = viteConfig.build;
 
-const assets: Array<{
-	route: string;
-	file: string;
-	mime: string;
-	gzip: boolean;
-}> = [];
+type Asset = {
+	readonly route: string;
+	readonly file: string;
+	readonly mime: string;
+	readonly gzip: boolean;
+};
+
+const manifest: { index?: Asset; assets: Array<Asset> } = {
+	assets: [],
+};
 
 let totalSize = 0;
 for await (const route of new Bun.Glob('**').scan({ dot: true, cwd: outDir })) {
@@ -35,9 +39,13 @@ for await (const route of new Bun.Glob('**').scan({ dot: true, cwd: outDir })) {
 	}
 
 	totalSize += size;
-	assets.push(asset);
+	if (asset.route === '/') {
+		manifest.index = asset;
+	} else {
+		manifest.assets.push(asset);
+	}
 }
 
-await Bun.write(`${outDir}/assets.json`, JSON.stringify(assets));
+await Bun.write(`${outDir}/manifest.json`, JSON.stringify(manifest));
 
 console.info(`Total size: ${(totalSize / 1024).toFixed(2)}KiB`);

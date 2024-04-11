@@ -126,6 +126,12 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
 
 fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
+    struct Manifest {
+        index: Asset,
+        assets: Vec<Asset>,
+    }
+
+    #[derive(Debug, Deserialize)]
     struct Asset {
         route: String,
         file: String,
@@ -138,40 +144,34 @@ fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
     };
     println!("cargo:rerun-if-changed={}", web.display());
 
-    let assets = fs::read_to_string(web.join("assets.json"))?;
-    let assets: Vec<Asset> = serde_json::from_str(&assets).unwrap();
-
-    let assets = assets.into_iter().map(
-        |Asset {
-             route,
-             file,
-             mime,
-             gzip,
-         }| {
-            let headers = gzip.then(|| quote!(("Content-Encoding", "gzip")));
-            let path = web.join(file).display().to_string();
-            quote! {
-                .route(
-                    #route,
-                    ::picoserve::routing::get(|| ::picoserve::response::fs::File::with_content_type_and_headers(
-                        #mime,
-                        include_bytes!(#path),
-                        &[#headers],
-                    ))
-                )
-            }
-        },
-    );
-
-    let tokens = quote! {
-        macro_rules! router {
-            ($($route:literal => $handler:expr)*) => {
-                ::picoserve::Router::new()
-                    #(#assets)*
-                    $( .route($route, $handler) )*
-            }
-        }
+    let asset_into_file = |asset: &Asset| {
+        let Asset { mime, .. } = asset;
+        let path = web.join(&asset.file).display().to_string();
+        let headers = asset.gzip.then(|| quote!(("Content-Encoding", "gzip")));
+        quote!(::picoserve::response::File::with_content_type_and_headers(
+            #mime,
+            include_bytes!(#path),
+            &[#headers],
+        ))
     };
 
-    out_file!(format!("{out_dir}/router.rs"), tokens)
+    let assets = fs::read_to_string(web.join("manifest.json"))?;
+    let Manifest { index, mut assets } = serde_json::from_str(&assets).unwrap();
+
+    let index = asset_into_file(&index);
+
+    assets.sort_unstable_by(|a, b| a.route.cmp(&b.route));
+    let assets = assets.into_iter().map(|asset| {
+        let file = asset_into_file(&asset);
+        let Asset { route, .. } = asset;
+        quote!((#route, #file))
+    });
+    let assets = quote!( &[#(#assets),*] );
+
+    let tokens = quote! {
+        static INDEX: ::picoserve::response::File = #index;
+        #[allow(long_running_const_eval)]
+        static ASSETS: &[(&str, ::picoserve::response::File)] = #assets;
+    };
+    out_file!(format!("{out_dir}/configurator.rs"), tokens)
 }
