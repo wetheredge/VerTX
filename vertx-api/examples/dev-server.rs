@@ -73,53 +73,44 @@ async fn main() {
     let addr = "localhost:8080";
     let (status_tx, status_rx) = mpsc::channel(1);
 
-    let _ = task::LocalSet::new()
-        .run_until(async {
-            let status = task::spawn_local({
-                let status_tx = status_tx.clone();
-                async move {
-                    let mut interval = time::interval(Duration::from_secs(10));
+    let set = task::LocalSet::new();
 
-                    loop {
-                        interval.tick().await;
-                        status_tx
-                            .send(response::Status {
-                                battery_voltage: 390,
-                                idle_time: rand::thread_rng().gen_range(0.1..1.0),
-                                timing_drift: rand::thread_rng().gen_range(-0.01..=0.01),
-                            })
-                            .await
-                            .unwrap();
-                    }
-                }
-            });
+    set.spawn_local({
+        let status_tx = status_tx.clone();
+        async move {
+            let mut interval = time::interval(Duration::from_secs(10));
 
-            let serve = task::spawn_local(async move {
-                let router =
-                    picoserve::Router::new().nest_service("/api", vertx_api::UpgradeHandler);
-
-                let state = State::new(status_rx);
-                let socket = TcpListener::bind(addr).await.unwrap();
-                log::info!("Listening on http://{addr}/");
-                loop {
-                    let (stream, remote) = socket.accept().await.unwrap();
-                    log::debug!("Got connection from {remote}");
-
-                    if let Err(err) = picoserve::serve_with_state(
-                        &router,
-                        &CONFIG,
-                        &mut [0; 2048],
-                        stream,
-                        &state,
-                    )
+            loop {
+                interval.tick().await;
+                status_tx
+                    .send(response::Status {
+                        battery_voltage: 390,
+                        idle_time: rand::thread_rng().gen_range(0.1..1.0),
+                        timing_drift: rand::thread_rng().gen_range(-0.01..=0.01),
+                    })
                     .await
-                    {
-                        log::error!("Error: {err:?}");
-                    }
-                }
-            });
+                    .unwrap();
+            }
+        }
+    });
 
-            tokio::join!(status, serve)
-        })
-        .await;
+    set.spawn_local(async move {
+        let router = picoserve::Router::new().nest_service("/api", vertx_api::UpgradeHandler);
+
+        let state = State::new(status_rx);
+        let socket = TcpListener::bind(addr).await.unwrap();
+        log::info!("Listening on http://{addr}/");
+        loop {
+            let (stream, remote) = socket.accept().await.unwrap();
+            log::debug!("Got connection from {remote}");
+
+            if let Err(err) =
+                picoserve::serve_with_state(&router, &CONFIG, &mut [0; 2048], stream, &state).await
+            {
+                log::error!("Error: {err:?}");
+            }
+        }
+    });
+
+    set.await;
 }
