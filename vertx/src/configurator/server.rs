@@ -1,5 +1,8 @@
+use core::future::Future;
+
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
+use embassy_sync::mutex::Mutex;
 use embassy_sync::signal::Signal;
 use embassy_time::Duration;
 use picoserve::response::ResponseWriter;
@@ -20,7 +23,7 @@ type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
     picoserve::Router::new()
         .nest_service("", AssetsRouter)
-        .nest_service("/api", vertx_api::UpgradeHandler)
+        .nest_service("/api", vertx_api::Service)
 }
 
 struct AssetsRouter;
@@ -62,9 +65,14 @@ pub fn run(
     stack: &'static super::wifi::Stack<'static>,
     mode: crate::mode::Publisher<'static>,
     status: &'static StatusSignal,
+    ota: crate::ota::Manager,
 ) {
     let app = make_static!(router());
-    let state = make_static!(State { status });
+    let state = make_static!(State {
+        status,
+        ota: Mutex::new(ota),
+        ota_status: Signal::new(),
+    });
 
     let mut mode = Some(mode);
     for id in 0..TASKS {
@@ -108,6 +116,8 @@ async fn worker(
 
 struct State {
     status: &'static StatusSignal,
+    ota: Mutex<crate::mutex::SingleCore, crate::ota::Manager>,
+    ota_status: Signal<crate::mutex::SingleCore, response::UpdateProgress>,
 }
 
 impl vertx_api::State for State {
@@ -115,6 +125,18 @@ impl vertx_api::State for State {
 
     async fn status(&self) -> response::Status {
         self.status.wait().await
+    }
+
+    fn update_progress(&self) -> impl Future<Output = response::UpdateProgress> {
+        self.ota_status.wait()
+    }
+
+    async fn update<R: picoserve::io::Read>(
+        &self,
+        reader: picoserve::request::RequestBodyReader<'_, R>,
+    ) {
+        let mut ota = self.ota.lock().await;
+        ota.update(reader, &self.ota_status).await;
     }
 
     fn power_off(&self) -> ! {

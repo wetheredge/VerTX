@@ -1,5 +1,6 @@
 use std::process;
 
+use picoserve::request::RequestBodyReader;
 use picoserve::Config;
 use rand::Rng;
 use tokio::net::TcpListener;
@@ -37,6 +38,14 @@ impl vertx_api::State for State {
 
     async fn status(&self) -> response::Status {
         (self.status.lock().await.recv().await).unwrap()
+    }
+
+    async fn update_progress(&self) -> response::UpdateProgress {
+        std::future::pending().await
+    }
+
+    async fn update<R: picoserve::io::Read>(&self, update: RequestBodyReader<'_, R>) {
+        log::info!("Received {} byte update", update.content_length());
     }
 
     fn power_off(&self) -> ! {
@@ -95,7 +104,7 @@ async fn main() {
     });
 
     set.spawn_local(async move {
-        let router = picoserve::Router::new().nest_service("/api", vertx_api::UpgradeHandler);
+        let router = picoserve::Router::new().nest_service("/api", vertx_api::Service);
 
         let state = State::new(status_rx);
         let socket = TcpListener::bind(addr).await.unwrap();

@@ -10,6 +10,7 @@ workspace = true
 
 [dependencies]
 bytemuck = { version = "1.15.0", features = ["min_const_generics"] }
+crc = { workspace = true }
 embassy-executor = { version = "0.5.0", features = ["nightly"] }
 embassy-futures = "0.1.1"
 embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-hostname"] }

@@ -17,6 +17,15 @@ export {
 	RequestKind,
 } from './protocol';
 
+const DEV_API_PORT = 8080;
+const HOST =
+	import.meta.env.MODE === 'production'
+		? location.host
+		: import.meta.env.CODESPACE_NAME
+			? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
+			: `localhost:${DEV_API_PORT}`;
+export const API_BASE = `${HOST}/api`;
+
 export const enum ApiStatus {
 	Connecting,
 	Connected,
@@ -35,8 +44,8 @@ export { state as api };
 export const request = (request: Request) =>
 	socket.send(encodeRequest(request));
 
-export function initApi(host: string) {
-	socket = makeReconnectingWS(`ws://${host}/api`, 'v0', {
+export function initApi() {
+	socket = makeReconnectingWS(`ws://${API_BASE}`, 'v0', {
 		delay: 15_000,
 		retries: 5,
 	});

@@ -8,8 +8,8 @@ use core::future::Future;
 use embassy_futures::select;
 use picoserve::extract::FromRequest;
 use picoserve::io;
-use picoserve::request::{Path, Request as HttpRequest};
-use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
+use picoserve::request::{Path, Request as HttpRequest, RequestBodyReader};
+use picoserve::response::{ws, IntoResponse, Response as HttpResponse, ResponseWriter, StatusCode};
 use picoserve::routing::PathRouterService;
 
 pub use self::protocol::{response, Request, Response};
@@ -18,6 +18,8 @@ pub trait State {
     const BUILD_INFO: response::BuildInfo;
 
     fn status(&self) -> impl Future<Output = response::Status>;
+    fn update_progress(&self) -> impl Future<Output = response::UpdateProgress>;
+    fn update<R: io::Read>(&self, update: RequestBodyReader<'_, R>) -> impl Future<Output = ()>;
     fn power_off(&self) -> !;
     fn reboot(&self) -> !;
 }
@@ -25,13 +27,10 @@ pub trait State {
 const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
 
 #[derive(Debug)]
-pub struct UpgradeHandler;
+pub struct Service;
 
-impl<S: State> PathRouterService<S> for UpgradeHandler {
-    async fn call_request_handler_service<
-        R: io::Read,
-        W: picoserve::response::ResponseWriter<Error = R::Error>,
-    >(
+impl<S: State> PathRouterService<S> for Service {
+    async fn call_request_handler_service<R: io::Read, W: ResponseWriter<Error = R::Error>>(
         &self,
         state: &S,
         _path_parameters: (),
@@ -39,42 +38,65 @@ impl<S: State> PathRouterService<S> for UpgradeHandler {
         mut request: HttpRequest<'_, R>,
         response_writer: W,
     ) -> Result<picoserve::ResponseSent, W::Error> {
+        macro_rules! send {
+            (ok) => {
+                send!(HttpResponse::new(StatusCode::OK, "OK"))
+            };
+            ($response:expr) => {{
+                let connection = request.body_connection.finalize().await?;
+                $response.write_to(connection, response_writer).await
+            }};
+        }
+
+        macro_rules! guard_method {
+            ($method:literal) => {
+                if !request.parts.method().eq_ignore_ascii_case($method) {
+                    return send!(
+                        HttpResponse::new(StatusCode::METHOD_NOT_ALLOWED, "Method Not Allowed")
+                            .with_header("Allow", $method)
+                    );
+                }
+            };
+        }
+
         match path.encoded() {
             "" | "/" => {
                 let body = request.body_connection.body();
-                let upgrade = match ws::WebSocketUpgrade::from_request(state, request.parts, body)
-                    .await
-                {
-                    Ok(upgrade) => upgrade,
-                    Err(rejection) => {
-                        return rejection
-                            .write_to(request.body_connection.finalize().await?, response_writer)
-                            .await;
-                    }
-                };
+                let upgrade =
+                    match ws::WebSocketUpgrade::from_request(state, request.parts, body).await {
+                        Ok(upgrade) => upgrade,
+                        Err(rejection) => return send!(rejection),
+                    };
 
                 let valid_protocol = upgrade
                     .protocols()
                     .is_some_and(|mut protocols| protocols.any(|p| p == protocol::NAME));
 
-                let connection = request.body_connection.finalize().await?;
                 if valid_protocol {
-                    upgrade
-                        .on_upgrade(Handler::new(state))
-                        .with_protocol(protocol::NAME)
-                        .write_to(connection, response_writer)
-                        .await
+                    send!(
+                        upgrade
+                            .on_upgrade(Handler::new(state))
+                            .with_protocol(protocol::NAME)
+                    )
                 } else {
-                    HttpResponse::new(StatusCode::BAD_REQUEST, "Invalid protocol")
-                        .write_to(connection, response_writer)
-                        .await
+                    send!(HttpResponse::new(
+                        StatusCode::BAD_REQUEST,
+                        "Invalid protocol"
+                    ))
                 }
             }
+            "/ping" => {
+                guard_method!("GET");
+                send!(ok)
+            }
+            "/update" => {
+                guard_method!("POST");
+                let body = request.body_connection.body().reader();
+                state.update(body).await;
+                send!(ok)
+            }
             _ => {
-                let connection = request.body_connection.finalize().await?;
-                HttpResponse::new(StatusCode::NOT_FOUND, "Not Found")
-                    .write_to(connection, response_writer)
-                    .await
+                send!(HttpResponse::new(StatusCode::NOT_FOUND, "Not Found"))
             }
         }
     }
@@ -125,12 +147,16 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
 
         loop {
             let status = self.state.status();
+            let update_progress = self.state.update_progress();
             let request = rx.next_message(&mut req_buffer);
 
-            match select::select(status, request).await {
-                select::Either::First(status) => self.send::<W>(status.into(), &mut tx).await?,
+            match select::select3(status, update_progress, request).await {
+                select::Either3::First(status) => self.send::<W>(status.into(), &mut tx).await?,
+                select::Either3::Second(progress) => {
+                    self.send::<W>(progress.into(), &mut tx).await?;
+                }
 
-                select::Either::Second(request) => match request {
+                select::Either3::Third(request) => match request {
                     Ok(Message::Binary(request)) => {
                         let request = match bincode::decode_from_slice(request, BINCODE_CONFIG) {
                             Ok((request, _)) => request,

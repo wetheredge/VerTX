@@ -71,6 +71,10 @@ response! {
         idle_time: f32,
         timing_drift: f32,
     },
+    UpdateProgress {
+        /// Number of bytes written
+        written: u32,
+    },
     // Inputs,
     // Mixer,
 }

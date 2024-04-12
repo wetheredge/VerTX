@@ -1807,6 +1807,7 @@ version = "0.0.0"
 dependencies = [
  "bytemuck",
  "cargo_toml",
+ "crc",
  "embassy-executor",
  "embassy-futures",
  "embassy-net",

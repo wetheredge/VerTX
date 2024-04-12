@@ -25,9 +25,9 @@ pub struct Config {
 }
 
 impl Manager {
-    pub fn new(partitions: &mut Vec<Partition>) -> Manager {
+    pub fn new(partitions: &mut Vec<Partition>) -> Self {
         let partition = partitions.iter().position(Partition::is_config).unwrap();
-        let partition = partitions.swap_remove(partition);
+        let partition = partitions.remove(partition);
 
         let mut length = [0; 1];
         partition.read_into(0, &mut length).unwrap();

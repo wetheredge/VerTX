@@ -48,6 +48,7 @@ export const enum ResponseKind {
 	ProtocolVersion,
 	BuildInfo,
 	Status,
+	UpdateProgress,
 }
 
 export type Response =
@@ -80,6 +81,12 @@ export type Response =
 				batteryVoltage: number;
 				idleTime: number;
 				timingDrift: number;
+			};
+	  }
+	| {
+			kind: ResponseKind.UpdateProgress;
+			payload: {
+				written: number;
 			};
 	  };
 
@@ -122,6 +129,13 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 					batteryVoltage: reader.varint() / 100,
 					idleTime: reader.f32(),
 					timingDrift: reader.f32(),
+				},
+			};
+		case ResponseKind.UpdateProgress:
+			return {
+				kind,
+				payload: {
+					written: reader.varint(),
 				},
 			};
 

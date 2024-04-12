@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 
 pub const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
+pub const SECTOR_WORDS: u32 = SECTOR_BYTES / 4;
 const PARTITION_TABLE_ADDRESS: u32 = 0x8000;
 const PARTITION_TABLE_SIZE: usize = 0xC00;
 
@@ -121,14 +122,6 @@ impl Partition {
         matches!(self.kind, CUSTOM_TYPE_CONFIG)
     }
 
-    #[allow(unused)]
-    pub const fn is_ota(&self) -> bool {
-        match self.kind {
-            PartitionKind::App(partition) => partition.is_ota(),
-            _ => false,
-        }
-    }
-
     pub fn read_into(&self, offset: u32, buffer: &mut [u32]) -> Result<(), i32> {
         self.bounds_check(offset, buffer.len());
         let start = self.start + offset * 4;
@@ -148,7 +141,6 @@ impl Partition {
         unsafe { esp_storage::ll::spiflash_erase_sector(sector) }
     }
 
-    #[allow(unused)]
     pub fn write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;
@@ -159,7 +151,6 @@ impl Partition {
         unsafe { esp_storage::ll::spiflash_write(start, data.as_ptr(), data.len() as u32 * 4) }
     }
 
-    #[allow(unused)]
     pub fn erase_and_write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;
@@ -248,7 +239,7 @@ byte_enum! {
 }
 
 impl AppPartitionKind {
-    const fn is_ota(self) -> bool {
+    pub const fn is_ota(self) -> bool {
         (self as u8) & 0xF0 == 0x10
     }
 }

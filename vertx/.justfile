@@ -11,11 +11,11 @@ fmt:
 check $VERTX_TARGET='devkit' *args='':
     cargo +esp clippy {{ args }}
 
-build $VERTX_TARGET:
+build $VERTX_TARGET: && make-bin
     cargo +esp build
     cp ../target/xtensa-esp32s3-none-elf/debug/vertx ../target/vertx
 
-build-release $VERTX_TARGET:
+build-release $VERTX_TARGET: && make-bin
     cargo +esp build --release
     cp ../target/xtensa-esp32s3-none-elf/release/vertx ../target/vertx
 
@@ -24,6 +24,10 @@ erase-config:
 
 flash:
     cargo bin espflash flash --partition-table partitions.csv --flash-size 16mb --baud 460800 --monitor ../target/vertx
+
+[private]
+make-bin:
+    cargo bin espflash save-image --flash-size 16mb --chip esp32s3 ../target/vertx ../target/vertx.bin
 
 monitor:
     cargo bin espflash monitor

@@ -18,6 +18,7 @@ mod flash;
 mod leds;
 mod mode;
 mod mutex;
+mod ota;
 
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
@@ -105,6 +106,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
     let config = make_static!(config::Manager::new(&mut partitions));
+    let ota = ota::Manager::new(partitions);
 
     let configurator_enabled = configurator::IsEnabled::new();
     spawner.must_spawn(configurator::toggle_button(
@@ -129,7 +131,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             system.radio_clock_control,
         );
 
-        configurator::server::run(&spawner, stack, mode.publisher(), status_signal);
+        configurator::server::run(&spawner, stack, mode.publisher(), status_signal, ota);
     } else {
         log::info!("Configurator disabled");
         mode.publish(crate::Mode::Ok);
