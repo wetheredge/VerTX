@@ -182,7 +182,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                     }
 
                     Ok(Message::Ping(payload)) => tx.send_pong(payload).await?,
-                    Ok(Message::Close(close)) => break tx.close(close).await,
+                    Ok(Message::Close(_)) => break tx.close(None).await,
 
                     Ok(Message::Text(_)) | Ok(Message::Pong(_)) => continue,
                     Err(err) => {

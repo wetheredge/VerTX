@@ -96,17 +96,21 @@ const apiStatusBase = style({
 	border: `${borderWidth} solid oklch(${apiStatusColor})`,
 });
 
-export const apiStatus = styleVariants({
-	[ApiStatus.Connected]: [
-		apiStatusBase,
-		{ vars: { [apiStatusColor]: vars.colors.raw.green } },
-	],
+const partialApiStatus = styleVariants({
 	[ApiStatus.Connecting]: [
 		apiStatusBase,
 		{ vars: { [apiStatusColor]: vars.colors.raw.orange } },
+	],
+	[ApiStatus.Connected]: [
+		apiStatusBase,
+		{ vars: { [apiStatusColor]: vars.colors.raw.green } },
 	],
 	[ApiStatus.LostConnection]: [
 		apiStatusBase,
 		{ vars: { [apiStatusColor]: vars.colors.raw.red } },
 	],
 });
+export const apiStatus: Record<ApiStatus, string> = {
+	...partialApiStatus,
+	[ApiStatus.Reconnecting]: partialApiStatus[ApiStatus.Connecting],
+};

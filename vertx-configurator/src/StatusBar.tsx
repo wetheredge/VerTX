@@ -4,8 +4,9 @@ import { ApiStatus, ResponseKind, type ResponsePayload, api } from './api';
 import { formatVersion } from './utils';
 
 const connectionMessage = {
-	[ApiStatus.Connected]: 'Connected',
 	[ApiStatus.Connecting]: 'Connecting',
+	[ApiStatus.Connected]: 'Connected',
+	[ApiStatus.Reconnecting]: 'Reconnecting',
 	[ApiStatus.LostConnection]: 'Lost connection',
 };
 

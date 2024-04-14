@@ -87,7 +87,7 @@ async fn main() {
     set.spawn_local({
         let status_tx = status_tx.clone();
         async move {
-            let mut interval = time::interval(Duration::from_secs(10));
+            let mut interval = time::interval(Duration::from_secs(1));
 
             loop {
                 interval.tick().await;
