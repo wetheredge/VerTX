@@ -14,12 +14,17 @@ export default function About() {
 type BuildInfo = ResponsePayload<ResponseKind.BuildInfo>;
 
 function BuildInfoTable(props: { build?: BuildInfo }) {
+	const profile = () => {
+		const debug = props.build?.debug;
+		return debug == null ? '' : debug ? 'dev' : 'release';
+	};
+
 	return (
 		<table class={styles.buildInfoTable}>
 			<tbody>
 				<Row name="Target" value={props.build?.target} />
 				<Row name="Version" value={formatVersion(props.build)} />
-				<Row name="Debug" value={props.build?.debug.toString()} />
+				<Row name="Profile" value={profile()} />
 				<Row name="Branch" value={props.build?.git.branch} />
 				<Row name="Commit" value={formatCommit(props.build)} />
 			</tbody>
