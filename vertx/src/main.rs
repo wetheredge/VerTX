@@ -26,13 +26,15 @@ use embassy_executor::{task, Spawner};
 use embassy_time::{Duration, Ticker};
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
+use esp_hal::embassy;
 use esp_hal::embassy::executor::Executor;
+use esp_hal::gpio::IO;
 use esp_hal::peripherals::Peripherals;
 use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
+use esp_hal::rng::Rng;
 use esp_hal::timer::TimerGroup;
 use esp_hal::xtensa_lx::timer::get_cycle_count;
-use esp_hal::{embassy, Rng, IO};
 use esp_hal_smartled::SmartLedsAdapter;
 use log::LevelFilter;
 use portable_atomic::{AtomicU32, Ordering};
@@ -76,13 +78,13 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     esp_println::logger::init_logger(LOG_LEVEL);
     log::info!("Logger initialized");
 
-    embassy::init(&clocks, TimerGroup::new(peripherals.TIMG0, &clocks));
+    embassy::init(&clocks, TimerGroup::new_async(peripherals.TIMG0, &clocks));
 
     let status_signal = make_static!(configurator::server::StatusSignal::new());
     spawner.must_spawn(status(idle_cycles, status_signal));
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks).unwrap();
+    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks, None).unwrap();
 
     let mode = make_static!(mode::Channel::new());
 
@@ -115,7 +117,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         mode.publish(crate::Mode::PreConfigurator);
 
         let rng = Rng::new(peripherals.RNG);
-        let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
+        let timer = TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
 
         let stack = configurator::wifi::run(
             &spawner,
