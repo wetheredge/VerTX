@@ -15,13 +15,12 @@ embassy-futures = "0.1.1"
 embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-hostname"] }
 embassy-sync = "0.5.0"
 embassy-time = { version = "0.3.0", features = ["generic-queue-8"] }
-embedded-hal-async = "1.0.0"
 esp-alloc = { version = "0.3.0" }
-esp-backtrace = { version = "0.10.0", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "print-uart"] }
-esp-hal-smartled = { version = "0.9.0", features = ["esp32s3"] }
+esp-backtrace = { version = "0.11.1", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "println"] }
+esp-hal-smartled = { version = "0.10.0", features = ["esp32s3"] }
 esp-println = { version = "0.9.1", features = ["esp32s3", "log"] }
 esp-storage = { version = "0.3.0", default-features = false, features = ["esp32s3", "low-level", "storage", "critical-section"] }
-esp-wifi = { version = "0.3.0", features = ["esp32s3", "wifi", "embassy-net"] }
+esp-wifi = { version = "0.5.0", features = ["esp32s3", "wifi", "embassy-net"] }
 heapless = "0.8.0"
 log = { version = "0.4.21" }
 picoserve = { workspace = true, features = ["embassy"] }
@@ -34,7 +33,7 @@ vertx-api = { workspace = true }
 # vertx-crsf = { workspace = true }
 
 [dependencies.esp-hal]
-version = "0.16.0"
+version = "0.17.0"
 features = [
     "esp32s3",
     "opsram-8m",

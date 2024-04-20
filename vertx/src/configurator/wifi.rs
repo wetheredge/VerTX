@@ -53,8 +53,8 @@ pub fn run(
     spawner: &Spawner,
     config: &'static crate::Config,
     clocks: &Clocks,
-    timer: timer::Timer<timer::Timer0<peripherals::TIMG1>>,
-    mut rng: esp_hal::Rng,
+    timer: timer::Timer<timer::Timer0<peripherals::TIMG1>, esp_hal::Blocking>,
+    mut rng: esp_hal::rng::Rng,
     device: impl Peripheral<P = peripherals::WIFI> + 'static,
     radio_clocks: esp_hal::system::RadioClockControl,
 ) -> &'static Stack<'static> {

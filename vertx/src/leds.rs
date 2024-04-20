@@ -123,7 +123,7 @@ impl Effect {
 
 #[task]
 pub async fn run(
-    mut leds: SmartLedsAdapter<Channel<0>, { BUFFER_SIZE }>,
+    mut leds: SmartLedsAdapter<Channel<esp_hal::Blocking, 0>, { BUFFER_SIZE }>,
     mut mode: crate::mode::Subscriber<'static>,
 ) -> ! {
     log::info!("Starting leds()");

@@ -6,7 +6,6 @@ use core::mem::MaybeUninit;
 use core::sync::atomic::{AtomicBool, Ordering};
 
 use embassy_executor::task;
-use embedded_hal_async::digital::Wait;
 use esp_hal::gpio::{self, AnyPin};
 use esp_hal::macros::ram;
 use esp_hal::reset;
@@ -69,7 +68,7 @@ impl IsEnabled {
 
 #[task]
 pub async fn toggle_button(mut button: AnyPin<gpio::Input<gpio::PullUp>>, enabled: IsEnabled) {
-    button.wait_for_falling_edge().await.unwrap();
+    button.wait_for_falling_edge().await;
     enabled.toggle();
     reset::software_reset();
 }
