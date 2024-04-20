@@ -16,9 +16,9 @@ vertx-api.path = "vertx-api"
 vertx-crsf.path = "vertx-crsf"
 
 [workspace.metadata.bin]
-cargo-machete = { version = "0.6.1", locked = true }
-cargo-nextest = { version = "0.9.57", locked = true }
-dprint = { version = "0.45.0", locked = true }
+cargo-machete = { version = "0.6.2", locked = true }
+cargo-nextest = { version = "0.9.68", locked = true }
+dprint = { version = "0.45.1", locked = true }
 espflash = { version = "3.0.0", locked = true }
 
 [profile.dev.package.esp-storage]
