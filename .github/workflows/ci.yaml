@@ -23,8 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Sync with /Cargo.toml
-      - uses: bnjbvr/cargo-machete@v0.6.1
+      - name: Install cargo-machete
+        uses: taiki-e/install-action@v2
+        with:
+          # Sync with /Cargo.toml
+          tool: cargo-machete@0.6.1
+      - run: cargo machete
 
   rustfmt:
     name: Rust format
