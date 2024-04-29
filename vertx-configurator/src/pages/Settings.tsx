@@ -60,7 +60,13 @@ export default function Settings() {
 			<SettingInput id="wifi-ssid" label="SSID" type="text" />
 			<SettingInput id="wifi-password" label="Password" type="password" />
 
-			<h2>Danger zone</h2>
+			<h2 id={styles.dangerId}>Danger zone</h2>
+
+			<SettingCheckbox
+				id="advanced-settings"
+				label="Enable advanced settings"
+				description="These settings are unnecessary for most users and can easily cause problems if configured incorrectly."
+			/>
 		</>
 	);
 }
@@ -101,6 +107,7 @@ function SettingSelect<V extends string | number>(
 		</SettingBase>
 	);
 }
+
 function SettingBase(props: SettingProps & { children: JSX.Element }) {
 	return (
 		<div class={styles.setting}>
@@ -109,6 +116,23 @@ function SettingBase(props: SettingProps & { children: JSX.Element }) {
 				<span id={`${props.id}-desc`}>{props.description}</span>
 			</Show>
 			{props.children}
+		</div>
+	);
+}
+
+function SettingCheckbox(props: SettingProps) {
+	const descriptionId = () => `${props.id}-desc`;
+	return (
+		<div class={styles.settingCheckbox}>
+			<input
+				id={props.id}
+				type="checkbox"
+				aria-describedby={props.description && descriptionId()}
+			/>
+			<label for={props.id}>{props.label}</label>
+			<Show when={props.description}>
+				<span id={descriptionId()}>{props.description}</span>
+			</Show>
 		</div>
 	);
 }
