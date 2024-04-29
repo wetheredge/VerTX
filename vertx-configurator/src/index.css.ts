@@ -4,6 +4,7 @@ import {
 	fontFace,
 	generateIdentifier,
 	globalStyle,
+	style,
 } from '@vanilla-extract/css';
 import inter from 'inter-ui/variable/InterVariable.woff2?url';
 
@@ -67,6 +68,7 @@ export const vars = createGlobalThemeContract(
 			bgHover: null,
 			border: null,
 			borderFocus: null,
+			borderFocusDanger: null,
 
 			raw: {
 				lightness: null,
@@ -96,6 +98,7 @@ createGlobalTheme(':root', vars, {
 		bgHover: 'oklch(0% 0 0 / 8%)',
 		border: 'oklch(80% 0 0)',
 		borderFocus: `oklch(55% ${vars.colors.raw.lightness} ${hues.blue})`,
+		borderFocusDanger: `oklch(55% ${vars.colors.raw.lightness} ${hues.red})`,
 
 		raw: {
 			lightness: '72%',
@@ -136,4 +139,19 @@ globalStyle('body', {
 	fontFeatureSettings: '"case", "dlig"',
 	color: vars.colors.fg,
 	background: vars.colors.bgSurface,
+});
+
+export const button = style({
+	cursor: 'pointer',
+	width: 'fit-content',
+	border: vars.border,
+	borderRadius: space.sm,
+	color: vars.colors.fg,
+	background: vars.colors.bgInput,
+	padding: `${space.xs} ${space.sm}`,
+	outline: 'none',
+
+	':focus-visible': {
+		borderColor: vars.colors.borderFocus,
+	},
 });
