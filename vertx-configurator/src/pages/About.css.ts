@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { space, vars } from '../index.css';
+import { consts, vars } from '../index.css';
 
 export const buildInfoTable = style({
 	borderCollapse: 'collapse',
@@ -9,7 +9,7 @@ export const buildInfoTable = style({
 	width: 'fit-content',
 });
 globalStyle(`${buildInfoTable} :is(th, td)`, {
-	padding: `${space.xs} ${space.sm}`,
+	padding: `${consts.space.xs} ${consts.space.sm}`,
 	border: vars.border,
 	textAlign: 'unset',
 });

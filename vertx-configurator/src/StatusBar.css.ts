@@ -6,28 +6,21 @@ import {
 } from '@vanilla-extract/css';
 import { padding as menuButtonPadding } from './MenuButton.css';
 import { ApiStatus } from './api';
-import {
-	borderWidth,
-	fontSize,
-	mediaIsMobile,
-	pagePadding,
-	space,
-	vars,
-} from './index.css';
+import { consts, vars } from './index.css';
 
-const rootPadding = space.sm;
-const statusFontSize = fontSize.small;
-const statusPadding = space.xs;
+const rootPadding = consts.space.sm;
+const statusFontSize = consts.fontSize.small;
+const statusPadding = consts.space.xs;
 export const height = createVar('status-bar-height');
 globalStyle(':root', {
 	vars: {
-		[height]: `calc(${pagePadding.top} + ${rootPadding} * 2 + max(1rem, ${statusFontSize} + (${statusPadding} + ${borderWidth}) * 2))`,
+		[height]: `calc(${consts.pagePadding.top} + ${rootPadding} * 2 + max(1rem, ${statusFontSize} + (${statusPadding} + ${consts.border.width}) * 2))`,
 	},
 	'@media': {
-		[mediaIsMobile]: {
+		[consts.isMobile]: {
 			vars: {
 				// Add space.button -- height of the menu button
-				[height]: `calc(${pagePadding.top} + ${rootPadding} * 2 + max(1rem, ${statusFontSize} + (${statusPadding} + ${borderWidth}) * 2, ${space.button}))`,
+				[height]: `calc(${consts.pagePadding.top} + ${rootPadding} * 2 + max(1rem, ${statusFontSize} + (${statusPadding} + ${consts.border.width}) * 2, ${consts.space.button}))`,
 			},
 		},
 	},
@@ -45,15 +38,15 @@ export const root = style({
 
 	display: 'flex',
 	alignItems: 'center',
-	gap: space.sm,
-	paddingTop: `calc(${rootPadding} + ${pagePadding.top})`,
+	gap: consts.space.sm,
+	paddingTop: `calc(${rootPadding} + ${consts.pagePadding.top})`,
 	paddingBottom: rootPadding,
-	paddingLeft: `calc(${space.md} + ${pagePadding.left})`,
-	paddingRight: `calc(${space.md} + ${pagePadding.right})`,
+	paddingLeft: `calc(${consts.space.md} + ${consts.pagePadding.left})`,
+	paddingRight: `calc(${consts.space.md} + ${consts.pagePadding.right})`,
 
 	'@media': {
-		[mediaIsMobile]: {
-			paddingLeft: `calc(${space.md} + ${pagePadding.left} - ${menuButtonPadding})`,
+		[consts.isMobile]: {
+			paddingLeft: `calc(${consts.space.md} + ${consts.pagePadding.left} - ${menuButtonPadding})`,
 		},
 	},
 });
@@ -67,12 +60,12 @@ globalStyle(`${root} > :is(:first-child, :last-child)`, {
 });
 globalStyle(`${root} > :last-child`, {
 	justifyContent: 'flex-end',
-	gap: space.sm,
+	gap: consts.space.sm,
 });
 
 export const vertxWithVersion = style({
 	'@media': {
-		[mediaIsMobile]: {
+		[consts.isMobile]: {
 			display: 'none',
 		},
 	},
@@ -80,7 +73,7 @@ export const vertxWithVersion = style({
 
 export const vertxWithoutVersion = style({
 	'@media': {
-		[`not ${mediaIsMobile}`]: {
+		[`not ${consts.isMobile}`]: {
 			display: 'none',
 		},
 	},
@@ -88,12 +81,12 @@ export const vertxWithoutVersion = style({
 
 const apiStatusColor = createVar('api-status-color');
 const apiStatusBase = style({
-	padding: `${statusPadding} ${space.sm}`,
-	borderRadius: space.md,
+	padding: `${statusPadding} ${consts.space.sm}`,
+	borderRadius: consts.space.md,
 	fontSize: statusFontSize,
 	lineHeight: 1,
 	background: `oklch(${apiStatusColor} / 0.7)`,
-	border: `${borderWidth} solid oklch(${apiStatusColor})`,
+	border: `${consts.border.width} solid oklch(${apiStatusColor})`,
 });
 
 const partialApiStatus = styleVariants({

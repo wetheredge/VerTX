@@ -1,27 +1,20 @@
 import { createVar, globalStyle, style } from '@vanilla-extract/css';
 import { menuClosed } from './MenuButton.css';
 import { height as statusBarHeight } from './StatusBar.css';
-import {
-	borderBase,
-	mediaIsMobile,
-	pagePadding,
-	space,
-	transition,
-	vars,
-} from './index.css';
+import { consts, vars } from './index.css';
 
-const padding = space.md;
+const padding = consts.space.md;
 
 export const width = createVar('navigation-width');
 globalStyle(':root', {
 	vars: {
-		[width]: `calc(${pagePadding.left} + clamp(200px, 30vw, 300px))`,
+		[width]: `calc(${consts.pagePadding.left} + clamp(200px, 30vw, 300px))`,
 	},
 	'@media': {
-		[mediaIsMobile]: {
+		[consts.isMobile]: {
 			vars: {
 				// Matches main's padding from App.css.ts
-				[width]: `calc(${pagePadding.left} + min(100vw - ${space.lg}, 300px))`,
+				[width]: `calc(${consts.pagePadding.left} + min(100vw - ${consts.space.lg}, 300px))`,
 			},
 		},
 	},
@@ -33,8 +26,8 @@ export const root = style({
 	top: statusBarHeight,
 	left: 0,
 	bottom: 0,
-	paddingLeft: pagePadding.left,
-	paddingBottom: pagePadding.bottom,
+	paddingLeft: consts.pagePadding.left,
+	paddingBottom: consts.pagePadding.bottom,
 	overflowY: 'auto',
 	overscrollBehavior: 'contain',
 
@@ -46,17 +39,17 @@ export const root = style({
 	width,
 
 	'@media': {
-		[mediaIsMobile]: {
+		[consts.isMobile]: {
 			vars: {
 				[visibilityDelay]: '0s',
 			},
 
-			transition: `transform ${transition.short} ${transition.timing}, opacity ${transition.short} ${transition.timing}, visibility 0s linear ${visibilityDelay}`,
+			transition: `transform ${consts.transition.short}, opacity ${consts.transition.short}, visibility 0s linear ${visibilityDelay}`,
 			transformOrigin: 'left',
 			selectors: {
 				[`${menuClosed} ~ &`]: {
 					vars: {
-						[visibilityDelay]: transition.short,
+						[visibilityDelay]: consts.transition.shortTime,
 					},
 
 					transform: 'translateX(-4px) scale(98%)',
@@ -73,13 +66,13 @@ export const nav = style({
 	flexDirection: 'column',
 	flexGrow: 1,
 	padding: padding,
-	gap: space.xs,
+	gap: consts.space.xs,
 });
 const navLink = `${nav} > a`;
 globalStyle(navLink, {
 	textDecoration: 'none',
-	lineHeight: space.button,
-	paddingInline: space.md,
+	lineHeight: consts.space.button,
+	paddingInline: consts.space.md,
 	display: 'flex',
 	alignItems: 'center',
 	overflow: 'hidden',
@@ -98,7 +91,7 @@ globalStyle(`${navLink} > :last-child`, {
 });
 
 export const navIcon = style({
-	marginInlineEnd: space.sm,
+	marginInlineEnd: consts.space.sm,
 });
 
 export const modelsHeader = style({
@@ -108,7 +101,7 @@ export const modelsHeader = style({
 
 	fontSize: '1.05em',
 	fontWeight: 600,
-	marginTop: space.sm,
+	marginTop: consts.space.sm,
 });
 
 export const newModel = style({
@@ -117,16 +110,16 @@ export const newModel = style({
 	display: 'inline-flex',
 	justifyContent: 'center',
 	alignItems: 'center',
-	width: space.button,
-	height: space.button,
-	borderRadius: space.sm,
+	width: consts.space.button,
+	height: consts.space.button,
+	borderRadius: consts.space.sm,
 });
 
 globalStyle(`${navLink}, ${newModel}`, {
 	color: 'inherit',
 	background: 'none',
-	borderRadius: space.sm,
-	border: `${borderBase} transparent`,
+	borderRadius: consts.space.sm,
+	border: `${consts.border.base} transparent`,
 	outline: 'none',
 });
 globalStyle(`:is(${navLink}:not(.active), ${newModel}):hover`, {

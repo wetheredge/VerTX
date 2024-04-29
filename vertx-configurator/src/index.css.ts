@@ -14,24 +14,29 @@ const font = fontFace(
 		fontStyle: 'normal',
 		fontWeight: '100 900',
 		fontDisplay: 'swap',
+		fontFeatureSettings: '"case", "dlig"',
 	},
 	'inter',
 );
 
-export const maxWidth = '1200px';
-export const maxMobileWidth = '600px';
+const maxWidth = '1200px';
+const maxMobileWidth = '600px';
 export const mediaIsMobile = `(max-width: ${maxMobileWidth})`;
 const pagePaddingBase = `max(0px, calc((100vw - ${maxWidth}) / 2))`;
-export const pagePadding = {
+const pagePadding = {
 	top: 'env(safe-area-inset-top)',
 	bottom: 'env(safe-area-inset-bottom)',
 	left: `calc(${pagePaddingBase} + env(safe-area-inset-left))`,
 	right: `calc(${pagePaddingBase} + env(safe-area-inset-right))`,
 };
-export const borderWidth = '1px';
-export const borderBase = `${borderWidth} solid`;
 
-export const space = {
+const borderWidth = '1px';
+const border = {
+	base: `${borderWidth} solid`,
+	width: borderWidth,
+} as const;
+
+const space = {
 	xs: '0.25rem',
 	sm: '0.5rem',
 	md: '1rem',
@@ -39,22 +44,33 @@ export const space = {
 	button: '2.5rem',
 } as const;
 
-export const fontSize = {
+const fontSize = {
 	small: '0.875rem',
 	normal: '1rem',
 	heading: ['1.75rem', '1.5rem', '1.25rem'],
 } as const;
 
-export const transition = {
-	short: '300ms',
-	timing: 'cubic-bezier(0.61, 1, 0.88, 1)',
+const transitionShort = '300ms';
+const transition = {
+	shortTime: transitionShort,
+	short: `${transitionShort} cubic-bezier(0.61, 1, 0.88, 1)`,
 } as const;
 
-export const hues = {
+const hues = {
 	green: 158,
 	blue: 250,
 	orange: 52,
 	red: 18,
+} as const;
+
+export const consts = {
+	border,
+	fontSize,
+	hues,
+	isMobile: mediaIsMobile,
+	pagePadding,
+	space,
+	transition,
 } as const;
 
 export const vars = createGlobalThemeContract(
@@ -113,7 +129,7 @@ createGlobalTheme(':root', vars, {
 		orange: `oklch(${vars.colors.raw.orange})`,
 		red: `oklch(${vars.colors.raw.red})`,
 	},
-	border: `${borderBase} ${vars.colors.border}`,
+	border: `${border.base} ${vars.colors.border}`,
 });
 
 globalStyle(':root', {
@@ -136,7 +152,6 @@ globalStyle(':root', {
 
 globalStyle('body', {
 	fontFamily: `${font}, system-ui, sans-serif`,
-	fontFeatureSettings: '"case", "dlig"',
 	color: vars.colors.fg,
 	background: vars.colors.bgSurface,
 });

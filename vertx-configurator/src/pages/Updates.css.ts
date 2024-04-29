@@ -1,12 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import {
-	borderBase,
-	button,
-	fontSize,
-	space,
-	transition,
-	vars,
-} from '../index.css';
+import { button, consts, vars } from '../index.css';
 
 export const localUpdate = button;
 globalStyle(`${localUpdate} > input`, {
@@ -16,15 +9,15 @@ globalStyle(`${localUpdate} > input`, {
 export const updateDialog = style({
 	color: vars.colors.fg,
 	margin: 'auto',
-	padding: space.md,
+	padding: consts.space.md,
 	background: vars.colors.bgSurface,
 	border: vars.border,
-	borderRadius: space.md,
+	borderRadius: consts.space.md,
 	outline: 'none',
 
 	display: 'flex',
 	flexDirection: 'column',
-	gap: space.sm,
+	gap: consts.space.sm,
 	width: '30ch',
 
 	':focus-visible': {
@@ -42,18 +35,18 @@ export const updateDialog = style({
 	},
 });
 globalStyle(`${updateDialog} h2`, {
-	fontSize: fontSize.heading[2],
+	fontSize: consts.fontSize.heading[2],
 	fontWeight: 'normal',
 });
 globalStyle(`${updateDialog} progress`, {
-	height: space.md,
-	borderRadius: space.md,
-	border: `${borderBase} ${vars.colors.green}`,
+	height: consts.space.md,
+	borderRadius: consts.space.md,
+	border: `${consts.border.base} ${vars.colors.green}`,
 	background: 'none',
 });
 globalStyle(`${updateDialog} ::-moz-progress-bar`, {
 	background: `oklch(${vars.colors.raw.green} / 0.7)`,
-	transition: `width ${transition.short} ${transition.timing}`,
+	transition: `width ${consts.transition.short}`,
 });
 export const updateDialogButton = style([
 	button,
