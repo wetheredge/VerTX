@@ -1,12 +1,12 @@
 import { generateIdentifier, globalStyle, style } from '@vanilla-extract/css';
-import { borderBase, mediaIsMobile, space, vars } from './index.css';
+import { consts, vars } from './index.css';
 
 export const id = generateIdentifier('navigation-menu-state');
 export const menuOpen = `#${id}:checked`;
 export const menuClosed = `#${id}:not(:checked)`;
 
 export const iconSize = '1.25em';
-const size = space.button;
+const size = consts.size.button;
 export const padding = `calc((${size} - ${iconSize}) / 2)`;
 
 export const button = style({
@@ -15,19 +15,19 @@ export const button = style({
 	display: 'none',
 	justifyContent: 'center',
 	alignItems: 'center',
-	width: space.button,
-	height: space.button,
+	width: consts.size.button,
+	height: consts.size.button,
 	flex: '0 0 auto',
 	outline: 'none',
-	borderRadius: space.sm,
-	border: `${borderBase} transparent`,
+	borderRadius: consts.size.sm,
+	border: `${consts.border.base} transparent`,
 
 	':focus-visible': {
 		borderColor: vars.colors.borderFocus,
 	},
 
 	'@media': {
-		[mediaIsMobile]: {
+		[consts.isMobile]: {
 			display: 'inline-flex',
 		},
 

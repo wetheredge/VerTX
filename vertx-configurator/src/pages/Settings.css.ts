@@ -1,9 +1,9 @@
 import { generateIdentifier, globalStyle, style } from '@vanilla-extract/css';
-import { fontSize, mediaIsMobile, space, vars } from '../index.css';
+import { consts, vars } from '../index.css';
 
 export const dangerId = generateIdentifier('danger-zone');
 const dangerSelector = `#${dangerId} ~`;
-const gap = space.sm;
+const gap = consts.size.sm;
 
 export const setting = style({
 	display: 'flex',
@@ -14,14 +14,14 @@ globalStyle(`${setting} > :is(input, select)`, {
 	width: '25ch',
 
 	border: vars.border,
-	borderRadius: space.sm,
+	borderRadius: consts.size.sm,
 	color: 'inherit',
 	background: vars.colors.bgInput,
-	padding: `${space.xs} ${space.sm}`,
+	padding: `${consts.size.xs} ${consts.size.sm}`,
 	outline: 'none',
 
 	'@media': {
-		[mediaIsMobile]: {
+		[consts.isMobile]: {
 			width: '100%',
 		},
 	},
@@ -54,6 +54,6 @@ globalStyle(`${allSettings} > label`, {
 	fontWeight: 500,
 });
 globalStyle(`${allSettings} > span`, {
-	fontSize: fontSize.small,
+	fontSize: consts.fontSize.small,
 	color: vars.colors.fgDim,
 });

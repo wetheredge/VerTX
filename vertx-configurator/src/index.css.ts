@@ -8,55 +8,6 @@ import {
 } from '@vanilla-extract/css';
 import inter from 'inter-ui/variable/InterVariable.woff2?url';
 
-const font = fontFace(
-	{
-		src: `local('InterVariable'), url(${inter}) format("woff2")`,
-		fontStyle: 'normal',
-		fontWeight: '100 900',
-		fontDisplay: 'swap',
-	},
-	'inter',
-);
-
-export const maxWidth = '1200px';
-export const maxMobileWidth = '600px';
-export const mediaIsMobile = `(max-width: ${maxMobileWidth})`;
-const pagePaddingBase = `max(0px, calc((100vw - ${maxWidth}) / 2))`;
-export const pagePadding = {
-	top: 'env(safe-area-inset-top)',
-	bottom: 'env(safe-area-inset-bottom)',
-	left: `calc(${pagePaddingBase} + env(safe-area-inset-left))`,
-	right: `calc(${pagePaddingBase} + env(safe-area-inset-right))`,
-};
-export const borderWidth = '1px';
-export const borderBase = `${borderWidth} solid`;
-
-export const space = {
-	xs: '0.25rem',
-	sm: '0.5rem',
-	md: '1rem',
-	lg: '2rem',
-	button: '2.5rem',
-} as const;
-
-export const fontSize = {
-	small: '0.875rem',
-	normal: '1rem',
-	heading: ['1.75rem', '1.5rem', '1.25rem'],
-} as const;
-
-export const transition = {
-	short: '300ms',
-	timing: 'cubic-bezier(0.61, 1, 0.88, 1)',
-} as const;
-
-export const hues = {
-	green: 158,
-	blue: 250,
-	orange: 52,
-	red: 18,
-} as const;
-
 export const vars = createGlobalThemeContract(
 	{
 		colors: {
@@ -70,13 +21,7 @@ export const vars = createGlobalThemeContract(
 			borderFocus: null,
 			borderFocusDanger: null,
 
-			raw: {
-				lightness: null,
-				green: null,
-				blue: null,
-				orange: null,
-				red: null,
-			},
+			lightness: null,
 
 			green: null,
 			blue: null,
@@ -88,6 +33,75 @@ export const vars = createGlobalThemeContract(
 	(_, path) => generateIdentifier(path.join('-')),
 );
 
+const font = fontFace(
+	{
+		src: `local('InterVariable'), url(${inter}) format("woff2")`,
+		fontStyle: 'normal',
+		fontWeight: '100 900',
+		fontDisplay: 'swap',
+		fontFeatureSettings: '"case", "dlig"',
+	},
+	'inter',
+);
+
+const maxWidth = '1200px';
+const maxMobileWidth = '600px';
+export const mediaIsMobile = `(max-width: ${maxMobileWidth})`;
+const pagePaddingBase = `max(0px, calc((100vw - ${maxWidth}) / 2))`;
+const pagePadding = {
+	top: 'env(safe-area-inset-top)',
+	bottom: 'env(safe-area-inset-bottom)',
+	left: `calc(${pagePaddingBase} + env(safe-area-inset-left))`,
+	right: `calc(${pagePaddingBase} + env(safe-area-inset-right))`,
+} as const;
+
+const borderWidth = '1px';
+const border = {
+	base: `${borderWidth} solid`,
+	width: borderWidth,
+} as const;
+
+const size = {
+	xs: '0.25rem',
+	sm: '0.5rem',
+	md: '1rem',
+	lg: '2rem',
+	button: '2.5rem',
+} as const;
+
+const fontSize = {
+	small: '0.875rem',
+	normal: '1rem',
+	heading: ['1.75rem', '1.5rem', '1.25rem'],
+} as const;
+
+const transitionShort = '300ms';
+const transition = {
+	shortTime: transitionShort,
+	short: `${transitionShort} cubic-bezier(0.61, 1, 0.88, 1)`,
+} as const;
+
+const colors = {
+	lc: `${vars.colors.lightness} 0.15`,
+	hues: {
+		green: 158,
+		blue: 250,
+		orange: 52,
+		red: 18,
+	},
+	opacity: 0.7,
+} as const;
+
+export const consts = {
+	border,
+	colors,
+	fontSize,
+	isMobile: mediaIsMobile,
+	pagePadding,
+	size,
+	transition,
+} as const;
+
 createGlobalTheme(':root', vars, {
 	colors: {
 		fg: 'black',
@@ -97,23 +111,17 @@ createGlobalTheme(':root', vars, {
 		bgInput: 'oklch(99% 0 0)',
 		bgHover: 'oklch(0% 0 0 / 8%)',
 		border: 'oklch(80% 0 0)',
-		borderFocus: `oklch(55% ${vars.colors.raw.lightness} ${hues.blue})`,
-		borderFocusDanger: `oklch(55% ${vars.colors.raw.lightness} ${hues.red})`,
+		borderFocus: `oklch(55% 0.25 ${colors.hues.blue})`,
+		borderFocusDanger: `oklch(55% 0.25 ${colors.hues.red})`,
 
-		raw: {
-			lightness: '72%',
-			green: `${vars.colors.raw.lightness} 0.15 ${hues.green}`,
-			blue: `${vars.colors.raw.lightness} 0.15 ${hues.blue}`,
-			orange: `${vars.colors.raw.lightness} 0.15 ${hues.orange}`,
-			red: `${vars.colors.raw.lightness} 0.15 ${hues.red}`,
-		},
+		lightness: '72%',
 
-		green: `oklch(${vars.colors.raw.green})`,
-		blue: `oklch(${vars.colors.raw.blue})`,
-		orange: `oklch(${vars.colors.raw.orange})`,
-		red: `oklch(${vars.colors.raw.red})`,
+		green: `oklch(${colors.lc} ${colors.hues.green})`,
+		blue: `oklch(${colors.lc} ${colors.hues.blue})`,
+		orange: `oklch(${colors.lc} ${colors.hues.orange})`,
+		red: `oklch(${colors.lc} ${colors.hues.red})`,
 	},
-	border: `${borderBase} ${vars.colors.border}`,
+	border: `${border.base} ${vars.colors.border}`,
 });
 
 globalStyle(':root', {
@@ -128,7 +136,7 @@ globalStyle(':root', {
 				[vars.colors.bgHover]: 'oklch(100% 0 0 / 13%)',
 				[vars.colors.border]: 'oklch(40% 0 0)',
 
-				[vars.colors.raw.lightness]: '65%',
+				[vars.colors.lightness]: '65%',
 			},
 		},
 	},
@@ -136,7 +144,6 @@ globalStyle(':root', {
 
 globalStyle('body', {
 	fontFamily: `${font}, system-ui, sans-serif`,
-	fontFeatureSettings: '"case", "dlig"',
 	color: vars.colors.fg,
 	background: vars.colors.bgSurface,
 });
@@ -145,10 +152,10 @@ export const button = style({
 	cursor: 'pointer',
 	width: 'fit-content',
 	border: vars.border,
-	borderRadius: space.sm,
+	borderRadius: size.sm,
 	color: vars.colors.fg,
 	background: vars.colors.bgInput,
-	padding: `${space.xs} ${space.sm}`,
+	padding: `${size.xs} ${size.sm}`,
 	outline: 'none',
 
 	':focus-visible': {
