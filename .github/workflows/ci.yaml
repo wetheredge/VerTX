@@ -113,7 +113,7 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           # Sync with /Cargo.toml
-          tool: nextest@0.9.68
+          tool: nextest@0.9.70
       - run: cargo nextest run -p vertx-crsf
 
   biome:
@@ -147,5 +147,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Sync with /Cargo.toml
-      - uses: crate-ci/typos@v1.19.0
+      # Sync with /.tool-versions
+      - uses: crate-ci/typos@v1.21.0
