@@ -10,5 +10,5 @@ workspace = true
 
 [dependencies]
 bitfield = "0.14.0"
-crc = "3.0.1"
+crc = "3.2.1"
 embedded-io = { workspace = true }
