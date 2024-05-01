@@ -624,10 +624,10 @@
   resolved "https://registry.npmjs.org/@solid-primitives/websocket/-/websocket-1.2.2.tgz"
   integrity sha512-kKiDAOy9eGyWgeNI/gF0L5ZDT9Wf0DYJlsqcq/n6DFSIOfEykvoFW8oRGoRN0KprE42MO9/Kkn/v1mj+iHow7w==
 
-"@solidjs/router@^0.13.0":
-  version "0.13.1"
-  resolved "https://registry.npmjs.org/@solidjs/router/-/router-0.13.1.tgz"
-  integrity sha512-Rz5Lf0ssWMuN+Wm2GFO0vwZoO/KSwYFSuCUzWrRAvje5M0ZYZrMk5FZxuzdJT+zg8KuqWJQlRALks5E0r+FjAA==
+"@solidjs/router@^0.13.3":
+  version "0.13.3"
+  resolved "https://registry.yarnpkg.com/@solidjs/router/-/router-0.13.3.tgz#f520362d716a58c0416a33372ae9e5ed1a26be9a"
+  integrity sha512-p8zznlvnN3KySMXqT8irhubgDNTETNa/guaGHU/cZl7kuiPO3PmkWNYfoNCygtEpoxLmLpf62/ZKeyhFdZexsw==
 
 "@tsconfig/bun@^1.0.5":
   version "1.0.5"
