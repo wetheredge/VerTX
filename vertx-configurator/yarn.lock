@@ -1060,10 +1060,10 @@ lru-cache@^5.1.1:
   dependencies:
     yallist "^3.0.2"
 
-lucide-solid@^0.363.0:
-  version "0.363.0"
-  resolved "https://registry.npmjs.org/lucide-solid/-/lucide-solid-0.363.0.tgz"
-  integrity sha512-6iXbSKvyfcr8EUUcIAwz+Ez6zupQjuhQgRGy8n7tLq5kWsuK6zshN8V3D848X8Z5nubnTFoWeKKbSTXjE5VhAQ==
+lucide-solid@^0.376.0:
+  version "0.376.0"
+  resolved "https://registry.yarnpkg.com/lucide-solid/-/lucide-solid-0.376.0.tgz#cce5e3b088d58814ef4bcae95f3483accfb99425"
+  integrity sha512-xqqpDz62/WdXKIXoRAhD7JIvj5ZpExOcAH5IEqG3QclwXRtgNz/I3wnrBlgljVEDViea5ASaT0pTlTUYyc++og==
 
 media-query-parser@^2.0.2:
   version "2.0.2"
