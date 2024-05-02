@@ -54,6 +54,9 @@ globalStyle(`body:has(#root > ${menuOpen})`, {
 globalStyle('main :is(h1, h2, h3, p)', {
 	margin: 0,
 });
+globalStyle('main > :not(h1) ~ h2', {
+	marginTop: space.md,
+});
 globalStyle('main h1', {
 	fontSize: fontSize.heading[0],
 });
@@ -62,7 +65,4 @@ globalStyle('main h2', {
 });
 globalStyle('main h3', {
 	fontSize: fontSize.heading[2],
-});
-globalStyle('main h1:not(:first-child)', {
-	marginTop: space.md,
 });
