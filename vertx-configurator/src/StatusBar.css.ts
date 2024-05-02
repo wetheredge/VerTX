@@ -68,6 +68,7 @@ globalStyle(`${root} > :is(:first-child, :last-child)`, {
 globalStyle(`${root} > :last-child`, {
 	justifyContent: 'flex-end',
 	gap: space.sm,
+	fontFeatureSettings: '"tnum"',
 });
 
 export const vertxWithVersion = style({
