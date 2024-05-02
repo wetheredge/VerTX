@@ -3,6 +3,7 @@ import { onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import {
 	type Request,
+	RequestKind,
 	type ResponseKind,
 	type ResponsePayload,
 	encodeRequest,
@@ -43,7 +44,10 @@ export function initApi(host: string) {
 
 	onCleanup(() => socket.close());
 
-	socket.addEventListener('open', () => setStatus(ApiStatus.Connected));
+	socket.addEventListener('open', () => {
+		setStatus(ApiStatus.Connected);
+		request({ kind: RequestKind.ProtocolVersion });
+	});
 	socket.addEventListener('close', () => setStatus(ApiStatus.LostConnection));
 
 	socket.addEventListener(

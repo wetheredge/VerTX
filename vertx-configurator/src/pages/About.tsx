@@ -6,22 +6,27 @@ export default function About() {
 	return (
 		<>
 			<h1>About</h1>
-			<BuildInfoTable build={api[ResponseKind.BuildInfo]} />
+			<BuildInfoTable
+				build={api[ResponseKind.BuildInfo]}
+				protocol={api[ResponseKind.ProtocolVersion]}
+			/>
 		</>
 	);
 }
 
+type Protocol = ResponsePayload<ResponseKind.ProtocolVersion>;
 type BuildInfo = ResponsePayload<ResponseKind.BuildInfo>;
 
-function BuildInfoTable(props: { build?: BuildInfo }) {
-	const profile = () => {
-		const debug = props.build?.debug;
-		return debug == null ? '' : debug ? 'dev' : 'release';
-	};
+function BuildInfoTable(props: { build?: BuildInfo; protocol?: Protocol }) {
+	const profile = () =>
+		props.build?.debug == null ? '' : props.build.debug ? 'dev' : 'release';
+	const protocol = () =>
+		props.protocol && `v${props.protocol.major}.${props.protocol.minor}`;
 
 	return (
 		<table class={styles.buildInfoTable}>
 			<tbody>
+				<Row name="Protocol" value={protocol()} />
 				<Row name="Target" value={props.build?.target} />
 				<Row name="Version" value={formatVersion(props.build)} />
 				<Row name="Profile" value={profile()} />
