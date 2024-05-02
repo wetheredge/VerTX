@@ -1,5 +1,6 @@
 import { Menu, X } from 'lucide-solid';
 import { createSignal, onMount } from 'solid-js';
+import { ButtonIcon } from './ButtonIcon';
 import * as styles from './MenuButton.css';
 import { mediaIsMobile } from './index.css';
 
@@ -21,18 +22,8 @@ export function MenuButton() {
 				}
 			}}
 		>
-			<Menu
-				size={styles.iconSize}
-				strokeWidth="3"
-				class={styles.iconMenu}
-				aria-hidden="true"
-			/>
-			<X
-				size={styles.iconSize}
-				strokeWidth="3"
-				class={styles.iconX}
-				aria-hidden="true"
-			/>
+			<ButtonIcon class={styles.iconMenu} icon={Menu} />
+			<ButtonIcon class={styles.iconX} icon={X} />
 		</label>
 	);
 }

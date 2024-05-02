@@ -4,7 +4,6 @@ import {
 	style,
 	styleVariants,
 } from '@vanilla-extract/css';
-import { padding as menuButtonPadding } from './MenuButton.css';
 import { ApiStatus } from './api';
 import { consts, vars } from './index.css';
 
@@ -46,7 +45,7 @@ export const root = style({
 
 	'@media': {
 		[consts.isMobile]: {
-			paddingLeft: `calc(${consts.size.md} + ${consts.pagePadding.left} - ${menuButtonPadding})`,
+			paddingLeft: `calc(${consts.size.md} + ${consts.pagePadding.left} - ((${consts.size.button} - ${consts.size.buttonIcon}) / 2))`,
 		},
 	},
 });

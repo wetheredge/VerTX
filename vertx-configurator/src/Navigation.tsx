@@ -10,6 +10,7 @@ import {
 	Sparkles,
 } from 'lucide-solid';
 import { For, onCleanup, onMount } from 'solid-js';
+import { ButtonIcon } from './ButtonIcon';
 import { closeMenu } from './MenuButton';
 import * as styles from './Navigation.css';
 
@@ -59,11 +60,7 @@ export function Navigation() {
 						onClick={() => console.error('TODO: create new model')}
 						aria-label="New model"
 					>
-						<Plus
-							size="1.25em"
-							strokeWidth="3"
-							aria-hidden="true"
-						/>
+						<ButtonIcon icon={Plus} />
 					</button>
 				</div>
 				<For each={models}>

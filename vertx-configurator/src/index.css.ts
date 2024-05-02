@@ -1,9 +1,11 @@
 import {
+	type ComplexStyleRule,
 	createGlobalTheme,
 	createGlobalThemeContract,
 	fontFace,
 	generateIdentifier,
 	globalStyle,
+	layer,
 	style,
 } from '@vanilla-extract/css';
 import inter from 'inter-ui/variable/InterVariable.woff2?url';
@@ -61,12 +63,14 @@ const border = {
 	width: borderWidth,
 } as const;
 
+export const buttonIconSize = '1.25rem';
 const size = {
 	xs: '0.25rem',
 	sm: '0.5rem',
 	md: '1rem',
 	lg: '2rem',
 	button: '2.5rem',
+	buttonIcon: buttonIconSize,
 } as const;
 
 const fontSize = {
@@ -148,17 +152,54 @@ globalStyle('body', {
 	background: vars.colors.bgSurface,
 });
 
-export const button = style({
+const components = layer('components');
+
+const buttonBase: ComplexStyleRule = {
 	cursor: 'pointer',
-	width: 'fit-content',
-	border: vars.border,
+	outline: 'none',
+
 	borderRadius: size.sm,
 	color: vars.colors.fg,
-	background: vars.colors.bgInput,
-	padding: `${size.xs} ${size.sm}`,
-	outline: 'none',
 
 	':focus-visible': {
 		borderColor: vars.colors.borderFocus,
+	},
+
+	'@media': {
+		'(hover: hover)': {
+			':hover': {
+				background: vars.colors.bgHover,
+			},
+		},
+	},
+};
+
+export const button = style({
+	'@layer': {
+		[components]: {
+			...buttonBase,
+
+			width: 'fit-content',
+			background: vars.colors.bgInput,
+			padding: `${size.xs} ${size.sm}`,
+			border: vars.border,
+		},
+	},
+});
+
+export const iconButton = style({
+	'@layer': {
+		[components]: {
+			...buttonBase,
+
+			display: 'inline-flex',
+			flex: '0 0 auto',
+			justifyContent: 'center',
+			alignItems: 'center',
+			width: size.button,
+			height: size.button,
+			border: `${border.base} transparent`,
+			background: 'none',
+		},
 	},
 });
