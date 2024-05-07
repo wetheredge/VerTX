@@ -53,12 +53,15 @@ static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 ///
 /// # Safety
 ///
-/// Must be called exactly once
+/// Must be called exactly once, before any allocations
 unsafe fn init_heap() {
     const HEAP_SIZE: usize = 32 * 1024;
     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
 
-    ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
+    // SAFETY:
+    // - `init_heap` is required to be called exactly once, before any allocations
+    // - `HEAP_SIZE` is > 0
+    unsafe { ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE) };
 }
 
 #[entry]
