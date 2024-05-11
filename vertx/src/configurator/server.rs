@@ -59,12 +59,13 @@ static CONFIG: Config<Duration> = Config {
 
 pub fn run(
     spawner: &Spawner,
+    config: &'static crate::config::Manager,
     stack: &'static super::wifi::Stack<'static>,
     mode: crate::mode::Publisher<'static>,
     status: &'static StatusSignal,
 ) {
     let app = make_static!(router());
-    let state = make_static!(State { status });
+    let state = make_static!(State { config, status });
 
     let mut mode = Some(mode);
     for id in 0..TASKS {
@@ -107,6 +108,7 @@ async fn worker(
 }
 
 struct State {
+    config: &'static crate::config::Manager,
     status: &'static StatusSignal,
 }
 
@@ -123,5 +125,32 @@ impl vertx_api::State for State {
 
     fn reboot(&self) -> ! {
         todo!()
+    }
+
+    async fn update_config<'a>(
+        &self,
+        key: &'a str,
+        value: vertx_api::ConfigUpdate<'a>,
+    ) -> vertx_api::ConfigUpdateResult {
+        use vertx_api::{ConfigUpdate, ConfigUpdateResult};
+        use vertx_config::update::{Error, Update, UpdateRef};
+
+        let value = match value {
+            ConfigUpdate::Boolean(b) => Update::Boolean(b),
+            ConfigUpdate::String(s) => Update::String(s),
+            ConfigUpdate::Unsigned(x) => Update::Unsigned(x),
+            ConfigUpdate::Signed(x) => Update::Signed(x),
+            ConfigUpdate::Float(f) => Update::Float(f),
+        };
+
+        log::info!("{key} = {value:?}");
+        match self.config.config().update_ref(key, value).await {
+            Ok(()) => ConfigUpdateResult::Ok,
+            Err(Error::KeyNotFound) => ConfigUpdateResult::KeyNotFound,
+            Err(Error::InvalidType) => ConfigUpdateResult::InvalidType,
+            Err(Error::InvalidValue) => ConfigUpdateResult::InvalidValue,
+            Err(Error::TooSmall { min }) => ConfigUpdateResult::TooSmall { min },
+            Err(Error::TooLarge { max }) => ConfigUpdateResult::TooLarge { max },
+        }
     }
 }

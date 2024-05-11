@@ -11,6 +11,8 @@ import {
 } from './protocol';
 
 export {
+	type ConfigUpdate,
+	ConfigUpdateKind,
 	type Request,
 	type Response,
 	type ResponsePayload,

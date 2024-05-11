@@ -1,4 +1,3 @@
-use alloc::string::String;
 use core::convert::identity;
 use core::fmt;
 
@@ -10,39 +9,44 @@ use esp_hal::peripheral::Peripheral;
 use esp_hal::{peripherals, timer};
 use esp_wifi::wifi::{WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::{wifi, EspWifiInitFor};
-use serde::{Deserialize, Serialize};
+use heapless::String;
 use static_cell::make_static;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Config {
-    hostname: String,
-    credentials: Credentials,
+pub type Config = vertx_config::BootSnapshot<RawConfig, crate::mutex::SingleCore>;
+
+#[derive(Clone, vertx_config::UpdateMut, vertx_config::Storage)]
+pub struct RawConfig {
+    hostname: String<32>,
+    password: String<64>,
+    home_ssid: String<32>,
+    home_password: String<64>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-struct Credentials {
-    ssid: String,
-    password: String,
-}
-
-impl fmt::Debug for Credentials {
+impl fmt::Debug for RawConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Credentials")
-            .field("ssid", &"***")
+        f.debug_struct("RawConfig")
+            .field("hostname", &self.hostname)
             .field("password", &"***")
+            .field("home_ssid", &"***")
+            .field("home_password", &"***")
             .finish()
     }
 }
 
-impl Default for Config {
+impl Default for RawConfig {
     fn default() -> Self {
         Self {
-            hostname: String::from("vertx"),
-            credentials: Credentials {
-                ssid: String::from(env!("WIFI_SSID")),
-                password: String::from(env!("WIFI_PASSWORD")),
-            },
+            hostname: "vertx".try_into().unwrap(),
+            password: String::new(), // TODO
+            home_ssid: env!("WIFI_SSID").try_into().unwrap(),
+            home_password: env!("WIFI_PASSWORD").try_into().unwrap(),
         }
+    }
+}
+
+impl RawConfig {
+    fn valid_home(&self) -> bool {
+        !self.home_ssid.is_empty() && !self.home_password.is_empty()
     }
 }
 
@@ -58,13 +62,15 @@ pub fn run(
     device: impl Peripheral<P = peripherals::WIFI> + 'static,
     radio_clocks: esp_hal::system::RadioClockControl,
 ) -> &'static Stack<'static> {
+    let config = config.wifi.boot();
+
     let init =
         esp_wifi::initialize(EspWifiInitFor::Wifi, timer, rng, radio_clocks, clocks).unwrap();
 
     let (wifi_interface, controller) = wifi::new_with_mode(&init, device, WifiStaDevice).unwrap();
 
     let mut dhcp_config = embassy_net::DhcpConfig::default();
-    dhcp_config.hostname = Some(config.wifi.hostname.as_str().try_into().unwrap());
+    dhcp_config.hostname = Some(config.hostname.clone());
 
     let dhcp = embassy_net::Config::dhcpv4(dhcp_config);
     let stack = &*make_static!(embassy_net::Stack::new(
@@ -74,18 +80,17 @@ pub fn run(
         (u64::from(rng.random()) << 32) | u64::from(rng.random()),
     ));
 
-    spawner.must_spawn(connection(controller, &config.wifi.credentials));
+    spawner.must_spawn(connection(controller, config));
     spawner.must_spawn(network(stack));
 
     stack
 }
 
 #[task]
-async fn connection(
-    mut controller: WifiController<'static>,
-    credentials: &'static Credentials,
-) -> ! {
+async fn connection(mut controller: WifiController<'static>, config: &'static RawConfig) -> ! {
     log::info!("Starting connection()");
+
+    assert!(config.valid_home());
 
     loop {
         // If connected, wait for disconnect
@@ -97,10 +102,10 @@ async fn connection(
 
         if !matches!(controller.is_started(), Ok(true)) {
             let config = wifi::Configuration::Client(wifi::ClientConfiguration {
-                ssid: credentials.ssid.as_str().try_into().unwrap(),
+                ssid: config.home_ssid.clone(),
                 bssid: None,
                 auth_method: wifi::AuthMethod::WPA2Personal,
-                password: credentials.password.as_str().try_into().unwrap(),
+                password: config.home_password.clone(),
                 channel: None,
             });
 

@@ -23,6 +23,7 @@ use alloc::vec::Vec;
 use core::mem::MaybeUninit;
 
 use embassy_executor::{task, Spawner};
+use embassy_sync::mutex::Mutex;
 use embassy_time::{Duration, Ticker};
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
@@ -40,7 +41,6 @@ use log::LevelFilter;
 use portable_atomic::{AtomicU32, Ordering};
 use static_cell::make_static;
 
-pub use crate::config::Config;
 pub use crate::mode::Mode;
 use crate::pins::pins;
 
@@ -73,6 +73,14 @@ fn entry() -> ! {
     executor.run(main)
 }
 
+#[derive(Default, vertx_config::Storage, vertx_config::UpdateRef)]
+struct Config {
+    name: Mutex<mutex::SingleCore, heapless::String<20>>,
+    leds: leds::Config,
+    wifi: configurator::WifiConfig,
+    expert: Mutex<mutex::SingleCore, bool>,
+}
+
 fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
@@ -91,6 +99,14 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
     let mode = make_static!(mode::Channel::new());
 
+    flash::unlock().unwrap();
+    let mut partitions = flash::read_partition_table()
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    let config_manager = make_static!(config::Manager::new(&mut partitions));
+    let config = config_manager.config();
+
     // Leds init
     {
         let leds = SmartLedsAdapter::new(
@@ -99,15 +115,8 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             [0; leds::BUFFER_SIZE],
             &clocks,
         );
-        spawner.must_spawn(leds::run(leds, mode.subscriber().unwrap()));
+        spawner.must_spawn(leds::run(config, leds, mode.subscriber().unwrap()));
     }
-
-    flash::unlock().unwrap();
-    let mut partitions = flash::read_partition_table()
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
-    let config = make_static!(config::Manager::new(&mut partitions));
 
     let configurator_enabled = configurator::IsEnabled::new();
     spawner.must_spawn(configurator::toggle_button(
@@ -124,7 +133,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
         let stack = configurator::wifi::run(
             &spawner,
-            config.boot_config(),
+            config,
             &clocks,
             timer,
             rng,
@@ -132,7 +141,13 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             system.radio_clock_control,
         );
 
-        configurator::server::run(&spawner, stack, mode.publisher(), status_signal);
+        configurator::server::run(
+            &spawner,
+            config_manager,
+            stack,
+            mode.publisher(),
+            status_signal,
+        );
     } else {
         log::info!("Configurator disabled");
         mode.publish(crate::Mode::Ok);

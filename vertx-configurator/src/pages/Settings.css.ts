@@ -16,7 +16,7 @@ globalStyle(`${setting} > :is(input, select)`, {
 	border: vars.border,
 	borderRadius: consts.size.sm,
 	color: 'inherit',
-	background: vars.colors.bgInput,
+	background: vars.colors.inputBg,
 	padding: `${consts.size.xs} ${consts.size.sm}`,
 	outline: 'none',
 
@@ -31,6 +31,9 @@ globalStyle(`${setting} > :is(input, select):focus-visible`, {
 });
 globalStyle(`${dangerSelector} ${setting} > :is(input, select):focus-visible`, {
 	borderColor: vars.colors.borderFocusDanger,
+});
+globalStyle(`${setting} > :is(input, select):invalid`, {
+	background: vars.colors.inputBgInvalid,
 });
 
 export const settingCheckbox = style({

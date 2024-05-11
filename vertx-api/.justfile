@@ -1,11 +1,7 @@
+import '../.justfile.base'
+
 _default:
     @just --list --unsorted
-
-fmt:
-    cargo +nightly fmt
-
-check *args='':
-    cargo clippy --all-targets {{ args }}
 
 # Run a local dev server
 dev:

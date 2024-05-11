@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["vertx", "vertx-api", "vertx-crsf"]
+members = ["vertx", "vertx-api", "vertx-config", "vertx-config-macros", "vertx-crsf"]
 
 [workspace.package]
 version = "0.0.0"
@@ -10,10 +10,16 @@ license = "MPL-2.0"
 
 [workspace.dependencies]
 embassy-net = "0.4.0"
+embassy-sync = "0.5.0"
 embedded-io = "0.6.1"
+heapless = "0.8.0"
 picoserve = "0.10.2"
+quote = "1.0.36"
+serde = { version = "1.0.200", default-features = false }
+syn = "2.0.60"
+tokio = "1.37.0"
 vertx-api.path = "vertx-api"
-vertx-crsf.path = "vertx-crsf"
+vertx-config.path = "vertx-config"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "0.6.2", locked = true }
@@ -37,6 +43,7 @@ lto = true
 esp-hal = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
 esp-hal-procmacros = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
 esp-hal-smartled = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
+embassy-sync = { git = "https://github.com/wetheredge/embassy.git", branch = "mutex-trait-parity-backport", commit = "9ebf04e9f7cf9514c4c63ee4678479a7a878910c" }
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"

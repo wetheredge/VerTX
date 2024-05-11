@@ -65,6 +65,7 @@ export class DataReader {
 
 export class DataWriter {
 	readonly #view: DataView;
+	readonly #textEncoder = new TextEncoder();
 	#index = 0;
 
 	constructor(bytes: number) {
@@ -97,12 +98,20 @@ export class DataWriter {
 	}
 
 	u16(x: number) {
-		this.#view.setUint16(this.#index, x);
+		this.#view.setUint16(this.#index, x, true);
 		this.#index += 2;
 	}
 
 	u32(x: number) {
-		this.#view.setUint32(this.#index, x);
+		this.#view.setUint32(this.#index, x, true);
 		this.#index += 4;
+	}
+
+	string(s: string) {
+		const encoded = this.#textEncoder.encode(s);
+		this.varint(encoded.length);
+		const view = new Uint8Array(this.#view.buffer);
+		view.set(encoded, this.#index);
+		this.#index += encoded.length;
 	}
 }

@@ -13,7 +13,18 @@ pub const MAX_LEDS: usize = 1;
 // 3 channels * 8 bits + 1 stop byte
 pub const BUFFER_SIZE: usize = MAX_LEDS * 3 * 8 + 1;
 
-const MAX_BRIGHTNESS: u8 = 10;
+#[derive(vertx_config::UpdateRef, vertx_config::Storage)]
+pub struct Config {
+    brightness: vertx_config::Reactive<u8, crate::mutex::SingleCore>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            brightness: 10.into(),
+        }
+    }
+}
 
 macro_rules! color_array {
     (static $name:ident = [ $(($r:expr, $g:expr, $b:expr)),* $(,)? ]) => {
@@ -96,7 +107,7 @@ impl Effect {
         }
     }
 
-    fn next(&mut self) -> (RGB8, Option<Duration>) {
+    fn next_frame(&mut self) -> (RGB8, Option<Duration>) {
         match self {
             Self::Solid(color) => (*color, None),
             Self::Blink {
@@ -123,29 +134,38 @@ impl Effect {
 
 #[task]
 pub async fn run(
+    config: &'static crate::Config,
     mut leds: SmartLedsAdapter<Channel<esp_hal::Blocking, 0>, { BUFFER_SIZE }>,
     mut mode: crate::mode::Subscriber<'static>,
 ) -> ! {
     log::info!("Starting leds()");
+    let config = &config.leds;
 
     let mut effect = Effect::default();
+    let mut brightness_subscriber = config.brightness.subscriber().unwrap();
 
     loop {
-        let (color, new_timer) = effect.next();
+        let (color, duration) = effect.next_frame();
+        let timer = duration.map(Timer::after);
 
         leds.write(smart_leds::brightness(
             smart_leds::gamma(iter::once(color)),
-            MAX_BRIGHTNESS,
+            *config.brightness.current().await,
         ))
         .unwrap();
 
-        let new_mode = if let Some(new_next) = new_timer {
-            match select::select(Timer::after(new_next), mode.next()).await {
+        let new_mode = if let Some(timer) = timer {
+            // Assume `timer` is a fraction of a second, so don't bother updating brightness
+            // until the next frame
+            match select::select(timer, mode.next()).await {
                 select::Either::First(()) => continue,
                 select::Either::Second(effect) => effect,
             }
         } else {
-            mode.next().await
+            match select::select(brightness_subscriber.wait(), mode.next()).await {
+                select::Either::First(()) => continue,
+                select::Either::Second(effect) => effect,
+            }
         };
 
         effect = new_mode.into();

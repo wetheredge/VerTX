@@ -17,11 +17,13 @@ export const vars = createGlobalThemeContract(
 			fgDim: null,
 			bgRoot: null,
 			bgSurface: null,
-			bgInput: null,
 			bgHover: null,
 			border: null,
 			borderFocus: null,
 			borderFocusDanger: null,
+
+			inputBg: null,
+			inputBgInvalid: null,
 
 			lightness: null,
 
@@ -91,7 +93,7 @@ const colors = {
 		green: 158,
 		blue: 250,
 		orange: 52,
-		red: 18,
+		red: 12,
 	},
 	opacity: 0.7,
 } as const;
@@ -112,11 +114,13 @@ createGlobalTheme(':root', vars, {
 		fgDim: 'black',
 		bgRoot: 'oklch(95% 0 0)',
 		bgSurface: 'white',
-		bgInput: 'oklch(99% 0 0)',
 		bgHover: 'oklch(0% 0 0 / 8%)',
 		border: 'oklch(80% 0 0)',
 		borderFocus: `oklch(55% 0.25 ${colors.hues.blue})`,
 		borderFocusDanger: `oklch(55% 0.25 ${colors.hues.red})`,
+
+		inputBg: 'oklch(98% 0 0)',
+		inputBgInvalid: `oklch(94% 0.03 ${colors.hues.red})`,
 
 		lightness: '72%',
 
@@ -136,9 +140,12 @@ globalStyle(':root', {
 				[vars.colors.fgDim]: 'oklch(90% 0 0)',
 				[vars.colors.bgRoot]: 'black',
 				[vars.colors.bgSurface]: 'oklch(19% 0 0)',
-				[vars.colors.bgInput]: 'oklch(25% 0 0)',
 				[vars.colors.bgHover]: 'oklch(100% 0 0 / 13%)',
 				[vars.colors.border]: 'oklch(40% 0 0)',
+
+				[vars.colors.inputBg]: 'oklch(25% 0 0)',
+				[vars.colors.inputBgInvalid]:
+					`oklch(36% 0.05 ${colors.hues.red})`,
 
 				[vars.colors.lightness]: '65%',
 			},
@@ -180,7 +187,7 @@ export const button = style({
 			...buttonBase,
 
 			width: 'fit-content',
-			background: vars.colors.bgInput,
+			background: vars.colors.inputBg,
 			padding: `${size.xs} ${size.sm}`,
 			border: vars.border,
 		},

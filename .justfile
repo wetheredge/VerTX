@@ -19,6 +19,8 @@ fmt:
 check:
     just vertx/check
     just vertx-api/check
+    just vertx-config/check
+    just vertx-config-macros/check
     just vertx-crsf/check
     just vertx-configurator/check
 

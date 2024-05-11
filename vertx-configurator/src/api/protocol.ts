@@ -2,7 +2,7 @@ import { unreachable } from '../utils';
 import { DataReader, DataWriter } from './helpers';
 
 export const PROTOCOL: string = 'v0';
-const REQUEST_BUFFER_SIZE = 1;
+const REQUEST_BUFFER_SIZE = 100;
 
 export const enum RequestKind {
 	ProtocolVersion,
@@ -10,8 +10,9 @@ export const enum RequestKind {
 	PowerOff,
 	Reboot,
 	CheckForUpdate,
-	StreamInputs,
-	StreamMixer,
+	ConfigUpdate,
+	// StreamInputs,
+	// StreamMixer,
 }
 
 export type Request =
@@ -20,25 +21,62 @@ export type Request =
 	| { kind: RequestKind.PowerOff }
 	| { kind: RequestKind.Reboot }
 	| { kind: RequestKind.CheckForUpdate }
-	| { kind: RequestKind.StreamInputs }
-	| { kind: RequestKind.StreamMixer };
+	| {
+			kind: RequestKind.ConfigUpdate;
+			payload: {
+				id: number;
+				key: string;
+			} & ConfigUpdate;
+	  };
 
-export function encodeRequest({ kind }: Request): ArrayBuffer {
+export const enum ConfigUpdateKind {
+	Boolean,
+	String,
+	Unsigned,
+	// Signed,
+	// Float,
+}
+
+export type ConfigUpdate =
+	| { kind: ConfigUpdateKind.Boolean; update: boolean }
+	| { kind: ConfigUpdateKind.String; update: string }
+	| { kind: ConfigUpdateKind.Unsigned; update: number };
+
+export function encodeRequest(request: Request): ArrayBuffer {
 	const writer = new DataWriter(REQUEST_BUFFER_SIZE);
 
-	writer.varint(kind);
-	switch (kind) {
+	writer.varint(request.kind);
+	switch (request.kind) {
 		case RequestKind.ProtocolVersion:
 		case RequestKind.BuildInfo:
 		case RequestKind.PowerOff:
 		case RequestKind.Reboot:
 		case RequestKind.CheckForUpdate:
-		case RequestKind.StreamInputs:
-		case RequestKind.StreamMixer:
 			break;
 
+		case RequestKind.ConfigUpdate: {
+			const { id, key, kind, update } = request.payload;
+			writer.varint(id);
+			writer.string(key);
+			writer.u8(kind);
+			switch (kind) {
+				case ConfigUpdateKind.Boolean:
+					writer.boolean(update);
+					break;
+				case ConfigUpdateKind.String:
+					writer.string(update);
+					break;
+				case ConfigUpdateKind.Unsigned:
+					writer.varint(update);
+					break;
+				default:
+					unreachable(kind);
+			}
+			break;
+		}
+
 		default:
-			unreachable(kind);
+			unreachable(request);
 	}
 
 	return writer.done();
@@ -48,6 +86,7 @@ export const enum ResponseKind {
 	ProtocolVersion,
 	BuildInfo,
 	Status,
+	ConfigUpdate,
 }
 
 export type Response =
@@ -81,11 +120,31 @@ export type Response =
 				idleTime: number;
 				timingDrift: number;
 			};
+	  }
+	| {
+			kind: ResponseKind.ConfigUpdate;
+			payload: { id: number } & ConfigUpdateResult;
 	  };
+
+const enum ConfigUpdateResultKind {
+	Ok,
+	KeyNotFound,
+	InvalidType,
+	InvalidValue,
+	TooSmall,
+	TooLarge,
+}
+
+type ConfigUpdateResult =
+	| { result: ConfigUpdateResultKind.Ok }
+	| { result: ConfigUpdateResultKind.KeyNotFound }
+	| { result: ConfigUpdateResultKind.InvalidType }
+	| { result: ConfigUpdateResultKind.TooSmall; min: number }
+	| { result: ConfigUpdateResultKind.TooLarge; max: number };
 
 export type ResponsePayload<Kind extends ResponseKind> = Extract<
 	Response,
-	{ kind: Kind }
+	{ kind: Kind; payload: unknown }
 >['payload'];
 
 export function parseResponse(buffer: ArrayBuffer): Response {

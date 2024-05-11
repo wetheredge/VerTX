@@ -2,15 +2,20 @@ pub(crate) const VERSION_MAJOR: u8 = 0;
 pub(crate) const VERSION_MINOR: u8 = 0;
 pub(crate) const NAME: &str = "v0";
 
-#[derive(Debug, Clone, bincode::Decode)]
-pub enum Request {
+#[derive(Debug, Clone, bincode::BorrowDecode)]
+pub enum Request<'a> {
     ProtocolVersion,
     BuildInfo,
     PowerOff,
     Reboot,
     CheckForUpdate,
-    StreamInputs,
-    StreamMixer,
+    ConfigUpdate {
+        id: u32,
+        key: &'a str,
+        value: ConfigUpdate<'a>,
+    },
+    // StreamInputs,
+    // StreamMixer,
 }
 
 macro_rules! response {
@@ -32,6 +37,8 @@ macro_rules! response {
         ),*}
 
         pub mod response { $($(
+            use super::*;
+
             #[derive(Debug, Clone)]
             pub struct $variant {
                 $( $(#[$fattr])* pub $field : $type ),*
@@ -71,6 +78,10 @@ response! {
         idle_time: f32,
         timing_drift: f32,
     },
+    ConfigUpdate {
+        id: u32,
+        result: ConfigUpdateResult,
+    },
     // Inputs,
     // Mixer,
 }
@@ -80,4 +91,23 @@ impl Response {
         major: VERSION_MAJOR,
         minor: VERSION_MINOR,
     };
+}
+
+#[derive(Debug, Clone, bincode::BorrowDecode)]
+pub enum ConfigUpdate<'a> {
+    Boolean(bool),
+    String(&'a str),
+    Unsigned(u32),
+    Signed(i32),
+    Float(f32),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, bincode::Encode)]
+pub enum ConfigUpdateResult {
+    Ok,
+    KeyNotFound,
+    InvalidType,
+    InvalidValue,
+    TooSmall { min: i64 },
+    TooLarge { max: i64 },
 }

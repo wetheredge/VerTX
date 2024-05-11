@@ -12,7 +12,7 @@ use picoserve::request::{Path, Request as HttpRequest};
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
 use picoserve::routing::PathRouterService;
 
-pub use self::protocol::{response, Request, Response};
+pub use self::protocol::{response, ConfigUpdate, ConfigUpdateResult, Request, Response};
 
 pub trait State {
     const BUILD_INFO: response::BuildInfo;
@@ -20,6 +20,12 @@ pub trait State {
     fn status(&self) -> impl Future<Output = response::Status>;
     fn power_off(&self) -> !;
     fn reboot(&self) -> !;
+
+    fn update_config<'a>(
+        &self,
+        key: &'a str,
+        value: ConfigUpdate<'a>,
+    ) -> impl Future<Output = ConfigUpdateResult>;
 }
 
 const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
@@ -121,7 +127,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
     ) -> Result<(), W::Error> {
         use ws::Message;
 
-        let mut req_buffer = [0; 20];
+        let mut req_buffer = [0; 64];
 
         loop {
             let status = self.state.status();
@@ -132,13 +138,14 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
 
                 select::Either::Second(request) => match request {
                     Ok(Message::Binary(request)) => {
-                        let request = match bincode::decode_from_slice(request, BINCODE_CONFIG) {
-                            Ok((request, _)) => request,
-                            Err(err) => {
-                                log::error!("Failed to parse request: {err:?}");
-                                continue;
-                            }
-                        };
+                        let request =
+                            match bincode::borrow_decode_from_slice(request, BINCODE_CONFIG) {
+                                Ok((request, _)) => request,
+                                Err(err) => {
+                                    log::error!("Failed to parse request: {err:?}");
+                                    continue;
+                                }
+                            };
 
                         log::debug!("Received api request: {request:?}");
 
@@ -148,8 +155,10 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                             Request::PowerOff => self.state.power_off(),
                             Request::Reboot => self.state.reboot(),
                             Request::CheckForUpdate => todo!(),
-                            Request::StreamInputs => todo!(),
-                            Request::StreamMixer => todo!(),
+                            Request::ConfigUpdate { id, key, value } => {
+                                let result = self.state.update_config(key, value).await;
+                                Response::ConfigUpdate { id, result }
+                            }
                         };
 
                         self.send::<W>(response, &mut tx).await?;

@@ -48,6 +48,15 @@ impl vertx_api::State for State {
         log::info!("Rebooting");
         process::exit(0)
     }
+
+    async fn update_config<'a>(
+        &self,
+        key: &'a str,
+        value: vertx_api::ConfigUpdate<'a>,
+    ) -> vertx_api::ConfigUpdateResult {
+        log::info!("{key:?} = {value:?}");
+        vertx_api::ConfigUpdateResult::Ok
+    }
 }
 
 static CONFIG: Config<Duration> = picoserve::Config {

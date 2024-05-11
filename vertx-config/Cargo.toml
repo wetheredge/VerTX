@@ -1,0 +1,23 @@
+[package]
+name = "vertx-config"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+heapless = ["dep:heapless"]
+
+[dependencies]
+embassy-sync = { workspace = true }
+heapless = { workspace = true, optional = true }
+num_enum = { version = "0.7.2", default-features = false }
+postcard = { version = "1.0.8", default-features = false, features = ["alloc"] }
+serde = { workspace = true, features = ["derive", "alloc"] }
+vertx-config-macros = { path = "../vertx-config-macros" }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }
