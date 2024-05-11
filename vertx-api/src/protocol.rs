@@ -1,8 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 pub(crate) const VERSION_MAJOR: u8 = 0;
 pub(crate) const VERSION_MINOR: u8 = 0;
 pub(crate) const NAME: &str = "v0";
 
-#[derive(Debug, Clone, bincode::BorrowDecode)]
+#[derive(Debug, Clone, Deserialize)]
 pub enum Request<'a> {
     ProtocolVersion,
     BuildInfo,
@@ -12,7 +14,7 @@ pub enum Request<'a> {
     ConfigUpdate {
         id: u32,
         key: &'a str,
-        value: ConfigUpdate<'a>,
+        value: vertx_config::update::Update<'a>,
     },
     // StreamInputs,
     // StreamMixer,
@@ -20,7 +22,7 @@ pub enum Request<'a> {
 
 macro_rules! response {
     (
-        $bincode:path,
+        $derive:path,
         $(
             $variant:ident $({
                 $( $(#[$fattr:meta])* $field:ident : $type:ty ),*
@@ -29,7 +31,7 @@ macro_rules! response {
         ),*
         $(,)?
     ) => {
-        #[derive(Debug, Clone, $bincode)]
+        #[derive(Debug, Clone, $derive)]
         pub enum Response {$(
             $variant $({
                 $( $(#[$fattr])* $field : $type),*
@@ -56,7 +58,7 @@ macro_rules! response {
 }
 
 response! {
-    bincode::Encode,
+    Serialize,
     ProtocolVersion {
         major: u8,
         minor: u8,
@@ -93,16 +95,7 @@ impl Response {
     };
 }
 
-#[derive(Debug, Clone, bincode::BorrowDecode)]
-pub enum ConfigUpdate<'a> {
-    Boolean(bool),
-    String(&'a str),
-    Unsigned(u32),
-    Signed(i32),
-    Float(f32),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, bincode::Encode)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 pub enum ConfigUpdateResult {
     Ok,
     KeyNotFound,
@@ -110,4 +103,19 @@ pub enum ConfigUpdateResult {
     InvalidValue,
     TooSmall { min: i64 },
     TooLarge { max: i64 },
+}
+
+impl From<vertx_config::update::Result> for ConfigUpdateResult {
+    fn from(from: vertx_config::update::Result) -> Self {
+        use vertx_config::update::Error;
+
+        match from {
+            Ok(()) => Self::Ok,
+            Err(Error::KeyNotFound) => Self::KeyNotFound,
+            Err(Error::InvalidType) => Self::InvalidType,
+            Err(Error::InvalidValue) => Self::InvalidValue,
+            Err(Error::TooSmall { min }) => Self::TooSmall { min },
+            Err(Error::TooLarge { max }) => Self::TooLarge { max },
+        }
+    }
 }

@@ -9,10 +9,12 @@ publish = false
 workspace = true
 
 [dependencies]
-bincode = { version = "2.0.0-rc.3", features = ["derive"], default-features = false }
 embassy-futures = "0.1.1"
 log = "0.4.21"
 picoserve = { workspace = true }
+postcard = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+vertx-config = { workspace = true }
 
 [dev-dependencies]
 picoserve = { workspace = true, features = ["tokio"] }

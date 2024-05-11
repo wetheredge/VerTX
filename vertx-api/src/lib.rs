@@ -12,7 +12,7 @@ use picoserve::request::{Path, Request as HttpRequest};
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
 use picoserve::routing::PathRouterService;
 
-pub use self::protocol::{response, ConfigUpdate, ConfigUpdateResult, Request, Response};
+pub use self::protocol::{response, ConfigUpdateResult, Request, Response};
 
 pub trait State {
     const BUILD_INFO: response::BuildInfo;
@@ -24,11 +24,9 @@ pub trait State {
     fn update_config<'a>(
         &self,
         key: &'a str,
-        value: ConfigUpdate<'a>,
-    ) -> impl Future<Output = ConfigUpdateResult>;
+        value: vertx_config::update::Update<'a>,
+    ) -> impl Future<Output = vertx_config::update::Result>;
 }
-
-const BINCODE_CONFIG: bincode::config::Configuration = bincode::config::standard();
 
 #[derive(Debug)]
 pub struct UpgradeHandler;
@@ -109,8 +107,8 @@ impl<S> Handler<'_, S> {
     ) -> Result<(), W::Error> {
         let buffer = &mut self.response_buffer;
 
-        match bincode::encode_into_slice(response, buffer, BINCODE_CONFIG) {
-            Ok(len) => tx.send_binary(&buffer[0..len]).await,
+        match postcard::to_slice(&response, buffer) {
+            Ok(data) => tx.send_binary(data).await,
             Err(err) => {
                 log::error!("Failed to encode api response: {err}");
                 Ok(())
@@ -138,14 +136,13 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
 
                 select::Either::Second(request) => match request {
                     Ok(Message::Binary(request)) => {
-                        let request =
-                            match bincode::borrow_decode_from_slice(request, BINCODE_CONFIG) {
-                                Ok((request, _)) => request,
-                                Err(err) => {
-                                    log::error!("Failed to parse request: {err:?}");
-                                    continue;
-                                }
-                            };
+                        let request = match postcard::from_bytes(request) {
+                            Ok(request) => request,
+                            Err(err) => {
+                                log::error!("Failed to parse request: {err:?}");
+                                continue;
+                            }
+                        };
 
                         log::debug!("Received api request: {request:?}");
 
@@ -156,7 +153,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                             Request::Reboot => self.state.reboot(),
                             Request::CheckForUpdate => todo!(),
                             Request::ConfigUpdate { id, key, value } => {
-                                let result = self.state.update_config(key, value).await;
+                                let result = self.state.update_config(key, value).await.into();
                                 Response::ConfigUpdate { id, result }
                             }
                         };

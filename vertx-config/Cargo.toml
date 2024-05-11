@@ -12,7 +12,7 @@ heapless = ["dep:heapless"]
 embassy-sync = { workspace = true }
 heapless = { workspace = true, optional = true }
 num_enum = { version = "0.7.2", default-features = false }
-postcard = { version = "1.0.8", default-features = false, features = ["alloc"] }
+postcard = { workspace = true, features = ["alloc"] }
 serde = { workspace = true, features = ["derive", "alloc"] }
 vertx-config-macros = { path = "../vertx-config-macros" }
 

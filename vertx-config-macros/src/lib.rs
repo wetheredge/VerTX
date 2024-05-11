@@ -50,7 +50,7 @@ fn update_common(
                 & #maybe_mut self,
                 key: &'a str,
                 update: #config::update::Update<'a>,
-            ) -> Result<(), #config::update::Error> {
+            ) -> #config::update::Result {
                 let (head, tail) = #config::split_key(key);
 
                 match head {

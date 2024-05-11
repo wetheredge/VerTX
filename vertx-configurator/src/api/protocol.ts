@@ -150,7 +150,7 @@ export type ResponsePayload<Kind extends ResponseKind> = Extract<
 export function parseResponse(buffer: ArrayBuffer): Response {
 	const reader = new DataReader(buffer);
 
-	const kind = reader.u8();
+	const kind = reader.u8() as ResponseKind;
 	switch (kind) {
 		case ResponseKind.ProtocolVersion:
 			return {
@@ -183,10 +183,44 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 					timingDrift: reader.f32(),
 				},
 			};
+		case ResponseKind.ConfigUpdate: {
+			const id = reader.varint();
+			const result = reader.u8() as ConfigUpdateResultKind;
+			const rest: Record<string, unknown> = {};
+			switch (result) {
+				case ConfigUpdateResultKind.Ok:
+				case ConfigUpdateResultKind.KeyNotFound:
+				case ConfigUpdateResultKind.InvalidType:
+				case ConfigUpdateResultKind.InvalidValue:
+					break;
+				case ConfigUpdateResultKind.TooSmall:
+					rest.min = reader.varint();
+					break;
+				case ConfigUpdateResultKind.TooLarge:
+					rest.max = reader.varint();
+					break;
+
+				default:
+					unreachable(result);
+			}
+
+			return {
+				kind,
+				payload: {
+					id,
+					result,
+					...rest,
+				} as ResponsePayload<ResponseKind.ConfigUpdate>,
+			};
+		}
 
 		default:
-			throw new Error(`Invalid response kind: ${kind}`);
+			invalidResponseKind(kind);
 	}
+}
+
+function invalidResponseKind(kind: never): never {
+	throw new Error(`Invalid response kind: ${kind}`);
 }
 
 export type ProtocolVersion = {

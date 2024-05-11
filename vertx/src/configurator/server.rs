@@ -130,27 +130,11 @@ impl vertx_api::State for State {
     async fn update_config<'a>(
         &self,
         key: &'a str,
-        value: vertx_api::ConfigUpdate<'a>,
-    ) -> vertx_api::ConfigUpdateResult {
-        use vertx_api::{ConfigUpdate, ConfigUpdateResult};
-        use vertx_config::update::{Error, Update, UpdateRef};
+        update: vertx_config::update::Update<'a>,
+    ) -> vertx_config::update::Result {
+        use vertx_config::update::UpdateRef;
 
-        let value = match value {
-            ConfigUpdate::Boolean(b) => Update::Boolean(b),
-            ConfigUpdate::String(s) => Update::String(s),
-            ConfigUpdate::Unsigned(x) => Update::Unsigned(x),
-            ConfigUpdate::Signed(x) => Update::Signed(x),
-            ConfigUpdate::Float(f) => Update::Float(f),
-        };
-
-        log::info!("{key} = {value:?}");
-        match self.config.config().update_ref(key, value).await {
-            Ok(()) => ConfigUpdateResult::Ok,
-            Err(Error::KeyNotFound) => ConfigUpdateResult::KeyNotFound,
-            Err(Error::InvalidType) => ConfigUpdateResult::InvalidType,
-            Err(Error::InvalidValue) => ConfigUpdateResult::InvalidValue,
-            Err(Error::TooSmall { min }) => ConfigUpdateResult::TooSmall { min },
-            Err(Error::TooLarge { max }) => ConfigUpdateResult::TooLarge { max },
-        }
+        log::info!("{key} = {update:?}");
+        self.config.config().update_ref(key, update).await
     }
 }

@@ -52,10 +52,10 @@ impl vertx_api::State for State {
     async fn update_config<'a>(
         &self,
         key: &'a str,
-        value: vertx_api::ConfigUpdate<'a>,
-    ) -> vertx_api::ConfigUpdateResult {
-        log::info!("{key:?} = {value:?}");
-        vertx_api::ConfigUpdateResult::Ok
+        update: vertx_config::update::Update<'a>,
+    ) -> vertx_config::update::Result {
+        log::info!("{key:?} = {update:?}");
+        Ok(())
     }
 }
 
