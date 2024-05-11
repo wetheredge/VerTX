@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [vertx-api, vertx-crsf]
+        crate: [vertx-api, vertx-config, vertx-config-macros, vertx-crsf]
     steps:
       - uses: actions/checkout@v4
       - name: Install toolchain
