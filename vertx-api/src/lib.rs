@@ -22,6 +22,7 @@ pub trait State {
     fn status(&self) -> impl Future<Output = response::Status>;
     fn power_off(&self);
     fn reboot(&self);
+    fn exit_configurator(&self);
 
     fn config(&self) -> &impl vertx_config::Storage;
     fn update_config<'a>(
@@ -158,6 +159,10 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                             }
                             Request::Reboot => {
                                 self.state.reboot();
+                                continue;
+                            }
+                            Request::ExitConfigurator => {
+                                self.state.exit_configurator();
                                 continue;
                             }
                             Request::CheckForUpdate => todo!(),

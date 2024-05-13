@@ -9,6 +9,7 @@ export const enum RequestKind {
 	BuildInfo,
 	PowerOff,
 	Reboot,
+	ExitConfigurator,
 	CheckForUpdate,
 	GetConfig,
 	ConfigUpdate,
@@ -21,6 +22,7 @@ export type Request =
 	| { kind: RequestKind.BuildInfo }
 	| { kind: RequestKind.PowerOff }
 	| { kind: RequestKind.Reboot }
+	| { kind: RequestKind.ExitConfigurator }
 	| { kind: RequestKind.CheckForUpdate }
 	| { kind: RequestKind.GetConfig }
 	| {
@@ -53,6 +55,7 @@ export function encodeRequest(request: Request): ArrayBuffer {
 		case RequestKind.BuildInfo:
 		case RequestKind.PowerOff:
 		case RequestKind.Reboot:
+		case RequestKind.ExitConfigurator:
 		case RequestKind.CheckForUpdate:
 		case RequestKind.GetConfig:
 			break;

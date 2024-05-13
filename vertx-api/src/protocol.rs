@@ -12,6 +12,7 @@ pub enum Request<'a> {
     BuildInfo,
     PowerOff,
     Reboot,
+    ExitConfigurator,
     CheckForUpdate,
     GetConfig,
     ConfigUpdate {

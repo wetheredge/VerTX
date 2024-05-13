@@ -1,7 +1,7 @@
 import { createVar, globalStyle, style } from '@vanilla-extract/css';
 import { menuClosed } from './MenuButton.css';
 import { height as statusBarHeight } from './StatusBar.css';
-import { consts, vars } from './index.css';
+import { consts, iconButton, vars } from './index.css';
 
 const padding = consts.size.md;
 
@@ -65,7 +65,7 @@ export const nav = style({
 	display: 'flex',
 	flexDirection: 'column',
 	flexGrow: 1,
-	padding: padding,
+	padding,
 	gap: consts.size.xs,
 });
 const navLink = `${nav} > a`;
@@ -88,6 +88,9 @@ globalStyle(`${navLink} > :last-child`, {
 	overflow: 'hidden',
 	textOverflow: 'ellipsis',
 	whiteSpace: 'nowrap',
+});
+globalStyle(`${navLink}:last-of-type`, {
+	marginBottom: 'auto',
 });
 
 export const navIcon = style({
@@ -132,3 +135,19 @@ globalStyle(`:is(${navLink}:not(.active), ${newModel}):hover`, {
 globalStyle(`:is(${navLink}, ${newModel}):focus-visible`, {
 	borderColor: vars.colors.borderFocus,
 });
+
+export const powerButtonsRow = style({
+	display: 'inline-flex',
+	justifyContent: 'center',
+	gap: consts.size.xs,
+
+	position: 'sticky',
+	bottom: consts.size.sm,
+
+	borderTop: vars.border,
+	marginTop: consts.size.sm,
+	paddingTop: consts.size.sm,
+	background: vars.colors.bgRoot,
+});
+
+export const powerButton = style([iconButton]);

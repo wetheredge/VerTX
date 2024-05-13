@@ -133,6 +133,10 @@ impl vertx_api::State for State {
         self.reset.reboot();
     }
 
+    fn exit_configurator(&self) {
+        self.reset.toggle_configurator();
+    }
+
     fn config(&self) -> &impl vertx_config::Storage {
         self.config.config()
     }
