@@ -1,6 +1,8 @@
 #![no_std]
 #![cfg_attr(not(any(feature = "embassy", feature = "tokio")), allow(unused))]
 
+extern crate alloc;
+
 mod protocol;
 
 use core::future::Future;
@@ -21,6 +23,7 @@ pub trait State {
     fn power_off(&self) -> !;
     fn reboot(&self) -> !;
 
+    fn config(&self) -> &impl vertx_config::Storage;
     fn update_config<'a>(
         &self,
         key: &'a str,
@@ -86,7 +89,7 @@ impl<S: State> PathRouterService<S> for UpgradeHandler {
 
 #[derive(Debug)]
 pub struct Handler<'a, S> {
-    response_buffer: [u8; 64],
+    response_buffer: [u8; 256],
     state: &'a S,
 }
 
@@ -152,6 +155,11 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                             Request::PowerOff => self.state.power_off(),
                             Request::Reboot => self.state.reboot(),
                             Request::CheckForUpdate => todo!(),
+                            Request::GetConfig => {
+                                let config = self.state.config();
+                                let config = vertx_config::storage::postcard::to_vec(config).await;
+                                Response::Config { config }
+                            }
                             Request::ConfigUpdate { id, key, value } => {
                                 let result = self.state.update_config(key, value).await.into();
                                 Response::ConfigUpdate { id, result }

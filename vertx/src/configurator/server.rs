@@ -127,6 +127,10 @@ impl vertx_api::State for State {
         todo!()
     }
 
+    fn config(&self) -> &impl vertx_config::Storage {
+        self.config.config()
+    }
+
     async fn update_config<'a>(
         &self,
         key: &'a str,

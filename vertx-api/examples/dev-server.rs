@@ -49,6 +49,12 @@ impl vertx_api::State for State {
         process::exit(0)
     }
 
+    fn config(&self) -> &impl vertx_config::Storage {
+        #[derive(Default, vertx_config::Storage)]
+        struct Config {}
+        &Config {}
+    }
+
     async fn update_config<'a>(
         &self,
         key: &'a str,

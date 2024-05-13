@@ -14,6 +14,7 @@ mod pins {
 mod config;
 mod configurator;
 mod crsf;
+mod display;
 mod flash;
 mod leds;
 mod mode;
@@ -77,6 +78,7 @@ fn entry() -> ! {
 struct Config {
     name: Mutex<mutex::SingleCore, heapless::String<20>>,
     leds: leds::Config,
+    display: display::Config,
     wifi: configurator::WifiConfig,
     expert: Mutex<mutex::SingleCore, bool>,
 }

@@ -10,6 +10,7 @@ export const enum RequestKind {
 	PowerOff,
 	Reboot,
 	CheckForUpdate,
+	GetConfig,
 	ConfigUpdate,
 	// StreamInputs,
 	// StreamMixer,
@@ -21,6 +22,7 @@ export type Request =
 	| { kind: RequestKind.PowerOff }
 	| { kind: RequestKind.Reboot }
 	| { kind: RequestKind.CheckForUpdate }
+	| { kind: RequestKind.GetConfig }
 	| {
 			kind: RequestKind.ConfigUpdate;
 			payload: {
@@ -52,6 +54,7 @@ export function encodeRequest(request: Request): ArrayBuffer {
 		case RequestKind.PowerOff:
 		case RequestKind.Reboot:
 		case RequestKind.CheckForUpdate:
+		case RequestKind.GetConfig:
 			break;
 
 		case RequestKind.ConfigUpdate: {
@@ -86,6 +89,7 @@ export const enum ResponseKind {
 	ProtocolVersion,
 	BuildInfo,
 	Status,
+	Config,
 	ConfigUpdate,
 }
 
@@ -114,6 +118,10 @@ export type Response =
 			};
 	  }
 	| {
+			kind: ResponseKind.Config;
+			payload: Config;
+	  }
+	| {
 			kind: ResponseKind.Status;
 			payload: {
 				batteryVoltage: number;
@@ -126,7 +134,9 @@ export type Response =
 			payload: { id: number } & ConfigUpdateResult;
 	  };
 
-const enum ConfigUpdateResultKind {
+export type Config = Record<string, boolean | number | string>;
+
+export enum ConfigUpdateResultKind {
 	Ok,
 	KeyNotFound,
 	InvalidType,
@@ -135,12 +145,28 @@ const enum ConfigUpdateResultKind {
 	TooLarge,
 }
 
-type ConfigUpdateResult =
+export type ConfigUpdateResult =
 	| { result: ConfigUpdateResultKind.Ok }
 	| { result: ConfigUpdateResultKind.KeyNotFound }
 	| { result: ConfigUpdateResultKind.InvalidType }
 	| { result: ConfigUpdateResultKind.TooSmall; min: number }
 	| { result: ConfigUpdateResultKind.TooLarge; max: number };
+
+export function configUpdateResultToString(result: ConfigUpdateResult): string {
+	const name = ConfigUpdateResultKind[result.result];
+	switch (result.result) {
+		case ConfigUpdateResultKind.Ok:
+		case ConfigUpdateResultKind.KeyNotFound:
+		case ConfigUpdateResultKind.InvalidType:
+			return name;
+		case ConfigUpdateResultKind.TooSmall:
+			return `${name} { min: ${result.min} }`;
+		case ConfigUpdateResultKind.TooLarge:
+			return `${name} { max: ${result.max} }`;
+		default:
+			unreachable(result);
+	}
+}
 
 export type ResponsePayload<Kind extends ResponseKind> = Extract<
 	Response,
@@ -183,6 +209,15 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 					timingDrift: reader.f32(),
 				},
 			};
+		case ResponseKind.Config:
+			reader.varint(); // Ignore config byte array length
+			if (reader.u8() !== ConfigKind.Struct) {
+				throw new Error('Invalid config');
+			}
+			return {
+				kind,
+				payload: parseConfig(reader),
+			};
 		case ResponseKind.ConfigUpdate: {
 			const id = reader.varint();
 			const result = reader.u8() as ConfigUpdateResultKind;
@@ -223,15 +258,51 @@ function invalidResponseKind(kind: never): never {
 	throw new Error(`Invalid response kind: ${kind}`);
 }
 
-export type ProtocolVersion = {
-	major: number;
-	minor: number;
-};
+const enum ConfigKind {
+	Boolean,
+	String,
+	Unsigned,
+	Signed,
+	Float,
+	Struct,
+}
 
-export type FirmwareVersion = {
-	major: number;
-	minor: number;
-	patch: number;
-	commit: string;
-	dirty: boolean;
-};
+function invalidConfigKind(kind: never): never {
+	throw new Error(`Invalid config kind: ${kind}`);
+}
+
+function parseConfig(
+	reader: DataReader,
+	config: Config = {},
+	root?: string,
+): Config {
+	const path = root ? `${root}.` : '';
+	for (let i = reader.varint(); i > 0; i--) {
+		const field = `${path}${reader.string()}`;
+		const kind = reader.u8() as ConfigKind;
+		switch (kind) {
+			case ConfigKind.Boolean:
+				config[field] = reader.boolean();
+				break;
+			case ConfigKind.String:
+				config[field] = reader.string();
+				break;
+			case ConfigKind.Unsigned:
+				config[field] = reader.varint();
+				break;
+			case ConfigKind.Signed:
+				throw new Error('unimplemented');
+			case ConfigKind.Float:
+				config[field] = reader.f32();
+				break;
+			case ConfigKind.Struct:
+				parseConfig(reader, config, field);
+				break;
+
+			default:
+				invalidConfigKind(kind);
+		}
+	}
+
+	return config;
+}

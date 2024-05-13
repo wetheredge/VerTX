@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use serde::{Deserialize, Serialize};
 
 pub(crate) const VERSION_MAJOR: u8 = 0;
@@ -11,6 +13,7 @@ pub enum Request<'a> {
     PowerOff,
     Reboot,
     CheckForUpdate,
+    GetConfig,
     ConfigUpdate {
         id: u32,
         key: &'a str,
@@ -79,6 +82,9 @@ response! {
         battery_voltage: u16,
         idle_time: f32,
         timing_drift: f32,
+    },
+    Config {
+        config: Vec<u8>,
     },
     ConfigUpdate {
         id: u32,
