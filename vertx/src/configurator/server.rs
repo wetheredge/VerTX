@@ -59,13 +59,18 @@ static CONFIG: Config<Duration> = Config {
 
 pub fn run(
     spawner: &Spawner,
+    reset: crate::reset::Manager,
     config: &'static crate::config::Manager,
     stack: &'static super::wifi::Stack<'static>,
     mode: crate::mode::Publisher<'static>,
     status: &'static StatusSignal,
 ) {
     let app = make_static!(router());
-    let state = make_static!(State { config, status });
+    let state = make_static!(State {
+        reset,
+        config,
+        status
+    });
 
     let mut mode = Some(mode);
     for id in 0..TASKS {
@@ -108,6 +113,7 @@ async fn worker(
 }
 
 struct State {
+    reset: crate::reset::Manager,
     config: &'static crate::config::Manager,
     status: &'static StatusSignal,
 }
@@ -119,12 +125,12 @@ impl vertx_api::State for State {
         self.status.wait().await
     }
 
-    fn power_off(&self) -> ! {
-        todo!()
+    fn power_off(&self) {
+        self.reset.power_off();
     }
 
-    fn reboot(&self) -> ! {
-        todo!()
+    fn reboot(&self) {
+        self.reset.reboot();
     }
 
     fn config(&self) -> &impl vertx_config::Storage {
@@ -137,8 +143,6 @@ impl vertx_api::State for State {
         update: vertx_config::update::Update<'a>,
     ) -> vertx_config::update::Result {
         use vertx_config::update::UpdateRef;
-
-        log::info!("{key} = {update:?}");
-        self.config.config().update_ref(key, update).await
+        self.config.update_ref(key, update).await
     }
 }

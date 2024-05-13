@@ -39,12 +39,12 @@ impl vertx_api::State for State {
         (self.status.lock().await.recv().await).unwrap()
     }
 
-    fn power_off(&self) -> ! {
+    fn power_off(&self) {
         log::info!("Powering off");
         process::exit(0)
     }
 
-    fn reboot(&self) -> ! {
+    fn reboot(&self) {
         log::info!("Rebooting");
         process::exit(0)
     }

@@ -19,6 +19,7 @@ mod flash;
 mod leds;
 mod mode;
 mod mutex;
+mod reset;
 
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
@@ -84,6 +85,9 @@ struct Config {
 }
 
 fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
+    // SAFETY: Nothing before this will trigger a reset
+    let reset = unsafe { reset::Manager::new() };
+
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::max(system.clock_control).freeze();
@@ -120,13 +124,13 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         spawner.must_spawn(leds::run(config, leds, mode.subscriber().unwrap()));
     }
 
-    let configurator_enabled = configurator::IsEnabled::new();
+    spawner.must_spawn(reset::reset(config_manager));
     spawner.must_spawn(configurator::toggle_button(
         pins!(io.pins, configurator).into_pull_up_input().into(),
-        configurator_enabled,
+        reset,
     ));
 
-    if configurator_enabled.is_enabled() {
+    if reset.current_mode().is_configurator() {
         log::info!("Configurator enabled");
         mode.publish(crate::Mode::PreConfigurator);
 
@@ -145,6 +149,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
         configurator::server::run(
             &spawner,
+            reset,
             config_manager,
             stack,
             mode.publisher(),

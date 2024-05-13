@@ -20,8 +20,8 @@ pub trait State {
     const BUILD_INFO: response::BuildInfo;
 
     fn status(&self) -> impl Future<Output = response::Status>;
-    fn power_off(&self) -> !;
-    fn reboot(&self) -> !;
+    fn power_off(&self);
+    fn reboot(&self);
 
     fn config(&self) -> &impl vertx_config::Storage;
     fn update_config<'a>(
@@ -152,8 +152,14 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                         let response = match request {
                             Request::ProtocolVersion => Response::PROTOCOL_VERSION,
                             Request::BuildInfo => S::BUILD_INFO.into(),
-                            Request::PowerOff => self.state.power_off(),
-                            Request::Reboot => self.state.reboot(),
+                            Request::PowerOff => {
+                                self.state.power_off();
+                                continue;
+                            }
+                            Request::Reboot => {
+                                self.state.reboot();
+                                continue;
+                            }
                             Request::CheckForUpdate => todo!(),
                             Request::GetConfig => {
                                 let config = self.state.config();
