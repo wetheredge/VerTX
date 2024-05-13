@@ -55,6 +55,8 @@ impl Manager {
             return;
         }
 
+        log::info!("Writing configuration");
+
         let encoded = vertx_config::storage::postcard::to_vec(&self.config).await;
 
         let mut data = vec![0; 1 + encoded.len().div_ceil(4)];
