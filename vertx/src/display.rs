@@ -1,16 +1,16 @@
-use vertx_config::{storage, update};
+use vertx_config::{minmax, storage, update};
 
 #[allow(unused)]
 #[derive(vertx_config::UpdateRef, vertx_config::Storage)]
 pub struct Config {
-    brightness: vertx_config::Reactive<u8, crate::mutex::SingleCore>,
+    brightness: vertx_config::Reactive<minmax::U8<1, { u8::MAX }>, crate::mutex::SingleCore>,
     font_size: vertx_config::Reactive<FontSize, crate::mutex::SingleCore>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            brightness: u8::MAX.into(),
+            brightness: minmax::U8::MAX.into(),
             font_size: Default::default(),
         }
     }

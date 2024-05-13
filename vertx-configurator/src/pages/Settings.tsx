@@ -76,7 +76,7 @@ export default function Settings() {
 				key="leds.brightness"
 				label="Status LED brightness"
 				type="number"
-				min={1}
+				min={10}
 				max={255}
 				handler={handleInteger}
 			/>

@@ -4,6 +4,7 @@ extern crate alloc;
 
 mod boot_snapshot;
 mod impls;
+pub mod minmax;
 mod reactive;
 pub mod storage;
 pub mod update;

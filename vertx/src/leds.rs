@@ -6,6 +6,7 @@ use embassy_time::{Duration, Timer};
 use esp_hal::rmt::Channel;
 use esp_hal_smartled::SmartLedsAdapter;
 use smart_leds::{colors, SmartLedsWrite, RGB8};
+use vertx_config::minmax;
 
 use crate::Mode;
 
@@ -15,13 +16,13 @@ pub const BUFFER_SIZE: usize = MAX_LEDS * 3 * 8 + 1;
 
 #[derive(vertx_config::UpdateRef, vertx_config::Storage)]
 pub struct Config {
-    brightness: vertx_config::Reactive<u8, crate::mutex::SingleCore>,
+    brightness: vertx_config::Reactive<minmax::U8<10, { u8::MAX }>, crate::mutex::SingleCore>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            brightness: 10.into(),
+            brightness: minmax::U8::MIN.into(),
         }
     }
 }
@@ -150,7 +151,7 @@ pub async fn run(
 
         leds.write(smart_leds::brightness(
             smart_leds::gamma(iter::once(color)),
-            *config.brightness.current().await,
+            **config.brightness.current().await,
         ))
         .unwrap();
 
