@@ -82,11 +82,7 @@ export function initApi(host: string) {
 
 	onCleanup(() => socket.close());
 
-	socket.addEventListener('open', () => {
-		setStatus(ApiStatus.Connected);
-		request({ kind: RequestKind.ProtocolVersion });
-		request({ kind: RequestKind.GetConfig });
-	});
+	socket.addEventListener('open', () => setStatus(ApiStatus.Connected));
 	socket.addEventListener('close', () => setStatus(ApiStatus.LostConnection));
 
 	socket.addEventListener(

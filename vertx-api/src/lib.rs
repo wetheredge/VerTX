@@ -121,6 +121,14 @@ impl<S> Handler<'_, S> {
     }
 }
 
+impl<S: State> Handler<'_, S> {
+    async fn config_response(&self) -> Response {
+        let config = self.state.config();
+        let config = vertx_config::storage::postcard::to_vec(config).await;
+        Response::Config { config }
+    }
+}
+
 impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
     async fn run<R: io::Read, W: io::Write<Error = R::Error>>(
         mut self,
@@ -130,6 +138,9 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
         use ws::Message;
 
         let mut req_buffer = [0; 64];
+
+        self.send(Response::PROTOCOL_VERSION, &mut tx).await?;
+        self.send(self.config_response().await, &mut tx).await?;
 
         loop {
             let status = self.state.status();
@@ -166,11 +177,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
                                 continue;
                             }
                             Request::CheckForUpdate => todo!(),
-                            Request::GetConfig => {
-                                let config = self.state.config();
-                                let config = vertx_config::storage::postcard::to_vec(config).await;
-                                Response::Config { config }
-                            }
+                            Request::GetConfig => self.config_response().await,
                             Request::ConfigUpdate { id, key, value } => {
                                 let result = self.state.update_config(key, value).await.into();
                                 Response::ConfigUpdate { id, result }
