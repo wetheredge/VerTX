@@ -1,0 +1,38 @@
+name: Update dependencies
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  updates:
+    name: Update dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Git identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - uses: asdf-vm/actions/setup@v3
+      - name: Install asdf plugins
+        run: |
+          asdf plugin add bun https://github.com/cometkim/asdf-bun
+          asdf plugin add just https://github.com/olofvndrhr/asdf-just
+          asdf plugin add typos https://github.com/aschiavon91/asdf-typos
+      - run: asdf install bun
+      - name: Install dependencies
+        run: cd vertx-configurator && bun install
+      - run: bun run vertx-configurator/scripts/update.ts
+      - run: git push --set-upstream origin updates
+      - name: Open PR
+        run: gh pr create --base main --title 'Update dependencies' --body-file '.updates.md'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -72,9 +72,16 @@
 			}
 		},
 		{
-			"include": ["./*.ts"],
+			"include": ["./*.ts", "./scripts/*.ts"],
 			"javascript": {
 				"globals": ["Bun"]
+			},
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off"
+					}
+				}
 			}
 		}
 	]
