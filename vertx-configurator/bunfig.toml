@@ -1,5 +1,2 @@
 [install]
 auto = "disable"
-
-[install.lockfile]
-print = "yarn"

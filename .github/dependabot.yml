@@ -1,22 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: cargo
-    directory: '/'
-    schedule:
-      interval: monthly
-    groups:
-      development:
-        dependency-type: development
-  - package-ecosystem: npm
-    directory: 'vertx-configurator/'
-    schedule:
-      interval: monthly
-    groups:
-      development:
-        dependency-type: development
-        exclude-patterns:
-          - "@biomejs/biome"
-  - package-ecosystem: devcontainers
+  - package-ecosystem: github-actions
     directory: '/'
     schedule:
       interval: monthly
