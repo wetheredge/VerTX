@@ -9,6 +9,6 @@ publish = false
 workspace = true
 
 [dependencies]
-bitfield = "0.14.0"
+bitfield = "=0.15.0"
 crc = "3.2.1"
 embedded-io = { workspace = true }
