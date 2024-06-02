@@ -292,11 +292,11 @@ function group(group: string) {
 					if (import.meta.env.CI) {
 						if (!updatedAny) {
 							const md = `### \`${group}\`\ndependency|from|to\n-|-|-`;
-							await $`echo ${md} >> .updates.md`.quiet();
+							await $`echo ${md} >> ${repoRoot}/.updates.md`.quiet();
 							updatedAny = true;
 						}
 						const md = `\`${dep}\`|${current}|${latest}`;
-						await $`echo ${md} >> .updates.md`.quiet();
+						await $`echo ${md} >> ${repoRoot}/.updates.md`.quiet();
 					}
 				}
 
