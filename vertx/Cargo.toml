@@ -21,7 +21,7 @@ esp-hal = { version = "0.17.0", features = ["esp32s3", "opsram-8m", "async", "em
 esp-hal-smartled = { version = "0.10.0", features = ["esp32s3"] }
 esp-println = { version = "0.9.1", features = ["esp32s3", "log"] }
 esp-storage = { version = "0.3.0", default-features = false, features = ["esp32s3", "low-level", "storage", "critical-section"] }
-esp-wifi = { version = "0.5.0", features = ["esp32s3", "wifi", "embassy-net"] }
+esp-wifi = { version = "=0.5.1", features = ["esp32s3", "wifi", "embassy-net"] }
 heapless = { workspace = true }
 log = { version = "0.4.21" }
 picoserve = { workspace = true, features = ["embassy"] }
