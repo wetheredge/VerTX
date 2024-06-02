@@ -25,7 +25,7 @@ vertx-config.path = "vertx-config"
 [workspace.metadata.bin]
 cargo-machete = { version = "0.6.2", locked = true }
 cargo-nextest = { version = "=0.9.72", locked = true }
-dprint = { version = "0.45.1", locked = true }
+dprint = { version = "=0.46.1", locked = true }
 espflash = { version = "3.0.0", locked = true }
 
 [profile.dev.package.esp-storage]
