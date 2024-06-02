@@ -33,7 +33,7 @@ vertx-config = { workspace = true, features = ["heapless"] }
 
 [build-dependencies]
 cargo_toml = "=0.20.2"
-prettyplease = "0.2.17"
+prettyplease = "=0.2.20"
 quote = "1.0.36"
 serde = { workspace = true, features = ["derive"] }
 serde_json = "1.0.115"
