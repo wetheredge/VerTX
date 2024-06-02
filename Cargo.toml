@@ -44,7 +44,6 @@ lto = true
 esp-hal = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
 esp-hal-procmacros = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
 esp-hal-smartled = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
-embassy-sync = { git = "https://github.com/wetheredge/embassy.git", branch = "mutex-trait-parity-backport", commit = "9ebf04e9f7cf9514c4c63ee4678479a7a878910c" }
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"
