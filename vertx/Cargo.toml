@@ -17,7 +17,7 @@ embassy-sync = { workspace = true }
 embassy-time = { version = "0.3.0", features = ["generic-queue-8"] }
 esp-alloc = { version = "0.3.0" }
 esp-backtrace = { version = "0.11.1", features = ["esp32s3", "colors", "panic-handler", "exception-handler", "println"] }
-esp-hal = { version = "0.17.0", features = ["esp32s3", "opsram-8m", "async", "embassy", "embassy-executor-thread", "embassy-time-timg0", "embedded-io"] }
+esp-hal = { version = "0.17.0", features = ["esp32s3", "opsram-8m", "async", "embassy", "embassy-executor-thread", "embassy-time-timg0"] }
 esp-hal-smartled = { version = "0.10.0", features = ["esp32s3"] }
 esp-println = { version = "0.9.1", features = ["esp32s3", "log"] }
 esp-storage = { version = "0.3.0", default-features = false, features = ["esp32s3", "low-level", "storage", "critical-section"] }
