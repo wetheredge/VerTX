@@ -9,7 +9,7 @@ publish = false
 workspace = true
 
 [dependencies]
-bytemuck = { version = "1.15.0", features = ["min_const_generics"] }
+bytemuck = { version = "=1.16.0", features = ["min_const_generics"] }
 embassy-executor = { version = "0.5.0", features = ["nightly"] }
 embassy-futures = "0.1.1"
 embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-hostname"] }
@@ -21,7 +21,7 @@ esp-hal = { version = "0.17.0", features = ["esp32s3", "opsram-8m", "async", "em
 esp-hal-smartled = { version = "0.10.0", features = ["esp32s3"] }
 esp-println = { version = "0.9.1", features = ["esp32s3", "log"] }
 esp-storage = { version = "0.3.0", default-features = false, features = ["esp32s3", "low-level", "storage", "critical-section"] }
-esp-wifi = { version = "0.5.0", features = ["esp32s3", "wifi", "embassy-net"] }
+esp-wifi = { version = "=0.5.1", features = ["esp32s3", "wifi", "embassy-net"] }
 heapless = { workspace = true }
 log = { version = "0.4.21" }
 picoserve = { workspace = true, features = ["embassy"] }
@@ -32,9 +32,9 @@ vertx-api = { workspace = true }
 vertx-config = { workspace = true, features = ["heapless"] }
 
 [build-dependencies]
-cargo_toml = "0.19.2"
-prettyplease = "0.2.17"
+cargo_toml = "=0.20.2"
+prettyplease = "=0.2.20"
 quote = "1.0.36"
 serde = { workspace = true, features = ["derive"] }
-serde_json = "1.0.115"
-syn = { version = "2.0.60", default-features = false, features = ["parsing"] }
+serde_json = "=1.0.117"
+syn = { version = "=2.0.66", default-features = false, features = ["parsing"] }

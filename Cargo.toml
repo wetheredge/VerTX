@@ -10,23 +10,23 @@ license = "MPL-2.0"
 
 [workspace.dependencies]
 embassy-net = "0.4.0"
-embassy-sync = "0.5.0"
+embassy-sync = "=0.6.0"
 embedded-io = "0.6.1"
 heapless = "0.8.0"
-picoserve = "0.10.2"
+picoserve = "=0.11.0"
 postcard = { version = "1.0.8", default-features = false }
 quote = "1.0.36"
-serde = { version = "1.0.200", default-features = false }
-syn = "2.0.60"
-tokio = "1.37.0"
+serde = { version = "=1.0.203", default-features = false }
+syn = "=2.0.66"
+tokio = "=1.38.0"
 vertx-api.path = "vertx-api"
 vertx-config.path = "vertx-config"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "0.6.2", locked = true }
-cargo-nextest = { version = "0.9.70", locked = true }
-dprint = { version = "0.45.1", locked = true }
-espflash = { version = "3.0.0", locked = true }
+cargo-nextest = { version = "=0.9.72", locked = true }
+dprint = { version = "=0.46.1", locked = true }
+espflash = { version = "=3.1.0", locked = true }
 
 [profile.dev.package.esp-storage]
 opt-level = 3
@@ -44,7 +44,6 @@ lto = true
 esp-hal = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
 esp-hal-procmacros = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
 esp-hal-smartled = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
-embassy-sync = { git = "https://github.com/wetheredge/embassy.git", branch = "mutex-trait-parity-backport", commit = "9ebf04e9f7cf9514c4c63ee4678479a7a878910c" }
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"
