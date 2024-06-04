@@ -25,6 +25,7 @@ check:
     just vertx-configurator/check
 
 setup:
+    git config --local include.path ../.gitconfig
     cargo bin --install
     cargo bin --sync-aliases
     cd vertx-configurator && bun install
