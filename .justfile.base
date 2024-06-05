@@ -1,8 +1,0 @@
-fmt:
-    cargo +nightly fmt
-
-check *args='':
-    cargo clippy --all-targets --all-features {{ args }}
-
-test:
-    cargo bin cargo-nextest run --status-level=leak

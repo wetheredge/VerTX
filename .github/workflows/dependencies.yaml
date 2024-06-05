@@ -25,7 +25,7 @@ jobs:
       - name: Install asdf plugins
         run: |
           asdf plugin add bun https://github.com/cometkim/asdf-bun
-          asdf plugin add just https://github.com/olofvndrhr/asdf-just
+          asdf plugin add task https://github.com/particledecay/asdf-task
           asdf plugin add typos https://github.com/aschiavon91/asdf-typos
       - run: asdf install bun
       - name: Install dependencies

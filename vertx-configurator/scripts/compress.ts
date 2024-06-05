@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+
 import { resolveConfig } from 'vite';
 
 const viteConfig = await resolveConfig({}, 'build');

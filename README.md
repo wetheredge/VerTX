@@ -51,11 +51,11 @@ $ espup install -t esp32s3
 
 # Install asdf plugins if necessary
 $ asdf plugin add bun https://github.com/cometkim/asdf-bun
-$ asdf plugin add just https://github.com/olofvndrhr/asdf-just
+$ asdf plugin add task https://github.com/particledecay/asdf-task
 $ asdf plugin add typos https://github.com/aschiavon91/asdf-typos
 
 $ asdf install
-$ just setup
+$ task setup
 
 # On Linux, remember to load the esp toolchain environment before building vertx
 $ . ~/export-esp.sh
@@ -73,18 +73,8 @@ requests welcome.
 
 ### Workflow
 
-Once all prerequisites are installed or the devcontainer is started, run
-`just setup` in the project root. This will install the remaining dev tools
-inside the project directory.
-
-Most tasks are run using `just` (ie `just fmt`, `just check`, etc). Each
-`vertx*` subproject has its own set of tasks. There are a few project-wide tasks
-defined in project root. Run `just` without any arguments to get a list of the
-tasks available in that directory.
-
-The configurator/web ui must to be built before building the main VerTX binary.
-This can be done by running `just build` inside the `vertx-configurator/`
-directory, or `just vertx-configurator/build` from the root.
+Most development tasks are run using [`task`](https://taskfile.dev). Run `task`
+without any arguments to get a list of all the tasks available.
 
 ## License
 

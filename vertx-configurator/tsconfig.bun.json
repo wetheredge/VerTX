@@ -7,5 +7,5 @@
 		"noEmit": false,
 		"noPropertyAccessFromIndexSignature": false
 	},
-	"files": ["compress.ts", "vite.config.ts", "scripts/*.ts"]
+	"files": ["vite.config.ts", "scripts/*.ts"]
 }

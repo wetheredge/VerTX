@@ -1,0 +1,208 @@
+version: "3"
+
+dotenv:
+  - .env
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+    silent: true
+
+  clean:
+    desc: Delete all build artifacts
+    prompt: Delete all build artifacts?
+    cmds:
+      - cargo clean
+      - cd vertx-configurator && rm -r dist
+
+  fmt:
+    desc: Format everything
+    cmds:
+      - cargo +nightly fmt --all
+      - cargo bin dprint fmt
+      - cd vertx-configurator && bun run -b biome format --write .
+
+  setup:
+    desc: Setup needed after first clone and dependency updates
+    cmds:
+      - git config --local include.path ../.gitconfig
+      - cargo bin --install
+      - cargo bin --sync-aliases
+      - cd vertx-configurator && bun install
+      - cmd: echo
+        silent: true
+      - cmd: echo "The WIFI_SSID, WIFI_PASSWORD, and VERTX_TARGET environment variables are required at build time."
+        silent: true
+      - cmd: echo "A complete list of targets can be printed by running \`task targets\`"
+        silent: true
+      - cmd: echo
+        silent: true
+      - cmd: echo "Env vars will be automatically loaded from .env in the project root, if present."
+        silent: true
+
+  targets:
+    desc: Print the list of targets
+    cmds:
+      - echo "Available targets:"
+      - for: sources
+        cmd: echo '* {{.ITEM | trimPrefix "vertx/targets/" | trimSuffix ".json"}}'
+    sources:
+      - vertx/targets/*
+    status:
+      - 'false'
+    silent: true
+
+  all:check:
+    cmds:
+      - task: vertx:check
+      - task: api:check
+      - task: config-macros:check
+      - task: config:check
+      - task: configurator:check
+      - task: crsf:check
+
+  all:test:
+    cmds:
+      - task: config:test
+      - task: crsf:test
+
+  handset:flash:
+    desc: Flash the most recently built firmware to the connected handset
+    cmds:
+      - cargo bin espflash flash --partition-table vertx/partitions.csv --flash-size 16mb --baud 460800 --monitor target/vertx
+
+  handset:monitor:
+    desc: Monitor serial output from the connected handset
+    cmds:
+      - cargo bin espflash monitor
+
+  handset:erase-config:
+    desc: Erase the connected handset's config partition
+    cmds:
+      - cargo bin espflash erase-parts --partition-table vertx/partitions.csv config
+
+  vertx:check:
+    dir: vertx
+    deps:
+      - configurator:build
+    cmds:
+      - cargo +esp clippy
+
+  vertx:build:
+    dir: vertx
+    deps:
+      - configurator:build
+    cmds:
+      - cargo +esp build
+      - task: vertx:post-build
+        vars:
+          PROFILE: debug
+
+  vertx:build:release:
+    dir: vertx
+    deps:
+      - configurator:build
+    cmds:
+      - cargo +esp build --release
+      - task: vertx:post-build
+        vars:
+          PROFILE: release
+
+  vertx:post-build:
+    internal: true
+    dir: target
+    requires:
+      vars: [PROFILE]
+    cmds:
+      - cp xtensa-esp32s3-none-elf/{{.PROFILE}}/vertx vertx
+    silent: true
+
+  api:check:
+    dir: vertx-api
+    cmds:
+      - cargo clippy --all-targets
+
+  api:dev:
+    desc: Run a local dev server for use with configurator:{dev,preview}
+    dir: vertx-api
+    cmds:
+      - cargo run --example dev-server
+
+  config-macros:check:
+    dir: vertx-config-macros
+    cmds:
+      - cargo clippy
+
+  config:check:
+    dir: vertx-config
+    cmds:
+      - cargo clippy --all-features
+
+  config:test:
+    dir: vertx-config
+    cmds:
+      - cargo bin cargo-nextest run --status-level=leak
+
+  configurator:dev:
+    desc: Run a local dev server. Needs api:dev running
+    dir: vertx-configurator
+    cmds:
+      - bun run -b vite
+
+  configurator:check:
+    desc: Run all checks
+    dir: vertx-configurator
+    cmds:
+      - bun run -b biome ci .
+      - task: configurator:check:tsc
+
+  configurator:check:tsc:
+    internal: true
+    dir: vertx-configurator
+    cmds:
+      - bun run -b tsc
+    sources:
+      - bun.lockb
+      - scripts/**
+      - src/**
+      - '*.config.*'
+      - tsconfig.*
+
+  configurator:build:
+    dir: vertx-configurator
+    deps:
+      - configurator:check
+    env:
+      NODE_ENV: production
+    cmds:
+      - bun run -b vite build
+      - bun run scripts/compress.ts
+    sources:
+      - package.json
+      - bun.lockb
+      - index.html
+      - src/**
+      - '*.config.*'
+      - tsconfig.*
+      - scripts/compress.ts
+    generates:
+      - dist/**
+
+  configurator:preview:
+    desc: Run a local server from built artifacts. Needs api:dev running
+    dir: vertx-configurator
+    deps:
+      - configurator:build
+    cmds:
+      - bun run -b vite preview
+
+  crsf:check:
+    dir: vertx-crsf
+    cmds:
+      - cargo clippy
+
+  crsf:test:
+    dir: vertx-crsf
+    cmds:
+      - cargo bin cargo-nextest run --status-level=leak
