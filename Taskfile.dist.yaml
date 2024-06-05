@@ -56,6 +56,7 @@ tasks:
   all:check:
     cmds:
       - task: vertx:check
+      - task: simulator:check
       - task: api:check
       - task: config-macros:check
       - task: config:check
@@ -83,31 +84,45 @@ tasks:
       - cargo bin espflash erase-parts --partition-table vertx/partitions.csv config
 
   vertx:check:
-    dir: vertx
     deps:
       - configurator:build
     cmds:
-      - cargo +esp clippy
+      - task: vertx:cargo
+        vars:
+          COMMAND: clippy
 
   vertx:build:
-    dir: vertx
     deps:
       - configurator:build
     cmds:
-      - cargo +esp build
+      - task: vertx:cargo
+        vars:
+          COMMAND: build
       - task: vertx:post-build
         vars:
           PROFILE: debug
 
   vertx:build:release:
-    dir: vertx
     deps:
       - configurator:build
     cmds:
-      - cargo +esp build --release
+      - task: vertx:cargo
+        vars:
+          COMMAND: build
+          ARGS: --release
       - task: vertx:post-build
         vars:
           PROFILE: release
+
+  vertx:cargo:
+    internal: true
+    dir: vertx
+    requires:
+      vars: [COMMAND]
+    env:
+      RUSTFLAGS: -Clink-arg=-Tlinkall.x -Clink-arg=-Trom_functions.x -Clink-arg=-nostartfiles
+    cmds:
+      - cargo +esp {{.COMMAND}} -Zbuild-std=alloc,core --target xtensa-esp32s3-none-elf --bin vertx -F esp32s3 {{.ARGS}}
 
   vertx:post-build:
     internal: true
@@ -117,6 +132,30 @@ tasks:
     cmds:
       - cp xtensa-esp32s3-none-elf/{{.PROFILE}}/vertx vertx
     silent: true
+
+  simulator:check:
+    deps:
+      - configurator:build
+    cmds:
+      - task: simulator:cargo
+        vars:
+          COMMAND: clippy
+
+  simulator:run:
+    deps:
+      - configurator:build
+    cmds:
+      - task: simulator:cargo
+        vars:
+          COMMAND: run
+
+  simulator:cargo:
+    internal: true
+    dir: vertx
+    requires:
+      vars: [COMMAND]
+    cmds:
+      - cargo +nightly {{.COMMAND}} --bin simulator -F simulator
 
   api:check:
     dir: vertx-api

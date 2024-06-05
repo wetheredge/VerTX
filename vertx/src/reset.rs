@@ -1,17 +1,12 @@
-use core::cell::UnsafeCell;
-use core::mem::MaybeUninit;
 use core::sync::atomic::{AtomicU8, Ordering};
 
 use embassy_executor::task;
 use embassy_sync::signal::Signal;
-use esp_hal::macros::ram;
-use esp_hal::reset;
-use esp_hal::rtc_cntl::SocResetReason;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Reset {
-    Reset,
-    PowerOff,
+    Reboot,
+    ShutDown,
 }
 
 static RESET: Signal<crate::mutex::MultiCore, Reset> = Signal::new();
@@ -65,28 +60,40 @@ impl Manager {
             }
         }
 
-        let raw: &mut MaybeUninit<AtomicU8> = {
-            // TODO: replace this with SyncUnsafeCell when it is stabilized
-            struct Raw(UnsafeCell<MaybeUninit<AtomicU8>>);
-            // SAFETY: only runs once so this is never available to multiple threads
-            unsafe impl Sync for Raw {}
+        #[cfg(feature = "esp32")]
+        let mode = {
+            use core::cell::UnsafeCell;
+            use core::mem::MaybeUninit;
 
-            #[ram(rtc_fast, uninitialized)]
-            static RAW: Raw = Raw(UnsafeCell::new(MaybeUninit::uninit()));
+            let raw: &mut MaybeUninit<AtomicU8> = {
+                // TODO: replace this with SyncUnsafeCell when it is stabilized
+                struct Raw(UnsafeCell<MaybeUninit<AtomicU8>>);
+                // SAFETY: only runs once so this is never available to multiple threads
+                unsafe impl Sync for Raw {}
 
-            // SAFETY: this only runs once and RAW is contained in this block, so the
-            // reference is unique
-            unsafe { &mut *RAW.0.get() }
+                #[esp_hal::macros::ram(rtc_fast, uninitialized)]
+                static RAW: Raw = Raw(UnsafeCell::new(MaybeUninit::uninit()));
+
+                // SAFETY: this only runs once and RAW is contained in this block, so the
+                // reference is unique
+                unsafe { &mut *RAW.0.get() }
+            };
+
+            // Initialize on for any reset that could happen before this has run
+            if !matches!(
+                esp_hal::reset::get_reset_reason(),
+                Some(esp_hal::rtc_cntl::SocResetReason::CoreSw)
+            ) {
+                let init = AtomicU8::new(BootMode::default() as u8);
+                raw.write(init);
+            }
+
+            // SAFETY: initialized by the if statement above, or the same on a previous boot
+            unsafe { raw.assume_init_ref() }
         };
 
-        // Initialize on for any reset that could happen before this has run
-        if !matches!(reset::get_reset_reason(), Some(SocResetReason::CoreSw)) {
-            let init = AtomicU8::new(BootMode::default() as u8);
-            raw.write(init);
-        }
-
-        // SAFETY: initialized by the if statement above, or the same on a previous boot
-        let mode = unsafe { raw.assume_init_ref() };
+        #[cfg(feature = "simulator")]
+        let mode = static_cell::make_static!(AtomicU8::new(BootMode::default() as u8));
 
         Self { mode }
     }
@@ -103,15 +110,15 @@ impl Manager {
         };
 
         self.mode.store(mode as u8, Ordering::Release);
-        RESET.signal(Reset::Reset);
+        RESET.signal(Reset::Reboot);
     }
 
-    pub fn power_off(&self) {
-        RESET.signal(Reset::PowerOff);
+    pub fn shut_down(&self) {
+        RESET.signal(Reset::ShutDown);
     }
 
     pub fn reboot(&self) {
-        RESET.signal(Reset::Reset);
+        RESET.signal(Reset::Reboot);
     }
 }
 
@@ -120,9 +127,8 @@ pub async fn reset(config: &'static crate::config::Manager) {
     let kind = RESET.wait().await;
     config.save().await;
 
-    if kind == Reset::PowerOff {
-        panic!("Emulating power off");
-    } else {
-        reset::software_reset();
+    match kind {
+        Reset::ShutDown => crate::hal::shut_down(),
+        Reset::Reboot => crate::hal::reboot(),
     }
 }

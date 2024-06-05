@@ -4,10 +4,10 @@ pub const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
 const PARTITION_TABLE_ADDRESS: u32 = 0x8000;
 const PARTITION_TABLE_SIZE: usize = 0xC00;
 
+// .unwrap() is not const
 const CUSTOM_TYPE_CONFIG: PartitionKind = if let Some(config) = PartitionKind::new_custom(0x40, 0) {
     config
 } else {
-    // Needed since .unwrap() is not const yet
     panic!("Invalid config PartitionKind")
 };
 

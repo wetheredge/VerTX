@@ -2,50 +2,34 @@
 #![warn(clippy::big_endian_bytes, clippy::little_endian_bytes)]
 
 use alloc::vec;
-use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, Ordering};
 
 use embassy_sync::mutex::Mutex;
 use vertx_config::update;
 
-use crate::flash::Partition;
+use crate::hal::traits::ConfigStorage as _;
+use crate::hal::ConfigStorage;
 
 pub struct Manager {
     modified: AtomicBool,
-    partition: Mutex<crate::mutex::SingleCore, Partition>,
+    storage: Mutex<crate::mutex::SingleCore, ConfigStorage>,
     config: crate::Config,
 }
 
 impl Manager {
-    pub fn new(partitions: &mut Vec<Partition>) -> Self {
-        let partition = partitions.iter().position(Partition::is_config).unwrap();
-        let partition = partitions.swap_remove(partition);
-
-        let mut length = [0; 1];
-        partition.read_into(0, &mut length).unwrap();
-        let [length] = length;
-        let length = if length == u32::MAX { 0 } else { length };
-        let length = length as usize;
-
-        let config = if length > 0 {
-            let mut config = vec![0; length.div_ceil(4)];
-            partition.read_into(1, &mut config).unwrap();
-            let config_bytes: &[u8] = &bytemuck::cast_slice(&config)[..length];
-
-            match vertx_config::storage::postcard::from_slice(config_bytes) {
-                Ok(config) => config,
-                Err(err) => {
-                    log::error!("Failed to load config: {err}");
-                    Default::default()
-                }
+    pub fn new(storage: ConfigStorage) -> Self {
+        let config = match storage.load(vertx_config::storage::postcard::from_slice) {
+            Some(Ok(config)) => config,
+            Some(Err(err)) => {
+                log::error!("Failed to load config: {err}");
+                Default::default()
             }
-        } else {
-            Default::default()
+            None => Default::default(),
         };
 
         Self {
             modified: AtomicBool::new(false),
-            partition: Mutex::new(partition),
+            storage: Mutex::new(storage),
             config,
         }
     }
@@ -63,8 +47,8 @@ impl Manager {
         data[0] = encoded.len() as u32;
         bytemuck::cast_slice_mut(&mut data)[4..(4 + encoded.len())].copy_from_slice(&encoded);
 
-        let mut partition = self.partition.lock().await;
-        partition.erase_and_write(0, &data).unwrap();
+        let mut storage = self.storage.lock().await;
+        storage.save(&data);
     }
 
     pub fn config(&self) -> &crate::Config {

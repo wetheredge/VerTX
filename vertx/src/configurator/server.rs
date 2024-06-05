@@ -1,5 +1,6 @@
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
+use embassy_net::Stack;
 use embassy_sync::signal::Signal;
 use embassy_time::Duration;
 use picoserve::response::ResponseWriter;
@@ -58,10 +59,10 @@ static CONFIG: Config<Duration> = Config {
 };
 
 pub fn run(
-    spawner: &Spawner,
+    spawner: Spawner,
     reset: crate::reset::Manager,
     config: &'static crate::config::Manager,
-    stack: &'static super::wifi::Stack<'static>,
+    stack: &'static Stack<crate::hal::NetDriver>,
     mode: crate::mode::Publisher<'static>,
     status: &'static StatusSignal,
 ) {
@@ -81,7 +82,7 @@ pub fn run(
 #[task(pool_size = TASKS)]
 async fn worker(
     id: usize,
-    stack: &'static super::wifi::Stack<'static>,
+    stack: &'static Stack<crate::hal::NetDriver>,
     router: &'static Router,
     config: &'static Config<Duration>,
     state: &'static State,
@@ -126,7 +127,7 @@ impl vertx_api::State for State {
     }
 
     fn power_off(&self) {
-        self.reset.power_off();
+        self.reset.shut_down();
     }
 
     fn reboot(&self) {

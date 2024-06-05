@@ -3,8 +3,6 @@ use core::iter;
 use embassy_executor::task;
 use embassy_futures::select;
 use embassy_time::{Duration, Timer};
-use esp_hal::rmt::Channel;
-use esp_hal_smartled::SmartLedsAdapter;
 use smart_leds::{colors, SmartLedsWrite, RGB8};
 use vertx_config::minmax;
 
@@ -12,7 +10,7 @@ use crate::Mode;
 
 pub const MAX_LEDS: usize = 1;
 // 3 channels * 8 bits + 1 stop byte
-pub const BUFFER_SIZE: usize = MAX_LEDS * 3 * 8 + 1;
+pub(crate) const BUFFER_SIZE: usize = MAX_LEDS * 3 * 8 + 1;
 
 #[derive(vertx_config::UpdateRef, vertx_config::Storage)]
 pub struct Config {
@@ -136,7 +134,7 @@ impl Effect {
 #[task]
 pub async fn run(
     config: &'static crate::Config,
-    mut leds: SmartLedsAdapter<Channel<esp_hal::Blocking, 0>, { BUFFER_SIZE }>,
+    mut leds: crate::hal::LedDriver,
     mut mode: crate::mode::Subscriber<'static>,
 ) -> ! {
     log::info!("Starting leds()");
