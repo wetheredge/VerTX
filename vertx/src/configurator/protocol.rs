@@ -43,6 +43,8 @@ macro_rules! response {
         ),*}
 
         pub mod response { $($(
+            // this actually is used?
+            #[allow(unused_imports)]
             use super::*;
 
             #[derive(Debug, Clone)]

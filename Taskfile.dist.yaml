@@ -57,7 +57,6 @@ tasks:
     cmds:
       - task: vertx:check
       - task: simulator:check
-      - task: api:check
       - task: config-macros:check
       - task: config:check
       - task: configurator:check
@@ -156,17 +155,6 @@ tasks:
       vars: [COMMAND]
     cmds:
       - cargo +nightly {{.COMMAND}} --bin simulator -F simulator
-
-  api:check:
-    dir: vertx-api
-    cmds:
-      - cargo clippy --all-targets
-
-  api:dev:
-    desc: Run a local dev server for use with configurator:{dev,preview}
-    dir: vertx-api
-    cmds:
-      - cargo run --example dev-server
 
   config-macros:check:
     dir: vertx-config-macros

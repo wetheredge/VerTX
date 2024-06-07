@@ -1,12 +1,3 @@
-#![no_std]
-#![cfg_attr(not(any(feature = "embassy", feature = "tokio")), allow(unused))]
-
-extern crate alloc;
-
-mod protocol;
-
-use core::future::Future;
-
 use embassy_futures::select;
 use picoserve::extract::FromRequest;
 use picoserve::io;
@@ -14,34 +5,18 @@ use picoserve::request::{Path, Request as HttpRequest};
 use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode};
 use picoserve::routing::PathRouterService;
 
-pub use self::protocol::{response, ConfigUpdateResult, Request, Response};
-
-pub trait State {
-    const BUILD_INFO: response::BuildInfo;
-
-    fn status(&self) -> impl Future<Output = response::Status>;
-    fn power_off(&self);
-    fn reboot(&self);
-    fn exit_configurator(&self);
-
-    fn config(&self) -> &impl vertx_config::Storage;
-    fn update_config<'a>(
-        &self,
-        key: &'a str,
-        value: vertx_config::update::Update<'a>,
-    ) -> impl Future<Output = vertx_config::update::Result>;
-}
+use super::protocol::{response, Request, Response};
 
 #[derive(Debug)]
 pub struct UpgradeHandler;
 
-impl<S: State> PathRouterService<S> for UpgradeHandler {
+impl PathRouterService<super::State> for UpgradeHandler {
     async fn call_request_handler_service<
         R: io::Read,
         W: picoserve::response::ResponseWriter<Error = R::Error>,
     >(
         &self,
-        state: &S,
+        state: &super::State,
         _path_parameters: (),
         path: Path<'_>,
         mut request: HttpRequest<'_, R>,
@@ -63,13 +38,13 @@ impl<S: State> PathRouterService<S> for UpgradeHandler {
 
                 let valid_protocol = upgrade
                     .protocols()
-                    .is_some_and(|mut protocols| protocols.any(|p| p == protocol::NAME));
+                    .is_some_and(|mut protocols| protocols.any(|p| p == super::protocol::NAME));
 
                 let connection = request.body_connection.finalize().await?;
                 if valid_protocol {
                     upgrade
                         .on_upgrade(Handler::new(state))
-                        .with_protocol(protocol::NAME)
+                        .with_protocol(super::protocol::NAME)
                         .write_to(connection, response_writer)
                         .await
                 } else {
@@ -88,14 +63,13 @@ impl<S: State> PathRouterService<S> for UpgradeHandler {
     }
 }
 
-#[derive(Debug)]
-pub struct Handler<'a, S> {
+pub struct Handler<'a> {
     response_buffer: [u8; 256],
-    state: &'a S,
+    state: &'a super::State,
 }
 
-impl<'a, S> Handler<'a, S> {
-    pub fn new(state: &'a S) -> Self {
+impl<'a> Handler<'a> {
+    pub fn new(state: &'a super::State) -> Self {
         Self {
             response_buffer: core::array::from_fn(|_| 0),
             state,
@@ -103,7 +77,7 @@ impl<'a, S> Handler<'a, S> {
     }
 }
 
-impl<S> Handler<'_, S> {
+impl Handler<'_> {
     async fn send<W: io::Write>(
         &mut self,
         response: Response,
@@ -121,15 +95,15 @@ impl<S> Handler<'_, S> {
     }
 }
 
-impl<S: State> Handler<'_, S> {
+impl Handler<'_> {
     async fn config_response(&self) -> Response {
-        let config = self.state.config();
+        let config = self.state.config.config();
         let config = vertx_config::storage::postcard::to_vec(config).await;
         Response::Config { config }
     }
 }
 
-impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
+impl ws::WebSocketCallback for Handler<'_> {
     async fn run<R: io::Read, W: io::Write<Error = R::Error>>(
         mut self,
         mut rx: ws::SocketRx<R>,
@@ -143,7 +117,7 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
         self.send(self.config_response().await, &mut tx).await?;
 
         loop {
-            let status = self.state.status();
+            let status = self.state.status.wait();
             let request = rx.next_message(&mut req_buffer);
 
             match select::select(status, request).await {
@@ -163,23 +137,26 @@ impl<S: State> ws::WebSocketCallback for Handler<'_, S> {
 
                         let response = match request {
                             Request::ProtocolVersion => Response::PROTOCOL_VERSION,
-                            Request::BuildInfo => S::BUILD_INFO.into(),
+                            Request::BuildInfo => {
+                                include!(concat!(env!("OUT_DIR"), "/build_info.rs")).into()
+                            }
                             Request::PowerOff => {
-                                self.state.power_off();
+                                self.state.reset.shut_down();
                                 continue;
                             }
                             Request::Reboot => {
-                                self.state.reboot();
+                                self.state.reset.reboot();
                                 continue;
                             }
                             Request::ExitConfigurator => {
-                                self.state.exit_configurator();
+                                self.state.reset.toggle_configurator();
                                 continue;
                             }
                             Request::CheckForUpdate => todo!(),
                             Request::GetConfig => self.config_response().await,
                             Request::ConfigUpdate { id, key, value } => {
-                                let result = self.state.update_config(key, value).await.into();
+                                use vertx_config::update::UpdateRef;
+                                let result = self.state.config.update_ref(key, value).await.into();
                                 Response::ConfigUpdate { id, result }
                             }
                         };

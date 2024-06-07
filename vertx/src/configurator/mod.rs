@@ -1,3 +1,6 @@
+mod api;
+pub(crate) mod protocol;
+
 use embassy_executor::{task, Spawner};
 use embassy_net::tcp::TcpSocket;
 use embassy_net::Stack;
@@ -7,7 +10,8 @@ use picoserve::response::ResponseWriter;
 use picoserve::routing::{PathRouter, PathRouterService, RequestHandlerService};
 use picoserve::{self, Config, ResponseSent};
 use static_cell::make_static;
-use vertx_api::response;
+
+use self::protocol::response;
 
 pub const TASKS: usize = 8;
 const TCP_BUFFER: usize = 1024;
@@ -21,7 +25,7 @@ type Router = picoserve::Router<impl PathRouter<State>, State>;
 fn router() -> Router {
     picoserve::Router::new()
         .nest_service("", AssetsRouter)
-        .nest_service("/api", vertx_api::UpgradeHandler)
+        .nest_service("/api", api::UpgradeHandler)
 }
 
 struct AssetsRouter;
@@ -117,37 +121,4 @@ struct State {
     reset: crate::reset::Manager,
     config: &'static crate::config::Manager,
     status: &'static StatusSignal,
-}
-
-impl vertx_api::State for State {
-    const BUILD_INFO: response::BuildInfo = include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
-
-    async fn status(&self) -> response::Status {
-        self.status.wait().await
-    }
-
-    fn power_off(&self) {
-        self.reset.shut_down();
-    }
-
-    fn reboot(&self) {
-        self.reset.reboot();
-    }
-
-    fn exit_configurator(&self) {
-        self.reset.toggle_configurator();
-    }
-
-    fn config(&self) -> &impl vertx_config::Storage {
-        self.config.config()
-    }
-
-    async fn update_config<'a>(
-        &self,
-        key: &'a str,
-        update: vertx_config::update::Update<'a>,
-    ) -> vertx_config::update::Result {
-        use vertx_config::update::UpdateRef;
-        self.config.update_ref(key, update).await
-    }
 }

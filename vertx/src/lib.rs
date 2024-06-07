@@ -118,7 +118,7 @@ async fn status(idle_cycles: &'static AtomicU32, status: &'static configurator::
             }
         }
 
-        status.signal(vertx_api::response::Status {
+        status.signal(configurator::protocol::response::Status {
             battery_voltage: 0,
             idle_time,
             timing_drift,
