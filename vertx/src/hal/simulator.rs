@@ -1,4 +1,4 @@
-use std::future;
+use std::future::{self, Future};
 use std::sync::Mutex;
 
 use embassy_executor::Spawner;
@@ -12,7 +12,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         rng: Rng::new(),
         led_driver: LedDriver,
         config_storage: ConfigStorage(&CONFIG),
-        mode_button_pressed: future::pending(), // TODO
+        get_mode_button: || ModeButton,
         get_net_driver: |_ssid, _password| embassy_net_tuntap::TunTapDevice::new("TODO").unwrap(),
     }
 }
@@ -92,5 +92,14 @@ impl super::traits::ConfigStorage for ConfigStorage {
         let mut raw = self.0.lock().unwrap();
         raw.fill(0);
         raw[..data.len()].copy_from_slice(data);
+    }
+}
+
+struct ModeButton;
+
+impl super::traits::ModeButton for ModeButton {
+    fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
+        // TODO
+        future::pending()
     }
 }

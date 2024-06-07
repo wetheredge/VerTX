@@ -44,7 +44,7 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         mut rng,
         led_driver,
         config_storage,
-        mode_button_pressed,
+        get_mode_button,
         get_net_driver,
     } = hal::init(spawner);
 
@@ -54,7 +54,7 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     let config_manager = make_static!(config::Manager::new(config_storage));
     let config = config_manager.config();
 
-    spawner.must_spawn(change_mode(mode_button_pressed, reset));
+    spawner.must_spawn(change_mode(get_mode_button, reset));
     spawner.must_spawn(status(idle_cycles, status_signal));
     spawner.must_spawn(reset::reset(config_manager));
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
@@ -83,8 +83,11 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 }
 
 #[task]
-async fn change_mode(button_pressed: crate::hal::ModeButtonPressed, reset: crate::reset::Manager) {
-    button_pressed.await;
+async fn change_mode(get_mode_button: crate::hal::GetModeButton, reset: crate::reset::Manager) {
+    use hal::traits::ModeButton;
+
+    let mut button = get_mode_button();
+    button.wait_for_pressed().await;
     reset.toggle_configurator();
 }
 

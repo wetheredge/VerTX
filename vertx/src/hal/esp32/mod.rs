@@ -10,13 +10,14 @@ mod flash;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::convert::identity;
+use core::future::Future;
 
 use embassy_executor::Spawner;
 use embassy_time::Timer;
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
 use esp_hal::embassy;
-use esp_hal::gpio::IO;
+use esp_hal::gpio::{self, AnyPin, IO};
 use esp_hal::peripherals::Peripherals;
 use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
@@ -26,7 +27,6 @@ use esp_hal_smartled::SmartLedsAdapter;
 use esp_wifi::wifi::{self, WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::EspWifiInitFor;
 use heapless::String;
-use static_cell::make_static;
 
 use self::flash::Partition;
 use self::pins::pins;
@@ -55,10 +55,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
         .unwrap();
     let config_storage = ConfigStorage::new(&mut partitions);
 
-    // TODO: drop `make_static!`?
-    let mode_button = pins!(io.pins, configurator).into_pull_up_input();
-    let mode_button = make_static!(mode_button);
-    let mode_button_pressed = mode_button.wait_for_falling_edge();
+    let get_mode_button = || AnyPin::from(pins!(io.pins, configurator).into_pull_up_input());
 
     let get_net_driver = move |ssid, password| {
         let timer = TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
@@ -84,7 +81,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
         rng,
         led_driver,
         config_storage,
-        mode_button_pressed,
+        get_mode_button,
         get_net_driver,
     }
 }
@@ -139,6 +136,12 @@ impl super::traits::ConfigStorage for ConfigStorage {
 
     fn save(&mut self, data: &[u32]) {
         self.partition.erase_and_write(0, data).unwrap();
+    }
+}
+
+impl super::traits::ModeButton for AnyPin<gpio::Input<gpio::PullUp>> {
+    fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
+        self.wait_for_falling_edge()
     }
 }
 
