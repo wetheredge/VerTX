@@ -14,6 +14,7 @@ mod leds;
 mod mode;
 mod mutex;
 mod reset;
+mod wifi;
 
 use embassy_executor::{task, Spawner};
 use embassy_sync::mutex::Mutex;
@@ -29,7 +30,7 @@ struct Config {
     name: Mutex<mutex::SingleCore, heapless::String<20>>,
     leds: leds::Config,
     display: display::Config,
-    wifi: configurator::WifiConfig,
+    wifi: wifi::Config,
     expert: Mutex<mutex::SingleCore, bool>,
 }
 
@@ -43,18 +44,18 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         mut rng,
         led_driver,
         config_storage,
-        configurator_button,
+        mode_button_pressed,
         get_net_driver,
     } = hal::init(spawner);
 
     let mode = make_static!(mode::Channel::new());
-    let status_signal = make_static!(configurator::server::StatusSignal::new());
+    let status_signal = make_static!(configurator::StatusSignal::new());
 
     let config_manager = make_static!(config::Manager::new(config_storage));
     let config = config_manager.config();
 
+    spawner.must_spawn(change_mode(mode_button_pressed, reset));
     spawner.must_spawn(status(idle_cycles, status_signal));
-    spawner.must_spawn(configurator::button(configurator_button, reset));
     spawner.must_spawn(reset::reset(config_manager));
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
@@ -67,9 +68,9 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             log::info!("Configurator enabled");
             mode.publish(crate::Mode::PreConfigurator);
 
-            let stack = configurator::wifi::run(spawner, config, &mut rng, get_net_driver);
+            let stack = wifi::run(spawner, config, &mut rng, get_net_driver);
 
-            configurator::server::run(
+            configurator::run(
                 spawner,
                 reset,
                 config_manager,
@@ -82,10 +83,13 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 }
 
 #[task]
-async fn status(
-    idle_cycles: &'static AtomicU32,
-    status: &'static configurator::server::StatusSignal,
-) {
+async fn change_mode(button_pressed: crate::hal::ModeButtonPressed, reset: crate::reset::Manager) {
+    button_pressed.await;
+    reset.toggle_configurator();
+}
+
+#[task]
+async fn status(idle_cycles: &'static AtomicU32, status: &'static configurator::StatusSignal) {
     log::info!("Starting status()");
 
     let mut ticker = Ticker::every(Duration::from_secs(1));

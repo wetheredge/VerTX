@@ -12,7 +12,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         rng: Rng::new(),
         led_driver: LedDriver,
         config_storage: ConfigStorage(&CONFIG),
-        configurator_button: future::pending(),
+        mode_button_pressed: future::pending(), // TODO
         get_net_driver: |_ssid, _password| embassy_net_tuntap::TunTapDevice::new("TODO").unwrap(),
     }
 }

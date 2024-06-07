@@ -56,9 +56,9 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
     let config_storage = ConfigStorage::new(&mut partitions);
 
     // TODO: drop `make_static!`?
-    let configurator_button = pins!(io.pins, configurator).into_pull_up_input();
-    let configurator_button = make_static!(configurator_button);
-    let configurator_button = configurator_button.wait_for_falling_edge();
+    let mode_button = pins!(io.pins, configurator).into_pull_up_input();
+    let mode_button = make_static!(mode_button);
+    let mode_button_pressed = mode_button.wait_for_falling_edge();
 
     let get_net_driver = move |ssid, password| {
         let timer = TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
@@ -84,7 +84,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
         rng,
         led_driver,
         config_storage,
-        configurator_button,
+        mode_button_pressed,
         get_net_driver,
     }
 }

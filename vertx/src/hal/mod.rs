@@ -14,7 +14,7 @@ pub(crate) type Rng = impl traits::Rng;
 pub(crate) type LedDriver =
     impl smart_leds::SmartLedsWrite<Error = impl Debug, Color = smart_leds::RGB8>;
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
-pub(crate) type ConfiguratorButton = impl Future<Output = ()>;
+pub(crate) type ModeButtonPressed = impl Future<Output = ()>;
 pub(crate) type NetDriver = impl embassy_net::driver::Driver + 'static;
 pub(crate) type GetNetDriver =
     impl FnOnce(&'static heapless::String<32>, &'static heapless::String<64>) -> NetDriver;
@@ -23,7 +23,7 @@ pub(crate) struct Init {
     pub(crate) rng: Rng,
     pub(crate) led_driver: LedDriver,
     pub(crate) config_storage: ConfigStorage,
-    pub(crate) configurator_button: ConfiguratorButton,
+    pub(crate) mode_button_pressed: ModeButtonPressed,
     pub(crate) get_net_driver: GetNetDriver,
 }
 

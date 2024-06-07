@@ -62,7 +62,9 @@ pub fn run(
     let stack = &*make_static!(Stack::new(
         driver,
         dhcp,
-        make_static!(embassy_net::StackResources::<{ super::server::TASKS + 1 }>::new()),
+        make_static!(embassy_net::StackResources::<
+            { crate::configurator::TASKS + 1 },
+        >::new()),
         rng.u64(),
     ));
 
