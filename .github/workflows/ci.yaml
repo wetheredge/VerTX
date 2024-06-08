@@ -176,7 +176,7 @@ jobs:
         env:
           GITHUB_TOKEN: null
       - run: biome version
-      - run: biome ci --error-on-warnings .
+      - run: biome ci --reporter=github --error-on-warnings .
 
   dprint:
     runs-on: ubuntu-latest
