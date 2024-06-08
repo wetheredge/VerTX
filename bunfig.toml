@@ -1,3 +1,6 @@
 [install]
 auto = "disable"
 exact = true
+
+[run]
+bun = true

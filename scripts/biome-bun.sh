@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bun run -b biome $@
+bun run biome $@

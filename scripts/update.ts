@@ -135,7 +135,7 @@ async function npm() {
 			const rawCurrent = rawVersion(current);
 			const done = dep(name, rawCurrent);
 
-			await $`bun add --exact ${kindFlag} ${name} && bun run -b biome format --write package.json && git restore bun.lockb`.quiet();
+			await $`bun add --exact ${kindFlag} ${name} && bun run biome format --write package.json && git restore bun.lockb`.quiet();
 
 			const newData = await packageJson();
 			const latest = newData[kind][name] as string;

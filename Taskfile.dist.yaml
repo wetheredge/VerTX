@@ -21,7 +21,7 @@ tasks:
     cmds:
       - cargo +nightly fmt --all
       - cargo bin dprint fmt
-      - bun run -b biome format --write .
+      - bun run biome format --write .
 
   setup:
     desc: Setup needed after first clone and dependency updates
@@ -62,7 +62,7 @@ tasks:
       - task: crsf:check
       - task: configurator:check:tsc
       - task: scripts:check:tsc
-      - bun run -b biome ci .
+      - bun run biome ci .
 
   all:test:
     cmds:
@@ -177,18 +177,18 @@ tasks:
     desc: Run a local dev server. Needs api:dev running
     dir: vertx-configurator
     cmds:
-      - bun run -b vite
+      - bun run vite
 
   configurator:check:
     cmds:
-      - bun run -b biome ci vertx-configurator
+      - bun run biome ci vertx-configurator
       - task: configurator:check:tsc
 
   configurator:check:tsc:
     internal: true
     dir: vertx-configurator
     cmds:
-      - bun run -b tsc
+      - bun run tsc
     sources:
       - ../bun.lockb
       - ../tsconfig.*
@@ -204,7 +204,7 @@ tasks:
     env:
       NODE_ENV: production
     cmds:
-      - bun run -b vite build
+      - bun run vite build
       - bun run scripts/compress.ts
     sources:
       - package.json
@@ -223,7 +223,7 @@ tasks:
     deps:
       - configurator:build
     cmds:
-      - bun run -b vite preview
+      - bun run vite preview
 
   crsf:check:
     dir: vertx-crsf
@@ -237,14 +237,14 @@ tasks:
 
   scripts:check:
     cmds:
-      - bun run -b biome ci scripts
+      - bun run biome ci scripts
       - task: scripts:check:tsc
 
   scripts:check:tsc:
     internal: true
     dir: scripts
     cmds:
-      - bun run -b tsc
+      - bun run tsc
     sources:
       - ../bun.lockb
       - ../tsconfig.*

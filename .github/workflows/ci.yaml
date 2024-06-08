@@ -66,7 +66,7 @@ jobs:
           asdf plugin add bun https://github.com/cometkim/asdf-bun
           asdf install bun
       - run: bun install
-      - run: bun run -b vite build
+      - run: bun run vite build
       - run: bun run scripts/compress.ts
       - uses: actions/upload-artifact@v4
         with:
