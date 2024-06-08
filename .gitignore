@@ -1,6 +1,8 @@
 target/
-.pnpm-store/
+dist/
+node_modules/
 .env
 .bin/
 /.cargo/
 .task/
+*.tsbuildinfo

@@ -6,8 +6,6 @@
 		"pitch": 5,
 		"yaw": 6,
 		"throttle": 7,
-		"switches": [
-			11
-		]
+		"switches": [11]
 	}
 }

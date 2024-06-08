@@ -1,5 +1,8 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": "../tsconfig.bun.json",
-	"files": ["vite.config.ts", "scripts/*.ts"]
+	"compilerOptions": {
+		"noEmit": true
+	},
+	"include": ["*.ts"]
 }

@@ -1,4 +1,5 @@
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
+import autoprefixer from 'autoprefixer';
 import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 
@@ -18,5 +19,10 @@ export default defineConfig({
 		'import.meta.env.CODESPACE_NAME': JSON.stringify(
 			process.env.CODESPACE_NAME,
 		),
+	},
+	css: {
+		postcss: {
+			plugins: [autoprefixer({})],
+		},
 	},
 });

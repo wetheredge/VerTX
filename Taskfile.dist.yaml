@@ -21,7 +21,7 @@ tasks:
     cmds:
       - cargo +nightly fmt --all
       - cargo bin dprint fmt
-      - cd vertx-configurator && bun run -b biome format --write .
+      - bun run -b biome format --write .
 
   setup:
     desc: Setup needed after first clone and dependency updates
@@ -59,8 +59,10 @@ tasks:
       - task: simulator:check
       - task: config-macros:check
       - task: config:check
-      - task: configurator:check
       - task: crsf:check
+      - task: configurator:check:tsc
+      - task: scripts:check:tsc
+      - bun run -b biome ci .
 
   all:test:
     cmds:
@@ -178,10 +180,8 @@ tasks:
       - bun run -b vite
 
   configurator:check:
-    desc: Run all checks
-    dir: vertx-configurator
     cmds:
-      - bun run -b biome ci .
+      - bun run -b biome ci vertx-configurator
       - task: configurator:check:tsc
 
   configurator:check:tsc:
@@ -190,7 +190,8 @@ tasks:
     cmds:
       - bun run -b tsc
     sources:
-      - bun.lockb
+      - ../bun.lockb
+      - ../tsconfig.*
       - scripts/**
       - src/**
       - '*.config.*'
@@ -233,3 +234,20 @@ tasks:
     dir: vertx-crsf
     cmds:
       - cargo bin cargo-nextest run --status-level=leak
+
+  scripts:check:
+    cmds:
+      - bun run -b biome ci scripts
+      - task: scripts:check:tsc
+
+  scripts:check:tsc:
+    internal: true
+    dir: scripts
+    cmds:
+      - bun run -b tsc
+    sources:
+      - ../bun.lockb
+      - ../tsconfig.*
+      - tsconfig.*
+      - '**.ts'
+

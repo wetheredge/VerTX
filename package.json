@@ -1,0 +1,13 @@
+{
+	"$schema": "https://json.schemastore.org/package.json",
+	"name": "vertx",
+	"private": true,
+	"type": "module",
+	"workspaces": ["vertx-configurator"],
+	"devDependencies": {
+		"@biomejs/biome": "1.7.3",
+		"@tsconfig/bun": "1.0.6",
+		"@types/bun": "1.1.3",
+		"typescript": "5.4.5"
+	}
+}

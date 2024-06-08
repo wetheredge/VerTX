@@ -3,7 +3,8 @@
 	"extends": "@tsconfig/vite-react/tsconfig.json",
 	"compilerOptions": {
 		"jsx": "preserve",
-		"jsxImportSource": "solid-js"
+		"jsxImportSource": "solid-js",
+		"noEmit": true
 	},
 	"include": ["src"],
 	"references": [

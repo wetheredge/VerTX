@@ -67,7 +67,7 @@ jobs:
           asdf install bun
       - run: bun install
       - run: bun run -b vite build
-      - run: bun run compress.ts
+      - run: bun run scripts/compress.ts
       - uses: actions/upload-artifact@v4
         with:
           name: vertx-configurator

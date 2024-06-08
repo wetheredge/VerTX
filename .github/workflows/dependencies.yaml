@@ -29,8 +29,8 @@ jobs:
           asdf plugin add typos https://github.com/aschiavon91/asdf-typos
       - run: asdf install bun
       - name: Install dependencies
-        run: cd vertx-configurator && bun install
-      - run: bun run vertx-configurator/scripts/update.ts
+        run: bun install
+      - run: bun run scripts/update.ts
       - run: git push --set-upstream origin updates
       - name: Open PR
         run: gh pr create --base main --title 'Update dependencies' --body-file '.updates.md'

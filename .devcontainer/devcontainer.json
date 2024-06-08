@@ -13,7 +13,7 @@
 				"files.watcherExclude": {
 					"**/target/**": true
 				},
-				"biome.lspBin": "vertx-configurator/scripts/biome-bun.sh",
+				"biome.lspBin": "scripts/biome-bun.sh",
 				"rust-analyzer.checkOnSave.command": "clippy",
 				"rust-analyzer.checkOnSave.allTargets": false,
 				"[rust]": {
@@ -41,11 +41,7 @@
 			]
 		}
 	},
-	"forwardPorts": [
-		5173,
-		4173,
-		8080
-	],
+	"forwardPorts": [5173, 4173, 8080],
 	"portsAttributes": {
 		"5173": {
 			"label": "Vite dev"
