@@ -35,18 +35,17 @@ struct Config {
 }
 
 pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
-    // SAFETY: Nothing before this will trigger a reset
-    let reset = unsafe { reset::Manager::new() };
-
     log::info!("Starting VerTX");
 
     let hal::Init {
         mut rng,
+        boot_mode,
         led_driver,
         config_storage,
         get_mode_button,
         get_net_driver,
     } = hal::init(spawner);
+    let reset = reset::Manager::new(boot_mode);
 
     let mode = make_static!(mode::Channel::new());
     let status_signal = make_static!(configurator::StatusSignal::new());
@@ -59,7 +58,7 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     spawner.must_spawn(reset::reset(config_manager));
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
-    match reset.current_mode() {
+    match boot_mode {
         BootMode::Standard => {
             log::info!("Configurator disabled");
             mode.publish(crate::Mode::Ok);

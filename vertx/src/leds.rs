@@ -147,11 +147,13 @@ pub async fn run(
         let (color, duration) = effect.next_frame();
         let timer = duration.map(Timer::after);
 
-        leds.write(smart_leds::brightness(
+        let data = iter::once(color);
+        #[cfg(not(feature = "simulator"))]
+        let data = smart_leds::brightness(
             smart_leds::gamma(iter::once(color)),
             **config.brightness.current().await,
-        ))
-        .unwrap();
+        );
+        leds.write(data).unwrap();
 
         let new_mode = if let Some(timer) = timer {
             // Assume `timer` is a fraction of a second, so don't bother updating brightness

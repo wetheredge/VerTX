@@ -6,7 +6,7 @@ dotenv:
 tasks:
   default:
     cmds:
-      - task --list-all
+      - task --list-all --sort none
     silent: true
 
   clean:
@@ -56,11 +56,13 @@ tasks:
   all:check:
     cmds:
       - task: vertx:check
-      - task: simulator:check
-      - task: config-macros:check
-      - task: config:check
-      - task: crsf:check
+      - task: vertx:simulator:check
       - task: configurator:check:tsc
+      - task: simulator:check
+      - task: simulator-ipc:check
+      - task: config:check
+      - task: config-macros:check
+      - task: crsf:check
       - task: scripts:check:tsc
       - bun run biome ci .
 
@@ -134,44 +136,29 @@ tasks:
       - cp xtensa-esp32s3-none-elf/{{.PROFILE}}/vertx vertx
     silent: true
 
-  simulator:check:
+  vertx:simulator:check:
     deps:
       - configurator:build
     cmds:
-      - task: simulator:cargo
+      - task: vertx:simulator:cargo
         vars:
           COMMAND: clippy
 
-  simulator:run:
+  vertx:simulator:build:
     deps:
       - configurator:build
     cmds:
-      - task: simulator:cargo
+      - task: vertx:simulator:cargo
         vars:
-          COMMAND: run
+          COMMAND: build
 
-  simulator:cargo:
+  vertx:simulator:cargo:
     internal: true
     dir: vertx
     requires:
       vars: [COMMAND]
     cmds:
       - cargo +nightly {{.COMMAND}} --bin simulator -F simulator
-
-  config-macros:check:
-    dir: vertx-config-macros
-    cmds:
-      - cargo clippy
-
-  config:check:
-    dir: vertx-config
-    cmds:
-      - cargo clippy --all-features
-
-  config:test:
-    dir: vertx-config
-    cmds:
-      - cargo bin cargo-nextest run --status-level=leak
 
   configurator:dev:
     desc: Run a local dev server. Needs api:dev running
@@ -224,6 +211,45 @@ tasks:
       - configurator:build
     cmds:
       - bun run vite preview
+
+  simulator:check:
+    dir: vertx-simulator
+    cmds:
+      - cargo clippy
+
+  simulator:build:
+    dir: vertx-simulator
+    deps:
+      - vertx:simulator:build
+    cmds:
+      - cargo build
+
+  simulator:run:
+    dir: vertx-simulator
+    deps:
+      - vertx:simulator:build
+    cmds:
+      - cargo run
+
+  simulator-ipc:check:
+    dir: vertx-simulator-ipc
+    cmds:
+      - cargo clippy
+
+  config:check:
+    dir: vertx-config
+    cmds:
+      - cargo clippy --all-features
+
+  config:test:
+    dir: vertx-config
+    cmds:
+      - cargo bin cargo-nextest run --status-level=leak
+
+  config-macros:check:
+    dir: vertx-config-macros
+    cmds:
+      - cargo clippy
 
   crsf:check:
     dir: vertx-crsf

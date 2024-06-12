@@ -1,0 +1,13 @@
+[package]
+name = "vertx-simulator-ipc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+postcard = { workspace = true, features = ["use-std"] }
+serde = { workspace = true, features = ["derive"] }
+
+[lints]
+workspace = true

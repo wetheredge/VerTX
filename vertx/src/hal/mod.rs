@@ -21,6 +21,7 @@ pub(crate) type GetNetDriver =
 
 pub(crate) struct Init {
     pub(crate) rng: Rng,
+    pub(crate) boot_mode: crate::BootMode,
     pub(crate) led_driver: LedDriver,
     pub(crate) config_storage: ConfigStorage,
     pub(crate) get_mode_button: GetModeButton,

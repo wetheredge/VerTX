@@ -1,32 +1,66 @@
-use std::future::{self, Future};
-use std::sync::Mutex;
+use std::future::Future;
+use std::io::{self, BufRead, BufReader, Write};
+use std::path::PathBuf;
+use std::vec::Vec;
+use std::{env, fs, process, thread};
 
 use embassy_executor::Spawner;
+use embassy_sync::signal::Signal;
 use rand::RngCore as _;
-
-pub static CONFIG: Mutex<[u32; 1024]> = Mutex::new([0; 1024]);
-pub static RESET_REASON: Mutex<ResetReason> = Mutex::new(ResetReason::Crash);
+use smart_leds::RGB8;
+use vertx_simulator_ipc as ipc;
 
 pub(crate) fn init(_spawner: Spawner) -> super::Init {
+    static MODE_BUTTON: Signal<crate::mutex::MultiCore, ()> = Signal::new();
+    thread::Builder::new()
+        .name("ipc rx".into())
+        .spawn(move || {
+            let mut stdin = BufReader::new(io::stdin());
+            let mut message = Vec::new();
+            while stdin.read_until(0, &mut message).unwrap() > 0 {
+                let message = ipc::deserialize(&mut message).unwrap();
+                match message {
+                    ipc::ToFirmware::ModeButtonPressed => MODE_BUTTON.signal(()),
+                }
+            }
+        })
+        .unwrap();
+
     super::Init {
         rng: Rng::new(),
+        boot_mode: env::var("VERTX_BOOT_MODE")
+            .map(|mode| mode.parse::<u8>().unwrap().into())
+            .unwrap_or_default(),
         led_driver: LedDriver,
-        config_storage: ConfigStorage(&CONFIG),
-        get_mode_button: || ModeButton,
+        config_storage: ConfigStorage::new(),
+        get_mode_button: move || ModeButton(&MODE_BUTTON),
         get_net_driver: |_ssid, _password| embassy_net_tuntap::TunTapDevice::new("TODO").unwrap(),
     }
 }
 
-pub(crate) fn shut_down() {
-    *RESET_REASON.lock().unwrap() = ResetReason::ShutDown;
+pub(crate) fn set_boot_mode(mode: u8) {
+    ipc_send(ipc::ToManager::ChangeMode(mode));
 }
 
-pub(crate) fn reboot() {
-    *RESET_REASON.lock().unwrap() = ResetReason::Reboot;
+pub(crate) fn shut_down() -> ! {
+    ipc_send(ipc::ToManager::ShutDown);
+    process::exit(0);
+}
+
+pub(crate) fn reboot() -> ! {
+    ipc_send(ipc::ToManager::Reboot);
+    process::exit(0);
 }
 
 pub(crate) fn get_cycle_count() -> u32 {
     0
+}
+
+fn ipc_send(message: ipc::ToManager) {
+    let bytes = ipc::serialize(&message).unwrap();
+    let mut stdout = io::stdout();
+    stdout.write_all(&bytes).unwrap();
+    stdout.flush().unwrap();
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -56,50 +90,59 @@ impl super::traits::Rng for Rng {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct LedBufferOverflow;
+struct LedBufferOverflow;
 
 #[derive(Debug)]
 struct LedDriver;
 
 impl smart_leds::SmartLedsWrite for LedDriver {
-    type Color = smart_leds::RGB8;
+    type Color = RGB8;
     type Error = LedBufferOverflow;
 
-    fn write<T, I>(&mut self, _iterator: T) -> Result<(), Self::Error>
+    fn write<T, I>(&mut self, iterator: T) -> Result<(), Self::Error>
     where
         T: IntoIterator<Item = I>,
         I: Into<Self::Color>,
     {
-        // TODO
-        Ok(())
+        let mut iterator = iterator.into_iter();
+        let RGB8 { r, g, b } = iterator.next().unwrap().into();
+        ipc_send(ipc::ToManager::StatusLed { r, g, b });
+
+        if iterator.next().is_some() {
+            Err(LedBufferOverflow)
+        } else {
+            Ok(())
+        }
     }
 }
 
-struct ConfigStorage(&'static Mutex<[u32; 1024]>);
+struct ConfigStorage(PathBuf);
+
+impl ConfigStorage {
+    fn new() -> Self {
+        let path = env::var_os("VERTX_CONFIG").unwrap();
+        Self(path.into())
+    }
+}
 
 impl super::traits::ConfigStorage for ConfigStorage {
     fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T> {
-        let raw = self.0.lock().unwrap();
-        let length = raw[0] as usize;
-
-        (length > 0).then(|| {
-            let bytes: &[u8] = &bytemuck::cast_slice(&raw[1..])[..length];
-            parse(bytes)
-        })
+        match fs::read(&self.0) {
+            Ok(contents) => Some(parse(&contents)),
+            Err(err) if err.kind() == io::ErrorKind::NotFound => None,
+            Err(err) => panic!("Failed to read config file: {err:?}"),
+        }
     }
 
     fn save(&mut self, data: &[u32]) {
-        let mut raw = self.0.lock().unwrap();
-        raw.fill(0);
-        raw[..data.len()].copy_from_slice(data);
+        fs::write(&self.0, bytemuck::cast_slice(data)).unwrap();
     }
 }
 
-struct ModeButton;
+struct ModeButton(&'static Signal<crate::mutex::MultiCore, ()>);
 
 impl super::traits::ModeButton for ModeButton {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
-        // TODO
-        future::pending()
+        self.0.wait()
     }
 }
