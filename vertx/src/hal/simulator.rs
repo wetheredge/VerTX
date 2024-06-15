@@ -34,7 +34,16 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         led_driver: LedDriver,
         config_storage: ConfigStorage::new(),
         get_mode_button: move || ModeButton(&MODE_BUTTON),
-        get_net_driver: |_ssid, _password| embassy_net_tuntap::TunTapDevice::new("TODO").unwrap(),
+        get_net_driver: |_ssid, _password| {
+            let interface = match env::var("VERTX_NET_INTERFACE") {
+                Ok(interface) => interface,
+                Err(env::VarError::NotPresent) => {
+                    panic!("missing VERTX_NET_INTERFACE environment variable")
+                }
+                Err(_) => panic!("Failed to parse VERTX_NET_INTERFACE contents"),
+            };
+            embassy_net_tuntap::TunTapDevice::new(&interface).unwrap()
+        },
     }
 }
 
@@ -120,7 +129,9 @@ struct ConfigStorage(PathBuf);
 
 impl ConfigStorage {
     fn new() -> Self {
-        let path = env::var_os("VERTX_CONFIG").unwrap();
+        let path = env::var_os("VERTX_CONFIG").expect(
+            "VERTX_CONFIG env var should be set to the path for the simulator config storage",
+        );
         Self(path.into())
     }
 }

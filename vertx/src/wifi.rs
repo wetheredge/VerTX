@@ -1,7 +1,7 @@
 use core::fmt;
 
 use embassy_executor::{task, Spawner};
-use embassy_net::Stack;
+use embassy_net::{Stack, StackResources};
 use heapless::String;
 use static_cell::make_static;
 
@@ -58,15 +58,9 @@ pub fn run(
     let mut dhcp_config = embassy_net::DhcpConfig::default();
     dhcp_config.hostname = Some(config.hostname.clone());
 
-    let dhcp = embassy_net::Config::dhcpv4(dhcp_config);
-    let stack = &*make_static!(Stack::new(
-        driver,
-        dhcp,
-        make_static!(embassy_net::StackResources::<
-            { crate::configurator::TASKS + 1 },
-        >::new()),
-        rng.u64(),
-    ));
+    let stack_config = embassy_net::Config::dhcpv4(dhcp_config);
+    let resources = make_static!(StackResources::<{ crate::configurator::TASKS + 1 }>::new());
+    let stack = make_static!(Stack::new(driver, stack_config, resources, rng.u64()));
 
     spawner.must_spawn(network(stack));
 

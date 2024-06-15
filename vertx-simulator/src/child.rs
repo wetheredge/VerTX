@@ -1,6 +1,6 @@
-use std::io;
 use std::path::Path;
 use std::process::Stdio;
+use std::{env, io};
 
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{self, Command};
@@ -26,17 +26,19 @@ impl Child {
         let path = target_dir.join("debug/simulator");
         let path = path.canonicalize()?.into_os_string();
 
-        let mut vertx = Command::new(path)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .kill_on_drop(true)
-            .env_clear()
-            .envs([
-                ("VERTX_BOOT_MODE", boot_mode.to_string().as_str()),
-                ("VERTX_CONFIG", "config.bin"),
-            ])
-            .spawn()?;
+        let mut vertx =
+            Command::new(path)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .kill_on_drop(true)
+                .env_clear()
+                .env("VERTX_CONFIG", "config.bin")
+                .envs(env::vars_os().filter(|(name, _)| {
+                    name.to_str().is_some_and(|name| name.starts_with("VERTX_"))
+                }))
+                .env("VERTX_BOOT_MODE", boot_mode.to_string().as_str())
+                .spawn()?;
 
         let mut stdin = vertx.stdin.take().unwrap();
         let stdout = vertx.stdout.take().unwrap();
