@@ -11,7 +11,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::convert::identity;
 use core::future::Future;
-use core::sync::atomic::AtomicU8;
 
 use embassy_executor::Spawner;
 use embassy_time::Timer;
@@ -28,14 +27,12 @@ use esp_hal_smartled::SmartLedsAdapter;
 use esp_wifi::wifi::{self, WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::EspWifiInitFor;
 use heapless::String;
-use portable_atomic::Ordering;
 
 use self::flash::Partition;
 use self::pins::pins;
+use crate::BootMode;
 
 pub(crate) fn init(spawner: Spawner) -> super::Init {
-    let boot_mode = unsafe { get_boot_mode() };
-
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::max(system.clock_control).freeze();
@@ -83,7 +80,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
 
     super::Init {
         rng,
-        boot_mode,
+        boot_mode: BootMode::default(),
         led_driver,
         config_storage,
         get_mode_button,
@@ -91,7 +88,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
     }
 }
 
-pub(crate) fn set_boot_mode(mode: u8) {
+pub(crate) fn set_boot_mode(_mode: u8) {
     todo!()
 }
 
@@ -106,54 +103,6 @@ pub(crate) fn reboot() -> ! {
 
 pub(crate) fn get_cycle_count() -> u32 {
     esp_hal::xtensa_lx::timer::get_cycle_count()
-}
-
-/// # Safety
-///
-/// Must be called exactly once as early as possible. Do not trigger a reset
-/// before this finishes.
-unsafe fn get_boot_mode() -> &'static AtomicU8 {
-    #[cfg(debug_assertions)]
-    {
-        use core::sync::atomic::AtomicBool;
-
-        // Verify that this only runs once in debug mode
-
-        static IS_SINGLETON: AtomicBool = AtomicBool::new(true);
-
-        if !IS_SINGLETON.swap(false, Ordering::AcqRel) {
-            panic!("Cannot run configurator::IsEnabled::new() multiple times");
-        }
-    }
-
-    let raw: &mut MaybeUninit<AtomicU8> = {
-        use core::cell::UnsafeCell;
-        use core::mem::MaybeUninit;
-
-        // TODO: replace this with SyncUnsafeCell when it is stabilized
-        struct Raw(UnsafeCell<MaybeUninit<AtomicU8>>);
-        // SAFETY: only runs once so this is never available to multiple threads
-        unsafe impl Sync for Raw {}
-
-        #[esp_hal::macros::ram(rtc_fast, uninitialized)]
-        static RAW: Raw = Raw(UnsafeCell::new(MaybeUninit::uninit()));
-
-        // SAFETY: this only runs once and RAW is contained in this block, so the
-        // reference is unique
-        unsafe { &mut *RAW.0.get() }
-    };
-
-    // Initialize on for any reset that could happen before this has run
-    if !matches!(
-        esp_hal::reset::get_reset_reason(),
-        Some(esp_hal::rtc_cntl::SocResetReason::CoreSw)
-    ) {
-        let init = AtomicU8::new(BootMode::default() as u8);
-        raw.write(init);
-    }
-
-    // SAFETY: initialized by the if statement above, or the same on a previous boot
-    unsafe { raw.assume_init_ref() }
 }
 
 impl super::traits::Rng for Rng {
