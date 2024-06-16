@@ -23,7 +23,7 @@ impl Child {
         log_tx: mpsc::UnboundedSender<String>,
         sender: relm4::ComponentSender<crate::ui::App>,
     ) -> io::Result<Self> {
-        let path = target_dir.join("debug/simulator");
+        let path = target_dir.join("debug/hosted");
         let path = path.canonicalize()?.into_os_string();
 
         let mut vertx =

@@ -2,7 +2,7 @@
 #![feature(type_alias_impl_trait)]
 
 extern crate alloc;
-#[cfg(feature = "simulator")]
+#[cfg(feature = "hosted")]
 extern crate std;
 
 mod config;

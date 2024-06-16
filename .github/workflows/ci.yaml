@@ -122,7 +122,7 @@ jobs:
           name: configurator
           path: vertx-configurator/dist
       - name: Run clippy
-        run: cargo clippy --bin simulator -F simulator
+        run: cargo clippy --bin hosted -F hosted
         working-directory: vertx
         env:
           VERTX_TARGET: devkit

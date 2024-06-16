@@ -60,7 +60,7 @@ tasks:
   all:check:
     cmds:
       - task: vertx:check
-      - task: vertx:simulator:check
+      - task: vertx:hosted:check
       - task: configurator:check:tsc
       - task: simulator:check
       - task: simulator-ipc:check
@@ -140,29 +140,29 @@ tasks:
       - cp xtensa-esp32s3-none-elf/{{.PROFILE}}/vertx vertx
     silent: true
 
-  vertx:simulator:check:
+  vertx:hosted:check:
     deps:
       - configurator:build
     cmds:
-      - task: vertx:simulator:cargo
+      - task: vertx:hosted:cargo
         vars:
           COMMAND: clippy
 
-  vertx:simulator:build:
+  vertx:hosted:build:
     deps:
       - configurator:build
     cmds:
-      - task: vertx:simulator:cargo
+      - task: vertx:hosted:cargo
         vars:
           COMMAND: build
 
-  vertx:simulator:cargo:
+  vertx:hosted:cargo:
     internal: true
     dir: vertx
     requires:
       vars: [COMMAND]
     cmds:
-      - cargo +{{.NIGHTLY}} {{.COMMAND}} --bin simulator -F simulator
+      - cargo +{{.NIGHTLY}} {{.COMMAND}} --bin hosted -F hosted
 
   configurator:dev:
     desc: Run a local dev server. Needs api:dev running
@@ -224,14 +224,14 @@ tasks:
   simulator:build:
     dir: vertx-simulator
     deps:
-      - vertx:simulator:build
+      - vertx:hosted:build
     cmds:
       - cargo build
 
   simulator:run:
     dir: vertx-simulator
     deps:
-      - vertx:simulator:build
+      - vertx:hosted:build
     cmds:
       - cargo run
 

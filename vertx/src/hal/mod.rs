@@ -1,12 +1,12 @@
 use core::fmt::Debug;
 
 #[cfg_attr(feature = "esp32", path = "esp32/mod.rs")]
-#[cfg_attr(feature = "simulator", path = "simulator.rs")]
+#[cfg_attr(feature = "hosted", path = "hosted.rs")]
 mod implementation;
 
-#[cfg(feature = "simulator")]
+#[cfg(feature = "hosted")]
 pub use implementation::*;
-#[cfg(not(feature = "simulator"))]
+#[cfg(not(feature = "hosted"))]
 pub(crate) use implementation::*;
 
 pub(crate) type Rng = impl traits::Rng;
