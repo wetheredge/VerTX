@@ -8,8 +8,9 @@ use vertx_config::minmax;
 
 use crate::Mode;
 
-pub const MAX_LEDS: usize = 1;
+const MAX_LEDS: usize = 1;
 // 3 channels * 8 bits + 1 stop byte
+#[cfg_attr(not(feature = "esp32"), allow(dead_code))]
 pub(crate) const BUFFER_SIZE: usize = MAX_LEDS * 3 * 8 + 1;
 
 #[derive(vertx_config::UpdateRef, vertx_config::Storage)]

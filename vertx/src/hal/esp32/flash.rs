@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-pub const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
+const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
 const PARTITION_TABLE_ADDRESS: u32 = 0x8000;
 const PARTITION_TABLE_SIZE: usize = 0xC00;
 
@@ -12,18 +12,18 @@ const CUSTOM_TYPE_CONFIG: PartitionKind = if let Some(config) = PartitionKind::n
 };
 
 #[derive(Debug)]
-pub enum PartitionError {
+pub(super) enum PartitionError {
     UndersizedOtaData,
 }
 
-pub fn unlock() -> Result<(), i32> {
+pub(super) fn unlock() -> Result<(), i32> {
     // TODO: What exactly does this do?
     // SAFETY: TODO -- no safety docs...
     unsafe { esp_storage::ll::spiflash_unlock() }
 }
 
 #[allow(clippy::assertions_on_constants)]
-pub fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
+pub(super) fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
     let mut table = [0u32; PARTITION_TABLE_SIZE / 4];
     const _: () = assert!(PARTITION_TABLE_ADDRESS % SECTOR_BYTES == 0);
     const _: () = assert!(PARTITION_TABLE_SIZE <= SECTOR_BYTES as usize);
@@ -56,13 +56,14 @@ pub fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
 }
 
 #[derive(Debug)]
-pub struct Partition {
-    pub name: heapless::Vec<u8, 16>,
-    pub kind: PartitionKind,
-    pub start: u32,
-    pub size: u32,
-    pub encrypted: bool,
-    pub read_only: bool,
+#[allow(dead_code)]
+pub(super) struct Partition {
+    pub(super) name: heapless::Vec<u8, 16>,
+    pub(super) kind: PartitionKind,
+    pub(super) start: u32,
+    pub(super) size: u32,
+    pub(super) encrypted: bool,
+    pub(super) read_only: bool,
 }
 
 impl Partition {
@@ -112,24 +113,23 @@ impl Partition {
         self.size / 4
     }
 
-    #[allow(unused)]
     pub const fn sectors(&self) -> u32 {
         self.size / SECTOR_BYTES
     }
 
-    pub const fn is_config(&self) -> bool {
+    pub(super) const fn is_config(&self) -> bool {
         matches!(self.kind, CUSTOM_TYPE_CONFIG)
     }
 
     #[allow(unused)]
-    pub const fn is_ota(&self) -> bool {
+    pub(super) const fn is_ota(&self) -> bool {
         match self.kind {
             PartitionKind::App(partition) => partition.is_ota(),
             _ => false,
         }
     }
 
-    pub fn read_into(&self, offset: u32, buffer: &mut [u32]) -> Result<(), i32> {
+    pub(super) fn read_into(&self, offset: u32, buffer: &mut [u32]) -> Result<(), i32> {
         self.bounds_check(offset, buffer.len());
         let start = self.start + offset * 4;
 
@@ -142,14 +142,14 @@ impl Partition {
     }
 
     #[allow(unused)]
-    pub fn erase_sector(&mut self, sector: u32) -> Result<(), i32> {
+    pub(super) fn erase_sector(&mut self, sector: u32) -> Result<(), i32> {
         assert!(sector < self.sectors());
         // SAFETY: `assert!` prevents overflowing flash
         unsafe { esp_storage::ll::spiflash_erase_sector(sector) }
     }
 
     #[allow(unused)]
-    pub fn write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
+    pub(super) fn write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;
 
@@ -159,8 +159,7 @@ impl Partition {
         unsafe { esp_storage::ll::spiflash_write(start, data.as_ptr(), data.len() as u32 * 4) }
     }
 
-    #[allow(unused)]
-    pub fn erase_and_write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
+    pub(super) fn erase_and_write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;
 
@@ -183,7 +182,7 @@ impl Partition {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PartitionKind {
+pub(super) enum PartitionKind {
     App(AppPartitionKind),
     Data(DataPartitionKind),
     Custom(u8, u8),
@@ -194,7 +193,7 @@ impl PartitionKind {
     const CUSTOM_MAX: u8 = 0xFE;
     const CUSTOM_MIN: u8 = 0x40;
 
-    pub const fn new_custom(type_: u8, sub_type: u8) -> Option<Self> {
+    pub(super) const fn new_custom(type_: u8, sub_type: u8) -> Option<Self> {
         match type_ {
             PartitionKind::CUSTOM_MIN..=PartitionKind::CUSTOM_MAX => {
                 Some(Self::Custom(type_, sub_type))
