@@ -3,6 +3,9 @@ version: "3"
 dotenv:
   - .env
 
+vars:
+  NIGHTLY: nightly-2024-06-08 # Sync with CI
+
 tasks:
   default:
     cmds:
@@ -19,7 +22,7 @@ tasks:
   fmt:
     desc: Format everything
     cmds:
-      - cargo +nightly fmt --all
+      - cargo +{{.NIGHTLY}} fmt --all
       - cargo bin dprint fmt
       - bun run biome format --write .
 
@@ -27,6 +30,7 @@ tasks:
     desc: Setup needed after first clone and dependency updates
     cmds:
       - git config --local include.path ../.gitconfig
+      - rustup toolchain install {{.NIGHTLY}} --profile minimal --component rustfmt clippy
       - cargo bin --install
       - cargo bin --sync-aliases
       - cd vertx-configurator && bun install
@@ -64,7 +68,7 @@ tasks:
       - task: config-macros:check
       - task: crsf:check
       - task: scripts:check:tsc
-      - bun run biome ci .
+      - bun run biome ci --error-on-warnings .
 
   all:test:
     cmds:
@@ -158,7 +162,7 @@ tasks:
     requires:
       vars: [COMMAND]
     cmds:
-      - cargo +nightly {{.COMMAND}} --bin simulator -F simulator
+      - cargo +{{.NIGHTLY}} {{.COMMAND}} --bin simulator -F simulator
 
   configurator:dev:
     desc: Run a local dev server. Needs api:dev running

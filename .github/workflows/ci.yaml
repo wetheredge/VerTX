@@ -16,6 +16,7 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  RUSTFLAGS: -Dwarnings
 
 jobs:
   unused-dependencies:
@@ -30,30 +31,31 @@ jobs:
       - run: cargo machete
 
   rustfmt:
-    name: Rust format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: rm rust-toolchain.toml
       - run: rustup toolchain install nightly --profile minimal --component rustfmt
       - run: cargo +nightly fmt --all --check
 
   clippy:
-    name: Rust lints
+    name: Clippy
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        crate: [vertx-api, vertx-config, vertx-config-macros, vertx-crsf]
+        crate: [vertx-config, vertx-config-macros, vertx-crsf, vertx-simulator-ipc]
     steps:
       - uses: actions/checkout@v4
+      - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: rustup toolchain install stable --profile minimal --component clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets
         working-directory: ${{ matrix.crate }}
 
   build-configurator:
-    name: Build vertx-configurator
+    name: Build configurator
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,50 +63,100 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: asdf-vm/actions/setup@v3
-      - name: Install Bun
-        run: |
-          asdf plugin add bun https://github.com/cometkim/asdf-bun
-          asdf install bun
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.1.12 # dep:asdf:bun
       - run: bun install
-      - run: bun run vite build
+      - run: bun run -b vite build
       - run: bun run scripts/compress.ts
       - uses: actions/upload-artifact@v4
         with:
-          name: vertx-configurator
+          name: configurator
           path: vertx-configurator/dist/
           compression-level: 1
           if-no-files-found: error
 
   clippy-vertx:
-    name: Rust lints (vertx)
+    name: Clippy (vertx)
     runs-on: ubuntu-latest
     needs: build-configurator
     steps:
       - uses: actions/checkout@v4
-      - name: Install toolchain (esp)
+      - run: rm rust-toolchain.toml
+      - name: Install toolchain
         uses: esp-rs/xtensa-toolchain@v1.5
         with:
           default: true
           buildtargets: esp32s3
           ldproxy: false
       - uses: Swatinem/rust-cache@v2
-      - name: Get pre-built vertx-configurator
+      - name: Get pre-built configurator
         uses: actions/download-artifact@v4
         with:
-          name: vertx-configurator
+          name: configurator
           path: vertx-configurator/dist
-      - run: cargo +esp clippy -- -D warnings
+      - name: Run clippy
+        run: cargo clippy -Zbuild-std=alloc,core --target xtensa-esp32s3-none-elf --bin vertx -F esp32s3
+        working-directory: vertx
+        env:
+          VERTX_TARGET: devkit
+          WIFI_SSID: CI
+          WIFI_PASSWORD: password
+          RUSTFLAGS: -Clink-arg=-Tlinkall.x -Clink-arg=-Trom_functions.x -Clink-arg=-nostartfiles -Dwarnings
+
+  clippy-vertx-hosted:
+    name: Clippy (vertx hosted)
+    runs-on: ubuntu-latest
+    needs: build-configurator
+    steps:
+      - uses: actions/checkout@v4
+      - run: rm rust-toolchain.toml
+      - name: Install toolchain
+        run: |
+          rustup toolchain install nightly-2024-06-08 --profile minimal --component clippy
+          rustup default nightly-2024-06-08
+      - uses: Swatinem/rust-cache@v2
+      - name: Get pre-built configurator
+        uses: actions/download-artifact@v4
+        with:
+          name: configurator
+          path: vertx-configurator/dist
+      - name: Run clippy
+        run: cargo clippy --bin simulator -F simulator
         working-directory: vertx
         env:
           VERTX_TARGET: devkit
           WIFI_SSID: CI
           WIFI_PASSWORD: password
 
-  tests:
-    name: Rust tests
+  clippy-simulator:
+    name: Clippy (simulator)
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/gtk-rs/gtk4-rs/gtk4:latest
     steps:
       - uses: actions/checkout@v4
+      - run: rm rust-toolchain.toml
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Run clippy
+        run: cargo clippy
+        working-directory: vertx-simulator
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: [vertx-config, vertx-crsf]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: rustup toolchain install stable --profile minimal
       - uses: Swatinem/rust-cache@v2
@@ -112,26 +164,21 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: nextest@0.9.70 # dep:cargo-bin:cargo-nextest
-      - run: cargo nextest run -p vertx-crsf
+      - run: cargo nextest run
+        working-directory: ${{ matrix.crate }}
 
   biome:
-    name: Lint & format configurator
+    name: Biome
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: vertx-configurator
     steps:
       - uses: actions/checkout@v4
       - uses: biomejs/setup-biome@v2
-        with:
-          working-dir: vertx-configurator
         env:
           GITHUB_TOKEN: null
       - run: biome version
       - run: biome ci --error-on-warnings .
 
   dprint:
-    name: Check misc formatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -145,3 +192,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: crate-ci/typos@v1.21.0 # dep:asdf:typos
+
+  passed:
+    runs-on: ubuntu-latest
+    needs:
+      - unused-dependencies
+      - rustfmt
+      - clippy
+      - clippy-vertx
+      - clippy-vertx-hosted
+      - clippy-simulator
+      - tests
+      - biome
+      - dprint
+      - typos
+    steps:
+      - run: 'true'

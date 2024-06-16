@@ -43,11 +43,8 @@ exclusively for the ELRS transmitter module.
 After installing the above list:
 
 ```shell
-# Install/update nightly rustfmt
-$ rustup toolchain install nightly --component rustfmt --profile minimal
-
 # Install Rust esp toolchain
-$ espup install -t esp32s3
+$ espup install -t esp32s3 -v 1.79.0.0
 
 # Install asdf plugins if necessary
 $ asdf plugin add bun https://github.com/cometkim/asdf-bun
