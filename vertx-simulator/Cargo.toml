@@ -9,8 +9,6 @@ publish = false
 relm4 = { version = "=0.8.1", features = ["libadwaita", "gnome_45"] }
 relm4-icons = { version = "=0.8.3", features = ["icon-development-kit"] }
 tokio = { version = "*", default-features = false, features = ["macros", "io-util", "process"] }
-tracing = "=0.1.40"
-tracing-subscriber = { version = "=0.3.18", features = ["env-filter", "local-time"] }
 vertx-simulator-ipc = { workspace = true }
 
 [lints]
