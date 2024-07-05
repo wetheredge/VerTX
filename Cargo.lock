@@ -100,7 +100,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "miniz_oxide",
- "object",
+ "object 0.35.0",
  "rustc-demangle",
 ]
 
@@ -274,14 +274,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8566979429cf69b49a5c740c60791108e86440e8be149bbea4fe54d2c32d6e2"
 
 [[package]]
-name = "derive_more"
-version = "0.99.17"
+name = "delegate"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fb810d30a7c1953f91334de7244731fc3f3c10d7fe163338a35b9f640960321"
+checksum = "4e018fccbeeb50ff26562ece792ed06659b9c2dae79ece77c4456bb10d9bf79b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.66",
 ]
 
 [[package]]
@@ -409,6 +409,23 @@ name = "embassy-time-queue-driver"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1177859559ebf42cd24ae7ba8fe6ee707489b01d0bf471f8827b7b12dcb0bc0"
+
+[[package]]
+name = "embassy-usb-driver"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fc247028eae04174b6635104a35b1ed336aabef4654f5e87a8f32327d231970"
+
+[[package]]
+name = "embassy-usb-synopsys-otg"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d46be92e72bcf39e623ff74d739a8ab29b02f4909a9b05986ca81c2157ac254a"
+dependencies = [
+ "critical-section",
+ "embassy-sync 0.5.0",
+ "embassy-usb-driver",
+]
 
 [[package]]
 name = "embedded-can"
@@ -552,9 +569,9 @@ checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 
 [[package]]
 name = "esp-alloc"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83792eb7261a375bb838679fea2b45654b8f4a48da6bef10a96da5054aa81c7d"
+checksum = "e44c0b0c0416865313f3fcb6c00f7bc8ecebef30459bec74dc272eb12e465e3f"
 dependencies = [
  "critical-section",
  "linked_list_allocator",
@@ -562,17 +579,31 @@ dependencies = [
 
 [[package]]
 name = "esp-backtrace"
-version = "0.11.1"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dda6c53c50ed96cce44e8565bd7659f8884d55bac3262184c3a77f748553e3ff"
+checksum = "d5b1720f2275eb87dbde9607cb2ab6a10894a4502045c0924c0f265aaceb3118"
 dependencies = [
+ "esp-build 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "esp-println",
+ "rustversion",
+ "semihosting",
 ]
 
 [[package]]
 name = "esp-build"
 version = "0.1.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=cycle-counter#ec2b1039db4706642f12ecfc59d627586e422792"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b94a4b8d74e7cc7baabcca5b2277b41877e039ad9cd49959d48ef94dac7eab4b"
+dependencies = [
+ "quote",
+ "syn 2.0.66",
+ "termcolor",
+]
+
+[[package]]
+name = "esp-build"
+version = "0.1.0"
+source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
 dependencies = [
  "quote",
  "syn 2.0.66",
@@ -581,19 +612,20 @@ dependencies = [
 
 [[package]]
 name = "esp-hal"
-version = "0.17.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=cycle-counter#ec2b1039db4706642f12ecfc59d627586e422792"
+version = "0.18.0"
+source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
 dependencies = [
  "basic-toml",
  "bitfield",
  "bitflags 2.5.0",
  "cfg-if",
  "critical-section",
+ "delegate",
  "document-features",
- "embassy-executor",
  "embassy-futures",
- "embassy-sync 0.5.0",
- "embassy-time-driver",
+ "embassy-sync 0.6.0",
+ "embassy-usb-driver",
+ "embassy-usb-synopsys-otg",
  "embedded-can",
  "embedded-dma",
  "embedded-hal 1.0.0",
@@ -602,7 +634,7 @@ dependencies = [
  "embedded-io 0.6.1",
  "embedded-io-async",
  "enumset",
- "esp-build",
+ "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git)",
  "esp-hal-procmacros",
  "esp-metadata",
  "esp-riscv-rt",
@@ -623,14 +655,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "esp-hal-embassy"
+version = "0.1.0"
+source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+dependencies = [
+ "cfg-if",
+ "critical-section",
+ "document-features",
+ "embassy-time-driver",
+ "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git)",
+ "esp-hal",
+ "esp-metadata",
+ "portable-atomic",
+]
+
+[[package]]
 name = "esp-hal-procmacros"
-version = "0.10.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=cycle-counter#ec2b1039db4706642f12ecfc59d627586e422792"
+version = "0.11.0"
+source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
 dependencies = [
  "darling",
  "document-features",
  "litrs",
- "object",
+ "object 0.36.1",
  "proc-macro-crate",
  "proc-macro-error",
  "proc-macro2",
@@ -640,8 +687,9 @@ dependencies = [
 
 [[package]]
 name = "esp-hal-smartled"
-version = "0.10.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=cycle-counter#ec2b1039db4706642f12ecfc59d627586e422792"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4984c06ebc6fba104636b91b06ad3070d9828d9a1f6407ca22cd4926d884f55c"
 dependencies = [
  "document-features",
  "esp-hal",
@@ -651,8 +699,8 @@ dependencies = [
 
 [[package]]
 name = "esp-metadata"
-version = "0.1.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=cycle-counter#ec2b1039db4706642f12ecfc59d627586e422792"
+version = "0.1.1"
+source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
 dependencies = [
  "basic-toml",
  "lazy_static",
@@ -673,7 +721,7 @@ dependencies = [
 [[package]]
 name = "esp-riscv-rt"
 version = "0.8.0"
-source = "git+https://github.com/wetheredge/esp-hal.git?branch=cycle-counter#ec2b1039db4706642f12ecfc59d627586e422792"
+source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
 dependencies = [
  "document-features",
  "riscv",
@@ -705,21 +753,21 @@ dependencies = [
 
 [[package]]
 name = "esp-wifi"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af0f9ab6775afcd2af9c28c5058259017cbe535545a2b895ec660a705a7e4155"
+version = "0.6.0"
+source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
 dependencies = [
  "atomic-waker",
  "cfg-if",
  "critical-section",
  "embassy-futures",
  "embassy-net-driver",
- "embassy-sync 0.5.0",
- "embedded-hal 0.2.7",
+ "embassy-sync 0.6.0",
  "embedded-io 0.6.1",
  "embedded-io-async",
  "enumset",
+ "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git)",
  "esp-hal",
+ "esp-hal-embassy",
  "esp-wifi-sys",
  "fugit",
  "futures-util",
@@ -746,9 +794,8 @@ dependencies = [
 
 [[package]]
 name = "esp32s3"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fd8d5ad8c9984fdb3f81de5a85e21a6499993c3bebab2585631139bbf36abbb"
+version = "0.26.0"
+source = "git+https://github.com/esp-rs/esp-pacs?rev=a7c72f7#a7c72f72c4cc50d1595a0d5a395250306d741fed"
 dependencies = [
  "critical-section",
  "vcell",
@@ -1147,6 +1194,15 @@ version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8ec7ab813848ba4522158d5517a6093db1ded27575b070f4177b8d12b41db5e"
 dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "object"
+version = "0.36.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "081b846d1d56ddfc18fdf1a922e4f6e07a11768ea1b92dec44e42b72712ccfce"
+dependencies = [
  "flate2",
  "memchr",
  "ruzstd",
@@ -1421,12 +1477,11 @@ checksum = "955d28af4278de8121b7ebeb796b6a45735dc01436d898801014aced2773a3d6"
 
 [[package]]
 name = "ruzstd"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5174a470eeb535a721ae9fdd6e291c2411a906b96592182d05217591d5c5cf7b"
+checksum = "5022b253619b1ba797f243056276bed8ed1a73b0f5a7ce7225d524067644bf8f"
 dependencies = [
  "byteorder",
- "derive_more",
  "twox-hash",
 ]
 
@@ -1441,6 +1496,12 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "semihosting"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92bc56e056d8725553408cc2dfdfb96591c49ef2835d2f6060f28396d645d785"
 
 [[package]]
 name = "serde"
@@ -1833,6 +1894,7 @@ version = "0.0.0"
 dependencies = [
  "bytemuck",
  "cargo_toml",
+ "critical-section",
  "embassy-executor",
  "embassy-futures",
  "embassy-net",
@@ -1841,6 +1903,7 @@ dependencies = [
  "esp-alloc",
  "esp-backtrace",
  "esp-hal",
+ "esp-hal-embassy",
  "esp-hal-smartled",
  "esp-println",
  "esp-storage",

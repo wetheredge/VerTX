@@ -5,8 +5,8 @@ use embassy_executor::{task, Spawner};
 use embassy_time::Timer;
 use esp_backtrace as _;
 use esp_hal::clock::Clocks;
-use esp_hal::peripheral::Peripheral;
-use esp_hal::{peripherals, timer};
+use esp_hal::peripherals;
+use esp_hal::timer::timg;
 use esp_wifi::wifi::{WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::{wifi, EspWifiInitFor};
 use heapless::String;
@@ -57,10 +57,10 @@ pub fn run(
     spawner: &Spawner,
     config: &'static crate::Config,
     clocks: &Clocks,
-    timer: timer::Timer<timer::Timer0<peripherals::TIMG1>, esp_hal::Blocking>,
+    timer: timg::Timer<timg::Timer0<peripherals::TIMG1>, esp_hal::Blocking>,
     mut rng: esp_hal::rng::Rng,
-    device: impl Peripheral<P = peripherals::WIFI> + 'static,
-    radio_clocks: esp_hal::system::RadioClockControl,
+    device: peripherals::WIFI,
+    radio_clocks: peripherals::RADIO_CLK,
 ) -> &'static Stack<'static> {
     let config = config.wifi.boot();
 

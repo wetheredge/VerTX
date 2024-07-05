@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(type_alias_impl_trait)]
+#![feature(asm_experimental_arch)]
 
 extern crate alloc;
 
@@ -15,6 +16,7 @@ mod config;
 mod configurator;
 mod crsf;
 mod display;
+mod executor;
 mod flash;
 mod leds;
 mod mode;
@@ -29,14 +31,13 @@ use embassy_sync::mutex::Mutex;
 use embassy_time::{Duration, Ticker};
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
-use esp_hal::embassy;
-use esp_hal::embassy::executor::Executor;
-use esp_hal::gpio::IO;
+use esp_hal::gpio;
 use esp_hal::peripherals::Peripherals;
 use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
-use esp_hal::timer::TimerGroup;
+use esp_hal::system::SystemControl;
+use esp_hal::timer::timg;
 use esp_hal::xtensa_lx::timer::get_cycle_count;
 use esp_hal_smartled::SmartLedsAdapter;
 use log::LevelFilter;
@@ -71,7 +72,7 @@ fn entry() -> ! {
     // SAFETY: entry() will only run once
     unsafe { init_heap() };
 
-    let executor = make_static!(Executor::new());
+    let executor = make_static!(executor::Executor::new());
     executor.run(main)
 }
 
@@ -89,18 +90,21 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     let reset = unsafe { reset::Manager::new() };
 
     let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
 
     esp_println::logger::init_logger(LOG_LEVEL);
     log::info!("Logger initialized");
 
-    embassy::init(&clocks, TimerGroup::new_async(peripherals.TIMG0, &clocks));
+    esp_hal_embassy::init(
+        &clocks,
+        timg::TimerGroup::new_async(peripherals.TIMG0, &clocks),
+    );
 
     let status_signal = make_static!(configurator::server::StatusSignal::new());
     spawner.must_spawn(status(idle_cycles, status_signal));
 
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
     let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks, None).unwrap();
 
     let mode = make_static!(mode::Channel::new());
@@ -126,7 +130,7 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
     spawner.must_spawn(reset::reset(config_manager));
     spawner.must_spawn(configurator::toggle_button(
-        pins!(io.pins, configurator).into_pull_up_input().into(),
+        gpio::AnyInput::new(pins!(io.pins, configurator), gpio::Pull::Up),
         reset,
     ));
 
@@ -135,16 +139,16 @@ fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         mode.publish(crate::Mode::PreConfigurator);
 
         let rng = Rng::new(peripherals.RNG);
-        let timer = TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
+        let timers = timg::TimerGroup::new(peripherals.TIMG1, &clocks, None);
 
         let stack = configurator::wifi::run(
             &spawner,
             config,
             &clocks,
-            timer,
+            timers.timer0,
             rng,
             peripherals.WIFI,
-            system.radio_clock_control,
+            peripherals.RADIO_CLK,
         );
 
         configurator::server::run(

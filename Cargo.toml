@@ -41,9 +41,10 @@ opt-level = 1
 lto = true
 
 [patch.crates-io]
-esp-hal = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
-esp-hal-procmacros = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
-esp-hal-smartled = { git = "https://github.com/wetheredge/esp-hal.git", branch = "cycle-counter", commit = "ec2b1039db4706642f12ecfc59d627586e422792" }
+# Needed until next release of esp-hal-embassy
+esp-hal = { git = "https://github.com/wetheredge/esp-hal.git", commit = "1ef5cec3c176a6db936575df0c83221608c6ca70" }
+esp-hal-embassy = { git = "https://github.com/wetheredge/esp-hal.git", commit = "1ef5cec3c176a6db936575df0c83221608c6ca70" }
+esp-wifi = { git = "https://github.com/wetheredge/esp-hal.git", commit = "1ef5cec3c176a6db936575df0c83221608c6ca70" }
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"
