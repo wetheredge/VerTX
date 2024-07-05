@@ -16,13 +16,13 @@ use embassy_executor::Spawner;
 use embassy_time::Timer;
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
-use esp_hal::embassy;
-use esp_hal::gpio::{self, AnyPin, IO};
+use esp_hal::gpio;
 use esp_hal::peripherals::Peripherals;
 use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
-use esp_hal::timer::TimerGroup;
+use esp_hal::system::SystemControl;
+use esp_hal::timer::timg;
 use esp_hal_smartled::SmartLedsAdapter;
 use esp_wifi::wifi::{self, WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::EspWifiInitFor;
@@ -34,13 +34,16 @@ use crate::BootMode;
 
 pub(crate) fn init(spawner: Spawner) -> super::Init {
     let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
     let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks, None).unwrap();
     let rng = Rng::new(peripherals.RNG);
 
-    embassy::init(&clocks, TimerGroup::new_async(peripherals.TIMG0, &clocks));
+    esp_hal_embassy::init(
+        &clocks,
+        timg::TimerGroup::new_async(peripherals.TIMG0, &clocks),
+    );
 
     let led_driver = SmartLedsAdapter::new(
         rmt.channel0,
@@ -56,16 +59,16 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
         .unwrap();
     let config_storage = ConfigStorage::new(&mut partitions);
 
-    let get_mode_button = || AnyPin::from(pins!(io.pins, configurator).into_pull_up_input());
+    let get_mode_button = || gpio::AnyInput::new(pins!(io.pins, configurator), gpio::Pull::Up);
 
     let get_net_driver = move |ssid, password| {
-        let timer = TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
+        let timers = timg::TimerGroup::new(peripherals.TIMG1, &clocks, None);
 
         let init = esp_wifi::initialize(
             EspWifiInitFor::Wifi,
-            timer,
+            timers.timer0,
             rng,
-            system.radio_clock_control,
+            peripherals.RADIO_CLK,
             &clocks,
         )
         .unwrap();
@@ -146,7 +149,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
     }
 }
 
-impl super::traits::ModeButton for AnyPin<gpio::Input<gpio::PullUp>> {
+impl super::traits::ModeButton for gpio::AnyInput<'_> {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
         self.wait_for_falling_edge()
     }

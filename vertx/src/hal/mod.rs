@@ -4,10 +4,8 @@ use core::fmt::Debug;
 #[cfg_attr(feature = "hosted", path = "hosted.rs")]
 mod implementation;
 
-#[cfg(feature = "hosted")]
+#[allow(unused_imports)]
 pub use implementation::*;
-#[cfg(not(feature = "hosted"))]
-pub(crate) use implementation::*;
 
 pub(crate) type Rng = impl traits::Rng;
 pub(crate) type LedDriver =

@@ -1,10 +1,12 @@
 #![no_std]
 #![no_main]
+#![feature(asm_experimental_arch)]
 #![feature(type_alias_impl_trait)]
+
+mod executor;
 
 use core::mem::MaybeUninit;
 
-use esp_hal::embassy::executor::Executor;
 use esp_hal::prelude::*;
 use static_cell::make_static;
 
@@ -34,6 +36,6 @@ fn entry() -> ! {
     esp_println::logger::init_logger(log::LevelFilter::Info);
     log::info!("Logger initialized");
 
-    let executor = make_static!(Executor::new());
+    let executor = make_static!(executor::Executor::new());
     executor.run(vertx::main)
 }
