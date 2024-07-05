@@ -72,7 +72,7 @@ async function asdf() {
 }
 
 async function cargoBin(state: CargoState) {
-	await cargoUpdateImpl({
+	await cargoImpl({
 		state,
 		group: 'cargo-bin',
 		path: 'Cargo.toml',
@@ -116,11 +116,24 @@ async function dprint() {
 }
 
 async function npm() {
-	chdir('vertx-configurator');
+	await npmImpl('workspace');
 
+	const { workspaces } = await import('../package.json');
+	for (const dir of workspaces) {
+		chdir(`${repoRoot}/${dir}`);
+		await npmImpl(dir);
+	}
+
+	chdir(repoRoot);
+	await $`rm bun.lockb && bun install`.quiet();
+	await commit('Recreate bun.lockb');
+	console.info('Recreated bun.lockb');
+}
+
+async function npmImpl(name: string) {
 	const kinds = [
-		['npm', 'dependencies', ''],
-		['npm(dev)', 'devDependencies', '--dev'],
+		[`npm(${name})`, 'dependencies', ''],
+		[`npm(${name} dev)`, 'devDependencies', '--dev'],
 	] as const;
 	const packageJson = async () =>
 		JSON.parse(await Bun.file('package.json').text()) as Record<
@@ -130,12 +143,16 @@ async function npm() {
 
 	const data = await packageJson();
 	for (const [groupName, kind, kindFlag] of kinds) {
+		if (data[kind] == null) {
+			continue;
+		}
+
 		const { dep } = group(groupName);
 		for (const [name, current] of Object.entries(data[kind])) {
 			const rawCurrent = rawVersion(current);
 			const done = dep(name, rawCurrent);
 
-			await $`bun add --exact ${kindFlag} ${name} && bun run biome format --write package.json && git restore bun.lockb`.quiet();
+			await $`bun add --exact ${kindFlag} ${name} && bun run biome format --write package.json && git restore ${repoRoot}/bun.lockb`.quiet();
 
 			const newData = await packageJson();
 			const latest = newData[kind][name] as string;
@@ -147,16 +164,10 @@ async function npm() {
 			await done(latest);
 		}
 	}
-
-	await $`rm bun.lockb && bun install`.quiet();
-	await commit('Recreate bun.lockb');
-	console.info('Recreated bun.lockb');
-
-	chdir(repoRoot);
 }
 
 async function cargo(state: CargoState) {
-	await cargoUpdateImpl({
+	await cargoImpl({
 		state,
 		group: 'cargo(workspace)',
 		path: 'Cargo.toml',
@@ -170,19 +181,19 @@ async function cargo(state: CargoState) {
 	);
 
 	for (const dir of members) {
-		await cargoUpdateImpl({
+		await cargoImpl({
 			state,
 			group: `cargo(${dir})`,
 			path: `${dir}/Cargo.toml`,
 			section: 'dependencies',
 		});
-		await cargoUpdateImpl({
+		await cargoImpl({
 			state,
 			group: `cargo(${dir} build)`,
 			path: `${dir}/Cargo.toml`,
 			section: 'build-dependencies',
 		});
-		await cargoUpdateImpl({
+		await cargoImpl({
 			state,
 			group: `cargo(${dir} dev)`,
 			path: `${dir}/Cargo.toml`,
@@ -225,7 +236,7 @@ async function getCargoState(): Promise<CargoState> {
 	};
 }
 
-async function cargoUpdateImpl(args: {
+async function cargoImpl(args: {
 	state: CargoState;
 	group: string;
 	path: string;
