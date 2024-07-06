@@ -78,6 +78,13 @@
 			"include": ["./scripts/*.ts", "./vertx-configurator/scripts/*.ts"],
 			"javascript": {
 				"globals": ["Bun"]
+			},
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					}
+				}
 			}
 		},
 		{
