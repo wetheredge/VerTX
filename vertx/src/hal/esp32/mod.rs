@@ -27,10 +27,14 @@ use esp_hal_smartled::SmartLedsAdapter;
 use esp_wifi::wifi::{self, WifiController, WifiEvent, WifiStaDevice};
 use esp_wifi::EspWifiInitFor;
 use heapless::String;
+use portable_atomic::{AtomicU8, Ordering};
 
 use self::flash::Partition;
 use self::pins::pins;
 use crate::BootMode;
+
+#[ram(rtc_fast, persistent)]
+static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
 
 pub(crate) fn init(spawner: Spawner) -> super::Init {
     let peripherals = Peripherals::take();
@@ -83,7 +87,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
 
     super::Init {
         rng,
-        boot_mode: BootMode::default(),
+        boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         led_driver,
         config_storage,
         get_mode_button,
@@ -91,8 +95,8 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
     }
 }
 
-pub(crate) fn set_boot_mode(_mode: u8) {
-    todo!()
+pub(crate) fn set_boot_mode(mode: u8) {
+    BOOT_MODE.store(mode, Ordering::Relaxed);
 }
 
 pub(crate) fn shut_down() -> ! {

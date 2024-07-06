@@ -787,7 +787,7 @@ dependencies = [
 [[package]]
 name = "esp-build"
 version = "0.1.0"
-source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+source = "git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05#6ed1df25de76e2b49d5bc677a7871c695e0f2c05"
 dependencies = [
  "quote",
  "syn 2.0.68",
@@ -797,11 +797,12 @@ dependencies = [
 [[package]]
 name = "esp-hal"
 version = "0.18.0"
-source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+source = "git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05#6ed1df25de76e2b49d5bc677a7871c695e0f2c05"
 dependencies = [
  "basic-toml",
  "bitfield",
  "bitflags 2.6.0",
+ "bytemuck",
  "cfg-if",
  "critical-section",
  "delegate",
@@ -818,7 +819,7 @@ dependencies = [
  "embedded-io 0.6.1",
  "embedded-io-async",
  "enumset",
- "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git)",
+ "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05)",
  "esp-hal-procmacros",
  "esp-metadata",
  "esp-riscv-rt",
@@ -841,13 +842,13 @@ dependencies = [
 [[package]]
 name = "esp-hal-embassy"
 version = "0.1.0"
-source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+source = "git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05#6ed1df25de76e2b49d5bc677a7871c695e0f2c05"
 dependencies = [
  "cfg-if",
  "critical-section",
  "document-features",
  "embassy-time-driver",
- "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git)",
+ "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05)",
  "esp-hal",
  "esp-metadata",
  "portable-atomic",
@@ -856,7 +857,7 @@ dependencies = [
 [[package]]
 name = "esp-hal-procmacros"
 version = "0.11.0"
-source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+source = "git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05#6ed1df25de76e2b49d5bc677a7871c695e0f2c05"
 dependencies = [
  "darling",
  "document-features",
@@ -884,7 +885,7 @@ dependencies = [
 [[package]]
 name = "esp-metadata"
 version = "0.1.1"
-source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+source = "git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05#6ed1df25de76e2b49d5bc677a7871c695e0f2c05"
 dependencies = [
  "basic-toml",
  "lazy_static",
@@ -905,7 +906,7 @@ dependencies = [
 [[package]]
 name = "esp-riscv-rt"
 version = "0.8.0"
-source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+source = "git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05#6ed1df25de76e2b49d5bc677a7871c695e0f2c05"
 dependencies = [
  "document-features",
  "riscv",
@@ -938,7 +939,7 @@ dependencies = [
 [[package]]
 name = "esp-wifi"
 version = "0.6.0"
-source = "git+https://github.com/wetheredge/esp-hal.git#967c478846a501bfac2f54a3eade158586aed7d3"
+source = "git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05#6ed1df25de76e2b49d5bc677a7871c695e0f2c05"
 dependencies = [
  "atomic-waker",
  "cfg-if",
@@ -949,7 +950,7 @@ dependencies = [
  "embedded-io 0.6.1",
  "embedded-io-async",
  "enumset",
- "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git)",
+ "esp-build 0.1.0 (git+https://github.com/wetheredge/esp-hal.git?rev=6ed1df25de76e2b49d5bc677a7871c695e0f2c05)",
  "esp-hal",
  "esp-hal-embassy",
  "esp-wifi-sys",
@@ -979,7 +980,8 @@ dependencies = [
 [[package]]
 name = "esp32s3"
 version = "0.26.0"
-source = "git+https://github.com/esp-rs/esp-pacs?rev=a7c72f7#a7c72f72c4cc50d1595a0d5a395250306d741fed"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53ac7bb447c239be8a6a9eba9aaf4099c3aab4b7aefca5871be8bf7d8c8893cf"
 dependencies = [
  "critical-section",
  "vcell",
