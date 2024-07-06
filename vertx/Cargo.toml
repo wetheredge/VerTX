@@ -48,7 +48,7 @@ embassy-time = { version = "=0.3.1", features = ["generic-queue-8"] }
 esp-alloc = "=0.4.0"
 esp-println = { version = "=0.9.1", features = ["esp32s3", "log"] }
 heapless = { workspace = true }
-log = { version = "0.4.21" }
+log = { version = "=0.4.22" }
 picoserve = { workspace = true, features = ["embassy"] }
 portable-atomic = { version = "1.6.0", default-features = false }
 postcard = { workspace = true }
