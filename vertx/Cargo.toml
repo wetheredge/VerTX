@@ -38,17 +38,17 @@ hosted = [
 ]
 
 [dependencies]
-bytemuck = { version = "=1.16.0", features = ["min_const_generics"] }
+bytemuck = { version = "=1.16.1", features = ["min_const_generics"] }
 critical-section = "=1.1.2"
 embassy-executor = { version = "0.5.0", features = ["nightly"] }
 embassy-futures = "0.1.1"
 embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-hostname"] }
 embassy-sync = { workspace = true }
-embassy-time = { version = "0.3.0", features = ["generic-queue-8"] }
+embassy-time = { version = "=0.3.1", features = ["generic-queue-8"] }
 esp-alloc = "=0.4.0"
 esp-println = { version = "=0.9.1", features = ["esp32s3", "log"] }
 heapless = { workspace = true }
-log = { version = "0.4.21" }
+log = { version = "=0.4.22" }
 picoserve = { workspace = true, features = ["embassy"] }
 portable-atomic = { version = "1.6.0", default-features = false }
 postcard = { workspace = true }
@@ -72,11 +72,11 @@ rand = { version = "=0.8.5", optional = true }
 vertx-simulator-ipc = { workspace = true, optional = true }
 
 [build-dependencies]
-cargo_toml = "=0.20.2"
+cargo_toml = "=0.20.3"
 prettyplease = "=0.2.20"
 quote = "1.0.36"
 serde = { workspace = true, features = ["derive"] }
-serde_json = "=1.0.117"
+serde_json = "=1.0.120"
 syn = { workspace = true, features = ["parsing"] }
 
 [[bin]]
