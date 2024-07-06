@@ -38,7 +38,7 @@ hosted = [
 ]
 
 [dependencies]
-bytemuck = { version = "=1.16.0", features = ["min_const_generics"] }
+bytemuck = { version = "=1.16.1", features = ["min_const_generics"] }
 critical-section = "=1.1.2"
 embassy-executor = { version = "0.5.0", features = ["nightly"] }
 embassy-futures = "0.1.1"
