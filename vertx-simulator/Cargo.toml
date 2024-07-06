@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 relm4 = { version = "=0.8.1", features = ["libadwaita", "gnome_45"] }
 relm4-icons = { version = "=0.8.3", features = ["icon-development-kit"] }
-tokio = { version = "*", default-features = false, features = ["macros", "io-util", "process"] }
+tokio = { version = "=1.38.0", default-features = false, features = ["macros", "io-util", "process"] }
 vertx-simulator-ipc = { workspace = true }
 
 [lints]
