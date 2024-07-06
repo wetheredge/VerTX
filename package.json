@@ -8,6 +8,6 @@
 		"@biomejs/biome": "1.8.3",
 		"@tsconfig/bun": "1.0.7",
 		"@types/bun": "1.1.6",
-		"typescript": "5.4.5"
+		"typescript": "5.5.3"
 	}
 }
