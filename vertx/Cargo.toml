@@ -12,7 +12,9 @@ workspace = true
 esp32 = [
     "dep:esp-backtrace",
     "dep:esp-hal",
+    "dep:esp-hal-embassy",
     "dep:esp-hal-smartled",
+    "dep:esp-println",
     "dep:esp-storage",
     "dep:esp-wifi",
 ]
@@ -22,6 +24,7 @@ esp32s3 = [
     "esp-hal/esp32s3",
     "esp-hal-embassy/esp32s3",
     "esp-hal-smartled/esp32s3",
+    "esp-println/esp32s3",
     "esp-storage/esp32s3",
     "esp-wifi/esp32s3",
 ]
@@ -46,7 +49,6 @@ embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "dhcpv4-ho
 embassy-sync = { workspace = true }
 embassy-time = { version = "=0.3.1", features = ["generic-queue-8"] }
 esp-alloc = "=0.4.0"
-esp-println = { version = "=0.9.1", features = ["esp32s3", "log"] }
 heapless = { workspace = true }
 log = { version = "=0.4.22" }
 picoserve = { workspace = true, features = ["embassy"] }
@@ -62,6 +64,7 @@ esp-backtrace = { version = "=0.12.1", features = ["colors", "panic-handler", "e
 esp-hal = { version = "=0.18.0", features = ["async"], optional = true }
 esp-hal-embassy = { version = "=0.1.0", default-features = false, features = ["time-timg0"], optional = true }
 esp-hal-smartled = { version = "=0.11.0", optional = true }
+esp-println = { version = "=0.9.1", features = ["log"], optional = true }
 esp-storage = { version = "=0.3.0", default-features = false, features = ["low-level", "storage", "critical-section"], optional = true }
 esp-wifi = { version = "=0.6.0", features = ["wifi", "embassy-net"], optional = true }
 
