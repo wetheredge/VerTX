@@ -83,7 +83,9 @@ available through a GTK4 GUI. After
 [setting up the network interface][smoltcp-interface], start the simulator with
 `task simulator:run`.
 
-> [!NOTE] Networking does not work, yet.
+> [!NOTE]
+>
+> Networking does not work, yet.
 
 ## License
 
