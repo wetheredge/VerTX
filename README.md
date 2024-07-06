@@ -39,6 +39,9 @@ exclusively for the ELRS transmitter module.
   (optional, for faster installs)
 - [`cargo-run-bin`](https://github.com/dustinblackman/cargo-run-bin#install)
 - [`asdf`](https://asdf-vm.com/guide/getting-started.html)
+- Native gtk4 & libadwaita are required to build the simulator
+  ([see below](#simulator)):
+  <https://gtk-rs.org/gtk4-rs/git/book/installation.html>
 
 After installing the above list:
 
@@ -73,6 +76,15 @@ requests welcome.
 Most development tasks are run using [`task`](https://taskfile.dev). Run `task`
 without any arguments to get a list of all the tasks available.
 
+### Simulator
+
+The simulator allows VerTX to run on Linux with nearly full functionality
+available through a GTK4 GUI. After
+[setting up the network interface][smoltcp-interface], start the simulator with
+`task simulator:run`.
+
+> [!NOTE] Networking does not work, yet.
+
 ## License
 
 All code outside the `vertx-crsf` subdirectory is licensed under the
@@ -91,3 +103,4 @@ at your option.
 [OpenTX]: https://github.com/opentx/opentx
 [Solid]: https://www.solidjs.com/
 [`esp-hal`]: https://github.com/esp-rs/esp-hal
+[smoltcp-interface]: https://github.com/smoltcp-rs/smoltcp#hosted-usage-examples
