@@ -183,8 +183,8 @@ tasks:
     sources:
       - ../bun.lockb
       - ../tsconfig.*
-      - scripts/**
-      - src/**
+      - scripts/**/*
+      - src/**/*
       - '*.config.*'
       - tsconfig.*
 
@@ -201,12 +201,12 @@ tasks:
       - package.json
       - bun.lockb
       - index.html
-      - src/**
+      - src/**/*
       - '*.config.*'
       - tsconfig.*
       - scripts/compress.ts
     generates:
-      - dist/**
+      - dist/**/*
 
   configurator:preview:
     desc: Run a local server from built artifacts. Needs api:dev running
