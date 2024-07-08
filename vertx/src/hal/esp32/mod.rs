@@ -6,14 +6,13 @@ mod pins {
 }
 
 mod flash;
+mod wifi;
 
 use alloc::vec;
 use alloc::vec::Vec;
-use core::convert::identity;
 use core::future::Future;
 
 use embassy_executor::Spawner;
-use embassy_time::Timer;
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
 use esp_hal::gpio;
@@ -24,9 +23,6 @@ use esp_hal::rng::Rng;
 use esp_hal::system::SystemControl;
 use esp_hal::timer::timg;
 use esp_hal_smartled::SmartLedsAdapter;
-use esp_wifi::wifi::{self, WifiController, WifiEvent, WifiStaDevice};
-use esp_wifi::EspWifiInitFor;
-use heapless::String;
 use portable_atomic::{AtomicU8, Ordering};
 
 use self::flash::Partition;
@@ -65,33 +61,20 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
 
     let get_mode_button = || gpio::AnyInput::new(pins!(io.pins, configurator), gpio::Pull::Up);
 
-    let get_net_driver = move |ssid, password| {
-        let timers = timg::TimerGroup::new(peripherals.TIMG1, &clocks, None);
-
-        let init = esp_wifi::initialize(
-            EspWifiInitFor::Wifi,
-            timers.timer0,
-            rng,
-            peripherals.RADIO_CLK,
-            &clocks,
-        )
-        .unwrap();
-
-        let (device, controller): (wifi::WifiDevice<'static, WifiStaDevice>, _) =
-            wifi::new_with_mode(&init, peripherals.WIFI, WifiStaDevice).unwrap();
-
-        spawner.must_spawn(connection(controller, ssid, password));
-
-        device
-    };
-
     super::Init {
         rng,
         boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         led_driver,
         config_storage,
         get_mode_button,
-        get_net_driver,
+        get_wifi: wifi::GetWifi {
+            spawner,
+            clocks,
+            rng,
+            timer_group: peripherals.TIMG1,
+            radio_clocks: peripherals.RADIO_CLK,
+            wifi: peripherals.WIFI,
+        },
     }
 }
 
@@ -156,47 +139,5 @@ impl super::traits::ConfigStorage for ConfigStorage {
 impl super::traits::ModeButton for gpio::AnyInput<'_> {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
         self.wait_for_falling_edge()
-    }
-}
-
-#[embassy_executor::task]
-async fn connection(
-    mut controller: WifiController<'static>,
-    ssid: &'static String<32>,
-    password: &'static String<64>,
-) -> ! {
-    log::info!("Starting connection()");
-
-    loop {
-        // If connected, wait for disconnect
-        if controller.is_connected().is_ok_and(identity) {
-            controller.wait_for_event(WifiEvent::StaDisconnected).await;
-            log::info!("WiFi disconnected");
-            Timer::after_secs(1).await;
-        }
-
-        if !matches!(controller.is_started(), Ok(true)) {
-            let config = wifi::Configuration::Client(wifi::ClientConfiguration {
-                ssid: ssid.clone(),
-                bssid: None,
-                auth_method: wifi::AuthMethod::WPA2Personal,
-                password: password.clone(),
-                channel: None,
-            });
-
-            controller.set_configuration(&config).unwrap();
-            log::info!("Starting WiFi");
-            controller.start().await.unwrap();
-            log::info!("WiFi started");
-        }
-
-        log::info!("Connecting...");
-        match controller.connect().await {
-            Ok(()) => log::info!("WiFi connected"),
-            Err(err) => {
-                log::info!("WiFi connection failed: {err:?}");
-                Timer::after_secs(5).await;
-            }
-        }
     }
 }

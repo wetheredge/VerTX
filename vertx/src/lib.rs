@@ -43,9 +43,8 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         led_driver,
         config_storage,
         get_mode_button,
-        get_net_driver,
+        get_wifi,
     } = hal::init(spawner);
-    let reset = reset::Manager::new(boot_mode);
 
     let mode = make_static!(mode::Channel::new());
     let status_signal = make_static!(configurator::StatusSignal::new());
@@ -53,41 +52,57 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     let config_manager = make_static!(config::Manager::new(config_storage));
     let config = config_manager.config();
 
-    spawner.must_spawn(change_mode(get_mode_button, reset));
+    spawner.must_spawn(change_mode(boot_mode, get_mode_button));
     spawner.must_spawn(status(idle_cycles, status_signal));
     spawner.must_spawn(reset::reset(config_manager));
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
-    match boot_mode {
-        BootMode::Standard => {
-            log::info!("Configurator disabled");
-            mode.publish(crate::Mode::Ok);
-        }
-        BootMode::Configurator => {
-            log::info!("Configurator enabled");
-            mode.publish(crate::Mode::PreConfigurator);
+    if boot_mode.configurator_enabled() {
+        use self::wifi::Error;
 
-            let stack = wifi::run(spawner, config, &mut rng, get_net_driver);
+        log::info!("Configurator enabled");
+        mode.publish(crate::Mode::PreConfigurator);
 
-            configurator::run(
-                spawner,
-                reset,
-                config_manager,
-                stack,
-                mode.publisher(),
-                status_signal,
-            );
-        }
-    }
+        let is_home = boot_mode == BootMode::ConfiguratorHome;
+        let stack = match wifi::run(spawner, is_home, config, &mut rng, get_wifi) {
+            Ok(stack) => stack,
+            Err(Error::InvalidHomeConfig) => {
+                reset::reboot_into(BootMode::ConfiguratorField);
+                return;
+            }
+        };
+
+        spawner.must_spawn(configurator::run(
+            spawner,
+            config_manager,
+            stack,
+            mode.publisher(),
+            status_signal,
+        ));
+    } else {
+        log::info!("Configurator disabled");
+        mode.publish(crate::Mode::Ok);
+    };
 }
 
 #[task]
-async fn change_mode(get_mode_button: crate::hal::GetModeButton, reset: crate::reset::Manager) {
-    use hal::traits::ModeButton;
+async fn change_mode(boot_mode: BootMode, get_mode_button: hal::GetModeButton) {
+    use hal::traits::{GetWifi as _, ModeButton as _};
 
     let mut button = get_mode_button();
     button.wait_for_pressed().await;
-    reset.toggle_configurator();
+
+    let mode = if boot_mode.configurator_enabled() {
+        BootMode::Standard
+    } else if hal::GetWifi::SUPPORTS_HOME {
+        BootMode::ConfiguratorHome
+    } else if hal::GetWifi::SUPPORTS_FIELD {
+        BootMode::ConfiguratorField
+    } else {
+        unreachable!()
+    };
+
+    reset::reboot_into(mode);
 }
 
 #[task]

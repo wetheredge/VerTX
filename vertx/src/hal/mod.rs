@@ -13,9 +13,13 @@ pub(crate) type LedDriver =
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
 pub(crate) type ModeButton = impl traits::ModeButton;
 pub(crate) type GetModeButton = impl FnOnce() -> ModeButton;
-pub(crate) type NetDriver = impl embassy_net::driver::Driver + 'static;
-pub(crate) type GetNetDriver =
-    impl FnOnce(&'static heapless::String<32>, &'static heapless::String<64>) -> NetDriver;
+pub(crate) type Wifi = impl embassy_net::driver::Driver + 'static;
+pub(crate) type GetWifi = impl traits::GetWifi;
+
+const _: () = {
+    use traits::GetWifi as _;
+    assert!(GetWifi::SUPPORTS_HOME || GetWifi::SUPPORTS_FIELD);
+};
 
 pub(crate) struct Init {
     pub(crate) rng: Rng,
@@ -23,11 +27,13 @@ pub(crate) struct Init {
     pub(crate) led_driver: LedDriver,
     pub(crate) config_storage: ConfigStorage,
     pub(crate) get_mode_button: GetModeButton,
-    pub(crate) get_net_driver: GetNetDriver,
+    pub(crate) get_wifi: GetWifi,
 }
 
 pub(crate) mod traits {
     use core::future::Future;
+
+    use crate::wifi::{Password, Ssid};
 
     pub(crate) trait ConfigStorage {
         fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T>;
@@ -44,5 +50,13 @@ pub(crate) mod traits {
 
     pub(crate) trait ModeButton {
         fn wait_for_pressed(&mut self) -> impl Future<Output = ()>;
+    }
+
+    pub(crate) trait GetWifi {
+        const SUPPORTS_HOME: bool;
+        const SUPPORTS_FIELD: bool;
+
+        fn home(self, ssid: &'static Ssid, password: &'static Password) -> super::Wifi;
+        fn field(self, ssid: Ssid, password: &'static Password) -> super::Wifi;
     }
 }

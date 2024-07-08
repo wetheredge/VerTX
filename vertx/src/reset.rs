@@ -14,52 +14,40 @@ static RESET: Signal<crate::mutex::MultiCore, Reset> = Signal::new();
 pub enum BootMode {
     #[default]
     Standard = 0,
-    Configurator = 1,
+    ConfiguratorHome = 1,
+    ConfiguratorField = 2,
 }
 
 impl From<u8> for BootMode {
     fn from(raw: u8) -> Self {
         match raw {
-            1 => Self::Configurator,
+            1 => Self::ConfiguratorHome,
+            2 => Self::ConfiguratorField,
             _ => Self::Standard,
         }
     }
 }
 
 impl BootMode {
-    pub const fn is_configurator(self) -> bool {
-        matches!(self, BootMode::Configurator)
+    pub const fn configurator_enabled(self) -> bool {
+        matches!(
+            self,
+            BootMode::ConfiguratorHome | BootMode::ConfiguratorField
+        )
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Manager {
-    mode: BootMode,
+pub fn reboot_into(mode: BootMode) {
+    crate::hal::set_boot_mode(mode as u8);
+    RESET.signal(Reset::Reboot);
 }
 
-impl Manager {
-    pub fn new(mode: BootMode) -> Self {
-        Self { mode }
-    }
+pub fn shut_down() {
+    RESET.signal(Reset::ShutDown);
+}
 
-    pub fn toggle_configurator(&self) {
-        let mode = if self.mode.is_configurator() {
-            BootMode::Standard
-        } else {
-            BootMode::Configurator
-        };
-        crate::hal::set_boot_mode(mode as u8);
-
-        RESET.signal(Reset::Reboot);
-    }
-
-    pub fn shut_down(&self) {
-        RESET.signal(Reset::ShutDown);
-    }
-
-    pub fn reboot(&self) {
-        RESET.signal(Reset::Reboot);
-    }
+pub fn reboot() {
+    RESET.signal(Reset::Reboot);
 }
 
 #[task]

@@ -5,6 +5,7 @@ use std::vec::Vec;
 use std::{env, fs, process, thread};
 
 use embassy_executor::Spawner;
+use embassy_net_tuntap::TunTapDevice;
 use embassy_sync::signal::Signal;
 use rand::RngCore as _;
 use smart_leds::RGB8;
@@ -34,16 +35,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         led_driver: LedDriver,
         config_storage: ConfigStorage::new(),
         get_mode_button: move || ModeButton(&MODE_BUTTON),
-        get_net_driver: |_ssid, _password| {
-            let interface = match env::var("VERTX_NET_INTERFACE") {
-                Ok(interface) => interface,
-                Err(env::VarError::NotPresent) => {
-                    panic!("missing VERTX_NET_INTERFACE environment variable")
-                }
-                Err(_) => panic!("Failed to parse VERTX_NET_INTERFACE contents"),
-            };
-            embassy_net_tuntap::TunTapDevice::new(&interface).unwrap()
-        },
+        get_wifi: GetWifi,
     }
 }
 
@@ -155,5 +147,38 @@ struct ModeButton(&'static Signal<crate::mutex::MultiCore, ()>);
 impl super::traits::ModeButton for ModeButton {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
         self.0.wait()
+    }
+}
+
+struct GetWifi;
+
+impl crate::hal::traits::GetWifi for GetWifi {
+    const SUPPORTS_FIELD: bool = true;
+    const SUPPORTS_HOME: bool = false;
+
+    fn home(
+        self,
+        _ssid: &'static crate::wifi::Ssid,
+        _password: &'static crate::wifi::Password,
+    ) -> crate::hal::Wifi {
+        fn unimplemented() -> TunTapDevice {
+            unimplemented!()
+        }
+        unimplemented()
+    }
+
+    fn field(
+        self,
+        _ssid: crate::wifi::Ssid,
+        _password: &'static crate::wifi::Password,
+    ) -> crate::hal::Wifi {
+        let interface = match env::var("VERTX_NET_INTERFACE") {
+            Ok(interface) => interface,
+            Err(env::VarError::NotPresent) => {
+                panic!("missing VERTX_NET_INTERFACE environment variable")
+            }
+            Err(_) => panic!("Failed to parse VERTX_NET_INTERFACE contents"),
+        };
+        TunTapDevice::new(&interface).unwrap()
     }
 }

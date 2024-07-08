@@ -22,7 +22,7 @@ pub type StatusSignal = Signal<crate::mutex::SingleCore, response::Status>;
 include!(concat!(env!("OUT_DIR"), "/configurator.rs"));
 
 type Router = picoserve::Router<impl PathRouter<State>, State>;
-fn router() -> Router {
+fn get_router() -> Router {
     picoserve::Router::new()
         .nest_service("", AssetsRouter)
         .nest_service("/api", api::UpgradeHandler)
@@ -62,42 +62,40 @@ static CONFIG: Config<Duration> = Config {
     shutdown_method: picoserve::ShutdownMethod::Abort,
 };
 
-pub fn run(
+#[task]
+pub async fn run(
     spawner: Spawner,
-    reset: crate::reset::Manager,
     config: &'static crate::config::Manager,
-    stack: &'static Stack<crate::hal::NetDriver>,
+    stack: &'static Stack<crate::hal::Wifi>,
     mode: crate::mode::Publisher<'static>,
     status: &'static StatusSignal,
 ) {
-    let app = make_static!(router());
-    let state = make_static!(State {
-        reset,
-        config,
-        status
-    });
+    let router = make_static!(get_router());
+    let state = make_static!(State { config, status });
 
-    let mut mode = Some(mode);
+    stack.wait_config_up().await;
+    // loop {
+    //     if stack.is_link_up() {
+    //         break;
+    //     }
+    //     Timer::after(Duration::from_millis(500)).await;
+    // }
+
+    mode.publish(crate::Mode::Configurator);
+
     for id in 0..TASKS {
-        spawner.must_spawn(worker(id, stack, app, &CONFIG, state, mode.take()));
+        spawner.must_spawn(worker(id, stack, router, &CONFIG, state));
     }
 }
 
 #[task(pool_size = TASKS)]
 async fn worker(
     id: usize,
-    stack: &'static Stack<crate::hal::NetDriver>,
+    stack: &'static Stack<crate::hal::Wifi>,
     router: &'static Router,
     config: &'static Config<Duration>,
     state: &'static State,
-    mode: Option<crate::mode::Publisher<'static>>,
 ) -> ! {
-    stack.wait_config_up().await;
-
-    if let Some(mode) = mode {
-        mode.publish(crate::Mode::Configurator);
-    }
-
     let mut rx_buffer = [0; TCP_BUFFER];
     let mut tx_buffer = [0; TCP_BUFFER];
 
@@ -118,7 +116,6 @@ async fn worker(
 }
 
 struct State {
-    reset: crate::reset::Manager,
     config: &'static crate::config::Manager,
     status: &'static StatusSignal,
 }

@@ -6,6 +6,7 @@ use picoserve::response::{ws, IntoResponse, Response as HttpResponse, StatusCode
 use picoserve::routing::PathRouterService;
 
 use super::protocol::{response, Request, Response};
+use crate::reset;
 
 #[derive(Debug)]
 pub struct UpgradeHandler;
@@ -141,15 +142,15 @@ impl ws::WebSocketCallback for Handler<'_> {
                                 include!(concat!(env!("OUT_DIR"), "/build_info.rs")).into()
                             }
                             Request::PowerOff => {
-                                self.state.reset.shut_down();
+                                reset::shut_down();
                                 continue;
                             }
                             Request::Reboot => {
-                                self.state.reset.reboot();
+                                reset::reboot();
                                 continue;
                             }
                             Request::ExitConfigurator => {
-                                self.state.reset.toggle_configurator();
+                                reset::reboot_into(crate::BootMode::Standard);
                                 continue;
                             }
                             Request::CheckForUpdate => todo!(),
