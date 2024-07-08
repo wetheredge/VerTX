@@ -433,6 +433,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "edge-dhcp"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "219bb7ddf5c8dafa4f2d39a7e41d67989f49c501752f599fdfccae86097e65ec"
+dependencies = [
+ "edge-raw",
+ "embassy-futures",
+ "embassy-time",
+ "embedded-nal-async",
+ "embedded-nal-async-xtra",
+ "heapless",
+ "log",
+ "no-std-net",
+ "num_enum",
+ "rand_core",
+]
+
+[[package]]
+name = "edge-raw"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cb0fe4eeca2f029733c99469b16c8473fbc0a8ebc3f675be286c3f74bf81b59"
+dependencies = [
+ "log",
+ "no-std-net",
+]
+
+[[package]]
 name = "embassy-executor"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -671,6 +699,16 @@ dependencies = [
  "embedded-io-async",
  "embedded-nal",
  "no-std-net",
+]
+
+[[package]]
+name = "embedded-nal-async-xtra"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1edad1e195d3743ca2c52629c95f5a9a8853962bb34eae399e5baaa8dec96ba7"
+dependencies = [
+ "embedded-io-async",
+ "embedded-nal-async",
 ]
 
 [[package]]
@@ -2718,6 +2756,7 @@ dependencies = [
  "bytemuck",
  "cargo_toml",
  "critical-section",
+ "edge-dhcp",
  "embassy-executor",
  "embassy-futures",
  "embassy-net",

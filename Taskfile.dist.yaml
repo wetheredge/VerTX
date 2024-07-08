@@ -36,7 +36,7 @@ tasks:
       - cd vertx-configurator && bun install
       - cmd: echo
         silent: true
-      - cmd: echo "The WIFI_SSID, WIFI_PASSWORD, and VERTX_TARGET environment variables are required at build time."
+      - cmd: echo "The VERTX_TARGET environment variable is required at build time."
         silent: true
       - cmd: echo "A complete list of targets can be printed by running \`task targets\`"
         silent: true

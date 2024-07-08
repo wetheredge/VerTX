@@ -64,8 +64,8 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         mode.publish(crate::Mode::PreConfigurator);
 
         let is_home = boot_mode == BootMode::ConfiguratorHome;
-        let stack = match wifi::run(spawner, is_home, config, &mut rng, get_wifi) {
-            Ok(stack) => stack,
+        let (stack, stack_ready) = match wifi::run(spawner, is_home, config, &mut rng, get_wifi) {
+            Ok(ok) => ok,
             Err(Error::InvalidHomeConfig) => {
                 reset::reboot_into(BootMode::ConfiguratorField);
                 return;
@@ -76,6 +76,7 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
             spawner,
             config_manager,
             stack,
+            stack_ready,
             mode.publisher(),
             status_signal,
         ));

@@ -195,7 +195,7 @@ async fn home_connection(
 async fn field_connection(
     mut controller: WifiController<'static>,
     ssid: Ssid,
-    password: &'static Password,
+    _password: &'static Password,
 ) -> ! {
     log::info!("Starting field_connection()");
 
@@ -204,8 +204,8 @@ async fn field_connection(
         ssid_hidden: false,
         channel: 1,
         secondary_channel: None,
-        auth_method: wifi::AuthMethod::WPA2Personal,
-        password: password.clone(),
+        // auth_method: wifi::AuthMethod::WPA2Personal,
+        // password: password.clone(),
         // max_connections: 1,
         ..Default::default()
     });

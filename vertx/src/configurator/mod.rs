@@ -67,20 +67,14 @@ pub async fn run(
     spawner: Spawner,
     config: &'static crate::config::Manager,
     stack: &'static Stack<crate::hal::Wifi>,
+    stack_ready: crate::wifi::StackReady,
     mode: crate::mode::Publisher<'static>,
     status: &'static StatusSignal,
 ) {
     let router = make_static!(get_router());
     let state = make_static!(State { config, status });
 
-    stack.wait_config_up().await;
-    // loop {
-    //     if stack.is_link_up() {
-    //         break;
-    //     }
-    //     Timer::after(Duration::from_millis(500)).await;
-    // }
-
+    stack_ready.await;
     mode.publish(crate::Mode::Configurator);
 
     for id in 0..TASKS {
