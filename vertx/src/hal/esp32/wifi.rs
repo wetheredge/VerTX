@@ -4,9 +4,9 @@ use embassy_time::Timer;
 use esp_hal::clock::Clocks;
 use esp_hal::peripherals;
 use esp_hal::rng::Rng;
-use esp_hal::timer::timg;
+use esp_hal::timer::{ErasedTimer, PeriodicTimer};
 use esp_wifi::wifi::{self, WifiApDevice, WifiController, WifiEvent, WifiStaDevice, WifiState};
-use esp_wifi::{EspWifiInitFor, EspWifiInitialization};
+use esp_wifi::EspWifiInitFor;
 
 use crate::wifi::{Password, Ssid};
 
@@ -14,27 +14,9 @@ pub(super) struct GetWifi {
     pub(super) spawner: embassy_executor::Spawner,
     pub(super) clocks: Clocks<'static>,
     pub(super) rng: Rng,
-    pub(super) timer_group: peripherals::TIMG1,
+    pub(super) timer: PeriodicTimer<ErasedTimer>,
     pub(super) radio_clocks: peripherals::RADIO_CLK,
     pub(super) wifi: peripherals::WIFI,
-}
-
-fn init(
-    clocks: &Clocks<'static>,
-    rng: Rng,
-    timer_group: peripherals::TIMG1,
-    radio_clocks: peripherals::RADIO_CLK,
-) -> EspWifiInitialization {
-    let timers = timg::TimerGroup::new(timer_group, clocks, None);
-
-    esp_wifi::initialize(
-        EspWifiInitFor::Wifi,
-        timers.timer0,
-        rng,
-        radio_clocks,
-        clocks,
-    )
-    .unwrap()
 }
 
 impl crate::hal::traits::GetWifi for GetWifi {
@@ -43,7 +25,14 @@ impl crate::hal::traits::GetWifi for GetWifi {
 
     fn home(self, ssid: &'static Ssid, password: &'static Password) -> crate::hal::Wifi {
         let spawner = self.spawner;
-        let init = init(&self.clocks, self.rng, self.timer_group, self.radio_clocks);
+        let init = esp_wifi::initialize(
+            EspWifiInitFor::Wifi,
+            self.timer,
+            self.rng,
+            self.radio_clocks,
+            &self.clocks,
+        )
+        .unwrap();
 
         let (device, controller) = wifi::new_with_mode(&init, self.wifi, WifiStaDevice).unwrap();
 
@@ -54,7 +43,14 @@ impl crate::hal::traits::GetWifi for GetWifi {
 
     fn field(self, ssid: Ssid, password: &'static Password) -> crate::hal::Wifi {
         let spawner = self.spawner;
-        let init = init(&self.clocks, self.rng, self.timer_group, self.radio_clocks);
+        let init = esp_wifi::initialize(
+            EspWifiInitFor::Wifi,
+            self.timer,
+            self.rng,
+            self.radio_clocks,
+            &self.clocks,
+        )
+        .unwrap();
 
         let (device, controller) = wifi::new_with_mode(&init, self.wifi, WifiApDevice).unwrap();
 

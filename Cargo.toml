@@ -16,8 +16,8 @@ heapless = "0.8.0"
 picoserve = "=0.11.1"
 postcard = { version = "1.0.8", default-features = false }
 quote = "1.0.36"
-serde = { version = "=1.0.203", default-features = false }
-syn = { version = "=2.0.68", default-features = false }
+serde = { version = "=1.0.204", default-features = false }
+syn = { version = "=2.0.71", default-features = false }
 tokio = "=1.38.0"
 vertx-config.path = "vertx-config"
 vertx-simulator-ipc.path = "vertx-simulator-ipc"
@@ -39,12 +39,6 @@ opt-level = 1
 
 [profile.release]
 lto = true
-
-[patch.crates-io]
-# Needed until next release of esp-hal-embassy & esp-hal
-esp-hal = { git = "https://github.com/wetheredge/esp-hal.git", rev = "6ed1df25de76e2b49d5bc677a7871c695e0f2c05" }
-esp-hal-embassy = { git = "https://github.com/wetheredge/esp-hal.git", rev = "6ed1df25de76e2b49d5bc677a7871c695e0f2c05" }
-esp-wifi = { git = "https://github.com/wetheredge/esp-hal.git", rev = "6ed1df25de76e2b49d5bc677a7871c695e0f2c05" }
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"
