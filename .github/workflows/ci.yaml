@@ -191,7 +191,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: crate-ci/typos@v1.23.1 # dep:asdf:typos
+      - uses: crate-ci/typos@v1.23.6 # dep:asdf:typos
 
   passed:
     runs-on: ubuntu-latest
