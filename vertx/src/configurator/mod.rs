@@ -59,7 +59,6 @@ static CONFIG: Config<Duration> = Config {
         write: Some(Duration::from_secs(2)),
     },
     connection: picoserve::KeepAlive::KeepAlive,
-    shutdown_method: picoserve::ShutdownMethod::Abort,
 };
 
 #[task]
