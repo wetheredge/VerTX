@@ -18,7 +18,7 @@ postcard = { version = "1.0.8", default-features = false }
 quote = "1.0.36"
 serde = { version = "=1.0.204", default-features = false }
 syn = { version = "=2.0.72", default-features = false }
-tokio = "=1.38.0"
+tokio = "=1.39.2"
 vertx-config.path = "vertx-config"
 vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
