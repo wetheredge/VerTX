@@ -11,7 +11,7 @@ heapless = ["dep:heapless"]
 [dependencies]
 embassy-sync = { workspace = true }
 heapless = { workspace = true, optional = true }
-num_enum = { version = "0.7.2", default-features = false }
+num_enum = { version = "=0.7.3", default-features = false }
 postcard = { workspace = true, features = ["alloc"] }
 serde = { workspace = true, features = ["derive", "alloc"] }
 vertx-config-macros = { path = "../vertx-config-macros" }

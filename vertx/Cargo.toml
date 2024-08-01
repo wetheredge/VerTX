@@ -41,7 +41,7 @@ hosted = [
 ]
 
 [dependencies]
-bytemuck = { version = "=1.16.1", features = ["min_const_generics"] }
+bytemuck = { version = "=1.16.3", features = ["min_const_generics"] }
 critical-section = "=1.1.2"
 edge-dhcp = "0.2.0"
 embassy-executor = { version = "0.5.0", features = ["nightly"] }
@@ -53,7 +53,7 @@ esp-alloc = "=0.4.0"
 heapless = { workspace = true }
 log = { version = "=0.4.22" }
 picoserve = { workspace = true, features = ["embassy"] }
-portable-atomic = { version = "1.6.0", default-features = false }
+portable-atomic = { version = "=1.7.0", default-features = false }
 postcard = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 smart-leds = "0.4.0"
@@ -61,26 +61,26 @@ static_cell = { version = "2.1.0", features = ["nightly"] }
 vertx-config = { workspace = true, features = ["heapless"] }
 
 # esp32
-esp-backtrace = { version = "=0.12.2", features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
+esp-backtrace = { version = "=0.13.0", features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
 esp-hal = { version = "=0.19.0", features = ["async"], optional = true }
 esp-hal-embassy = { version = "=0.2.0", default-features = false, optional = true }
 esp-hal-smartled = { version = "=0.12.0", optional = true }
 esp-println = { version = "=0.10.0", default-features = false, features = ["log", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.3.0", default-features = false, features = ["low-level", "storage", "critical-section"], optional = true }
-esp-wifi = { version = "=0.7.0", features = ["wifi", "embassy-net"], optional = true }
+esp-wifi = { version = "=0.7.1", features = ["wifi", "embassy-net"], optional = true }
 
 # hosted
 embassy-net-tuntap = { version = "=0.1.0", optional = true }
-env_logger = { version = "=0.11.3", optional = true }
+env_logger = { version = "=0.11.5", optional = true }
 rand = { version = "=0.8.5", optional = true }
 vertx-simulator-ipc = { workspace = true, optional = true }
 
 [build-dependencies]
-cargo_toml = "=0.20.3"
+cargo_toml = "=0.20.4"
 prettyplease = "=0.2.20"
 quote = "1.0.36"
 serde = { workspace = true, features = ["derive"] }
-serde_json = "=1.0.120"
+serde_json = "=1.0.121"
 syn = { workspace = true, features = ["parsing"] }
 
 [[bin]]
