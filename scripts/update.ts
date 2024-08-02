@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 
 import { chdir, exit, stdout } from 'node:process';
-import { $ } from 'bun';
+import { request as ghRequest } from '@octokit/request';
+import { $, Glob } from 'bun';
 
 const branch = 'updates';
 
@@ -43,8 +44,9 @@ async function asdf() {
 	const commentPattern = /\s*#.*$/;
 	const isVersion = /^\d/;
 
-	const file = await Bun.file(path).text();
-	const lines = file.split('\n');
+	const file = Bun.file(path);
+	const contents = await file.text();
+	const lines = contents.split('\n');
 	for (let i = 0; i < lines.length; i++) {
 		const [line, comment] = splitComment(lines[i], commentPattern);
 		if (!line) {
@@ -62,8 +64,8 @@ async function asdf() {
 		if (version !== latest) {
 			lines[i] = `${tool} ${latest}${comment}`;
 			await Promise.all([
-				Bun.write(path, lines.join('\n')),
-				updateWorkflows(tool, version, latest),
+				Bun.write(file, lines.join('\n')),
+				updateWorkflows(tool, latest),
 			]);
 		}
 
@@ -87,7 +89,9 @@ async function dprint() {
 	const pattern =
 		/https:\/\/plugins\.dprint\.dev\/(?<name>\w+)-(?<version>(?:\d+\.){2}\d+)\.wasm/;
 
-	const lines = (await Bun.file(path).text()).split('\n');
+	const file = Bun.file(path);
+	const contents = await file.text();
+	const lines = contents.split('\n');
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
 		const matches = line.match(pattern);
@@ -108,7 +112,7 @@ async function dprint() {
 
 		if (version !== latest) {
 			lines[i] = line.replace(pattern, response.url);
-			await Bun.write(path, lines.join('\n'));
+			await Bun.write(file, lines.join('\n'));
 		}
 
 		await done(latest);
@@ -251,7 +255,9 @@ async function cargoImpl(args: {
 	const crateId = 1;
 	const versionId = 3;
 
-	const lines = (await Bun.file(args.path).text()).split('\n');
+	const file = Bun.file(args.path);
+	const contents = await file.text();
+	const lines = contents.split('\n');
 	const start = lines
 		.map((s) => s.replace(/\s/, ''))
 		.indexOf(`[${args.section}]`);
@@ -276,10 +282,10 @@ async function cargoImpl(args: {
 		if (rawCurrent !== latest) {
 			const exactLatest = latest.replace(/^[~^=]?/, '=');
 			lines[i] = matches.with(versionId, exactLatest).join('') + comment;
-			await Bun.write(args.path, lines.join('\n'));
+			await Bun.write(file, lines.join('\n'));
 
 			if (args.updateWorkflows) {
-				await updateWorkflows(crate, rawCurrent, latest);
+				await updateWorkflows(crate, latest);
 			}
 		}
 
@@ -314,23 +320,14 @@ function group(group: string) {
 				await commit(`${group}: ${dep} ${current} -> ${latest}`);
 			};
 		},
-		async updateWorkflows(dep: string, current: string, latest: string) {
-			const matches =
-				$`rg --line-number '# dep:${group}:${dep}$' .github/workflows`.nothrow();
-			for await (const match of matches.lines()) {
-				if (!match) {
-					continue;
-				}
-
-				const [file, line] = match.split(':');
-				const escapedVersion = current.replaceAll('.', '\\.');
-				Bun.spawnSync([
-					'sed',
-					'-Ei',
-					`${line}s/(.*)${escapedVersion}/\\1${latest}/`,
-					file,
-				]);
-			}
+		async updateWorkflows(dep: string, latest: string) {
+			const pattern = new RegExp(
+				`(?<=(?:@|:\\s*)v?)(\\d+(?:\\.\\d+(?:\\.\\d+)))(?=\\s*#\\s*dep:${escapeRegExp(group)}:${escapeRegExp(dep)}\\s*$)`,
+				'gm',
+			);
+			await forAllWorkflows(
+				updateFile((s) => s.replaceAll(pattern, latest)),
+			);
 		},
 	};
 }
@@ -343,6 +340,31 @@ async function commit(message: string) {
 	if (stagedChanges.exitCode !== 0) {
 		await $`git commit -m ${message}`.quiet();
 	}
+}
+
+async function forAllWorkflows(
+	callback: (path: string) => Promise<void> | void,
+) {
+	const glob = new Glob('*.yaml');
+	const options = { cwd: `${repoRoot}/.github/workflows`, absolute: true };
+	for await (const path of glob.scan(options)) {
+		await callback(path);
+	}
+}
+
+function updateFile(
+	update: (contents: string) => string,
+): (path: string) => Promise<void> {
+	return async (path) => {
+		const file = Bun.file(path);
+		const contents = update(await file.text());
+		await Bun.write(file, contents);
+	};
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping
+function escapeRegExp(s: string) {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function rawVersion(v: string) {
