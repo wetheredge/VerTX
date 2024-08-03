@@ -32,7 +32,9 @@ jobs:
         run: bun install
       - run: bun run scripts/update.ts
       - run: git push --set-upstream origin updates
+        if: github.ref == 'refs/heads/main'
       - name: Open PR
+        if: github.ref == 'refs/heads/main'
         run: gh pr create --base main --title 'Update dependencies' --body-file '.updates.md'
         env:
           GH_TOKEN: ${{ secrets.PR_TOKEN }}

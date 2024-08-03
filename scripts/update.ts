@@ -28,8 +28,8 @@ if (anyChanges.exitCode !== 0) {
 }
 
 const currentBranch = await $`git rev-parse --abbrev-ref HEAD`.text();
-if (currentBranch.trim() !== 'main') {
-	panic('Not on main branch');
+if (!['main', 'ci'].includes(currentBranch.trim())) {
+	panic('Not on main or ci branch');
 }
 
 const branchExists = await $`git rev-parse --verify --quiet ${branch}`
