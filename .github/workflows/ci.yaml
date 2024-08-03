@@ -23,9 +23,9 @@ jobs:
     name: No unused dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - name: Install cargo-machete
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.42.16
         with:
           tool: cargo-machete@0.6.2 # dep:cargo-bin:cargo-machete
       - run: cargo machete
@@ -33,7 +33,7 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - run: rustup toolchain install nightly --profile minimal --component rustfmt
       - run: cargo +nightly fmt --all --check
@@ -46,11 +46,11 @@ jobs:
       matrix:
         crate: [vertx-config, vertx-config-macros, vertx-crsf, vertx-simulator-ipc]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: rustup toolchain install stable --profile minimal --component clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.7.3
       - run: cargo clippy --all-targets
         working-directory: ${{ matrix.crate }}
 
@@ -61,15 +61,15 @@ jobs:
       run:
         working-directory: vertx-configurator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - uses: asdf-vm/actions/setup@v3
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2.0.1
         with:
-          bun-version: 1.1.12 # dep:asdf:bun
+          bun-version-file: .tool-versions
       - run: bun install --frozen-lockfile
       - run: bun run -b vite build
       - run: bun run scripts/compress.ts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4.3.5
         with:
           name: configurator
           path: vertx-configurator/dist/
@@ -81,17 +81,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-configurator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
-        uses: esp-rs/xtensa-toolchain@v1.5
+        uses: esp-rs/xtensa-toolchain@v1.5.2
         with:
           default: true
           buildtargets: esp32s3
           ldproxy: false
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.7.3
       - name: Get pre-built configurator
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.8
         with:
           name: configurator
           path: vertx-configurator/dist
@@ -109,15 +109,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-configurator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: |
           rustup toolchain install nightly-2024-06-08 --profile minimal --component clippy
           rustup default nightly-2024-06-08
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.7.3
       - name: Get pre-built configurator
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.8
         with:
           name: configurator
           path: vertx-configurator/dist
@@ -135,14 +135,14 @@ jobs:
     container:
       image: ghcr.io/gtk-rs/gtk4-rs/gtk4:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
           components: clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.7.3
       - name: Run clippy
         run: cargo clippy
         working-directory: vertx-simulator
@@ -155,15 +155,15 @@ jobs:
       matrix:
         crate: [vertx-config, vertx-crsf]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: rustup toolchain install stable --profile minimal
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.7.3
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.42.16
         with:
-          tool: nextest@0.9.70 # dep:cargo-bin:cargo-nextest
+          tool: nextest@0.9.72 # dep:cargo-bin:cargo-nextest
       - run: cargo nextest run
         working-directory: ${{ matrix.crate }}
 
@@ -171,8 +171,8 @@ jobs:
     name: Biome
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: biomejs/setup-biome@v2
+      - uses: actions/checkout@v4.1.7
+      - uses: biomejs/setup-biome@v2.2.1
         env:
           GITHUB_TOKEN: null
       - run: biome version
@@ -181,16 +181,16 @@ jobs:
   dprint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - uses: dprint/check@v2.2
         with:
-          dprint-version: 0.45.1 # dep:cargo-bin:dprint
+          dprint-version: 0.47.2 # dep:cargo-bin:dprint
 
   typos:
     name: Typos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - uses: crate-ci/typos@v1.23.6 # dep:asdf:typos
 
   passed:
