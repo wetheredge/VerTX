@@ -35,6 +35,7 @@ await cargoBin(cargoState);
 await dprint();
 await npm();
 await cargo(cargoState);
+await githubActions();
 await cargoState.finish();
 
 async function asdf() {
@@ -290,6 +291,81 @@ async function cargoImpl(args: {
 		}
 
 		await done(latest);
+	}
+}
+
+async function githubActions() {
+	const { dep } = group('actions');
+	const pattern =
+		/(?<=uses:\s*)(?<owner>[a-zA-Z_.-]+)\/(?<repo>[a-zA-Z_.-]+)@(?<tag>v?\d+(?:\.\d+(?:\.\d+)?)?)(?!\s*#\s*dep:)$/gm;
+	type Match = Record<'prefix' | 'owner' | 'repo' | 'tag', string>;
+
+	const versionPattern = /^v?(\d+)(?:\.(\d+)(?:\.(\d+))?)?$/;
+	const sortableTag = (tag: string) =>
+		tag
+			.match(versionPattern)
+			?.slice(1)
+			?.filter((x) => x != null)
+			?.map((x) => Number.parseInt(x));
+
+	const deps = new Map<string, Set<string>>();
+	await forAllWorkflows(async (path) => {
+		const contents = await Bun.file(path).text();
+		for (const match of contents.matchAll(pattern)) {
+			const { owner, repo, tag } = match.groups as Match;
+			const key = `${owner}\0${repo}\0${tag}`;
+			if (!deps.has(key)) {
+				deps.set(key, new Set());
+			}
+			deps.get(key)!.add(path);
+		}
+	});
+
+	for (const [key, paths] of [...deps].sort()) {
+		const [owner, repo, oldTag] = key.split('\0');
+		const name = `${owner}/${repo}`;
+		const done = dep(name, oldTag);
+
+		const { data } = await ghRequest(
+			'GET /repos/{owner}/{repo}/git/matching-refs/{ref}',
+			{
+				owner,
+				repo,
+				ref: 'tags/',
+			},
+		);
+		type SortableTags = Array<[Array<number>, string]>;
+		const sortableTags = data
+			.map(({ ref }) => ref.slice(10))
+			.map((tag) => [sortableTag(tag), tag])
+			.filter(([match]) => match != null) as SortableTags;
+		const [, latestTag] = sortableTags.reduce(
+			(best, next) => {
+				const length = Math.max(best[0].length, next[0].length);
+				for (let i = 0; i <= length; i++) {
+					const digitBest = best[0][i];
+					const digitNext = next[0][i];
+					if (digitNext > digitBest || digitBest == null) {
+						return next;
+					}
+					if (digitNext < digitBest) {
+						return best;
+					}
+				}
+				return best;
+			},
+			[sortableTag(oldTag) ?? [], oldTag],
+		);
+
+		const pattern = new RegExp(
+			`(?<=uses:\\s*${escapeRegExp(name)}@)${escapeRegExp(oldTag)}`,
+			'g',
+		);
+		await Promise.all([
+			[...paths].map(updateFile((s) => s.replaceAll(pattern, latestTag))),
+		]);
+
+		await done(latestTag);
 	}
 }
 
