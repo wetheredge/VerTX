@@ -23,7 +23,7 @@ jobs:
     name: No unused dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - name: Install cargo-machete
         uses: taiki-e/install-action@v2
         with:
@@ -33,7 +33,7 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - run: rustup toolchain install nightly --profile minimal --component rustfmt
       - run: cargo +nightly fmt --all --check
@@ -46,7 +46,7 @@ jobs:
       matrix:
         crate: [vertx-config, vertx-config-macros, vertx-crsf, vertx-simulator-ipc]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: rustup toolchain install stable --profile minimal --component clippy
@@ -61,7 +61,7 @@ jobs:
       run:
         working-directory: vertx-configurator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - uses: asdf-vm/actions/setup@v3
       - uses: oven-sh/setup-bun@v1
         with:
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-configurator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         uses: esp-rs/xtensa-toolchain@v1.5
@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-configurator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: |
@@ -135,7 +135,7 @@ jobs:
     container:
       image: ghcr.io/gtk-rs/gtk4-rs/gtk4:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@master
@@ -155,7 +155,7 @@ jobs:
       matrix:
         crate: [vertx-config, vertx-crsf]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
         run: rustup toolchain install stable --profile minimal
@@ -171,7 +171,7 @@ jobs:
     name: Biome
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - uses: biomejs/setup-biome@v2
         env:
           GITHUB_TOKEN: null
@@ -181,7 +181,7 @@ jobs:
   dprint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - uses: dprint/check@v2.2
         with:
           dprint-version: 0.45.1 # dep:cargo-bin:dprint
@@ -190,7 +190,7 @@ jobs:
     name: Typos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.7
       - uses: crate-ci/typos@v1.23.6 # dep:asdf:typos
 
   passed:
