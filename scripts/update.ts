@@ -4,6 +4,19 @@ import { chdir, exit, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
 import { $, Glob } from 'bun';
 
+const missingTools = [
+	'asdf',
+	'bun',
+	'cargo',
+	'echo',
+	'git',
+	'mktemp',
+	'rm',
+].filter((tool) => Bun.which(tool) == null);
+if (missingTools.length > 0) {
+	panic(`Missing required tools: ${missingTools.join(', ')}`);
+}
+
 const branch = 'updates';
 
 const anyChanges =
