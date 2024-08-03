@@ -84,7 +84,7 @@ jobs:
       - uses: actions/checkout@v4.1.7
       - run: rm rust-toolchain.toml
       - name: Install toolchain
-        uses: esp-rs/xtensa-toolchain@v1.5
+        uses: esp-rs/xtensa-toolchain@v1.5.2
         with:
           default: true
           buildtargets: esp32s3
