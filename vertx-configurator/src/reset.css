@@ -1,8 +1,8 @@
 *,
 ::before,
 ::after {
-  box-sizing: border-box;
-  text-size-adjust: none;
-  margin: 0;
-  font-size: inherit;
+	box-sizing: border-box;
+	text-size-adjust: none;
+	margin: 0;
+	font-size: inherit;
 }

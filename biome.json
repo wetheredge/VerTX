@@ -58,6 +58,14 @@
 			"quoteStyle": "single"
 		}
 	},
+	"css": {
+		"formatter": {
+			"enabled": true
+		},
+		"linter": {
+			"enabled": true
+		}
+	},
 	"json": {
 		"formatter": {
 			"enabled": true
