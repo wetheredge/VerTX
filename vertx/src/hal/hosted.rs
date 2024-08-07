@@ -34,7 +34,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
             .unwrap_or_default(),
         led_driver: LedDriver,
         config_storage: ConfigStorage::new(),
-        get_mode_button: move || ModeButton(&MODE_BUTTON),
+        mode_button: ModeButton(&MODE_BUTTON),
         get_wifi: GetWifi,
     }
 }
@@ -62,13 +62,6 @@ fn ipc_send(message: ipc::ToManager) {
     let mut stdout = io::stdout();
     stdout.write_all(&bytes).unwrap();
     stdout.flush().unwrap();
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ResetReason {
-    Crash,
-    ShutDown,
-    Reboot,
 }
 
 #[derive(Clone)]

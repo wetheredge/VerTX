@@ -1,15 +1,13 @@
 [package]
 name = "vertx"
 version.workspace = true
+authors.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
 
-[lints]
-workspace = true
-
 [features]
-esp32 = [
+target-esp = [
     "dep:esp-backtrace",
     "dep:esp-hal",
     "dep:esp-hal-embassy",
@@ -18,8 +16,8 @@ esp32 = [
     "dep:esp-storage",
     "dep:esp-wifi",
 ]
-esp32s3 = [
-    "esp32",
+target-esp32s3 = [
+    "target-esp",
     "esp-backtrace/esp32s3",
     "esp-hal/esp32s3",
     "esp-hal-embassy/esp32s3",
@@ -28,16 +26,17 @@ esp32s3 = [
     "esp-storage/esp32s3",
     "esp-wifi/esp32s3",
 ]
-hosted = [
+
+target-hosted = [
+    "dep:embassy-net-tuntap",
+    "dep:env_logger",
+    "dep:rand",
+    "dep:vertx-simulator-ipc",
     "embassy-executor/arch-std",
     "embassy-executor/executor-thread",
     "embassy-net/std",
     "embassy-time/std",
     "picoserve/std",
-    "dep:embassy-net-tuntap",
-    "dep:env_logger",
-    "dep:rand",
-    "dep:vertx-simulator-ipc",
 ]
 
 [dependencies]
@@ -60,7 +59,7 @@ smart-leds = "0.4.0"
 static_cell = { version = "2.1.0", features = ["nightly"] }
 vertx-config = { workspace = true, features = ["heapless"] }
 
-# esp32
+# target-esp
 esp-backtrace = { version = "=0.13.0", features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
 esp-hal = { version = "=0.19.0", features = ["async"], optional = true }
 esp-hal-embassy = { version = "=0.2.0", default-features = false, optional = true }
@@ -69,13 +68,14 @@ esp-println = { version = "=0.10.0", default-features = false, features = ["log"
 esp-storage = { version = "=0.3.0", default-features = false, features = ["low-level", "storage", "critical-section"], optional = true }
 esp-wifi = { version = "=0.7.1", features = ["wifi", "embassy-net"], optional = true }
 
-# hosted
+# target-hosted
 embassy-net-tuntap = { version = "=0.1.0", optional = true }
 env_logger = { version = "=0.11.5", optional = true }
 rand = { version = "=0.8.5", optional = true }
 vertx-simulator-ipc = { workspace = true, optional = true }
 
 [build-dependencies]
+basic-toml = "=0.1.9"
 cargo_toml = "=0.20.4"
 prettyplease = "=0.2.20"
 quote = "1.0.36"
@@ -85,4 +85,7 @@ syn = { workspace = true, features = ["parsing"] }
 
 [[bin]]
 name = "hosted"
-required-features = ["hosted"]
+required-features = ["target-hosted"]
+
+[lints]
+workspace = true

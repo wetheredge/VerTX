@@ -8,11 +8,6 @@ use vertx_config::minmax;
 
 use crate::Mode;
 
-const MAX_LEDS: usize = 1;
-// 3 channels * 8 bits + 1 stop byte
-#[cfg_attr(not(feature = "esp32"), allow(dead_code))]
-pub(crate) const BUFFER_SIZE: usize = MAX_LEDS * 3 * 8 + 1;
-
 #[derive(vertx_config::UpdateRef, vertx_config::Storage)]
 pub struct Config {
     brightness: vertx_config::Reactive<minmax::U8<10, { u8::MAX }>, crate::mutex::SingleCore>,
@@ -149,7 +144,7 @@ pub async fn run(
         let timer = duration.map(Timer::after);
 
         let iter = iter::once(color);
-        #[cfg(not(feature = "hosted"))]
+        #[cfg(not(feature = "target-hosted"))]
         let iter =
             smart_leds::brightness(smart_leds::gamma(iter), **config.brightness.current().await);
         leds.write(iter).unwrap();

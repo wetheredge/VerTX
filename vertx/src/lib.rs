@@ -2,14 +2,14 @@
 #![feature(type_alias_impl_trait)]
 
 extern crate alloc;
-#[cfg(feature = "hosted")]
+#[cfg(feature = "target-hosted")]
 extern crate std;
 
 mod config;
 mod configurator;
 mod crsf;
 mod display;
-pub mod hal;
+mod hal;
 mod leds;
 mod mode;
 mod mutex;
@@ -42,7 +42,7 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         boot_mode,
         led_driver,
         config_storage,
-        get_mode_button,
+        mode_button,
         get_wifi,
     } = hal::init(spawner);
 
@@ -52,7 +52,7 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     let config_manager = make_static!(config::Manager::new(config_storage));
     let config = config_manager.config();
 
-    spawner.must_spawn(change_mode(boot_mode, get_mode_button));
+    spawner.must_spawn(change_mode(boot_mode, mode_button));
     spawner.must_spawn(status(idle_cycles, status_signal));
     spawner.must_spawn(reset::reset(config_manager));
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
@@ -87,10 +87,9 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 }
 
 #[task]
-async fn change_mode(boot_mode: BootMode, get_mode_button: hal::GetModeButton) {
+async fn change_mode(boot_mode: BootMode, mut button: hal::ModeButton) {
     use hal::traits::{GetWifi as _, ModeButton as _};
 
-    let mut button = get_mode_button();
     button.wait_for_pressed().await;
 
     let mode = if boot_mode.configurator_enabled() {

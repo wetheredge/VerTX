@@ -1,8 +1,9 @@
 mod pins {
     include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 
+    pub(crate) use pins;
     #[allow(unused)]
-    pub(crate) use {pins, Pins};
+    pub(crate) use Pins;
 }
 
 mod flash;
@@ -49,7 +50,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
     let led_driver = SmartLedsAdapter::new(
         rmt.channel0,
         pins!(io.pins, leds),
-        [0; crate::leds::BUFFER_SIZE],
+        [0; 3 * 8 + 1], // 3 channels * 8 bits + 1 stop byte
         &clocks,
     );
 
@@ -60,14 +61,14 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
         .unwrap();
     let config_storage = ConfigStorage::new(&mut partitions);
 
-    let get_mode_button = || gpio::AnyInput::new(pins!(io.pins, configurator), gpio::Pull::Up);
+    let mode_button = gpio::AnyInput::new(pins!(io.pins, boot), gpio::Pull::Up);
 
     super::Init {
         rng,
         boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         led_driver,
         config_storage,
-        get_mode_button,
+        mode_button,
         get_wifi: wifi::GetWifi {
             spawner,
             clocks,

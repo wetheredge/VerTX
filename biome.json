@@ -83,6 +83,16 @@
 			}
 		},
 		{
+			"include": ["./scripts/set-target.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useNamingConvention": "off"
+					}
+				}
+			}
+		},
+		{
 			"include": ["./scripts/*.ts", "./vertx-configurator/scripts/*.ts"],
 			"javascript": {
 				"globals": ["Bun"]

@@ -1,0 +1,7 @@
+hal = "esp32s3"
+
+[pins]
+boot = 0
+leds = 38
+analog = [4, 5, 6, 7]
+switches = [11]

@@ -21,9 +21,9 @@ mod raw_config {
     #[derive(Clone, vertx_config::UpdateMut, vertx_config::Storage)]
     pub struct RawConfig {
         pub(super) hostname: String<32>,
-        pub(super) password: String<64>,
-        pub(super) home_ssid: String<32>,
-        pub(super) home_password: String<64>,
+        pub(super) password: super::Password,
+        pub(super) home_ssid: super::Ssid,
+        pub(super) home_password: super::Password,
     }
 
     impl fmt::Debug for RawConfig {

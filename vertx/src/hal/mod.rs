@@ -1,18 +1,17 @@
 use core::fmt::Debug;
 
-#[cfg_attr(feature = "esp32", path = "esp32/mod.rs")]
-#[cfg_attr(feature = "hosted", path = "hosted.rs")]
+#[cfg_attr(feature = "target-esp", path = "esp32/mod.rs")]
+#[cfg_attr(feature = "target-hosted", path = "hosted.rs")]
 mod implementation;
 
 #[allow(unused_imports)]
-pub use implementation::*;
+pub(crate) use implementation::{get_cycle_count, init, reboot, set_boot_mode, shut_down};
 
 pub(crate) type Rng = impl traits::Rng;
 pub(crate) type LedDriver =
     impl smart_leds::SmartLedsWrite<Error = impl Debug, Color = smart_leds::RGB8>;
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
 pub(crate) type ModeButton = impl traits::ModeButton;
-pub(crate) type GetModeButton = impl FnOnce() -> ModeButton;
 pub(crate) type Wifi = impl embassy_net::driver::Driver + 'static;
 pub(crate) type GetWifi = impl traits::GetWifi;
 
@@ -26,7 +25,7 @@ pub(crate) struct Init {
     pub(crate) boot_mode: crate::BootMode,
     pub(crate) led_driver: LedDriver,
     pub(crate) config_storage: ConfigStorage,
-    pub(crate) get_mode_button: GetModeButton,
+    pub(crate) mode_button: ModeButton,
     pub(crate) get_wifi: GetWifi,
 }
 

@@ -79,11 +79,11 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         Multiple(Vec<u8>),
     }
 
-    let path = format!("{root}/targets/{target}.json");
+    let path = format!("{root}/../targets/{target}.toml");
     println!("cargo:rerun-if-changed={path}");
 
     let target = fs::read_to_string(path)?;
-    let target: Target = serde_json::from_str(&target).unwrap();
+    let target: Target = basic_toml::from_str(&target).unwrap();
 
     let pins_arms = target.pins.iter().map(|(name, spec)| {
         let name = format_ident!("{name}");
