@@ -130,8 +130,6 @@ tasks:
     dir: vertx
     requires:
       vars: [COMMAND, VERTX_RUST_TOOLCHAIN, VERTX_RUST_TARGET, VERTX_CHIP]
-    env:
-      RUSTFLAGS: -Clink-arg=-Tlinkall.x -Clink-arg=-Trom_functions.x -Clink-arg=-nostartfiles
     cmds:
       - cargo +{{.VERTX_RUST_TOOLCHAIN}} {{.COMMAND}} -Zbuild-std=alloc,core --target {{.VERTX_RUST_TARGET}} --bin vertx -F chip-{{.VERTX_CHIP}} {{.ARGS}}
 

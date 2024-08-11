@@ -14,10 +14,27 @@ fn main() -> io::Result<()> {
 
     println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
+    link_args();
     build_info(&out_dir, &root, target_name)?;
     pins(&out_dir, &root, target_name)?;
 
     Ok(())
+}
+
+fn link_args() {
+    fn chip(chip: &str) -> bool {
+        env::var_os(format!("CARGO_FEATURE_CHIP_{chip}")).is_some()
+    }
+
+    let args: &[&str] = if chip("ESP") {
+        &["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
+    } else {
+        &[]
+    };
+
+    for arg in args {
+        println!("cargo::rustc-link-arg-bins={arg}");
+    }
 }
 
 // Written as a macro to avoid needing to name the private output type of
