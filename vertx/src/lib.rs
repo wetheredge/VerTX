@@ -6,6 +6,8 @@ extern crate alloc;
 extern crate std;
 
 mod api;
+#[cfg(feature = "backpack")]
+mod backpack;
 mod config;
 mod crsf;
 mod display;

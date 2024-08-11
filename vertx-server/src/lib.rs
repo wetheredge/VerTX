@@ -41,6 +41,7 @@ pub type Ssid = String<32>;
 pub type Password = String<64>;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Config {
     Home {
         ssid: Ssid,

@@ -5,7 +5,7 @@ dotenv:
   - .env.target
 
 vars:
-  NIGHTLY: nightly-2024-06-08 # Sync with CI
+  NIGHTLY: nightly-2024-06-08 # Sync with CI and scripts/set-target
 
 tasks:
   default:
@@ -79,17 +79,17 @@ tasks:
       - task: config:test
       - task: crsf:test
 
-  handset:flash:
+  flash:vertx:
     desc: Flash the most recently built firmware to the connected handset
     cmds:
       - cargo bin espflash flash --partition-table vertx/partitions.csv --flash-size 16mb --baud 460800 --monitor target/vertx
 
-  handset:monitor:
-    desc: Monitor serial output from the connected handset
+  flash:backpack:
+    desc: Flash the most recently built backpack firmware
     cmds:
-      - cargo bin espflash monitor
+      - cargo bin espflash flash --baud 460800 --monitor target/vertx-backpack
 
-  handset:erase-config:
+  erase-config:
     desc: Erase the connected handset's config partition
     cmds:
       - cargo bin espflash erase-parts --partition-table vertx/partitions.csv config
@@ -166,6 +166,53 @@ tasks:
       vars: [COMMAND]
     cmds:
       - cargo +{{.NIGHTLY}} {{.COMMAND}} --bin simulator -F simulator
+
+  backpack:check:
+    deps:
+      - configurator:build
+    cmds:
+      - task: backpack:cargo
+        vars:
+          COMMAND: clippy
+
+  backpack:build:
+    deps:
+      - configurator:build
+    cmds:
+      - task: backpack:cargo
+        vars:
+          COMMAND: build
+      - task: backpack:post-build
+        vars:
+          PROFILE: debug
+
+  backpack:build:release:
+    deps:
+      - configurator:build
+    cmds:
+      - task: backpack:cargo
+        vars:
+          COMMAND: build
+          ARGS: --release
+      - task: backpack:post-build
+        vars:
+          PROFILE: release
+
+  backpack:cargo:
+    internal: true
+    dir: vertx-backpack
+    requires:
+      vars: [COMMAND, VERTX_BACKPACK_RUST_TOOLCHAIN, VERTX_BACKPACK_RUST_TARGET, VERTX_BACKPACK_CHIP]
+    cmds:
+      - cargo +{{.VERTX_BACKPACK_RUST_TOOLCHAIN}} {{.COMMAND}} -Zbuild-std=alloc,core --target {{.VERTX_BACKPACK_RUST_TARGET}} --bin vertx-backpack -F chip-{{.VERTX_BACKPACK_CHIP}} {{.ARGS}}
+
+  backpack:post-build:
+    internal: true
+    requires:
+      vars: [PROFILE, VERTX_BACKPACK_RUST_TARGET]
+    cmds:
+      - cp target/{{.VERTX_BACKPACK_RUST_TOOLCHAIN}}/{{.PROFILE}}/vertx-backpack target/vertx-backpack
+    silent: true
 
   configurator:dev:
     desc: Run a local dev server. Needs api:dev running

@@ -46,6 +46,13 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
     let timers = make_static!([OneShotTimer::new(timg0.timer0.into())]);
     esp_hal_embassy::init(&clocks, timers);
 
+    // macro_rules! pins {
+    //     (boot) => { io.pins.gpioX };
+    //     (leds) => { io.pins.gpioX };
+    //     (backpack.tx) => { io.pins.gpioX };
+    //     (backpack.rx) => { io.pins.gpioX };
+    // }
+
     let led_driver = SmartLedsAdapter::new(
         rmt.channel0,
         pins!(io.pins, leds),

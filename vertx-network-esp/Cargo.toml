@@ -6,6 +6,14 @@ edition.workspace = true
 license.workspace = true
 
 [features]
+chip-esp32 = [
+    "esp-hal/esp32",
+    "esp-wifi/esp32",
+]
+chip-esp32c3 = [
+    "esp-hal/esp32c3",
+    "esp-wifi/esp32c3",
+]
 chip-esp32s3 = [
     "esp-hal/esp32s3",
     "esp-wifi/esp32s3",

@@ -10,6 +10,9 @@ publish = false
 network-native = [
     "dep:vertx-server",
 ]
+network-backpack = [
+    "dep:vertx-backpack-ipc",
+]
 
 chip-esp = [
     "network-native",
@@ -32,6 +35,13 @@ chip-esp32s3 = [
     "vertx-network-esp/chip-esp32s3",
 ]
 
+# chip-stm = []
+# chip-stm32f407 = [
+#   "chip-stm",
+#   "dep:stm32f4xx-hal",
+#   "stm32f4xx-hal/stm32f407",
+# ]
+
 simulator = [
     "network-native",
     "dep:embassy-net-tuntap",
@@ -40,7 +50,6 @@ simulator = [
     "dep:vertx-simulator-ipc",
     "embassy-executor/arch-std",
     "embassy-executor/executor-thread",
-    "embassy-net/std",
     "embassy-time/std",
     "vertx-server/std",
 ]
@@ -53,27 +62,30 @@ embassy-futures = { workspace = true }
 embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "udp", "dhcpv4-hostname"] }
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
-esp-alloc = "=0.4.0"
+esp-alloc = { workspace = true }
 heapless = { workspace = true }
 log = { workspace = true }
 portable-atomic = { version = "=1.7.0", default-features = false }
 postcard = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 smart-leds = "0.4.0"
-static_cell = { version = "2.1.0", features = ["nightly"] }
+static_cell = { workspace = true, features = ["nightly"] }
 vertx-config = { workspace = true, features = ["heapless"] }
 vertx-network-hal = { workspace = true }
+
+# backpack
+vertx-backpack-ipc = { workspace = true, optional = true }
 
 # network-native
 vertx-server = { workspace = true, optional = true }
 
 # chip-esp
-esp-backtrace = { version = "=0.13.0", features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
+esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
 esp-hal = { workspace = true, features = ["async"], optional = true }
-esp-hal-embassy = { version = "=0.2.0", default-features = false, optional = true }
-esp-hal-smartled = { version = "=0.12.0", optional = true }
-esp-println = { version = "=0.10.0", default-features = false, features = ["log", "uart", "critical-section", "colors"], optional = true }
-esp-storage = { version = "=0.3.0", default-features = false, features = ["low-level", "storage", "critical-section"], optional = true }
+esp-hal-embassy = { workspace = true, optional = true }
+esp-hal-smartled = { workspace = true, optional = true }
+esp-println = { workspace = true, features = ["log", "uart", "critical-section", "colors"], optional = true }
+esp-storage = { version = "=0.3.0", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, optional = true }
 
 # simulator

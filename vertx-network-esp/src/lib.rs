@@ -3,7 +3,6 @@
 #![allow(missing_debug_implementations)]
 
 use embassy_executor::{task, Spawner};
-use embassy_net::driver::Driver;
 use embassy_time::Timer;
 use esp_hal::clock::Clocks;
 use esp_hal::peripherals;
@@ -43,7 +42,7 @@ impl Hal {
 }
 
 impl vertx_network_hal::Hal for Hal {
-    type Driver = Device;
+    type Driver = Driver;
 
     const SUPPORTS_FIELD: bool = true;
     const SUPPORTS_HOME: bool = true;
@@ -63,7 +62,7 @@ impl vertx_network_hal::Hal for Hal {
 
         spawner.must_spawn(home_connection(controller, ssid, password));
 
-        Device::Home(device)
+        Driver::Home(device)
     }
 
     fn field(self, ssid: Ssid, password: Password) -> Self::Driver {
@@ -81,16 +80,16 @@ impl vertx_network_hal::Hal for Hal {
 
         spawner.must_spawn(field_connection(controller, ssid, password));
 
-        Device::Field(device)
+        Driver::Field(device)
     }
 }
 
-pub enum Device {
+pub enum Driver {
     Home(wifi::WifiDevice<'static, WifiStaDevice>),
     Field(wifi::WifiDevice<'static, WifiApDevice>),
 }
 
-impl Driver for Device {
+impl embassy_net::driver::Driver for Driver {
     type RxToken<'a> = RxToken where Self: 'a;
     type TxToken<'a> = TxToken where Self: 'a;
 
@@ -99,40 +98,40 @@ impl Driver for Device {
         cx: &mut core::task::Context,
     ) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
         match self {
-            Device::Home(wifi) => {
-                Driver::receive(wifi, cx).map(|(rx, tx)| (RxToken::Home(rx), TxToken::Home(tx)))
-            }
-            Device::Field(wifi) => {
-                Driver::receive(wifi, cx).map(|(rx, tx)| (RxToken::Field(rx), TxToken::Field(tx)))
-            }
+            Self::Home(wifi) => embassy_net::driver::Driver::receive(wifi, cx)
+                .map(|(rx, tx)| (RxToken::Home(rx), TxToken::Home(tx))),
+            Self::Field(wifi) => embassy_net::driver::Driver::receive(wifi, cx)
+                .map(|(rx, tx)| (RxToken::Field(rx), TxToken::Field(tx))),
         }
     }
 
     fn transmit(&mut self, cx: &mut core::task::Context) -> Option<Self::TxToken<'_>> {
         match self {
-            Device::Home(wifi) => Driver::transmit(wifi, cx).map(TxToken::Home),
-            Device::Field(wifi) => Driver::transmit(wifi, cx).map(TxToken::Field),
+            Self::Home(wifi) => embassy_net::driver::Driver::transmit(wifi, cx).map(TxToken::Home),
+            Self::Field(wifi) => {
+                embassy_net::driver::Driver::transmit(wifi, cx).map(TxToken::Field)
+            }
         }
     }
 
     fn link_state(&mut self, cx: &mut core::task::Context) -> embassy_net::driver::LinkState {
         match self {
-            Device::Home(wifi) => Driver::link_state(wifi, cx),
-            Device::Field(wifi) => Driver::link_state(wifi, cx),
+            Self::Home(wifi) => embassy_net::driver::Driver::link_state(wifi, cx),
+            Self::Field(wifi) => embassy_net::driver::Driver::link_state(wifi, cx),
         }
     }
 
     fn capabilities(&self) -> embassy_net::driver::Capabilities {
         match self {
-            Device::Home(wifi) => Driver::capabilities(wifi),
-            Device::Field(wifi) => Driver::capabilities(wifi),
+            Self::Home(wifi) => embassy_net::driver::Driver::capabilities(wifi),
+            Self::Field(wifi) => embassy_net::driver::Driver::capabilities(wifi),
         }
     }
 
     fn hardware_address(&self) -> embassy_net::driver::HardwareAddress {
         match self {
-            Device::Home(wifi) => Driver::hardware_address(wifi),
-            Device::Field(wifi) => Driver::hardware_address(wifi),
+            Self::Home(wifi) => embassy_net::driver::Driver::hardware_address(wifi),
+            Self::Field(wifi) => embassy_net::driver::Driver::hardware_address(wifi),
         }
     }
 }

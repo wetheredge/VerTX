@@ -11,6 +11,8 @@ pub(crate) type LedDriver =
     impl smart_leds::SmartLedsWrite<Error = impl Debug, Color = smart_leds::RGB8>;
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
 pub(crate) type ModeButton = impl traits::ModeButton;
+#[cfg(feature = "backpack")]
+pub(crate) type Backpack = impl embedded_io_async::Read;
 pub(crate) type Network = impl vertx_network_hal::Hal;
 pub(crate) type NetworkDriver = <Network as vertx_network_hal::Hal>::Driver;
 
@@ -25,6 +27,9 @@ pub(crate) struct Init {
     pub(crate) led_driver: LedDriver,
     pub(crate) config_storage: ConfigStorage,
     pub(crate) mode_button: ModeButton,
+    // #[cfg(feature = "backpack")]
+    // pub(crate) backpack: Backpack,
+    // #[cfg(not(feature = "backpack-network"))]
     pub(crate) network: Network,
 }
 

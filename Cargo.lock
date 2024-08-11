@@ -864,6 +864,8 @@ dependencies = [
  "esp-metadata",
  "esp-riscv-rt",
  "esp-synopsys-usb-otg",
+ "esp32",
+ "esp32c3",
  "esp32s3",
  "fugit",
  "log",
@@ -871,6 +873,7 @@ dependencies = [
  "paste",
  "portable-atomic",
  "rand_core",
+ "riscv",
  "serde",
  "strum 0.26.3",
  "usb-device",
@@ -888,6 +891,7 @@ dependencies = [
  "cfg-if",
  "critical-section",
  "document-features",
+ "embassy-executor",
  "embassy-time-driver",
  "esp-build",
  "esp-hal",
@@ -1021,6 +1025,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1829bd8c63b22a6d8a5485203a6e6bdc008897d9ee687aa6df8b57d2103a48d2"
 dependencies = [
  "anyhow",
+]
+
+[[package]]
+name = "esp32"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf4f67907f683a5049ad257cb57a757852bce959eed3e0e8f5e8c212de807714"
+dependencies = [
+ "critical-section",
+ "vcell",
+ "xtensa-lx",
+]
+
+[[package]]
+name = "esp32c3"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf6865f32b4936b2c396fd1bed3e935850b130282fdcb935af79c2da192cb638"
+dependencies = [
+ "critical-section",
+ "vcell",
 ]
 
 [[package]]
@@ -2769,11 +2794,42 @@ dependencies = [
  "smart-leds",
  "static_cell",
  "syn 2.0.72",
+ "vertx-backpack-ipc",
  "vertx-config",
  "vertx-network-esp",
  "vertx-network-hal",
  "vertx-server",
  "vertx-simulator-ipc",
+]
+
+[[package]]
+name = "vertx-backpack"
+version = "0.0.0"
+dependencies = [
+ "embassy-executor",
+ "embassy-sync 0.6.0",
+ "embassy-time",
+ "esp-alloc",
+ "esp-backtrace",
+ "esp-hal",
+ "esp-hal-embassy",
+ "esp-hal-smartled",
+ "esp-println",
+ "log",
+ "postcard",
+ "static_cell",
+ "vertx-backpack-ipc",
+ "vertx-network-esp",
+ "vertx-server",
+]
+
+[[package]]
+name = "vertx-backpack-ipc"
+version = "0.0.0"
+dependencies = [
+ "postcard",
+ "serde",
+ "vertx-server",
 ]
 
 [[package]]
