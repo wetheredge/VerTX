@@ -3,7 +3,7 @@
 
 //! Multicore-aware thread-mode embassy executor with a hacky.
 
-#[cfg(not(feature = "target-esp32s3"))]
+#[cfg(not(feature = "chip-esp32s3"))]
 compiler_error!("This executor is only meant to run on XTensa ESPs");
 
 use core::marker::PhantomData;

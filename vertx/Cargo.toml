@@ -7,27 +7,33 @@ license.workspace = true
 publish = false
 
 [features]
-target-esp = [
+network-native = [
+    "dep:vertx-server",
+]
+
+chip-esp = [
+    "network-native",
     "dep:esp-backtrace",
     "dep:esp-hal",
     "dep:esp-hal-embassy",
     "dep:esp-hal-smartled",
     "dep:esp-println",
     "dep:esp-storage",
-    "dep:esp-wifi",
+    "dep:vertx-network-esp",
 ]
-target-esp32s3 = [
-    "target-esp",
+chip-esp32s3 = [
+    "chip-esp",
     "esp-backtrace/esp32s3",
     "esp-hal/esp32s3",
     "esp-hal-embassy/esp32s3",
     "esp-hal-smartled/esp32s3",
     "esp-println/esp32s3",
     "esp-storage/esp32s3",
-    "esp-wifi/esp32s3",
+    "vertx-network-esp/chip-esp32s3",
 ]
 
-target-hosted = [
+simulator = [
+    "network-native",
     "dep:embassy-net-tuntap",
     "dep:env_logger",
     "dep:rand",
@@ -36,39 +42,41 @@ target-hosted = [
     "embassy-executor/executor-thread",
     "embassy-net/std",
     "embassy-time/std",
-    "picoserve/std",
+    "vertx-server/std",
 ]
 
 [dependencies]
 bytemuck = { version = "=1.16.3", features = ["min_const_generics"] }
 critical-section = "=1.1.2"
-edge-dhcp = "0.2.0"
-embassy-executor = { version = "0.5.0", features = ["nightly"] }
-embassy-futures = "0.1.1"
+embassy-executor = { workspace = true, features = ["nightly"] }
+embassy-futures = { workspace = true }
 embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "udp", "dhcpv4-hostname"] }
 embassy-sync = { workspace = true }
-embassy-time = { version = "=0.3.1", features = ["generic-queue-8"] }
+embassy-time = { workspace = true, features = ["generic-queue-8"] }
 esp-alloc = "=0.4.0"
 heapless = { workspace = true }
-log = { version = "=0.4.22" }
-picoserve = { workspace = true, features = ["embassy"] }
+log = { workspace = true }
 portable-atomic = { version = "=1.7.0", default-features = false }
 postcard = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 smart-leds = "0.4.0"
 static_cell = { version = "2.1.0", features = ["nightly"] }
 vertx-config = { workspace = true, features = ["heapless"] }
+vertx-network-hal = { workspace = true }
 
-# target-esp
+# network-native
+vertx-server = { workspace = true, optional = true }
+
+# chip-esp
 esp-backtrace = { version = "=0.13.0", features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
-esp-hal = { version = "=0.19.0", features = ["async"], optional = true }
+esp-hal = { workspace = true, features = ["async"], optional = true }
 esp-hal-embassy = { version = "=0.2.0", default-features = false, optional = true }
 esp-hal-smartled = { version = "=0.12.0", optional = true }
 esp-println = { version = "=0.10.0", default-features = false, features = ["log", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.3.0", default-features = false, features = ["low-level", "storage", "critical-section"], optional = true }
-esp-wifi = { version = "=0.7.1", features = ["wifi", "embassy-net"], optional = true }
+vertx-network-esp = { workspace = true, optional = true }
 
-# target-hosted
+# simulator
 embassy-net-tuntap = { version = "=0.1.0", optional = true }
 env_logger = { version = "=0.11.5", optional = true }
 rand = { version = "=0.8.5", optional = true }
@@ -80,12 +88,11 @@ cargo_toml = "=0.20.4"
 prettyplease = "=0.2.20"
 quote = "1.0.36"
 serde = { workspace = true, features = ["derive"] }
-serde_json = "=1.0.122"
 syn = { workspace = true, features = ["parsing"] }
 
 [[bin]]
-name = "hosted"
-required-features = ["target-hosted"]
+name = "simulator"
+required-features = ["simulator"]
 
 [lints]
 workspace = true

@@ -64,7 +64,7 @@ tasks:
   all:check:
     cmds:
       - task: vertx:check
-      - task: vertx:hosted:check
+      - task: vertx:simulator:check
       - task: configurator:check:tsc
       - task: simulator:check
       - task: simulator-ipc:check
@@ -129,44 +129,45 @@ tasks:
     internal: true
     dir: vertx
     requires:
-      vars: [COMMAND]
+      vars: [COMMAND, VERTX_RUST_TOOLCHAIN, VERTX_RUST_TARGET, VERTX_CHIP]
     env:
       RUSTFLAGS: -Clink-arg=-Tlinkall.x -Clink-arg=-Trom_functions.x -Clink-arg=-nostartfiles
     cmds:
-      - cargo +esp {{.COMMAND}} -Zbuild-std=alloc,core --target xtensa-esp32s3-none-elf --bin vertx -F target-esp32s3 {{.ARGS}}
+      - cargo +{{.VERTX_RUST_TOOLCHAIN}} {{.COMMAND}} -Zbuild-std=alloc,core --target {{.VERTX_RUST_TARGET}} --bin vertx -F chip-{{.VERTX_CHIP}} {{.ARGS}}
 
   vertx:post-build:
     internal: true
-    dir: target
     requires:
-      vars: [PROFILE]
+      vars: [PROFILE, VERTX_RUST_TARGET]
     cmds:
-      - cp xtensa-esp32s3-none-elf/{{.PROFILE}}/vertx vertx
+      - cp target/{{.VERTX_RUST_TOOLCHAIN}}/{{.PROFILE}}/vertx target/vertx
     silent: true
 
-  vertx:hosted:check:
+  vertx:simulator:check:
+    desc: Check simulator build of VerTX firmware
     deps:
       - configurator:build
     cmds:
-      - task: vertx:hosted:cargo
+      - task: vertx:simulator:cargo
         vars:
           COMMAND: clippy
 
-  vertx:hosted:build:
+  vertx:simulator:build:
+    desc: Build VerTX to run in the simulator. Handled automatically by simulator:build/run
     deps:
       - configurator:build
     cmds:
-      - task: vertx:hosted:cargo
+      - task: vertx:simulator:cargo
         vars:
           COMMAND: build
 
-  vertx:hosted:cargo:
+  vertx:simulator:cargo:
     internal: true
     dir: vertx
     requires:
       vars: [COMMAND]
     cmds:
-      - cargo +{{.NIGHTLY}} {{.COMMAND}} --bin hosted -F target-hosted
+      - cargo +{{.NIGHTLY}} {{.COMMAND}} --bin simulator -F simulator
 
   configurator:dev:
     desc: Run a local dev server. Needs api:dev running
@@ -228,14 +229,14 @@ tasks:
   simulator:build:
     dir: vertx-simulator
     deps:
-      - vertx:hosted:build
+      - vertx:simulator:build
     cmds:
       - cargo build
 
   simulator:run:
     dir: vertx-simulator
     deps:
-      - vertx:hosted:build
+      - vertx:simulator:build
     cmds:
       - cargo run
 

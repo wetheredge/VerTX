@@ -16,7 +16,6 @@ fn main() -> io::Result<()> {
 
     build_info(&out_dir, &root, target_name)?;
     pins(&out_dir, &root, target_name)?;
-    web_assets(&out_dir, &root)?;
 
     Ok(())
 }
@@ -122,56 +121,4 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     };
 
     out_file!(format!("{out_dir}/pins.rs"), tokens)
-}
-
-fn web_assets(out_dir: &str, root: &str) -> io::Result<()> {
-    #[derive(Debug, Deserialize)]
-    struct Manifest {
-        index: Asset,
-        assets: Vec<Asset>,
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Asset {
-        route: String,
-        file: String,
-        mime: String,
-        gzip: bool,
-    }
-
-    let Ok(web) = fs::canonicalize(format!("{root}/../vertx-configurator/dist")) else {
-        panic!("vertx-configurator must be built first")
-    };
-    println!("cargo:rerun-if-changed={}", web.display());
-
-    let asset_into_file = |asset: &Asset| {
-        let Asset { mime, .. } = asset;
-        let path = web.join(&asset.file).display().to_string();
-        let headers = asset.gzip.then(|| quote!(("Content-Encoding", "gzip")));
-        quote!(::picoserve::response::File::with_content_type_and_headers(
-            #mime,
-            include_bytes!(#path),
-            &[#headers],
-        ))
-    };
-
-    let assets = fs::read_to_string(web.join("manifest.json"))?;
-    let Manifest { index, mut assets } = serde_json::from_str(&assets).unwrap();
-
-    let index = asset_into_file(&index);
-
-    assets.sort_unstable_by(|a, b| a.route.cmp(&b.route));
-    let assets = assets.into_iter().map(|asset| {
-        let file = asset_into_file(&asset);
-        let Asset { route, .. } = asset;
-        quote!((#route, #file))
-    });
-    let assets = quote!( &[#(#assets),*] );
-
-    let tokens = quote! {
-        static INDEX: ::picoserve::response::File = #index;
-        #[allow(long_running_const_eval)]
-        static ASSETS: &[(&str, ::picoserve::response::File)] = #assets;
-    };
-    out_file!(format!("{out_dir}/configurator.rs"), tokens)
 }

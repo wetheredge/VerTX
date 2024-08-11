@@ -9,6 +9,7 @@ use embassy_net_tuntap::TunTapDevice;
 use embassy_sync::signal::Signal;
 use rand::RngCore as _;
 use smart_leds::RGB8;
+use vertx_network_hal::{Password, Ssid};
 use vertx_simulator_ipc as ipc;
 
 pub(crate) fn init(_spawner: Spawner) -> super::Init {
@@ -35,7 +36,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         led_driver: LedDriver,
         config_storage: ConfigStorage::new(),
         mode_button: ModeButton(&MODE_BUTTON),
-        get_wifi: GetWifi,
+        network: Network,
     }
 }
 
@@ -143,28 +144,14 @@ impl super::traits::ModeButton for ModeButton {
     }
 }
 
-struct GetWifi;
+struct Network;
 
-impl crate::hal::traits::GetWifi for GetWifi {
+impl vertx_network_hal::Hal for Network {
+    type Driver = TunTapDevice;
+
     const SUPPORTS_FIELD: bool = true;
-    const SUPPORTS_HOME: bool = false;
 
-    fn home(
-        self,
-        _ssid: &'static crate::wifi::Ssid,
-        _password: &'static crate::wifi::Password,
-    ) -> crate::hal::Wifi {
-        fn unimplemented() -> TunTapDevice {
-            unimplemented!()
-        }
-        unimplemented()
-    }
-
-    fn field(
-        self,
-        _ssid: crate::wifi::Ssid,
-        _password: &'static crate::wifi::Password,
-    ) -> crate::hal::Wifi {
+    fn field(self, _ssid: Ssid, _password: Password) -> Self::Driver {
         let interface = match env::var("VERTX_NET_INTERFACE") {
             Ok(interface) => interface,
             Err(env::VarError::NotPresent) => {

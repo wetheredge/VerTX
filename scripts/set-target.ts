@@ -1,40 +1,46 @@
 #!/usr/bin/env bun
 
+import { cwd } from 'node:process';
 import { select } from '@inquirer/prompts';
 import { Glob } from 'bun';
 
-const targetsDir = 'targets';
+const targetsDir = `${cwd()}/targets`;
 const targetEnvFile = '.env.target';
 
-type Target = {
-	hal: string;
+const CHIP_TO_RUST: Record<string, [toolchain: string, target: string]> = {
+	esp32s3: ['esp', 'xtensa-esp32s3-none-elf'],
 };
 
-const targets = new Glob('*.toml').scanSync({
-	cwd: targetsDir,
-	absolute: true,
-});
+type Target = {
+	chip: string;
+	server: string;
+	pins: Record<string, unknown>;
+};
+
+const targets = new Glob('*.toml').scanSync({ cwd: targetsDir });
 const choices = Array.from(targets)
 	.toSorted()
 	.map((path) => {
-		// biome-ignore lint/style/noNonNullAssertion: the absolute path to a target file will always contain a `/`
-		const name = path
-			.split('/')
-			.at(-1)!
-			.replace(/\.\w+$/, '');
+		const name = path.replace(/\.\w+$/, '');
 		return {
 			name,
-			value: [path, name],
+			value: [`${targetsDir}/${path}`, name],
 		};
 	});
 
 const [path, name] = await select({ message: 'Choose a target:', choices });
 const target: Target = await import(path);
 
-const targetEnv = Object.entries({
-	TARGET: name,
-	HAL: target.hal,
-})
-	.map(([key, value]) => `VERTX_${key}="${value}"`)
-	.join('\n');
-await Bun.write(targetEnvFile, targetEnv);
+const env: Record<string, string> = {
+	VERTX_TARGET: name,
+	VERTX_CHIP: target.chip,
+	VERTX_RUST_TOOLCHAIN: CHIP_TO_RUST[target.chip][0],
+	VERTX_RUST_TARGET: CHIP_TO_RUST[target.chip][1],
+};
+
+await Bun.write(
+	targetEnvFile,
+	Object.entries(env)
+		.map(([key, value]) => `${key}="${value}"`)
+		.join('\n'),
+);

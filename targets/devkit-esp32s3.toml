@@ -1,4 +1,4 @@
-hal = "esp32s3"
+chip = "esp32s3"
 
 [pins]
 boot = 0

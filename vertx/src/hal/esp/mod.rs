@@ -7,7 +7,6 @@ mod pins {
 }
 
 mod flash;
-mod wifi;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -69,14 +68,14 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
         led_driver,
         config_storage,
         mode_button,
-        get_wifi: wifi::GetWifi {
+        network: vertx_network_esp::Hal::new(
             spawner,
             clocks,
             rng,
-            timer: PeriodicTimer::new(timg1.timer0.into()),
-            radio_clocks: peripherals.RADIO_CLK,
-            wifi: peripherals.WIFI,
-        },
+            PeriodicTimer::new(timg1.timer0.into()),
+            peripherals.RADIO_CLK,
+            peripherals.WIFI,
+        ),
     }
 }
 

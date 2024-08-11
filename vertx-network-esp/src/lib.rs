@@ -1,4 +1,8 @@
-use embassy_executor::task;
+#![no_std]
+#![feature(type_alias_impl_trait)]
+#![allow(missing_debug_implementations)]
+
+use embassy_executor::{task, Spawner};
 use embassy_net::driver::Driver;
 use embassy_time::Timer;
 use esp_hal::clock::Clocks;
@@ -7,23 +11,44 @@ use esp_hal::rng::Rng;
 use esp_hal::timer::{ErasedTimer, PeriodicTimer};
 use esp_wifi::wifi::{self, WifiApDevice, WifiController, WifiEvent, WifiStaDevice, WifiState};
 use esp_wifi::EspWifiInitFor;
+use vertx_network_hal::{Password, Ssid};
 
-use crate::wifi::{Password, Ssid};
-
-pub(super) struct GetWifi {
-    pub(super) spawner: embassy_executor::Spawner,
-    pub(super) clocks: Clocks<'static>,
-    pub(super) rng: Rng,
-    pub(super) timer: PeriodicTimer<ErasedTimer>,
-    pub(super) radio_clocks: peripherals::RADIO_CLK,
-    pub(super) wifi: peripherals::WIFI,
+pub struct Hal {
+    spawner: Spawner,
+    clocks: Clocks<'static>,
+    rng: Rng,
+    timer: PeriodicTimer<ErasedTimer>,
+    radio_clocks: peripherals::RADIO_CLK,
+    wifi: peripherals::WIFI,
 }
 
-impl crate::hal::traits::GetWifi for GetWifi {
+impl Hal {
+    pub fn new(
+        spawner: Spawner,
+        clocks: Clocks<'static>,
+        rng: Rng,
+        timer: PeriodicTimer<ErasedTimer>,
+        radio_clocks: peripherals::RADIO_CLK,
+        wifi: peripherals::WIFI,
+    ) -> Self {
+        Self {
+            spawner,
+            clocks,
+            rng,
+            timer,
+            radio_clocks,
+            wifi,
+        }
+    }
+}
+
+impl vertx_network_hal::Hal for Hal {
+    type Driver = Device;
+
     const SUPPORTS_FIELD: bool = true;
     const SUPPORTS_HOME: bool = true;
 
-    fn home(self, ssid: &'static Ssid, password: &'static Password) -> crate::hal::Wifi {
+    fn home(self, ssid: Ssid, password: Password) -> Self::Driver {
         let spawner = self.spawner;
         let init = esp_wifi::initialize(
             EspWifiInitFor::Wifi,
@@ -41,7 +66,7 @@ impl crate::hal::traits::GetWifi for GetWifi {
         Device::Home(device)
     }
 
-    fn field(self, ssid: Ssid, password: &'static Password) -> crate::hal::Wifi {
+    fn field(self, ssid: Ssid, password: Password) -> Self::Driver {
         let spawner = self.spawner;
         let init = esp_wifi::initialize(
             EspWifiInitFor::Wifi,
@@ -60,7 +85,7 @@ impl crate::hal::traits::GetWifi for GetWifi {
     }
 }
 
-enum Device {
+pub enum Device {
     Home(wifi::WifiDevice<'static, WifiStaDevice>),
     Field(wifi::WifiDevice<'static, WifiApDevice>),
 }
@@ -112,7 +137,7 @@ impl Driver for Device {
     }
 }
 
-enum RxToken {
+pub enum RxToken {
     Home(wifi::WifiRxToken<WifiStaDevice>),
     Field(wifi::WifiRxToken<WifiApDevice>),
 }
@@ -129,7 +154,7 @@ impl embassy_net::driver::RxToken for RxToken {
     }
 }
 
-enum TxToken {
+pub enum TxToken {
     Home(wifi::WifiTxToken<WifiStaDevice>),
     Field(wifi::WifiTxToken<WifiApDevice>),
 }
@@ -149,16 +174,16 @@ impl embassy_net::driver::TxToken for TxToken {
 #[task]
 async fn home_connection(
     mut controller: WifiController<'static>,
-    ssid: &'static Ssid,
-    password: &'static Password,
+    ssid: Ssid,
+    password: Password,
 ) -> ! {
     log::info!("Starting home_connection()");
 
     let config = wifi::Configuration::Client(wifi::ClientConfiguration {
-        ssid: ssid.clone(),
+        ssid,
         bssid: None,
         auth_method: wifi::AuthMethod::WPA2Personal,
-        password: password.clone(),
+        password,
         channel: None,
     });
 
@@ -191,7 +216,7 @@ async fn home_connection(
 async fn field_connection(
     mut controller: WifiController<'static>,
     ssid: Ssid,
-    _password: &'static Password,
+    _password: Password,
 ) -> ! {
     log::info!("Starting field_connection()");
 

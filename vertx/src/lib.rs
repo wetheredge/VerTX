@@ -2,19 +2,19 @@
 #![feature(type_alias_impl_trait)]
 
 extern crate alloc;
-#[cfg(feature = "target-hosted")]
+#[cfg(feature = "simulator")]
 extern crate std;
 
+mod api;
 mod config;
-mod configurator;
 mod crsf;
 mod display;
 mod hal;
 mod leds;
 mod mode;
 mod mutex;
+mod network;
 mod reset;
-mod wifi;
 
 use embassy_executor::{task, Spawner};
 use embassy_sync::mutex::Mutex;
@@ -30,7 +30,7 @@ struct Config {
     name: Mutex<mutex::SingleCore, heapless::String<20>>,
     leds: leds::Config,
     display: display::Config,
-    wifi: wifi::Config,
+    network: network::Config,
     expert: Mutex<mutex::SingleCore, bool>,
 }
 
@@ -43,11 +43,11 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
         led_driver,
         config_storage,
         mode_button,
-        get_wifi,
+        network,
     } = hal::init(spawner);
 
     let mode = make_static!(mode::Channel::new());
-    let status_signal = make_static!(configurator::StatusSignal::new());
+    let status_signal = make_static!(api::StatusSignal::new());
 
     let config_manager = make_static!(config::Manager::new(config_storage));
     let config = config_manager.config();
@@ -58,28 +58,18 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
     if boot_mode.configurator_enabled() {
-        use self::wifi::Error;
-
         log::info!("Configurator enabled");
         mode.publish(crate::Mode::PreConfigurator);
 
         let is_home = boot_mode == BootMode::ConfiguratorHome;
-        let (stack, stack_ready) = match wifi::run(spawner, is_home, config, &mut rng, get_wifi) {
-            Ok(ok) => ok,
-            Err(Error::InvalidHomeConfig) => {
-                reset::reboot_into(BootMode::ConfiguratorField);
-                return;
-            }
-        };
 
-        spawner.must_spawn(configurator::run(
-            spawner,
-            config_manager,
-            stack,
-            stack_ready,
-            mode.publisher(),
-            status_signal,
-        ));
+        let api = make_static!(api::Api::new(config_manager, status_signal));
+        match network::run(spawner, is_home, config, &mut rng, network, api) {
+            Ok(ok) => ok,
+            Err(network::Error::InvalidHomeConfig) => {
+                reset::reboot_into(BootMode::ConfiguratorField);
+            }
+        }
     } else {
         log::info!("Configurator disabled");
         mode.publish(crate::Mode::Ok);
@@ -88,15 +78,16 @@ pub fn main(spawner: Spawner, idle_cycles: &'static AtomicU32) {
 
 #[task]
 async fn change_mode(boot_mode: BootMode, mut button: hal::ModeButton) {
-    use hal::traits::{GetWifi as _, ModeButton as _};
+    use hal::traits::ModeButton as _;
+    use vertx_network_hal::Hal as _;
 
     button.wait_for_pressed().await;
 
     let mode = if boot_mode.configurator_enabled() {
         BootMode::Standard
-    } else if hal::GetWifi::SUPPORTS_HOME {
+    } else if hal::Network::SUPPORTS_HOME {
         BootMode::ConfiguratorHome
-    } else if hal::GetWifi::SUPPORTS_FIELD {
+    } else if hal::Network::SUPPORTS_FIELD {
         BootMode::ConfiguratorField
     } else {
         unreachable!()
@@ -106,7 +97,7 @@ async fn change_mode(boot_mode: BootMode, mut button: hal::ModeButton) {
 }
 
 #[task]
-async fn status(idle_cycles: &'static AtomicU32, status: &'static configurator::StatusSignal) {
+async fn status(idle_cycles: &'static AtomicU32, status: &'static api::StatusSignal) {
     log::info!("Starting status()");
 
     let mut ticker = Ticker::every(Duration::from_secs(1));
@@ -132,7 +123,7 @@ async fn status(idle_cycles: &'static AtomicU32, status: &'static configurator::
             }
         }
 
-        status.signal(configurator::protocol::response::Status {
+        status.signal(api::response::Status {
             battery_voltage: 0,
             idle_time,
             timing_drift,

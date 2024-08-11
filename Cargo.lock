@@ -2744,7 +2744,6 @@ dependencies = [
  "bytemuck",
  "cargo_toml",
  "critical-section",
- "edge-dhcp",
  "embassy-executor",
  "embassy-futures",
  "embassy-net",
@@ -2759,21 +2758,21 @@ dependencies = [
  "esp-hal-smartled",
  "esp-println",
  "esp-storage",
- "esp-wifi",
  "heapless",
  "log",
- "picoserve",
  "portable-atomic",
  "postcard",
  "prettyplease",
  "quote",
  "rand",
  "serde",
- "serde_json",
  "smart-leds",
  "static_cell",
  "syn 2.0.72",
  "vertx-config",
+ "vertx-network-esp",
+ "vertx-network-hal",
+ "vertx-server",
  "vertx-simulator-ipc",
 ]
 
@@ -2808,6 +2807,45 @@ dependencies = [
  "bitfield 0.16.1",
  "crc",
  "embedded-io 0.6.1",
+]
+
+[[package]]
+name = "vertx-network-esp"
+version = "0.0.0"
+dependencies = [
+ "embassy-executor",
+ "embassy-futures",
+ "embassy-net",
+ "embassy-time",
+ "esp-hal",
+ "esp-wifi",
+ "heapless",
+ "log",
+ "vertx-network-hal",
+]
+
+[[package]]
+name = "vertx-network-hal"
+version = "0.0.0"
+dependencies = [
+ "embassy-net-driver",
+ "heapless",
+]
+
+[[package]]
+name = "vertx-server"
+version = "0.0.0"
+dependencies = [
+ "edge-dhcp",
+ "embassy-futures",
+ "embassy-net",
+ "embassy-time",
+ "heapless",
+ "log",
+ "picoserve",
+ "serde",
+ "serde_json",
+ "vertx-network-hal",
 ]
 
 [[package]]

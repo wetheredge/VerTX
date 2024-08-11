@@ -144,7 +144,7 @@ pub async fn run(
         let timer = duration.map(Timer::after);
 
         let iter = iter::once(color);
-        #[cfg(not(feature = "target-hosted"))]
+        #[cfg(not(feature = "simulator"))]
         let iter =
             smart_leds::brightness(smart_leds::gamma(iter), **config.brightness.current().await);
         leds.write(iter).unwrap();

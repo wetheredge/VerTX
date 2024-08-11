@@ -1,6 +1,16 @@
 [workspace]
 resolver = "2"
-members = ["vertx", "vertx-config", "vertx-config-macros", "vertx-crsf", "vertx-simulator", "vertx-simulator-ipc"]
+members = [
+    "vertx",
+    "vertx-config",
+    "vertx-config-macros",
+    "vertx-crsf",
+    "vertx-network-esp",
+    "vertx-network-hal",
+    "vertx-server",
+    "vertx-simulator",
+    "vertx-simulator-ipc",
+]
 
 [workspace.package]
 version = "0.0.0"
@@ -9,10 +19,15 @@ edition = "2021"
 license = "MPL-2.0"
 
 [workspace.dependencies]
+embassy-executor = "0.5.0"
+embassy-futures = "=0.1.1"
 embassy-net = "0.4.0"
 embassy-sync = "=0.6.0"
+embassy-time = "=0.3.1"
 embedded-io = "0.6.1"
+esp-hal = "=0.19.0"
 heapless = "0.8.0"
+log = "=0.4.22"
 picoserve = "=0.12.0"
 postcard = { version = "1.0.8", default-features = false }
 quote = "1.0.36"
@@ -20,6 +35,9 @@ serde = { version = "=1.0.204", default-features = false }
 syn = { version = "=2.0.72", default-features = false }
 tokio = "=1.39.2"
 vertx-config.path = "vertx-config"
+vertx-network-esp.path = "vertx-network-esp"
+vertx-network-hal.path = "vertx-network-hal"
+vertx-server.path = "vertx-server"
 vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
 [workspace.metadata.bin]

@@ -1,23 +1,22 @@
-use core::fmt::Debug;
-
-#[cfg_attr(feature = "target-esp", path = "esp32/mod.rs")]
-#[cfg_attr(feature = "target-hosted", path = "hosted.rs")]
+#[cfg_attr(feature = "chip-esp", path = "esp/mod.rs")]
+#[cfg_attr(feature = "simulator", path = "simulator.rs")]
 mod implementation;
 
-#[allow(unused_imports)]
-pub(crate) use implementation::{get_cycle_count, init, reboot, set_boot_mode, shut_down};
+use core::fmt::Debug;
+
+pub(crate) use self::implementation::{get_cycle_count, init, reboot, set_boot_mode, shut_down};
 
 pub(crate) type Rng = impl traits::Rng;
 pub(crate) type LedDriver =
     impl smart_leds::SmartLedsWrite<Error = impl Debug, Color = smart_leds::RGB8>;
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
 pub(crate) type ModeButton = impl traits::ModeButton;
-pub(crate) type Wifi = impl embassy_net::driver::Driver + 'static;
-pub(crate) type GetWifi = impl traits::GetWifi;
+pub(crate) type Network = impl vertx_network_hal::Hal;
+pub(crate) type NetworkDriver = <Network as vertx_network_hal::Hal>::Driver;
 
 const _: () = {
-    use traits::GetWifi as _;
-    assert!(GetWifi::SUPPORTS_HOME || GetWifi::SUPPORTS_FIELD);
+    use vertx_network_hal::Hal as _;
+    assert!(Network::SUPPORTS_HOME || Network::SUPPORTS_FIELD);
 };
 
 pub(crate) struct Init {
@@ -26,13 +25,11 @@ pub(crate) struct Init {
     pub(crate) led_driver: LedDriver,
     pub(crate) config_storage: ConfigStorage,
     pub(crate) mode_button: ModeButton,
-    pub(crate) get_wifi: GetWifi,
+    pub(crate) network: Network,
 }
 
 pub(crate) mod traits {
     use core::future::Future;
-
-    use crate::wifi::{Password, Ssid};
 
     pub(crate) trait ConfigStorage {
         fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T>;
@@ -49,13 +46,5 @@ pub(crate) mod traits {
 
     pub(crate) trait ModeButton {
         fn wait_for_pressed(&mut self) -> impl Future<Output = ()>;
-    }
-
-    pub(crate) trait GetWifi {
-        const SUPPORTS_HOME: bool;
-        const SUPPORTS_FIELD: bool;
-
-        fn home(self, ssid: &'static Ssid, password: &'static Password) -> super::Wifi;
-        fn field(self, ssid: Ssid, password: &'static Password) -> super::Wifi;
     }
 }
