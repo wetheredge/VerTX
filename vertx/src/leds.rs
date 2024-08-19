@@ -1,12 +1,13 @@
-use core::iter;
-
 use embassy_executor::task;
 use embassy_futures::select;
 use embassy_time::{Duration, Timer};
-use smart_leds::{colors, SmartLedsWrite, RGB8};
+use smart_leds::{colors, RGB8};
 use vertx_config::minmax;
 
+use crate::hal::traits::LedDriver;
 use crate::Mode;
+
+pub const MAX_LEDS: usize = 1;
 
 #[derive(vertx_config::UpdateRef, vertx_config::Storage)]
 pub struct Config {
@@ -130,7 +131,7 @@ impl Effect {
 #[task]
 pub async fn run(
     config: &'static crate::Config,
-    mut leds: crate::hal::LedDriver,
+    mut driver: crate::hal::LedDriver,
     mut mode: crate::mode::Subscriber<'static>,
 ) -> ! {
     log::info!("Starting leds()");
@@ -139,15 +140,17 @@ pub async fn run(
     let mut effect = Effect::default();
     let mut brightness_subscriber = config.brightness.subscriber().unwrap();
 
+    let mut leds = [RGB8::new(0, 0, 0); MAX_LEDS];
     loop {
         let (color, duration) = effect.next_frame();
         let timer = duration.map(Timer::after);
 
-        let iter = iter::once(color);
-        #[cfg(not(feature = "simulator"))]
-        let iter =
-            smart_leds::brightness(smart_leds::gamma(iter), **config.brightness.current().await);
-        leds.write(iter).unwrap();
+        leds.fill(color);
+        // #[cfg(not(feature = "simulator"))]
+        // let iter =
+        //     smart_leds::brightness(smart_leds::gamma(iter),
+        // **config.brightness.current().await);
+        driver.write(&leds).await.unwrap();
 
         let new_mode = if let Some(timer) = timer {
             // Assume `timer` is a fraction of a second, so don't bother updating brightness

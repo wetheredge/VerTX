@@ -1,17 +1,17 @@
 use std::env;
 
 fn main() {
-    let link_args = if is_target("ESP32") {
-        vec!["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
+    let args: &[&str] = if chip("ESP") {
+        &["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
     } else {
-        vec![]
+        &[]
     };
 
-    for link_arg in link_args {
-        println!("cargo::rustc-link-arg={link_arg}");
+    for arg in args {
+        println!("cargo::rustc-link-arg-bins={arg}");
     }
 }
 
-fn is_target(feature: &str) -> bool {
-    env::var_os(format!("CARGO_FEATURE_TARGET_{feature}")).is_some()
+fn chip(feature: &str) -> bool {
+    env::var_os(format!("CARGO_FEATURE_CHIP_{feature}")).is_some()
 }

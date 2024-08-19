@@ -2,9 +2,9 @@
 #![warn(clippy::big_endian_bytes, clippy::little_endian_bytes)]
 
 use alloc::vec;
-use core::sync::atomic::{AtomicBool, Ordering};
 
 use embassy_sync::mutex::Mutex;
+use portable_atomic::{AtomicBool, Ordering};
 use vertx_config::update;
 
 use crate::hal::traits::ConfigStorage as _;

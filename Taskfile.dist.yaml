@@ -32,18 +32,15 @@ tasks:
     cmds:
       - git config --local include.path ../.gitconfig
       - rustup toolchain install {{.NIGHTLY}} --profile minimal --component rustfmt clippy
+      - rustup +{{.NIGHTLY}} target install thumbv6m-none-eabi
       - cargo bin --install
       - cargo bin --sync-aliases
       - cd vertx-configurator && bun install
       - cmd: echo
         silent: true
-      - cmd: echo "The VERTX_TARGET environment variable is required at build time."
+      - cmd: echo "Run `task target:set` to choose your hardware target"
         silent: true
       - cmd: echo "A complete list of targets can be printed by running \`task targets\`"
-        silent: true
-      - cmd: echo
-        silent: true
-      - cmd: echo "Env vars will be automatically loaded from .env in the project root, if present."
         silent: true
 
   target:list:
@@ -138,7 +135,7 @@ tasks:
     requires:
       vars: [PROFILE, VERTX_RUST_TARGET]
     cmds:
-      - cp target/{{.VERTX_RUST_TOOLCHAIN}}/{{.PROFILE}}/vertx target/vertx
+      - cp target/{{.VERTX_RUST_TARGET}}/{{.PROFILE}}/vertx target/vertx
     silent: true
 
   vertx:simulator:check:
@@ -211,7 +208,7 @@ tasks:
     requires:
       vars: [PROFILE, VERTX_BACKPACK_RUST_TARGET]
     cmds:
-      - cp target/{{.VERTX_BACKPACK_RUST_TOOLCHAIN}}/{{.PROFILE}}/vertx-backpack target/vertx-backpack
+      - cp target/{{.VERTX_BACKPACK_RUST_TARGET}}/{{.PROFILE}}/vertx-backpack target/vertx-backpack
     silent: true
 
   configurator:dev:

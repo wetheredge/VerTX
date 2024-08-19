@@ -1,11 +1,3 @@
-mod pins {
-    include!(concat!(env!("OUT_DIR"), "/pins.rs"));
-
-    pub(crate) use pins;
-    #[allow(unused)]
-    pub(crate) use Pins;
-}
-
 mod flash;
 
 use alloc::vec;
@@ -27,7 +19,6 @@ use portable_atomic::{AtomicU8, Ordering};
 use static_cell::make_static;
 
 use self::flash::Partition;
-use self::pins::pins;
 use crate::BootMode;
 
 #[ram(rtc_fast, persistent)]
@@ -46,16 +37,9 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
     let timers = make_static!([OneShotTimer::new(timg0.timer0.into())]);
     esp_hal_embassy::init(&clocks, timers);
 
-    // macro_rules! pins {
-    //     (boot) => { io.pins.gpioX };
-    //     (leds) => { io.pins.gpioX };
-    //     (backpack.tx) => { io.pins.gpioX };
-    //     (backpack.rx) => { io.pins.gpioX };
-    // }
-
     let led_driver = SmartLedsAdapter::new(
         rmt.channel0,
-        pins!(io.pins, leds),
+        pins!(io, leds),
         [0; 3 * 8 + 1], // 3 channels * 8 bits + 1 stop byte
         &clocks,
     );
@@ -67,9 +51,10 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
         .unwrap();
     let config_storage = ConfigStorage::new(&mut partitions);
 
-    let mode_button = gpio::AnyInput::new(pins!(io.pins, boot), gpio::Pull::Up);
+    let mode_button = gpio::AnyInput::new(pins!(io, mode), gpio::Pull::Up);
 
     super::Init {
+        reset: Reset,
         rng,
         boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         led_driver,
@@ -90,22 +75,16 @@ pub(crate) fn set_boot_mode(mode: u8) {
     BOOT_MODE.store(mode, Ordering::Relaxed);
 }
 
-pub(crate) fn shut_down() -> ! {
-    panic!("Emulating shut down")
-}
+struct Reset;
 
-pub(crate) fn reboot() -> ! {
-    esp_hal::reset::software_reset();
-    unreachable!()
-}
+impl super::traits::Reset for Reset {
+    fn shut_down(&mut self) -> ! {
+        panic!("Emulating shut down")
+    }
 
-pub(crate) fn get_cycle_count() -> u32 {
-    esp_hal::xtensa_lx::timer::get_cycle_count()
-}
-
-impl super::traits::Rng for Rng {
-    fn u32(&mut self) -> u32 {
-        self.random()
+    fn reboot(&mut self) -> ! {
+        esp_hal::reset::software_reset();
+        unreachable!()
     }
 }
 

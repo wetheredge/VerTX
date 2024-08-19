@@ -8,7 +8,7 @@ license.workspace = true
 [dependencies]
 postcard = { workspace = true }
 serde = { workspace = true, features = ["alloc", "derive"] }
-vertx-server = { workspace = true, features = ["serde"] }
+vertx-network = { workspace = true, features = ["serde"] }
 
 [lints]
 workspace = true

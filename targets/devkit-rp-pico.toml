@@ -1,0 +1,11 @@
+chip = "rp2040"
+
+[pins]
+mode = 23
+leds = 25
+analog = []
+switches = []
+
+[pins.backpack]
+tx = 0
+rx = 1

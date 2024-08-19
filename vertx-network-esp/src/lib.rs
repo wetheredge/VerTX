@@ -10,7 +10,7 @@ use esp_hal::rng::Rng;
 use esp_hal::timer::{ErasedTimer, PeriodicTimer};
 use esp_wifi::wifi::{self, WifiApDevice, WifiController, WifiEvent, WifiStaDevice, WifiState};
 use esp_wifi::EspWifiInitFor;
-use vertx_network_hal::{Password, Ssid};
+use vertx_network::{Password, Ssid};
 
 pub struct Hal {
     spawner: Spawner,
@@ -41,7 +41,7 @@ impl Hal {
     }
 }
 
-impl vertx_network_hal::Hal for Hal {
+impl vertx_network::Hal for Hal {
     type Driver = Driver;
 
     const SUPPORTS_FIELD: bool = true;

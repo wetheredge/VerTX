@@ -7,7 +7,6 @@ license.workspace = true
 
 [features]
 std = ["picoserve/std"]
-serde = ["dep:serde", "heapless/serde"]
 
 [dependencies]
 edge-dhcp = { version = "0.2.0" }
@@ -17,8 +16,7 @@ embassy-time = { workspace = true }
 heapless = { workspace = true }
 log = { workspace = true }
 picoserve = { workspace = true, features = ["embassy"] }
-serde = { workspace = true, features = ["derive"], optional = true }
-vertx-network-hal = { workspace = true }
+vertx-network = { workspace = true }
 
 [build-dependencies]
 serde = { workspace = true, features = ["derive"] }

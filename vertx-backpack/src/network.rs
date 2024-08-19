@@ -10,7 +10,7 @@ const WORKERS: usize = 8;
 vertx_server::get_router!(get_router -> Router<Api>);
 type Context = vertx_server::Context<vertx_network_esp::Driver>;
 
-pub(crate) type Start = impl FnOnce(vertx_server::Config);
+pub(crate) type Start = impl FnOnce(vertx_network::Config);
 pub(crate) fn get_start(
     spawner: Spawner,
     rng: Rng,
@@ -25,14 +25,12 @@ pub(crate) fn get_start(
 #[task]
 async fn run(
     spawner: Spawner,
-    config: vertx_server::Config,
-    mut rng: Rng,
+    config: vertx_network::Config,
+    rng: Rng,
     hal: vertx_network_esp::Hal,
     api: &'static Api,
 ) {
-    let mut seed = [0; 8];
-    rng.read(&mut seed);
-    let seed = u64::from_ne_bytes(seed);
+    let seed = get_seed(rng);
 
     let resources = make_static!(vertx_server::Resources::<{ WORKERS + 2 }>::new());
     let (context, dhcp_context) = vertx_server::init(resources, config, seed, hal).await;
@@ -68,4 +66,11 @@ async fn http(
     api: &'static Api,
 ) -> ! {
     vertx_server::tasks::http(id, context, router, api).await
+}
+
+#[allow(clippy::host_endian_bytes)]
+fn get_seed(mut rng: Rng) -> u64 {
+    let mut seed = [0; 8];
+    rng.read(&mut seed);
+    u64::from_ne_bytes(seed)
 }

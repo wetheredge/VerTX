@@ -1,9 +1,4 @@
-use embassy_executor::{task, Spawner};
-use static_cell::make_static;
-use vertx_server::tasks::DhcpContext;
-
-use crate::api::Api;
-use crate::hal::traits::Rng as _;
+use embassy_executor::Spawner;
 
 pub type Config = vertx_config::BootSnapshot<raw_config::RawConfig, crate::mutex::SingleCore>;
 
@@ -11,7 +6,7 @@ mod raw_config {
     use core::fmt;
 
     use heapless::String;
-    use vertx_server::{Password, Ssid};
+    use vertx_network::{Password, Ssid};
 
     #[derive(Clone, vertx_config::UpdateMut, vertx_config::Storage)]
     pub struct RawConfig {
@@ -54,7 +49,6 @@ pub enum Error {
     InvalidHomeConfig,
 }
 
-const WORKERS: usize = 8;
 const STATIC_ADDRESS: [u8; 4] = [10, 0, 0, 1];
 
 pub fn run(
@@ -62,8 +56,9 @@ pub fn run(
     is_home: bool,
     config: &'static crate::Config,
     rng: &mut crate::hal::Rng,
-    network: crate::hal::Network,
-    api: &'static Api,
+    api: &'static crate::api::Api,
+    #[cfg(feature = "network-native")] network: crate::hal::Network,
+    #[cfg(feature = "network-backpack")] backpack: &crate::backpack::Backpack,
 ) -> Result<(), Error> {
     let config = config.network.boot();
 
@@ -73,66 +68,90 @@ pub fn run(
             return Err(Error::InvalidHomeConfig);
         }
 
-        vertx_server::Config::Home {
+        vertx_network::Config::Home {
             ssid: config.home_ssid.clone(),
             password: config.home_password.clone(),
             hostname: "vertx".try_into().unwrap(),
         }
     } else {
-        vertx_server::Config::Field {
+        vertx_network::Config::Field {
             ssid: "VerTX".try_into().unwrap(),
             password: config.password.clone(),
             address: STATIC_ADDRESS,
         }
     };
 
-    spawner.must_spawn(start_tasks(spawner, server_config, rng.u64(), network, api));
+    #[cfg(feature = "network-native")]
+    spawner.must_spawn(native::run(
+        spawner,
+        server_config,
+        rand::RngCore::next_u64(rng),
+        network,
+        api,
+    ));
+    #[cfg(not(feature = "network-native"))]
+    let _ = (spawner, rng);
+
+    #[cfg(feature = "network-backpack")]
+    backpack.start_network(server_config, api);
+
     Ok(())
 }
 
-vertx_server::get_router!(get_router -> Router<Api>);
-type Context = vertx_server::Context<crate::hal::NetworkDriver>;
+#[cfg(feature = "network-native")]
+mod native {
+    use embassy_executor::{task, Spawner};
+    use static_cell::make_static;
+    use vertx_server::tasks::DhcpContext;
 
-#[task]
-async fn start_tasks(
-    spawner: Spawner,
-    config: vertx_server::Config,
-    seed: u64,
-    hal: crate::hal::Network,
-    api: &'static Api,
-) {
-    let resources = make_static!(vertx_server::Resources::<{ WORKERS + 2 }>::new());
-    let (context, dhcp_context) = vertx_server::init(resources, config, seed, hal).await;
-    let context = make_static!(context);
+    use crate::api::Api;
 
-    spawner.must_spawn(network(context));
+    const WORKERS: usize = 8;
 
-    if let Some(dhcp_context) = dhcp_context {
-        spawner.must_spawn(dhcp(context, dhcp_context));
+    vertx_server::get_router!(get_router -> Router<Api>);
+    type Context = vertx_server::Context<crate::hal::NetworkDriver>;
+
+    #[task]
+    pub(super) async fn run(
+        spawner: Spawner,
+        config: vertx_network::Config,
+        seed: u64,
+        hal: crate::hal::Network,
+        api: &'static Api,
+    ) {
+        let resources = make_static!(vertx_server::Resources::<{ WORKERS + 2 }>::new());
+        let (context, dhcp_context) = vertx_server::init(resources, config, seed, hal).await;
+        let context = make_static!(context);
+
+        spawner.must_spawn(network(context));
+
+        if let Some(dhcp_context) = dhcp_context {
+            spawner.must_spawn(dhcp(context, dhcp_context));
+        }
+
+        let router = make_static!(get_router());
+        for id in 0..WORKERS {
+            spawner.must_spawn(http(id, context, router, api));
+        }
     }
 
-    let router = make_static!(get_router());
-    for id in 0..WORKERS {
-        spawner.must_spawn(http(id, context, router, api));
+    #[task]
+    async fn network(context: &'static Context) -> ! {
+        vertx_server::tasks::network(context).await
     }
-}
 
-#[task]
-async fn network(context: &'static Context) -> ! {
-    vertx_server::tasks::network(context).await
-}
+    #[task]
+    async fn dhcp(context: &'static Context, dhcp: DhcpContext) -> ! {
+        vertx_server::tasks::dhcp(context, dhcp).await
+    }
 
-#[task]
-async fn dhcp(context: &'static Context, dhcp: DhcpContext) -> ! {
-    vertx_server::tasks::dhcp(context, dhcp).await
-}
-
-#[task]
-async fn http(
-    id: usize,
-    context: &'static Context,
-    router: &'static Router,
-    api: &'static Api,
-) -> ! {
-    vertx_server::tasks::http(id, context, router, api).await
+    #[task]
+    async fn http(
+        id: usize,
+        context: &'static Context,
+        router: &'static Router,
+        api: &'static Api,
+    ) -> ! {
+        vertx_server::tasks::http(id, context, router, api).await
+    }
 }

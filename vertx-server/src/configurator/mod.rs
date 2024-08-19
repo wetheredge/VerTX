@@ -8,8 +8,9 @@ use embassy_time::Duration;
 use picoserve::response::ResponseWriter;
 use picoserve::routing::{PathRouterService, RequestHandlerService};
 use picoserve::{self, Config, ResponseSent};
+use vertx_network::Api;
 
-use crate::{Api, Context};
+use crate::Context;
 
 const TCP_BUFFER: usize = 1024;
 const HTTP_BUFFER: usize = 2048;

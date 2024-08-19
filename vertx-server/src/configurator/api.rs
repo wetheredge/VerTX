@@ -4,8 +4,7 @@ use picoserve::io;
 use picoserve::request::{Path, Request};
 use picoserve::response::{ws, IntoResponse, Response, StatusCode};
 use picoserve::routing::PathRouterService;
-
-use crate::Api;
+use vertx_network::Api;
 
 #[derive(Debug)]
 pub struct UpgradeHandler;

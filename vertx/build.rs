@@ -4,7 +4,6 @@ use std::fs::{self, File};
 use std::io::{self, BufWriter, Write};
 use std::process::Command;
 
-use quote::{format_ident, quote};
 use serde::Deserialize;
 
 fn main() -> io::Result<()> {
@@ -14,6 +13,7 @@ fn main() -> io::Result<()> {
 
     println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
+    memory_layout(&out_dir, &root)?;
     link_args();
     build_info(&out_dir, &root, target_name)?;
     pins(&out_dir, &root, target_name)?;
@@ -21,13 +21,28 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn link_args() {
-    fn chip(chip: &str) -> bool {
-        env::var_os(format!("CARGO_FEATURE_CHIP_{chip}")).is_some()
+fn chip(chip: &str) -> bool {
+    env::var_os(format!("CARGO_FEATURE_CHIP_{chip}")).is_some()
+}
+
+fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {
+    let path = chip("RP").then_some("src/hal/rp/memory.x");
+
+    if let Some(path) = path {
+        fs::copy(format!("{root}/{path}"), format!("{out_dir}/memory.x"))?;
+
+        println!("cargo::rustc-link-search={out_dir}");
+        println!("cargo::rerun-if-changed={root}/{path}");
     }
 
+    Ok(())
+}
+
+fn link_args() {
     let args: &[&str] = if chip("ESP") {
         &["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
+    } else if chip("RP") {
+        &["--nmagic", "-Tlink.x", "-Tlink-rp.x"]
     } else {
         &[]
     };
@@ -35,16 +50,6 @@ fn link_args() {
     for arg in args {
         println!("cargo::rustc-link-arg-bins={arg}");
     }
-}
-
-// Written as a macro to avoid needing to name the private output type of
-// quote!()
-macro_rules! out_file {
-    ($out:expr, $tokens:expr) => {{
-        let parsed = syn::parse2($tokens).unwrap();
-        let formatted = prettyplease::unparse(&parsed);
-        fs::write($out, formatted)
-    }};
 }
 
 fn build_info(out_dir: &str, root: &str, target_name: &str) -> io::Result<()> {
@@ -85,57 +90,73 @@ fn build_info(out_dir: &str, root: &str, target_name: &str) -> io::Result<()> {
 fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
     struct Target {
-        pins: HashMap<String, PinSpec>,
+        pins: Pins,
     }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(transparent)]
+    struct Pins(HashMap<String, PinSpec>);
 
     #[derive(Debug, Deserialize)]
     #[serde(untagged)]
     enum PinSpec {
         Single(u8),
         Multiple(Vec<u8>),
+        Nested(Pins),
+    }
+
+    impl Pins {
+        fn format(self, output: &mut String, prefix: &str, path: &str) {
+            for (key, value) in self.0 {
+                let key = if path.is_empty() {
+                    key
+                } else {
+                    format!("{path}.{key}")
+                };
+                match value {
+                    PinSpec::Single(pin) => {
+                        output.push_str("    ($p:expr, ");
+                        output.push_str(&key);
+                        output.push_str(") => { $p.");
+                        output.push_str(prefix);
+                        output.push_str(&pin.to_string());
+                        output.push_str(" };\n");
+                    }
+                    PinSpec::Multiple(pins) => {
+                        output.push_str("    ($p:expr, ");
+                        output.push_str(&key);
+                        output.push_str(" $(.$method:ident())*) => { &[");
+                        for pin in pins {
+                            output.push_str("$p.");
+                            output.push_str(prefix);
+                            output.push_str(&pin.to_string());
+                            output.push_str(" $(.$method())*,");
+                        }
+                        output.push_str("] };\n");
+                    }
+                    PinSpec::Nested(inner) => inner.format(output, prefix, &key),
+                }
+            }
+        }
     }
 
     let path = format!("{root}/../targets/{target}.toml");
     println!("cargo:rerun-if-changed={path}");
 
+    let gpio = if chip("ESP") {
+        "pins.gpio"
+    } else if chip("RP") {
+        "PIN_"
+    } else {
+        unreachable!()
+    };
+
     let target = fs::read_to_string(path)?;
     let target: Target = basic_toml::from_str(&target).unwrap();
 
-    let pins_arms = target.pins.iter().map(|(name, spec)| {
-        let name = format_ident!("{name}");
-        match spec {
-            PinSpec::Single(pin) => {
-                let gpio = format_ident!("gpio{pin}");
-                quote!( ($pins:expr, #name $(,)?) => { $pins.#gpio }; )
-            }
-            PinSpec::Multiple(pins) => {
-                let gpios = pins.iter().map(|pin| format_ident!("gpio{pin}"));
-                quote!( ($pins:expr, #name $(. $method:ident ())* $(,)?) => { [#($pins.#gpios $(.$method())*)*] }; )
-            }
-        }
-    });
+    let mut out = String::from("macro_rules! pins {\n");
+    target.pins.format(&mut out, gpio, "");
+    out.push_str("}\n");
 
-    let pins_type_arms = target.pins.iter().map(|(name, spec)| {
-        let name = format_ident!("{name}");
-        match spec {
-            PinSpec::Single(pin) => quote!( (#name) => { #pin }; ),
-            PinSpec::Multiple(pins) => {
-                let count = pins.len();
-                quote!( (#name count) => { #count }; )
-            }
-        }
-    });
-
-    let tokens = quote! {
-        macro_rules! pins {
-            #(#pins_arms)*
-        }
-
-        #[allow(unused)]
-        macro_rules! Pins {
-            #(#pins_type_arms)*
-        }
-    };
-
-    out_file!(format!("{out_dir}/pins.rs"), tokens)
+    fs::write(format!("{out_dir}/pins.rs"), out)
 }

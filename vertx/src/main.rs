@@ -3,12 +3,13 @@
 #![feature(asm_experimental_arch)]
 #![feature(type_alias_impl_trait)]
 
-mod executor;
-
 use core::mem::MaybeUninit;
 
-use esp_hal::prelude::*;
-use static_cell::make_static;
+#[cfg(feature = "chip-rp")]
+use embassy_executor::main;
+use embassy_executor::Spawner;
+#[cfg(feature = "chip-esp")]
+use esp_hal::prelude::{entry, main};
 
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
@@ -28,14 +29,14 @@ pub unsafe fn init_heap() {
     unsafe { ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE) };
 }
 
-#[entry]
-fn entry() -> ! {
-    // SAFETY: entry() will only run once
+#[main]
+async fn main(spawner: Spawner) {
+    // SAFETY: main() will only run once
     unsafe { init_heap() };
 
+    #[cfg(feature = "chip-esp")]
     esp_println::logger::init_logger(log::LevelFilter::Info);
     log::info!("Logger initialized");
 
-    let executor = make_static!(executor::Executor::new());
-    executor.run(vertx::main)
+    vertx::main(spawner).await;
 }

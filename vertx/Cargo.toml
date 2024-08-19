@@ -7,10 +7,14 @@ license.workspace = true
 publish = false
 
 [features]
+backpack = []
+backpack-boot-mode = ["backpack"]
+
 network-native = [
     "dep:vertx-server",
 ]
 network-backpack = [
+    "dep:embedded-io-async",
     "dep:vertx-backpack-ipc",
 ]
 
@@ -35,6 +39,23 @@ chip-esp32s3 = [
     "vertx-network-esp/chip-esp32s3",
 ]
 
+chip-rp = [
+    "backpack-boot-mode",
+    "network-backpack",
+    "dep:cortex-m-rt",
+    "dep:embassy-rp",
+    "dep:fixed",
+    "dep:fixed-macro",
+    "dep:panic-probe",
+    "dep:pio",
+    "embassy-executor/arch-cortex-m",
+    "embassy-executor/executor-thread",
+    "portable-atomic/critical-section",
+]
+chip-rp2040 = [
+    "chip-rp",
+]
+
 # chip-stm = []
 # chip-stm32f407 = [
 #   "chip-stm",
@@ -46,7 +67,6 @@ simulator = [
     "network-native",
     "dep:embassy-net-tuntap",
     "dep:env_logger",
-    "dep:rand",
     "dep:vertx-simulator-ipc",
     "embassy-executor/arch-std",
     "embassy-executor/executor-thread",
@@ -65,15 +85,17 @@ embassy-time = { workspace = true, features = ["generic-queue-8"] }
 esp-alloc = { workspace = true }
 heapless = { workspace = true }
 log = { workspace = true }
-portable-atomic = { version = "=1.7.0", default-features = false }
+portable-atomic = { workspace = true }
 postcard = { workspace = true }
+rand = { version = "=0.8.5", default-features = false, features = ["min_const_gen"] }
 serde = { workspace = true, features = ["derive"] }
 smart-leds = "0.4.0"
 static_cell = { workspace = true, features = ["nightly"] }
 vertx-config = { workspace = true, features = ["heapless"] }
-vertx-network-hal = { workspace = true }
+vertx-network = { workspace = true }
 
 # backpack
+embedded-io-async = { version = "=0.6.1", optional = true }
 vertx-backpack-ipc = { workspace = true, optional = true }
 
 # network-native
@@ -82,25 +104,31 @@ vertx-server = { workspace = true, optional = true }
 # chip-esp
 esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
 esp-hal = { workspace = true, features = ["async"], optional = true }
-esp-hal-embassy = { workspace = true, optional = true }
+esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
 esp-hal-smartled = { workspace = true, optional = true }
 esp-println = { workspace = true, features = ["log", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.3.0", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, optional = true }
 
+# chip-rp
+# TODO: flip-link
+cortex-m-rt = { version = "0.7.3", optional = true }
+embassy-rp = { version = "=0.2.0", features = ["critical-section-impl", "time-driver"], optional = true }
+fixed = { version = "=1.28.0", optional = true }
+fixed-macro = { version = "=1.2.0", optional = true }
+panic-probe = { version = "=0.3.2", optional = true }
+pio = { version = "=0.2.1", optional = true }
+
 # simulator
 embassy-net-tuntap = { version = "=0.1.0", optional = true }
 env_logger = { version = "=0.11.5", optional = true }
-rand = { version = "=0.8.5", optional = true }
 vertx-simulator-ipc = { workspace = true, optional = true }
 
 [build-dependencies]
 basic-toml = "=0.1.9"
 cargo_toml = "=0.20.4"
 prettyplease = "=0.2.20"
-quote = "1.0.36"
 serde = { workspace = true, features = ["derive"] }
-syn = { workspace = true, features = ["parsing"] }
 
 [[bin]]
 name = "simulator"

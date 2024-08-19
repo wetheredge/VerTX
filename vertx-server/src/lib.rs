@@ -9,7 +9,7 @@ use embassy_net::driver::Driver;
 use embassy_net::udp::{PacketMetadata, UdpSocket};
 use embassy_net::{Ipv4Address, Ipv4Cidr};
 use embassy_time::{Duration, Timer};
-use heapless::String;
+use vertx_network::Config;
 
 pub use self::configurator::Router;
 
@@ -37,35 +37,6 @@ macro_rules! get_router {
     };
 }
 
-pub type Ssid = String<32>;
-pub type Password = String<64>;
-
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub enum Config {
-    Home {
-        ssid: Ssid,
-        password: Password,
-        hostname: String<32>,
-    },
-    Field {
-        ssid: Ssid,
-        password: Password,
-        address: [u8; 4],
-    },
-}
-
-#[allow(async_fn_in_trait)]
-pub trait Api {
-    type Buffer;
-
-    const NAME: &'static str;
-
-    fn buffer() -> Self::Buffer;
-    async fn next_response<'b>(&self, buffer: &'b mut Self::Buffer) -> &'b [u8];
-    async fn handle<'b>(&self, request: &[u8], buffer: &'b mut Self::Buffer) -> Option<&'b [u8]>;
-}
-
 /// Memory resources for a network stack
 ///
 /// `SOCKETS` should be 2 greater than the number of http worker tasks. (1 for
@@ -88,7 +59,7 @@ impl<const SOCKETS: usize> Default for Resources<SOCKETS> {
 #[repr(transparent)]
 pub struct Context<D: Driver>(embassy_net::Stack<D>);
 
-pub async fn init<H: vertx_network_hal::Hal, const SOCKETS: usize>(
+pub async fn init<H: vertx_network::Hal, const SOCKETS: usize>(
     resources: &'static mut Resources<SOCKETS>,
     config: Config,
     seed: u64,

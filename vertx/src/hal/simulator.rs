@@ -9,7 +9,7 @@ use embassy_net_tuntap::TunTapDevice;
 use embassy_sync::signal::Signal;
 use rand::RngCore as _;
 use smart_leds::RGB8;
-use vertx_network_hal::{Password, Ssid};
+use vertx_network::{Password, Ssid};
 use vertx_simulator_ipc as ipc;
 
 pub(crate) fn init(_spawner: Spawner) -> super::Init {
@@ -146,7 +146,7 @@ impl super::traits::ModeButton for ModeButton {
 
 struct Network;
 
-impl vertx_network_hal::Hal for Network {
+impl vertx_network::Hal for Network {
     type Driver = TunTapDevice;
 
     const SUPPORTS_FIELD: bool = true;

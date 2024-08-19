@@ -9,7 +9,6 @@ mod ipc;
 mod network;
 
 use core::mem::MaybeUninit;
-use core::sync::atomic::{AtomicBool, Ordering};
 
 use embassy_executor::Spawner;
 use embassy_time::Timer;
@@ -21,7 +20,9 @@ use esp_hal::prelude::*;
 use esp_hal::rng::Rng;
 use esp_hal::system::SystemControl;
 use esp_hal::timer::{timg, OneShotTimer, PeriodicTimer};
+use esp_hal::uart::config::Config as UartConfig;
 use esp_hal::uart::Uart;
+use portable_atomic::{AtomicBool, AtomicU8, Ordering};
 use static_cell::make_static;
 use vertx_backpack_ipc::ToMain;
 
@@ -50,6 +51,9 @@ async fn main(spawner: Spawner) {
     // SAFETY: main() will only run once
     unsafe { init_heap() };
 
+    esp_println::logger::init_logger(log::LevelFilter::Info);
+    log::info!("Logger initialized");
+
     let peripherals = Peripherals::take();
     let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
@@ -61,13 +65,12 @@ async fn main(spawner: Spawner) {
     let timers = make_static!([OneShotTimer::new(timg0.timer0.into())]);
     esp_hal_embassy::init(&clocks, timers);
 
-    #[cfg(feature = "chip-esp32")]
-    let (tx, rx) = (io.pins.gpio1, io.pins.gpio3);
+    #[cfg(any(feature = "chip-esp32", feature = "chip-esp32s3"))]
+    let (tx, rx) = (io.pins.gpio4, io.pins.gpio5);
     #[cfg(feature = "chip-esp32c3")]
     let (tx, rx) = (io.pins.gpio21, io.pins.gpio20);
-    #[cfg(feature = "chip-esp32s3")]
-    let (tx, rx) = (io.pins.gpio43, io.pins.gpio44);
-    let (tx, rx) = Uart::new_async_with_default_pins(peripherals.UART0, &clocks, tx, rx)
+    let config = UartConfig::default().baudrate(vertx_backpack_ipc::BAUDRATE);
+    let (tx, rx) = Uart::new_async_with_config(peripherals.UART0, config, &clocks, tx, rx)
         .unwrap()
         .split();
 
@@ -86,18 +89,24 @@ async fn main(spawner: Spawner) {
     let api = make_static!(Api::new(ipc_tx_channel.sender(), api_responses.receiver()));
     let start_network = network::get_start(spawner, rng, network, api);
 
-    let init_acked = make_static!(AtomicBool::new(false));
+    #[ram(rtc_fast, persistent)]
+    static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
+    static INIT_ACKED: AtomicBool = AtomicBool::new(false);
+
     spawner.must_spawn(ipc::rx(
         rx,
-        init_acked,
+        &BOOT_MODE,
+        &INIT_ACKED,
         start_network,
         api_responses.sender(),
     ));
 
     loop {
-        ipc_tx_channel.send(ToMain::Init).await;
+        let boot_mode = BOOT_MODE.load(Ordering::Relaxed);
+        ipc_tx_channel.send(ToMain::Init { boot_mode }).await;
+
         Timer::after_millis(500).await;
-        if init_acked.load(Ordering::Relaxed) {
+        if INIT_ACKED.load(Ordering::Relaxed) {
             break;
         }
     }

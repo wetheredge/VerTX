@@ -19,7 +19,7 @@ impl Api {
     }
 }
 
-impl vertx_server::Api for Api {
+impl vertx_network::Api for Api {
     type Buffer = Option<Vec<u8>>;
 
     const NAME: &'static str = "v0";
@@ -34,9 +34,7 @@ impl vertx_server::Api for Api {
     }
 
     async fn handle<'b>(&self, request: &[u8], _buffer: &'b mut Self::Buffer) -> Option<&'b [u8]> {
-        self.tx
-            .send(ToMain::ApiRequest(request.to_vec().into()))
-            .await;
+        self.tx.send(ToMain::ApiRequest(request.to_vec())).await;
         None
     }
 }

@@ -1,13 +1,64 @@
-use embassy_executor::task;
+use core::future;
+
+use embassy_executor::{task, Spawner};
 use embassy_sync::signal::Signal;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Reset {
-    Reboot,
-    ShutDown,
+#[cfg(feature = "backpack-boot-mode")]
+use crate::backpack::Backpack;
+use crate::hal::traits::Reset as _;
+
+type ResetSignal = Signal<crate::mutex::MultiCore, Kind>;
+
+pub(crate) struct Manager {
+    reset: &'static ResetSignal,
+    #[cfg(feature = "backpack-boot-mode")]
+    backpack: &'static Backpack,
 }
 
-static RESET: Signal<crate::mutex::MultiCore, Reset> = Signal::new();
+impl Manager {
+    pub(crate) fn new(
+        spawner: Spawner,
+        hal: crate::hal::Reset,
+        config: &'static crate::config::Manager,
+        #[cfg(feature = "backpack-boot-mode")] backpack: &'static Backpack,
+    ) -> Self {
+        static RESET: ResetSignal = Signal::new();
+        let signal = &RESET;
+
+        spawner.must_spawn(reset(
+            hal,
+            signal,
+            config,
+            #[cfg(feature = "backpack-boot-mode")]
+            backpack,
+        ));
+
+        Self {
+            reset: signal,
+            #[cfg(feature = "backpack-boot-mode")]
+            backpack,
+        }
+    }
+
+    pub(crate) async fn reboot_into(&self, mode: BootMode) -> ! {
+        let mode = mode as u8;
+        #[cfg(feature = "backpack-boot-mode")]
+        self.backpack.set_boot_mode(mode).await;
+        #[cfg(not(feature = "backpack-boot-mode"))]
+        crate::hal::set_boot_mode(mode);
+        self.reboot().await
+    }
+
+    pub(crate) async fn reboot(&self) -> ! {
+        self.reset.signal(Kind::Reboot);
+        future::pending().await
+    }
+
+    pub(crate) async fn shut_down(&self) -> ! {
+        self.reset.signal(Kind::ShutDown);
+        future::pending().await
+    }
+}
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -37,26 +88,36 @@ impl BootMode {
     }
 }
 
-pub fn reboot_into(mode: BootMode) {
-    crate::hal::set_boot_mode(mode as u8);
-    RESET.signal(Reset::Reboot);
-}
-
-pub fn shut_down() {
-    RESET.signal(Reset::ShutDown);
-}
-
-pub fn reboot() {
-    RESET.signal(Reset::Reboot);
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Kind {
+    Reboot,
+    ShutDown,
 }
 
 #[task]
-pub async fn reset(config: &'static crate::config::Manager) -> ! {
-    let kind = RESET.wait().await;
-    config.save().await;
+async fn reset(
+    mut hal: crate::hal::Reset,
+    reset: &'static ResetSignal,
+    config: &'static crate::config::Manager,
+    #[cfg(feature = "backpack-boot-mode")] backpack: &'static Backpack,
+) -> ! {
+    let kind = reset.wait().await;
+
+    let config_saved = config.save();
+
+    #[cfg(not(feature = "backpack-boot-mode"))]
+    config_saved.await;
+    #[cfg(feature = "backpack-boot-mode")]
+    {
+        use embassy_futures::join::join;
+        let _ = match kind {
+            Kind::Reboot => join(config_saved, backpack.reboot()).await,
+            Kind::ShutDown => join(config_saved, backpack.shut_down()).await,
+        };
+    }
 
     match kind {
-        Reset::ShutDown => crate::hal::shut_down(),
-        Reset::Reboot => crate::hal::reboot(),
+        Kind::Reboot => hal.reboot(),
+        Kind::ShutDown => hal.shut_down(),
     }
 }

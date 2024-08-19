@@ -1,10 +1,9 @@
-use core::sync::atomic::{AtomicBool, Ordering};
-
 use embassy_executor::task;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel;
 use esp_hal::uart::{UartRx, UartTx};
 use esp_hal::{peripherals, Async};
+use portable_atomic::{AtomicBool, AtomicU8, Ordering};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use vertx_backpack_ipc::{ToBackpack, ToMain};
 
@@ -41,6 +40,7 @@ pub(crate) async fn tx(
 #[task]
 pub(crate) async fn rx(
     mut rx: UartRx<'static, peripherals::UART0, Async>,
+    boot_mode: &'static AtomicU8,
     init_acked: &'static AtomicBool,
     start_network: crate::network::Start,
     api_responses: crate::api::ResponseSender,
@@ -74,15 +74,17 @@ pub(crate) async fn rx(
                     match data {
                         ToBackpack::InitAck => {
                             if init_acked.swap(true, Ordering::Relaxed) {
-                                log::warn!("Repeated InitAck")
+                                log::warn!("Repeated InitAck");
                             }
                         }
 
+                        ToBackpack::SetBootMode(mode) => boot_mode.store(mode, Ordering::Relaxed),
+
                         ToBackpack::StartNetwork(config) => {
                             if let Some(start) = start_network.take() {
-                                start(config)
+                                start(config);
                             } else {
-                                log::warn!("Network already started")
+                                log::warn!("Network already started");
                             }
                         }
 

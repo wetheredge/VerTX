@@ -28,7 +28,7 @@ esp-hal = { workspace = true, features = ["async"] }
 esp-wifi = { version = "=0.7.1", features = ["wifi", "embassy-net"] }
 heapless = { workspace = true }
 log = { workspace = true }
-vertx-network-hal = { workspace = true }
+vertx-network = { workspace = true }
 
 [lints]
 workspace = true
