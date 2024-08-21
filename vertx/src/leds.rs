@@ -134,7 +134,7 @@ pub async fn run(
     mut driver: crate::hal::LedDriver,
     mut mode: crate::mode::Subscriber<'static>,
 ) -> ! {
-    log::info!("Starting leds()");
+    loog::info!("Starting leds()");
     let config = &config.leds;
 
     let mut effect = Effect::default();

@@ -2,6 +2,7 @@ mod leds;
 
 use core::future::Future;
 
+use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_rp::clocks::RoscRng;
 use embassy_rp::peripherals::{PIO0, UART0};

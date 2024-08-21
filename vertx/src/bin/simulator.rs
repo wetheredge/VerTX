@@ -1,6 +1,6 @@
 fn main() {
     env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(loog::log::LevelFilter::Info)
         .parse_env("VERTX_LOG")
         .init();
 

@@ -21,12 +21,8 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn chip(chip: &str) -> bool {
-    env::var_os(format!("CARGO_FEATURE_CHIP_{chip}")).is_some()
-}
-
 fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {
-    let path = chip("RP").then_some("src/hal/rp/memory.x");
+    let path = feature("CHIP_RP").then_some("src/hal/rp/memory.x");
 
     if let Some(path) = path {
         fs::copy(format!("{root}/{path}"), format!("{out_dir}/memory.x"))?;
@@ -39,13 +35,17 @@ fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {
 }
 
 fn link_args() {
-    let args: &[&str] = if chip("ESP") {
-        &["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
-    } else if chip("RP") {
-        &["--nmagic", "-Tlink.x", "-Tlink-rp.x"]
+    let mut args = if feature("CHIP_ESP") {
+        vec!["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
+    } else if feature("CHIP_RP") {
+        vec!["--nmagic", "-Tlink.x", "-Tlink-rp.x"]
     } else {
-        &[]
+        vec![]
     };
+
+    if feature("DEFMT") {
+        args.push("-Tdefmt.x");
+    }
 
     for arg in args {
         println!("cargo::rustc-link-arg-bins={arg}");
@@ -140,16 +140,16 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         }
     }
 
-    let path = format!("{root}/../targets/{target}.toml");
-    println!("cargo:rerun-if-changed={path}");
-
-    let gpio = if chip("ESP") {
+    let gpio = if feature("CHIP_ESP") {
         "pins.gpio"
-    } else if chip("RP") {
+    } else if feature("CHIP_RP") {
         "PIN_"
     } else {
-        unreachable!()
+        return Ok(());
     };
+
+    let path = format!("{root}/../targets/{target}.toml");
+    println!("cargo:rerun-if-changed={path}");
 
     let target = fs::read_to_string(path)?;
     let target: Target = basic_toml::from_str(&target).unwrap();
@@ -159,4 +159,8 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     out.push_str("}\n");
 
     fs::write(format!("{out_dir}/pins.rs"), out)
+}
+
+fn feature(feature: &str) -> bool {
+    env::var_os(format!("CARGO_FEATURE_{feature}")).is_some()
 }

@@ -34,9 +34,5 @@ async fn main(spawner: Spawner) {
     // SAFETY: main() will only run once
     unsafe { init_heap() };
 
-    #[cfg(feature = "chip-esp")]
-    esp_println::logger::init_logger(log::LevelFilter::Info);
-    log::info!("Logger initialized");
-
     vertx::main(spawner).await;
 }

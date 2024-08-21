@@ -21,7 +21,7 @@ impl Manager {
         let config = match storage.load(vertx_config::storage::postcard::from_slice) {
             Some(Ok(config)) => config,
             Some(Err(err)) => {
-                log::error!("Failed to load config: {err}");
+                loog::error!("Failed to load config: {err}");
                 Default::default()
             }
             None => Default::default(),
@@ -39,7 +39,7 @@ impl Manager {
             return;
         }
 
-        log::info!("Writing configuration");
+        loog::info!("Writing configuration");
 
         let encoded = vertx_config::storage::postcard::to_vec(&self.config).await;
 

@@ -35,7 +35,7 @@ struct Config {
 }
 
 pub async fn main(spawner: Spawner) {
-    log::info!("Starting VerTX");
+    loog::info!("Starting VerTX");
 
     let hal::Init {
         reset,
@@ -73,7 +73,7 @@ pub async fn main(spawner: Spawner) {
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
     if boot_mode.configurator_enabled() {
-        log::info!("Configurator enabled");
+        loog::info!("Configurator enabled");
         mode.publish(crate::Mode::PreConfigurator);
 
         let is_home = boot_mode == BootMode::ConfiguratorHome;
@@ -97,7 +97,7 @@ pub async fn main(spawner: Spawner) {
             }
         }
     } else {
-        log::info!("Configurator disabled");
+        loog::info!("Configurator disabled");
         mode.publish(crate::Mode::Ok);
     }
 }

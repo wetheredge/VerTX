@@ -7,6 +7,16 @@ license.workspace = true
 publish = false
 
 [features]
+log = [
+
+    "embassy-net/log",
+    "loog/log",
+]
+defmt = [
+    "loog/defmt",
+    "postcard/use-defmt",
+]
+
 backpack = []
 backpack-boot-mode = ["backpack"]
 
@@ -19,6 +29,7 @@ network-backpack = [
 ]
 
 chip-esp = [
+    "defmt",
     "network-native",
     "dep:esp-backtrace",
     "dep:esp-hal",
@@ -40,9 +51,11 @@ chip-esp32s3 = [
 ]
 
 chip-rp = [
+    "defmt",
     "backpack-boot-mode",
     "network-backpack",
     "dep:cortex-m-rt",
+    "dep:defmt-rtt",
     "dep:embassy-rp",
     "dep:fixed",
     "dep:fixed-macro",
@@ -64,6 +77,7 @@ chip-rp2040 = [
 # ]
 
 simulator = [
+    "log",
     "network-native",
     "dep:embassy-net-tuntap",
     "dep:env_logger",
@@ -79,12 +93,12 @@ bytemuck = { version = "=1.16.3", features = ["min_const_generics"] }
 critical-section = "=1.1.2"
 embassy-executor = { workspace = true, features = ["nightly"] }
 embassy-futures = { workspace = true }
-embassy-net = { workspace = true, features = ["dhcpv4", "log", "tcp", "udp", "dhcpv4-hostname"] }
+embassy-net = { workspace = true, features = ["dhcpv4", "tcp", "udp", "dhcpv4-hostname"] }
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
 esp-alloc = { workspace = true }
 heapless = { workspace = true }
-log = { workspace = true }
+loog = { workspace = true }
 portable-atomic = { workspace = true }
 postcard = { workspace = true }
 rand = { version = "=0.8.5", default-features = false, features = ["min_const_gen"] }
@@ -106,13 +120,14 @@ esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exce
 esp-hal = { workspace = true, features = ["async"], optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
 esp-hal-smartled = { workspace = true, optional = true }
-esp-println = { workspace = true, features = ["log", "uart", "critical-section", "colors"], optional = true }
+esp-println = { workspace = true, features = ["defmt-espflash", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.3.0", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, optional = true }
 
 # chip-rp
 # TODO: flip-link
 cortex-m-rt = { version = "0.7.3", optional = true }
+defmt-rtt = { version = "=0.4.1", optional = true }
 embassy-rp = { version = "=0.2.0", features = ["critical-section-impl", "time-driver"], optional = true }
 fixed = { version = "=1.28.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
@@ -129,6 +144,10 @@ basic-toml = "=0.1.9"
 cargo_toml = "=0.20.4"
 prettyplease = "=0.2.20"
 serde = { workspace = true, features = ["derive"] }
+
+[[bin]]
+name = "vertx"
+required-features = ["defmt"]
 
 [[bin]]
 name = "simulator"

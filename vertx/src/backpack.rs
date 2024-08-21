@@ -103,7 +103,7 @@ async fn tx(
         let bytes = match postcard::to_slice_cobs(&message, &mut buffer) {
             Ok(bytes) => bytes,
             Err(err) => {
-                log::error!("Failed to serialize message to backpack: {err:?}");
+                loog::error!("Failed to serialize message to backpack: {err:?}");
                 continue;
             }
         };
@@ -111,7 +111,7 @@ async fn tx(
         match tx.write_all(bytes).await {
             Ok(()) => {}
             Err(err) => {
-                log::error!("Failed to send message to backpack: {err:?}");
+                loog::error!("Failed to send message to backpack: {err:?}");
             }
         }
     }
@@ -132,7 +132,7 @@ async fn rx(
         let mut chunk = match rx.read(&mut buffer).await {
             Ok(len) => &buffer[0..len],
             Err(err) => {
-                log::error!("Backpack rx failed: {err:?}");
+                loog::error!("Backpack rx failed: {err:?}");
                 continue;
             }
         };
@@ -143,7 +143,7 @@ async fn rx(
                 FeedResult::OverFull(remaining) => remaining,
                 FeedResult::DeserError(remaining) => {
                     if ever_success {
-                        log::error!("Backpack rx decode failed");
+                        loog::error!("Backpack rx decode failed");
                     }
                     remaining
                 }
@@ -161,14 +161,14 @@ async fn rx(
                         ToMain::SetBootModeAck => set_boot_mode_ack.signal(()),
                         #[cfg(not(feature = "backpack-boot-mode"))]
                         ToMain::SetBootModeAck => {
-                            log::error!("Ignoring SetBootModeAck message from backpack")
+                            loog::error!("Ignoring SetBootModeAck message from backpack")
                         }
 
                         #[cfg(feature = "network-backpack")]
-                        ToMain::NetworkUp => log::info!("Network started"),
+                        ToMain::NetworkUp => loog::info!("Network started"),
                         #[cfg(not(feature = "network-backpack"))]
                         ToMain::NetworkUp => {
-                            log::error!("Ignoring NetworkUp message from backpack")
+                            loog::error!("Ignoring NetworkUp message from backpack")
                         }
 
                         #[cfg(feature = "network-backpack")]
@@ -179,12 +179,12 @@ async fn rx(
                                     tx.send(ToBackpack::ApiResponse(response.to_vec())).await;
                                 }
                             } else {
-                                log::error!("Got ApiRequest before network was initialized");
+                                loog::error!("Got ApiRequest before network was initialized");
                             }
                         }
                         #[cfg(not(feature = "network-backpack"))]
                         ToMain::ApiRequest(_) => {
-                            log::error!("Ignoring ApiRequest message from backpack")
+                            loog::error!("Ignoring ApiRequest message from backpack")
                         }
                     }
 

@@ -48,12 +48,12 @@ impl vertx_network::Api for Api {
         let request = match postcard::from_bytes(request) {
             Ok(request) => request,
             Err(err) => {
-                log::error!("Failed to parse request: {err:?}");
+                loog::error!("Failed to parse request: {err:?}");
                 return None;
             }
         };
 
-        log::debug!("Received api request: {request:?}");
+        loog::debug!("Received api request: {request:?}");
 
         let response = match request {
             Request::ProtocolVersion => Some(Response::PROTOCOL_VERSION),
@@ -98,7 +98,7 @@ fn encode(response: Response, buffer: &mut [u8]) -> &[u8] {
 
 #[task]
 async fn status(status: &'static StatusSignal) {
-    log::info!("Starting status()");
+    loog::info!("Starting status()");
 
     let mut ticker = Ticker::every(Duration::from_secs(1));
     loop {

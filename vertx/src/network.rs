@@ -64,7 +64,7 @@ pub fn run(
 
     let server_config = if is_home {
         if !config.valid_home() {
-            log::error!("Invalid home network config");
+            loog::error!("Invalid home network config");
             return Err(Error::InvalidHomeConfig);
         }
 
