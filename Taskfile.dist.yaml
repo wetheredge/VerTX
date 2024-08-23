@@ -103,6 +103,8 @@ tasks:
     deps:
       - configurator:build
     cmds:
+      - cmd: echo 'Building for target {{.VERTX_TARGET}}'
+        silent: true
       - task: vertx:cargo
         vars:
           COMMAND: build
@@ -114,6 +116,8 @@ tasks:
     deps:
       - configurator:build
     cmds:
+      - cmd: echo 'Building for target {{.VERTX_TARGET}}'
+        silent: true
       - task: vertx:cargo
         vars:
           COMMAND: build
