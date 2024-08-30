@@ -30,9 +30,11 @@ const _: () = {
 };
 
 #[cfg(feature = "backpack")]
-pub(crate) type BackpackTx = impl embedded_io_async::Write;
+pub(crate) type BackpackTx =
+    impl embedded_io_async::Write<Error = impl loog::DebugFormat + embedded_io_async::Error>;
 #[cfg(feature = "backpack")]
-pub(crate) type BackpackRx = impl embedded_io_async::Read;
+pub(crate) type BackpackRx =
+    impl embedded_io_async::Read<Error = impl loog::DebugFormat + embedded_io_async::Error>;
 #[cfg(feature = "backpack")]
 pub(crate) type BackpackAck = impl traits::BackpackAck;
 
