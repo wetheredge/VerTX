@@ -2,7 +2,7 @@ use embassy_executor::task;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel;
 use esp_hal::uart::{UartRx, UartTx};
-use esp_hal::{peripherals, Async};
+use esp_hal::{gpio, peripherals, Async};
 use portable_atomic::{AtomicBool, AtomicU8, Ordering};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use vertx_backpack_ipc::{ToBackpack, ToMain};
@@ -44,6 +44,7 @@ pub(crate) async fn rx(
     init_acked: &'static AtomicBool,
     start_network: crate::network::Start,
     api_responses: crate::api::ResponseSender,
+    mut ack: gpio::AnyOutput<'static>,
 ) -> ! {
     let mut start_network = Some(start_network);
 
@@ -70,6 +71,7 @@ pub(crate) async fn rx(
                     remaining
                 }
                 FeedResult::Success { data, remaining } => {
+                    ack.set_high();
                     ever_success = true;
                     match data {
                         ToBackpack::InitAck => {
@@ -89,8 +91,14 @@ pub(crate) async fn rx(
                         }
 
                         ToBackpack::ApiResponse(response) => api_responses.send(response).await,
+
+                        ToBackpack::Reboot => {
+                            ack.set_low();
+                            esp_hal::reset::software_reset();
+                        }
                     }
 
+                    ack.set_low();
                     remaining
                 }
             }

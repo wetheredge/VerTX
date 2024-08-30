@@ -1,8 +1,9 @@
+#[cfg(not(feature = "simulator"))]
 include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 
 #[cfg_attr(feature = "chip-esp", path = "esp/mod.rs")]
 #[cfg_attr(feature = "chip-rp", path = "rp/mod.rs")]
-#[cfg_attr(feature = "simulator", path = "simulator.rs")]
+#[cfg_attr(feature = "simulator", path = "simulator/mod.rs")]
 mod implementation;
 
 use core::fmt::Debug;
@@ -17,9 +18,6 @@ pub(crate) type LedDriver = impl traits::LedDriver<Error = impl Debug>;
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
 pub(crate) type ModeButton = impl traits::ModeButton;
 
-#[cfg(feature = "backpack")]
-pub(crate) type Backpack = impl traits::Backpack;
-
 #[cfg(feature = "network-native")]
 pub(crate) type Network = impl vertx_network::Hal;
 #[cfg(feature = "network-native")]
@@ -30,6 +28,20 @@ const _: () = {
     use vertx_network::Hal as _;
     assert!(Network::SUPPORTS_HOME || Network::SUPPORTS_FIELD);
 };
+
+#[cfg(feature = "backpack")]
+pub(crate) type BackpackTx = impl embedded_io_async::Write;
+#[cfg(feature = "backpack")]
+pub(crate) type BackpackRx = impl embedded_io_async::Read;
+#[cfg(feature = "backpack")]
+pub(crate) type BackpackAck = impl traits::BackpackAck;
+
+#[cfg(feature = "backpack")]
+pub(crate) struct Backpack {
+    pub(crate) tx: BackpackTx,
+    pub(crate) rx: BackpackRx,
+    pub(crate) ack: BackpackAck,
+}
 
 pub(crate) struct Init {
     pub(crate) reset: Reset,
@@ -82,10 +94,22 @@ pub(crate) mod traits {
     }
 
     #[cfg(feature = "backpack")]
-    pub(crate) trait Backpack {
-        type Tx: embedded_io_async::Write;
-        type Rx: embedded_io_async::Read;
+    pub(crate) trait BackpackAck {
+        /// Wait for backpack ack line to be pulled low.
+        async fn wait(&mut self);
+    }
 
-        fn split(self) -> (Self::Tx, Self::Rx);
+    #[cfg(feature = "backpack")]
+    impl<T> BackpackAck for T
+    where
+        T: embedded_hal_async::digital::Wait
+            + embedded_hal::digital::ErrorType<Error = core::convert::Infallible>,
+    {
+        async fn wait(&mut self) {
+            match self.wait_for_falling_edge().await {
+                Ok(()) => {}
+                Err(err) => match err {},
+            };
+        }
     }
 }

@@ -2,7 +2,6 @@ mod leds;
 
 use core::future::Future;
 
-use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_rp::clocks::RoscRng;
 use embassy_rp::peripherals::{PIO0, UART0};
@@ -10,8 +9,8 @@ use embassy_rp::pio::{self, Pio};
 use embassy_rp::uart::{self, BufferedUart};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio};
-use panic_probe as _;
 use static_cell::make_static;
+use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
@@ -38,19 +37,26 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
 
     let mode_button = gpio::Input::new(pins!(p, mode), gpio::Pull::Up);
 
-    let mut config = uart::Config::default();
-    config.baudrate = vertx_backpack_ipc::BAUDRATE;
-    let tx_buffer = make_static!([0; 32]);
-    let rx_buffer = make_static!([0; 32]);
-    let backpack = BufferedUart::new(
-        p.UART0,
-        Irqs,
-        pins!(p, backpack.tx),
-        pins!(p, backpack.rx),
-        tx_buffer,
-        rx_buffer,
-        config,
-    );
+    let backpack = {
+        let mut config = uart::Config::default();
+        config.baudrate = vertx_backpack_ipc::BAUDRATE;
+        let tx_buffer = make_static!([0; 32]);
+        let rx_buffer = make_static!([0; 32]);
+        let uart = BufferedUart::new(
+            p.UART0,
+            Irqs,
+            pins!(p, backpack.tx),
+            pins!(p, backpack.rx),
+            tx_buffer,
+            rx_buffer,
+            config,
+        );
+        let (tx, rx) = uart.split();
+
+        let ack = gpio::Input::new(pins!(p, backpack.ack), gpio::Pull::Up);
+
+        super::Backpack { tx, rx, ack }
+    };
 
     super::Init {
         reset,
@@ -94,14 +100,5 @@ impl super::traits::ConfigStorage for ConfigStorage {
 impl super::traits::ModeButton for gpio::Input<'_> {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
         self.wait_for_falling_edge()
-    }
-}
-
-impl<'d, T: uart::Instance> super::traits::Backpack for BufferedUart<'d, T> {
-    type Rx = uart::BufferedUartRx<'d, T>;
-    type Tx = uart::BufferedUartTx<'d, T>;
-
-    fn split(self) -> (Self::Tx, Self::Rx) {
-        self.split()
     }
 }

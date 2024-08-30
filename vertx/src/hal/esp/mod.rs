@@ -113,7 +113,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
             let mut config = vec![0; length.div_ceil(4)];
             self.partition.read_into(1, &mut config).unwrap();
 
-            let bytes: &[u8] = &bytemuck::cast_slice(&config)[..length];
+            let bytes: &[u8] = &bytemuck::cast_slice(&config)[0..length];
             parse(bytes)
         })
     }

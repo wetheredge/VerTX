@@ -1,86 +1,95 @@
+mod backpack;
+
 use std::future::Future;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, Read, Write};
 use std::path::PathBuf;
 use std::vec::Vec;
 use std::{env, fs, process, thread};
 
 use embassy_executor::Spawner;
-use embassy_net_tuntap::TunTapDevice;
+use embassy_sync::channel::Channel;
 use embassy_sync::signal::Signal;
-use rand::RngCore as _;
+use postcard::accumulator::{CobsAccumulator, FeedResult};
 use smart_leds::RGB8;
-use vertx_network::{Password, Ssid};
 use vertx_simulator_ipc as ipc;
 
 pub(crate) fn init(_spawner: Spawner) -> super::Init {
+    static BACKPACK_RX: Channel<crate::mutex::MultiCore, Vec<u8>, 10> = Channel::new();
+    static BACKPACK_ACK: backpack::AckSignal = backpack::AckSignal::new();
     static MODE_BUTTON: Signal<crate::mutex::MultiCore, ()> = Signal::new();
+
     thread::Builder::new()
         .name("ipc rx".into())
         .spawn(move || {
-            let mut stdin = BufReader::new(io::stdin());
-            let mut message = Vec::new();
-            while stdin.read_until(0, &mut message).unwrap() > 0 {
-                let message = ipc::deserialize(&mut message).unwrap();
-                match message {
-                    ipc::ToFirmware::ModeButtonPressed => MODE_BUTTON.signal(()),
+            let mut stdin = io::stdin().lock();
+
+            let mut buffer = [0; 128];
+            let mut accumulator: CobsAccumulator<512> = CobsAccumulator::new();
+
+            loop {
+                let len = stdin.read(&mut buffer).unwrap();
+                let mut chunk = &buffer[..len];
+
+                while !chunk.is_empty() {
+                    chunk = match accumulator.feed(chunk) {
+                        FeedResult::Consumed => break,
+                        FeedResult::OverFull(remaining) => remaining,
+                        FeedResult::DeserError(remaining) => {
+                            loog::warn!("ipc deserialization failed");
+                            remaining
+                        }
+                        FeedResult::Success { data, remaining } => {
+                            match data {
+                                ipc::Message::Backpack(chunk) => {
+                                    BACKPACK_RX.try_send(chunk.into_owned()).unwrap();
+                                }
+                                ipc::Message::Simulator(message) => match message {
+                                    ipc::ToVertx::BackpackAck => BACKPACK_ACK.signal(()),
+                                    ipc::ToVertx::ModeButtonPressed => MODE_BUTTON.signal(()),
+                                },
+                            }
+
+                            remaining
+                        }
+                    };
                 }
             }
         })
         .unwrap();
 
     super::Init {
-        rng: Rng::new(),
+        reset: Reset,
+        rng: rand::thread_rng(),
         boot_mode: env::var("VERTX_BOOT_MODE")
             .map(|mode| mode.parse::<u8>().unwrap().into())
-            .unwrap_or_default(),
+            .expect("VERTX_BOOT_MODE env var should be set"),
         led_driver: LedDriver,
         config_storage: ConfigStorage::new(),
         mode_button: ModeButton(&MODE_BUTTON),
-        network: Network,
+        backpack: backpack::new(BACKPACK_RX.receiver(), &BACKPACK_ACK),
     }
 }
 
 pub(crate) fn set_boot_mode(mode: u8) {
-    ipc_send(ipc::ToManager::ChangeMode(mode));
+    ipc_send(ipc::ToManager::SetBootMode(mode));
 }
 
-pub(crate) fn shut_down() -> ! {
-    ipc_send(ipc::ToManager::ShutDown);
-    process::exit(0);
-}
-
-pub(crate) fn reboot() -> ! {
-    ipc_send(ipc::ToManager::Reboot);
-    process::exit(0);
-}
-
-pub(crate) fn get_cycle_count() -> u32 {
-    0
-}
-
-fn ipc_send(message: ipc::ToManager) {
-    let bytes = ipc::serialize(&message).unwrap();
+fn ipc_send<'a, M: Into<ipc::Message<'a, ipc::ToManager>>>(message: M) {
+    let bytes = ipc::serialize(&message.into()).unwrap();
     let mut stdout = io::stdout();
     stdout.write_all(&bytes).unwrap();
     stdout.flush().unwrap();
 }
 
-#[derive(Clone)]
-struct Rng(rand::rngs::ThreadRng);
+struct Reset;
 
-impl Rng {
-    fn new() -> Self {
-        Self(rand::thread_rng())
-    }
-}
-
-impl super::traits::Rng for Rng {
-    fn u32(&mut self) -> u32 {
-        self.0.next_u32()
+impl super::traits::Reset for Reset {
+    fn shut_down(&mut self) -> ! {
+        process::exit(ipc::EXIT_SHUT_DOWN);
     }
 
-    fn u64(&mut self) -> u64 {
-        self.0.next_u64()
+    fn reboot(&mut self) -> ! {
+        process::exit(ipc::EXIT_REBOOT);
     }
 }
 
@@ -141,24 +150,5 @@ struct ModeButton(&'static Signal<crate::mutex::MultiCore, ()>);
 impl super::traits::ModeButton for ModeButton {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
         self.0.wait()
-    }
-}
-
-struct Network;
-
-impl vertx_network::Hal for Network {
-    type Driver = TunTapDevice;
-
-    const SUPPORTS_FIELD: bool = true;
-
-    fn field(self, _ssid: Ssid, _password: Password) -> Self::Driver {
-        let interface = match env::var("VERTX_NET_INTERFACE") {
-            Ok(interface) => interface,
-            Err(env::VarError::NotPresent) => {
-                panic!("missing VERTX_NET_INTERFACE environment variable")
-            }
-            Err(_) => panic!("Failed to parse VERTX_NET_INTERFACE contents"),
-        };
-        TunTapDevice::new(&interface).unwrap()
     }
 }

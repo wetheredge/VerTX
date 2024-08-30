@@ -8,7 +8,6 @@ publish = false
 
 [features]
 log = [
-
     "embassy-net/log",
     "loog/log",
 ]
@@ -17,13 +16,17 @@ defmt = [
     "postcard/use-defmt",
 ]
 
-backpack = []
+backpack = [
+    "dep:embedded-hal",
+    "dep:embedded-hal-async",
+]
 backpack-boot-mode = ["backpack"]
 
 network-native = [
     "dep:vertx-server",
 ]
 network-backpack = [
+    "backpack",
     "dep:embedded-io-async",
     "dep:vertx-backpack-ipc",
 ]
@@ -78,13 +81,16 @@ chip-rp2040 = [
 
 simulator = [
     "log",
-    "network-native",
-    "dep:embassy-net-tuntap",
+    "network-backpack",
     "dep:env_logger",
+    "dep:tokio",
     "dep:vertx-simulator-ipc",
     "embassy-executor/arch-std",
     "embassy-executor/executor-thread",
     "embassy-time/std",
+    "embedded-io-async/std",
+    "rand/std",
+    "rand/std_rng",
     "vertx-server/std",
 ]
 
@@ -109,6 +115,8 @@ vertx-config = { workspace = true, features = ["heapless"] }
 vertx-network = { workspace = true }
 
 # backpack
+embedded-hal = { version = "=1.0.0", optional = true }
+embedded-hal-async = { version = "=1.0.0", optional = true }
 embedded-io-async = { version = "=0.6.1", optional = true }
 vertx-backpack-ipc = { workspace = true, optional = true }
 
@@ -135,8 +143,8 @@ panic-probe = { version = "=0.3.2", optional = true }
 pio = { version = "=0.2.1", optional = true }
 
 # simulator
-embassy-net-tuntap = { version = "=0.1.0", optional = true }
 env_logger = { version = "=0.11.5", optional = true }
+tokio = { workspace = true, optional = true }
 vertx-simulator-ipc = { workspace = true, optional = true }
 
 [build-dependencies]

@@ -93,12 +93,16 @@ async fn main(spawner: Spawner) {
     static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
     static INIT_ACKED: AtomicBool = AtomicBool::new(false);
 
+    #[cfg(feature = "chip-esp32s3")]
+    let ack = io.pins.gpio6;
+    let ack = gpio::AnyOutput::new(ack, gpio::Level::Low);
     spawner.must_spawn(ipc::rx(
         rx,
         &BOOT_MODE,
         &INIT_ACKED,
         start_network,
         api_responses.sender(),
+        ack,
     ));
 
     loop {

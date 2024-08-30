@@ -3,7 +3,7 @@ use core::future;
 use embassy_executor::{task, Spawner};
 use embassy_sync::signal::Signal;
 
-#[cfg(feature = "backpack-boot-mode")]
+#[cfg(feature = "backpack")]
 use crate::backpack::Backpack;
 use crate::hal::traits::Reset as _;
 
@@ -20,7 +20,7 @@ impl Manager {
         spawner: Spawner,
         hal: crate::hal::Reset,
         config: &'static crate::config::Manager,
-        #[cfg(feature = "backpack-boot-mode")] backpack: &'static Backpack,
+        #[cfg(feature = "backpack")] backpack: &'static Backpack,
     ) -> Self {
         static RESET: ResetSignal = Signal::new();
         let signal = &RESET;
@@ -29,7 +29,7 @@ impl Manager {
             hal,
             signal,
             config,
-            #[cfg(feature = "backpack-boot-mode")]
+            #[cfg(feature = "backpack")]
             backpack,
         ));
 
@@ -99,21 +99,23 @@ async fn reset(
     mut hal: crate::hal::Reset,
     reset: &'static ResetSignal,
     config: &'static crate::config::Manager,
-    #[cfg(feature = "backpack-boot-mode")] backpack: &'static Backpack,
+    #[cfg(feature = "backpack")] backpack: &'static Backpack,
 ) -> ! {
     let kind = reset.wait().await;
 
     let config_saved = config.save();
 
-    #[cfg(not(feature = "backpack-boot-mode"))]
+    #[cfg(not(feature = "backpack"))]
     config_saved.await;
-    #[cfg(feature = "backpack-boot-mode")]
+    #[cfg(feature = "backpack")]
     {
         use embassy_futures::join::join;
-        let _ = match kind {
-            Kind::Reboot => join(config_saved, backpack.reboot()).await,
-            Kind::ShutDown => join(config_saved, backpack.shut_down()).await,
-        };
+        match kind {
+            Kind::Reboot => {
+                join(config_saved, backpack.reboot()).await;
+            }
+            Kind::ShutDown => config_saved.await,
+        }
     }
 
     match kind {

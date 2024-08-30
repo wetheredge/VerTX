@@ -52,7 +52,7 @@ pub async fn main(spawner: Spawner) {
     } = hal::init(spawner);
 
     #[cfg(feature = "backpack")]
-    let backpack = make_static!(backpack::Backpack::new(spawner, backpack, &mut rng));
+    let backpack = make_static!(backpack::Backpack::new(spawner, backpack));
     #[cfg(feature = "backpack-boot-mode")]
     let boot_mode = backpack.boot_mode().await;
 
@@ -65,7 +65,7 @@ pub async fn main(spawner: Spawner) {
         spawner,
         reset,
         config_manager,
-        #[cfg(feature = "backpack-boot-mode")]
+        #[cfg(feature = "backpack")]
         backpack
     ));
 
@@ -87,9 +87,10 @@ pub async fn main(spawner: Spawner) {
             api,
             #[cfg(feature = "network-native")]
             network,
-            #[cfg(feature = "backpack-boot-mode")]
+            #[cfg(feature = "network-backpack")]
             backpack,
-        );
+        )
+        .await;
         match network_result {
             Ok(ok) => ok,
             Err(network::Error::InvalidHomeConfig) => {

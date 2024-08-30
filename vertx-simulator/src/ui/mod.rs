@@ -7,9 +7,10 @@ use gtk::gdk;
 use relm4::prelude::*;
 use relm4_icons::icon_names;
 use tokio::sync::mpsc;
-use vertx_simulator_ipc::{ToFirmware, ToManager};
+use vertx_simulator_ipc as ipc;
 
 use self::log_view::LogView;
+use crate::backpack::Backpack;
 use crate::child::Child;
 
 #[derive(Debug, Clone, Copy)]
@@ -19,12 +20,12 @@ pub(crate) enum NoMessages {}
 pub(crate) enum Message {
     BootPressed,
     ToggleConfigurator,
-
-    Ipc(ToManager),
+    Exited { restart: bool },
+    Ipc(ipc::ToManager),
 }
 
-impl From<ToManager> for Message {
-    fn from(message: ToManager) -> Self {
+impl From<ipc::ToManager> for Message {
+    fn from(message: ipc::ToManager) -> Self {
         Self::Ipc(message)
     }
 }
@@ -39,6 +40,7 @@ pub(crate) struct App {
     status_color: gdk::RGBA,
     log_tx: mpsc::UnboundedSender<String>,
     vertx: Option<Child>,
+    backpack: Backpack,
 }
 
 impl App {
@@ -46,6 +48,7 @@ impl App {
         let vertx = Child::new(
             &self.target_dir,
             self.boot_mode,
+            &mut self.backpack,
             self.log_tx.clone(),
             sender,
         );
@@ -120,6 +123,7 @@ impl SimpleComponent for App {
             log_view,
             log_tx,
             vertx: None,
+            backpack: Backpack::new(),
         };
 
         let widgets = view_output!();
@@ -131,40 +135,27 @@ impl SimpleComponent for App {
         match message {
             Message::BootPressed => {
                 // TODO: trigger VerTX power button when firmware is running
-
-                let should_boot = match self.vertx {
-                    Some(ref mut vertx) => vertx.has_exited(),
-                    None => true,
-                };
-
-                if should_boot {
-                    let vertx = Child::new(
-                        &self.target_dir,
-                        self.boot_mode,
-                        self.log_tx.clone(),
-                        sender,
-                    );
-                    self.vertx = Some(vertx.unwrap());
-                }
+                self.start_vertx(sender);
             }
             Message::ToggleConfigurator => {
                 if let Some(vertx) = &mut self.vertx {
-                    vertx.send(ToFirmware::ModeButtonPressed);
+                    vertx.send(ipc::ToVertx::ModeButtonPressed);
+                }
+            }
+
+            Message::Exited { restart } => {
+                let _ = self.vertx.take();
+
+                if restart {
+                    self.start_vertx(sender);
+                } else {
+                    self.boot_mode = 0;
                 }
             }
 
             Message::Ipc(message) => match message {
-                ToManager::ChangeMode(mode) => self.boot_mode = mode,
-                ToManager::ShutDown => {
-                    // TODO: wait for exit?
-                    let _ = self.vertx.take();
-                }
-                ToManager::Reboot => {
-                    // TODO: wait for exit?
-                    let _ = self.vertx.take();
-                    self.start_vertx(sender);
-                }
-                ToManager::StatusLed { r, g, b } => {
+                ipc::ToManager::SetBootMode(mode) => self.boot_mode = mode,
+                ipc::ToManager::StatusLed { r, g, b } => {
                     self.status_color = gdk::RGBA::new(
                         f32::from(r) / 255.,
                         f32::from(g) / 255.,

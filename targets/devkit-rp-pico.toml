@@ -9,3 +9,4 @@ switches = []
 [pins.backpack]
 tx = 0
 rx = 1
+ack = 2

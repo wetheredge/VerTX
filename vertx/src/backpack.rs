@@ -5,62 +5,48 @@ use embassy_sync::signal::Signal;
 use embedded_io_async::{Read, Write};
 use portable_atomic::{AtomicUsize, Ordering};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
-use rand::RngCore as _;
 use static_cell::make_static;
 use vertx_backpack_ipc::{ToBackpack, ToMain};
 use vertx_network::Api as _;
 
 use crate::api::Api;
-use crate::hal::traits::Backpack as _;
+use crate::hal::traits::BackpackAck as _;
 
 type TxChannel = channel::Channel<crate::mutex::SingleCore, ToBackpack, 10>;
 type TxSender = channel::Sender<'static, crate::mutex::SingleCore, ToBackpack, 10>;
 type TxReceiver = channel::Receiver<'static, crate::mutex::SingleCore, ToBackpack, 10>;
 
-#[cfg(feature = "backpack-boot-mode")]
-pub(crate) type SetBootModeAck = Signal<crate::mutex::SingleCore, ()>;
+type AckSignal = Signal<crate::mutex::SingleCore, ()>;
 
 #[cfg(feature = "network-backpack")]
 static API: OnceLock<&'static Api> = OnceLock::new();
 #[cfg(feature = "backpack-boot-mode")]
 static BOOT_MODE: OnceLock<u8> = OnceLock::new();
-static MESSAGE_ID: AtomicUsize = AtomicUsize::new(0);
+static SENT: AtomicUsize = AtomicUsize::new(0);
+static ACKED: AtomicUsize = AtomicUsize::new(0);
 
 pub(crate) struct Backpack {
     tx: TxSender,
-    #[cfg(feature = "backpack-boot-mode")]
-    set_boot_mode_ack: &'static SetBootModeAck,
+    ack: &'static AckSignal,
 }
 
 impl Backpack {
-    pub(crate) fn new(
-        spawner: Spawner,
-        backpack: crate::hal::Backpack,
-        rng: &mut crate::hal::Rng,
-    ) -> Self {
+    pub(crate) fn new(spawner: Spawner, backpack: crate::hal::Backpack) -> Self {
         let channel = make_static!(TxChannel::new());
-        #[cfg(feature = "backpack-boot-mode")]
-        let set_boot_mode_ack = make_static!(Signal::new());
+        let ack_signal = make_static!(AckSignal::new());
 
-        #[cfg(target_pointer_width = "32")]
-        let first_id = rng.next_u32();
-        #[cfg(target_pointer_width = "64")]
-        let first_id = rng.next_u64();
-        MESSAGE_ID.store(first_id as usize, Ordering::Relaxed);
-
-        let backpack = backpack.split();
-        spawner.must_spawn(tx(backpack.0, channel.receiver()));
-        spawner.must_spawn(rx(
-            backpack.1,
+        spawner.must_spawn(tx_handler(backpack.tx, channel.receiver()));
+        spawner.must_spawn(rx_handler(
+            spawner,
+            backpack.rx,
             channel.sender(),
-            #[cfg(feature = "backpack-boot-mode")]
-            set_boot_mode_ack,
+            backpack.ack,
+            ack_signal,
         ));
 
         Self {
             tx: channel.sender(),
-            #[cfg(feature = "backpack-boot-mode")]
-            set_boot_mode_ack,
+            ack: ack_signal,
         }
     }
 
@@ -71,31 +57,32 @@ impl Backpack {
 
     #[cfg(feature = "backpack-boot-mode")]
     pub(crate) async fn set_boot_mode(&self, mode: u8) {
-        self.set_boot_mode_ack.reset();
-        self.tx.send(ToBackpack::SetBootMode(mode)).await;
-        self.set_boot_mode_ack.wait().await;
+        self.send(ToBackpack::SetBootMode(mode)).await;
     }
 
     pub(crate) async fn reboot(&self) {
-        todo!()
-    }
-
-    pub(crate) async fn shut_down(&self) {
-        todo!()
+        self.send(ToBackpack::Reboot).await;
     }
 
     #[cfg(feature = "network-backpack")]
-    pub(crate) fn start_network(&self, config: vertx_network::Config, api: &'static Api) {
+    pub(crate) async fn start_network(&self, config: vertx_network::Config, api: &'static Api) {
         API.init(api).map_err(|_| ()).unwrap();
-        self.tx.try_send(ToBackpack::StartNetwork(config)).unwrap();
+        self.send(ToBackpack::StartNetwork(config)).await;
+    }
+
+    async fn send(&self, message: ToBackpack) {
+        let id = SENT.fetch_add(1, Ordering::Relaxed);
+        loog::info!("backpack tx: {message:?}");
+        self.tx.send(message).await;
+
+        while ACKED.load(Ordering::Relaxed) < id {
+            self.ack.wait().await;
+        }
     }
 }
 
 #[task]
-async fn tx(
-    mut tx: <crate::hal::Backpack as crate::hal::traits::Backpack>::Tx,
-    messages: TxReceiver,
-) -> ! {
+async fn tx_handler(mut tx: crate::hal::BackpackTx, messages: TxReceiver) -> ! {
     let mut buffer = [0; 256];
 
     loop {
@@ -118,11 +105,14 @@ async fn tx(
 }
 
 #[task]
-async fn rx(
-    mut rx: <crate::hal::Backpack as crate::hal::traits::Backpack>::Rx,
+async fn rx_handler(
+    spawner: Spawner,
+    mut rx: crate::hal::BackpackRx,
     tx: TxSender,
-    #[cfg(feature = "backpack-boot-mode")] set_boot_mode_ack: &'static SetBootModeAck,
+    ack: crate::hal::BackpackAck,
+    ack_signal: &'static AckSignal,
 ) {
+    let mut spawn_ack_handler = Some(|| spawner.must_spawn(ack_handler(ack, ack_signal)));
     let mut api_buffer = Api::buffer();
 
     let mut ever_success = false;
@@ -152,16 +142,11 @@ async fn rx(
                     match data {
                         #[allow(unused)]
                         ToMain::Init { boot_mode } => {
+                            spawn_ack_handler.take().unwrap()();
+
                             #[cfg(feature = "backpack-boot-mode")]
                             BOOT_MODE.init(boot_mode).unwrap();
                             tx.send(ToBackpack::InitAck).await;
-                        }
-
-                        #[cfg(feature = "backpack-boot-mode")]
-                        ToMain::SetBootModeAck => set_boot_mode_ack.signal(()),
-                        #[cfg(not(feature = "backpack-boot-mode"))]
-                        ToMain::SetBootModeAck => {
-                            loog::error!("Ignoring SetBootModeAck message from backpack")
                         }
 
                         #[cfg(feature = "network-backpack")]
@@ -192,5 +177,14 @@ async fn rx(
                 }
             }
         }
+    }
+}
+
+#[task]
+async fn ack_handler(mut ack: crate::hal::BackpackAck, signal: &'static AckSignal) -> ! {
+    loop {
+        ack.wait().await;
+        ACKED.add(1, Ordering::Relaxed);
+        signal.signal(());
     }
 }

@@ -51,7 +51,7 @@ pub enum Error {
 
 const STATIC_ADDRESS: [u8; 4] = [10, 0, 0, 1];
 
-pub fn run(
+pub async fn run(
     spawner: Spawner,
     is_home: bool,
     config: &'static crate::Config,
@@ -93,7 +93,7 @@ pub fn run(
     let _ = (spawner, rng);
 
     #[cfg(feature = "network-backpack")]
-    backpack.start_network(server_config, api);
+    backpack.start_network(server_config, api).await;
 
     Ok(())
 }
