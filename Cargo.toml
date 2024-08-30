@@ -21,27 +21,27 @@ edition = "2021"
 license = "MPL-2.0"
 
 [workspace.dependencies]
-embassy-executor = "0.5.0"
+embassy-executor = "=0.5.0"
 embassy-futures = "=0.1.1"
-embassy-net = "0.4.0"
+embassy-net = "=0.4.0"
 embassy-sync = "=0.6.0"
 embassy-time = "=0.3.2"
-embedded-io = "0.6.1"
+embedded-io = "=0.6.1"
 esp-alloc = "=0.4.0"
 esp-backtrace = "=0.13.0"
 esp-hal = "=0.19.0"
 esp-hal-embassy = { version = "=0.2.0", default-features = false }
 esp-hal-smartled = "=0.12.0"
 esp-println = { version = "=0.10.0", default-features = false }
-heapless = "0.8.0"
+heapless = "=0.8.0"
 log = "=0.4.22"
 loog.path = "../loog/loog"
 picoserve = "=0.12.0"
 portable-atomic = "=1.7.0"
-postcard = { version = "1.0.8", default-features = false }
-quote = "1.0.36"
+postcard = { version = "=1.0.8", default-features = false }
+quote = "=1.0.36"
 serde = { version = "=1.0.204", default-features = false }
-static_cell = "2.1.0"
+static_cell = "=2.1.0"
 tokio = "=1.39.2"
 vertx-backpack-ipc.path = "vertx-backpack-ipc"
 vertx-config.path = "vertx-config"
@@ -51,7 +51,7 @@ vertx-server.path = "vertx-server"
 vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
 [workspace.metadata.bin]
-cargo-machete = { version = "0.6.2", locked = true }
+cargo-machete = { version = "=0.6.2", locked = true }
 cargo-nextest = { version = "=0.9.72", locked = true }
 dprint = { version = "=0.47.2", locked = true }
 espflash = { version = "=3.1.0", locked = true }
