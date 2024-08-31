@@ -1,5 +1,11 @@
+mod network;
+
+use std::sync::Arc;
+
 use postcard::accumulator::{CobsAccumulator, FeedResult};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Mutex};
+use tokio::task::AbortHandle;
+use tokio_util::sync::CancellationToken;
 use vertx_backpack_ipc::{ToBackpack, ToMain};
 use vertx_simulator_ipc as ipc;
 
@@ -7,7 +13,7 @@ type Tx = mpsc::UnboundedSender<ipc::Message<'static, ipc::ToVertx>>;
 
 #[derive(Debug)]
 pub(crate) struct Backpack {
-    rx_abort: Option<tokio::task::AbortHandle>,
+    rx_abort: Option<AbortHandle>,
 }
 
 impl Backpack {
@@ -31,8 +37,22 @@ impl Backpack {
     }
 }
 
+impl Drop for Backpack {
+    fn drop(&mut self) {
+        if let Some(rx) = &self.rx_abort {
+            rx.abort();
+        }
+    }
+}
+
 async fn handle_rx(mut tx: Tx, mut rx: mpsc::UnboundedReceiver<Vec<u8>>) {
     let tx = &mut tx;
+    let (ws_tx, ws_rx) = mpsc::unbounded_channel();
+    let ws_rx = Arc::new(Mutex::new(ws_rx));
+
+    let cancel = CancellationToken::new();
+    let _guard = cancel.clone().drop_guard();
+    let mut cancel = Some(cancel);
 
     let mut accumulator = CobsAccumulator::<256>::new();
     while let Some(buffer) = rx.recv().await {
@@ -50,17 +70,19 @@ async fn handle_rx(mut tx: Tx, mut rx: mpsc::UnboundedReceiver<Vec<u8>>) {
                         ToBackpack::SetBootMode(_) => {
                             unimplemented!("simulator backpack does not handle boot mode")
                         }
-                        ToBackpack::StartNetwork(config) => {
-                            dbg!(config);
-                            todo!("start network")
+                        ToBackpack::StartNetwork(_) => {
+                            if let Some(cancel) = cancel.take() {
+                                tokio::spawn(network::start(
+                                    cancel,
+                                    tx.clone(),
+                                    Arc::clone(&ws_rx),
+                                ));
+                            } else {
+                                eprintln!("Ignoring duplicate StartNetwork");
+                            }
                         }
-                        ToBackpack::ApiResponse(response) => {
-                            dbg!(response);
-                            todo!("respond")
-                        }
-                        ToBackpack::Reboot => {
-                            todo!("reboot backpack")
-                        }
+                        ToBackpack::ApiResponse(response) => ws_tx.send(response).unwrap(),
+                        ToBackpack::Reboot => todo!("reboot backpack"),
                     }
 
                     remaining

@@ -72,7 +72,6 @@ impl Backpack {
 
     async fn send(&self, message: ToBackpack) {
         let id = SENT.fetch_add(1, Ordering::Relaxed);
-        loog::info!("backpack tx: {message:?}");
         self.tx.send(message).await;
 
         while ACKED.load(Ordering::Relaxed) < id {

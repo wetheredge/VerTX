@@ -25,4 +25,7 @@ export default defineConfig({
 			plugins: [autoprefixer({})],
 		},
 	},
+	server: {
+		strictPort: true,
+	},
 });

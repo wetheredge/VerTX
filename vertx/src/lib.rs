@@ -74,12 +74,12 @@ pub async fn main(spawner: Spawner) {
 
     if boot_mode.configurator_enabled() {
         loog::info!("Configurator enabled");
-        mode.publish(crate::Mode::PreConfigurator);
+        mode.publish(Mode::PreConfigurator);
 
         let is_home = boot_mode == BootMode::ConfiguratorHome;
 
         let api = make_static!(api::Api::new(spawner, reset, config_manager));
-        let network_result = network::run(
+        let network = network::run(
             spawner,
             is_home,
             config,
@@ -89,17 +89,16 @@ pub async fn main(spawner: Spawner) {
             network,
             #[cfg(feature = "network-backpack")]
             backpack,
-        )
-        .await;
-        match network_result {
-            Ok(ok) => ok,
+        );
+        match network.await {
+            Ok(()) => mode.publish(Mode::Configurator),
             Err(network::Error::InvalidHomeConfig) => {
                 reset.reboot_into(BootMode::ConfiguratorField).await;
             }
         }
     } else {
         loog::info!("Configurator disabled");
-        mode.publish(crate::Mode::Ok);
+        mode.publish(Mode::Ok);
     }
 }
 
