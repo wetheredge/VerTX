@@ -3396,11 +3396,9 @@ dependencies = [
  "bytemuck",
  "cargo_toml",
  "cortex-m-rt",
- "critical-section",
  "defmt-rtt",
  "embassy-executor",
  "embassy-futures",
- "embassy-net",
  "embassy-rp",
  "embassy-sync 0.6.0",
  "embassy-time",
@@ -3428,7 +3426,6 @@ dependencies = [
  "serde",
  "smart-leds",
  "static_cell",
- "tokio",
  "vertx-backpack-ipc",
  "vertx-config",
  "vertx-network",
@@ -3463,7 +3460,6 @@ dependencies = [
 name = "vertx-backpack-ipc"
 version = "0.0.0"
 dependencies = [
- "postcard",
  "serde",
  "vertx-network",
 ]
@@ -3515,12 +3511,10 @@ name = "vertx-network-esp"
 version = "0.0.0"
 dependencies = [
  "embassy-executor",
- "embassy-futures",
  "embassy-net",
  "embassy-time",
  "esp-hal",
  "esp-wifi",
- "heapless",
  "log",
  "vertx-network",
 ]

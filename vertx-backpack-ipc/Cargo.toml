@@ -6,7 +6,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-postcard = { workspace = true }
 serde = { workspace = true, features = ["alloc", "derive"] }
 vertx-network = { workspace = true, features = ["serde"] }
 

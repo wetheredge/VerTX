@@ -8,7 +8,6 @@ publish = false
 
 [features]
 log = [
-    "embassy-net/log",
     "loog/log",
 ]
 defmt = [
@@ -83,7 +82,6 @@ simulator = [
     "log",
     "network-backpack",
     "dep:env_logger",
-    "dep:tokio",
     "dep:vertx-simulator-ipc",
     "embassy-executor/arch-std",
     "embassy-executor/executor-thread",
@@ -96,10 +94,8 @@ simulator = [
 
 [dependencies]
 bytemuck = { version = "=1.16.3", features = ["min_const_generics"] }
-critical-section = "=1.1.2"
 embassy-executor = { workspace = true, features = ["nightly"] }
 embassy-futures = { workspace = true }
-embassy-net = { workspace = true, features = ["dhcpv4", "tcp", "udp", "dhcpv4-hostname"] }
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
 esp-alloc = { workspace = true }
@@ -144,7 +140,6 @@ pio = { version = "=0.2.1", optional = true }
 
 # simulator
 env_logger = { version = "=0.11.5", optional = true }
-tokio = { workspace = true, optional = true }
 vertx-simulator-ipc = { workspace = true, optional = true }
 
 [build-dependencies]
@@ -163,3 +158,12 @@ required-features = ["simulator"]
 
 [lints]
 workspace = true
+
+[package.metadata.cargo-machete]
+ignored = [
+    "cortex-m-rt", # used by #[embassy-rp::main]
+    "defmt-rtt",
+    "esp-println",
+    "esp-backtrace",
+    "panic-probe",
+]

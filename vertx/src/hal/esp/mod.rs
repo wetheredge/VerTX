@@ -5,7 +5,6 @@ use alloc::vec::Vec;
 use core::future::Future;
 
 use embassy_executor::Spawner;
-use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
 use esp_hal::gpio;
 use esp_hal::peripherals::Peripherals;
@@ -17,6 +16,7 @@ use esp_hal::timer::{timg, OneShotTimer, PeriodicTimer};
 use esp_hal_smartled::SmartLedsAdapter;
 use portable_atomic::{AtomicU8, Ordering};
 use static_cell::make_static;
+use {esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;
 use crate::BootMode;

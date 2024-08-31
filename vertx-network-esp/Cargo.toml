@@ -21,12 +21,10 @@ chip-esp32s3 = [
 
 [dependencies]
 embassy-executor = { workspace = true, features = ["nightly"] }
-embassy-futures = { workspace = true }
 embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname", "udp"] }
 embassy-time = { workspace = true }
 esp-hal = { workspace = true, features = ["async"] }
 esp-wifi = { version = "=0.7.1", features = ["wifi", "embassy-net"] }
-heapless = { workspace = true }
 log = { workspace = true }
 vertx-network = { workspace = true }
 
