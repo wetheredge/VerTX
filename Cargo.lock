@@ -2091,6 +2091,7 @@ checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 [[package]]
 name = "loog"
 version = "0.1.0"
+source = "git+https://github.com/wetheredge/loog.git#e0ef5796230792bcb0e1f6e5ef1edde7d1a22403"
 dependencies = [
  "defmt",
  "log",
@@ -2100,6 +2101,7 @@ dependencies = [
 [[package]]
 name = "loog-macros"
 version = "0.1.0"
+source = "git+https://github.com/wetheredge/loog.git#e0ef5796230792bcb0e1f6e5ef1edde7d1a22403"
 dependencies = [
  "proc-macro2",
  "quote",
