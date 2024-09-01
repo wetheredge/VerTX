@@ -16,7 +16,7 @@ heapless = "0.8.0"
 picoserve = "=0.12.2"
 postcard = { version = "=1.0.10", default-features = false }
 quote = "=1.0.37"
-serde = { version = "=1.0.204", default-features = false }
+serde = { version = "=1.0.209", default-features = false }
 syn = { version = "=2.0.72", default-features = false }
 tokio = "=1.39.2"
 vertx-config.path = "vertx-config"
