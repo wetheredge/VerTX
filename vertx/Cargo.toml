@@ -65,7 +65,7 @@ esp-backtrace = { version = "=0.14.0", features = ["colors", "panic-handler", "e
 esp-hal = { version = "=0.20.1", features = ["async"], optional = true }
 esp-hal-embassy = { version = "=0.3.0", default-features = false, optional = true }
 esp-hal-smartled = { version = "=0.13.0", optional = true }
-esp-println = { version = "=0.10.0", default-features = false, features = ["log", "uart", "critical-section", "colors"], optional = true }
+esp-println = { version = "=0.11.0", default-features = false, features = ["log", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.3.0", default-features = false, features = ["low-level", "storage", "critical-section"], optional = true }
 esp-wifi = { version = "=0.7.1", features = ["wifi", "embassy-net"], optional = true }
 
