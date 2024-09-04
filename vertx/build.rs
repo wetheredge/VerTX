@@ -9,16 +9,18 @@ use serde::Deserialize;
 fn main() -> io::Result<()> {
     let out_dir = env::var("OUT_DIR").unwrap();
     let root = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let target_name = env!("VERTX_TARGET");
 
-    println!("cargo:rerun-if-env-changed=VERTX_TARGET");
+    if env::var_os("CARGO_FEATURE_SIMULATOR").is_some() {
+        build_info(&out_dir, &root, "simulator")
+    } else {
+        let target_name = env::var("VERTX_TARGET").unwrap();
+        println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
-    memory_layout(&out_dir, &root)?;
-    link_args();
-    build_info(&out_dir, &root, target_name)?;
-    pins(&out_dir, &root, target_name)?;
-
-    Ok(())
+        memory_layout(&out_dir, &root)?;
+        link_args();
+        build_info(&out_dir, &root, &target_name)?;
+        pins(&out_dir, &root, &target_name)
+    }
 }
 
 fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {

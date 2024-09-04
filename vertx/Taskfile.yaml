@@ -1,0 +1,73 @@
+version: 3
+
+includes:
+  embedded:
+    taskfile: ../.config/tasks/Taskfile.embedded.yaml
+    internal: true
+    vars:
+      chip: "{{.VERTX_CHIP}}"
+
+dotenv:
+  - ../.env.target
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list-all --sort none
+      - echo
+      - echo 'Except for tasks starting with `simulator:`, all tasks require a target. This'
+      - echo 'can be set by running `task target:set` in the root of the repo.'
+
+  check:
+    requires:
+      vars: [VERTX_TARGET, VERTX_CHIP]
+    cmds:
+      - task: embedded:cargo
+        vars:
+          command: clippy
+          args: "{{.CLI_ARGS}}"
+
+  build:
+    requires:
+      vars: [VERTX_TARGET, VERTX_CHIP]
+    cmds:
+      - task: embedded:cargo
+        vars:
+          command: build
+          args: "{{.CLI_ARGS}}"
+      - task: post-build
+        vars: { profile: debug }
+
+  build:release:
+    requires:
+      vars: [VERTX_TARGET, VERTX_CHIP]
+    cmds:
+      - task: embedded:cargo
+        vars:
+          command: build
+          args: --release {{.CLI_ARGS}}
+      - task: post-build
+        vars: { profile: release }
+
+  post-build:
+    internal: true
+    cmd: cp ../target/{{get (get .all_chip_data .VERTX_CHIP) "target"}}/{{.profile}}/vertx ../target/vertx
+    silent: true
+
+  simulator:check:
+    cmds:
+      - task: simulator:cargo
+        vars: { command: clippy }
+
+
+  simulator:build:
+    cmds:
+      - task: simulator:cargo
+        vars: { command: build }
+
+  simulator:cargo:
+    internal: true
+    cmd: cargo +{{.nightly}} {{.command}} --bin simulator -F simulator
+
+  :*: cd .. && task {{index .MATCH 0}}

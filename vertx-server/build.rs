@@ -1,3 +1,4 @@
+use std::process::Command;
 use std::{env, fs, io};
 
 use serde::Deserialize;
@@ -20,12 +21,19 @@ fn main() -> io::Result<()> {
         gzip: bool,
     }
 
-    let Ok(web) = fs::canonicalize(format!("{root}/../vertx-configurator/dist")) else {
-        panic!("vertx-configurator must be built first")
-    };
-    println!("cargo:rerun-if-changed={}", web.display());
+    let configurator = fs::canonicalize(format!("{root}/../vertx-configurator")).unwrap();
+    if env::var_os("VERTX_SERVER_SKIP_CONFIGURATOR_BUILD").is_none() {
+        let configurator_build = Command::new("task")
+            .arg("build")
+            .current_dir(&configurator)
+            .status()
+            .unwrap();
+        assert!(configurator_build.success(), "configurator failed to build");
+    }
+    let dist = configurator.join("dist");
+    println!("cargo:rerun-if-changed={}", dist.display());
 
-    let assets = fs::read_to_string(web.join("manifest.json"))?;
+    let assets = fs::read_to_string(dist.join("manifest.json"))?;
     let mut manifest: Manifest = serde_json::from_str(&assets).unwrap();
     manifest
         .assets
@@ -35,7 +43,7 @@ fn main() -> io::Result<()> {
         s.push_str("::picoserve::response::File::with_content_type_and_headers(\"");
         s.push_str(&asset.mime);
         s.push_str("\",::core::include_bytes!(\"");
-        s.push_str(&web.join(&asset.file).display().to_string());
+        s.push_str(&dist.join(&asset.file).display().to_string());
         s.push_str("\"),&[");
         if asset.gzip {
             s.push_str(r#"("Content-Encoding","gzip")"#);

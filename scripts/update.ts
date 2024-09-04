@@ -3,6 +3,7 @@
 import { chdir, exit, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
 import { $, Glob } from 'bun';
+import { getRepoRoot } from './utils';
 
 const missingTools = [
 	'asdf',
@@ -39,7 +40,7 @@ if (branchExists.exitCode === 0) {
 	panic(`Branch ${branch} already exists`);
 }
 
-const repoRoot = (await $`git rev-parse --show-toplevel`.text()).trim();
+const repoRoot = await getRepoRoot();
 chdir(repoRoot);
 await $`git switch -c updates`.quiet();
 const cargoState = await getCargoState();
@@ -434,10 +435,14 @@ async function commit(message: string) {
 async function forAllWorkflows(
 	callback: (path: string) => Promise<void> | void,
 ) {
-	const glob = new Glob('*.yaml');
-	const options = { cwd: `${repoRoot}/.github/workflows`, absolute: true };
-	for await (const path of glob.scan(options)) {
-		await callback(path);
+	for (const [dir, glob] of [
+		['workflows', '*.yaml'],
+		['actions', '*/*.yaml'],
+	]) {
+		const cwd = `${repoRoot}/.github/${dir}`;
+		for await (const path of new Glob(glob).scan({ cwd, absolute: true })) {
+			await callback(path);
+		}
 	}
 }
 

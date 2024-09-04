@@ -1,0 +1,37 @@
+version: 3
+
+includes:
+  embedded:
+    taskfile: ../.config/tasks/Taskfile.embedded.yaml
+    internal: true
+
+tasks:
+  default:
+    cmd: task --list-all --sort none
+    silent: true
+
+  check:esp32:
+    - task: check-impl
+      vars:
+        chip: esp32
+
+  check:esp32c3:
+    - task: check-impl
+      vars:
+        chip: esp32c3
+
+  check:esp32s3:
+    - task: check-impl
+      vars:
+        chip: esp32s3
+
+  check-impl:
+    internal: true
+    cmds:
+      - task: embedded:cargo
+        vars:
+          command: clippy
+          chip: "{{.chip}}"
+          args: "{{.CLI_ARGS}}"
+
+  :*: cd .. && task {{index .MATCH 0}}

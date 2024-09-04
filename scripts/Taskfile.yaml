@@ -1,0 +1,23 @@
+version: 3
+
+tasks:
+  default:
+    cmd: task --list-all --sort none
+    silent: true
+
+  check:
+    cmds:
+      - bun run biome ci .
+      - task: check:tsc
+
+  check:tsc:
+    internal: true
+    cmds:
+      - bun run tsc
+    sources:
+      - ../bun.lockb
+      - ../.config/tsconfig.*
+      - tsconfig.*
+      - '**.ts'
+
+  :*: cd .. && task {{index .MATCH 0}}

@@ -1,0 +1,29 @@
+{
+	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+	"extends": ["../.config/biome.json"],
+	"overrides": [
+		{
+			"include": ["./scripts/*.ts"],
+			"javascript": {
+				"globals": ["Bun"]
+			},
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					}
+				}
+			}
+		},
+		{
+			"include": ["./src/pages/*.tsx"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					}
+				}
+			}
+		}
+	]
+}

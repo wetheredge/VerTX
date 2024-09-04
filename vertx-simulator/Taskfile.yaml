@@ -1,0 +1,20 @@
+version: 3
+
+dotenv:
+  - ../.env
+
+tasks:
+  default:
+    cmd: task --list-all --sort none
+    silent: true
+
+  check: cargo clippy {{.CLI_ARGS}}
+  build: cargo build {{.CLI_ARGS}}
+
+  run:
+    desc: Needs configurator/run running for networking to work correctly
+    cmds:
+      - cd ../vertx && task simulator:build
+      - cargo run {{.CLI_ARGS}}
+
+  :*: cd .. && task {{index .MATCH 0}}

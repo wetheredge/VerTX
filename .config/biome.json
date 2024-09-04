@@ -1,5 +1,5 @@
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -70,50 +70,5 @@
 		"formatter": {
 			"enabled": true
 		}
-	},
-	"overrides": [
-		{
-			"include": ["./scripts/update.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noNonNullAssertion": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./scripts/set-target.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"useNamingConvention": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./scripts/*.ts", "./vertx-configurator/scripts/*.ts"],
-			"javascript": {
-				"globals": ["Bun"]
-			},
-			"linter": {
-				"rules": {
-					"correctness": {
-						"noNodejsModules": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./vertx-configurator/src/pages/*.tsx"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noDefaultExport": "off"
-					}
-				}
-			}
-		}
-	]
+	}
 }

@@ -1,0 +1,11 @@
+version: 3
+
+tasks:
+  default:
+    cmd: task --list-all --sort none
+    silent: true
+
+  check: cargo clippy {{.CLI_ARGS}}
+  test: cargo bin cargo-nextest run {{.CLI_ARGS}}
+
+  :*: cd .. && task {{index .MATCH 0}}

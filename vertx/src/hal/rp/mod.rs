@@ -87,12 +87,12 @@ impl super::traits::Reset for Reset {
 struct ConfigStorage {}
 
 impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T> {
+    fn load<T>(&self, _parse: impl FnOnce(&[u8]) -> T) -> Option<T> {
         // TODO
         None
     }
 
-    fn save(&mut self, data: &[u32]) {
+    fn save(&mut self, _data: &[u32]) {
         todo!()
     }
 }
