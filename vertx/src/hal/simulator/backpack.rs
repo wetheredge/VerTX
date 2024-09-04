@@ -52,20 +52,20 @@ impl embedded_io_async::ErrorType for Rx {
 }
 
 impl embedded_io_async::Read for Rx {
-    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        let (cached, offset) = if let Some(c) = self.buffer.take() {
+    async fn read(&mut self, output: &mut [u8]) -> Result<usize, Self::Error> {
+        let (input, offset) = if let Some(c) = self.buffer.take() {
             c
         } else {
             (self.rx.receive().await, 0)
         };
 
-        let len = buf.len().min(cached.len() - offset);
+        let len = output.len().min(input.len() - offset);
         let end = offset + len;
-        let slice = &cached[offset..end];
-        buf[..len].copy_from_slice(slice);
+        let slice = &input[offset..(offset + len)];
+        output[..len].copy_from_slice(slice);
 
-        if end < len {
-            self.buffer = Some((cached, end));
+        if end < input.len() {
+            self.buffer = Some((input, end));
         }
 
         Ok(len)
