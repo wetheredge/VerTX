@@ -17,6 +17,7 @@ const API_HOST =
 export function App(props: { children?: JSX.Element }) {
 	initApi(API_HOST);
 	request({ kind: RequestKind.BuildInfo });
+	request({ kind: RequestKind.GetConfig });
 
 	let main!: HTMLElement;
 	let container: HTMLElement | null;
