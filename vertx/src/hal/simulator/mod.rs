@@ -140,8 +140,8 @@ impl super::traits::ConfigStorage for ConfigStorage {
         }
     }
 
-    fn save(&mut self, data: &[u32]) {
-        fs::write(&self.0, bytemuck::cast_slice(data)).unwrap();
+    fn save(&mut self, data: Vec<u8>) {
+        fs::write(&self.0, data).unwrap();
     }
 }
 

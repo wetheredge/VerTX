@@ -88,7 +88,7 @@ pub(crate) mod traits {
 
     pub(crate) trait ConfigStorage {
         fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T>;
-        fn save(&mut self, data: &[u32]);
+        fn save(&mut self, data: alloc::vec::Vec<u8>);
     }
 
     pub(crate) trait ModeButton {

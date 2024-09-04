@@ -110,7 +110,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
         let length = length as usize;
 
         (length > 0).then(|| {
-            let mut config = vec![0; length.div_ceil(4)];
+            let mut config = vec![0; length];
             self.partition.read_into(1, &mut config).unwrap();
 
             let bytes: &[u8] = &bytemuck::cast_slice(&config)[0..length];
@@ -118,8 +118,20 @@ impl super::traits::ConfigStorage for ConfigStorage {
         })
     }
 
-    fn save(&mut self, data: &[u32]) {
-        self.partition.erase_and_write(0, data).unwrap();
+    fn save(&mut self, mut data: Vec<u8>) {
+        // Round up to the nearest u32
+        data.resize(((data.len() + 3) / 4) * 4, 0);
+
+        let words = bytemuck::cast_slice(&data);
+
+        let words_len = words.len() as u32;
+        let sectors = (words_len + 1) / (flash::SECTOR_BYTES / 4);
+        for i in 0..sectors {
+            self.partition.erase_sector(i).unwrap();
+        }
+
+        self.partition.write(0, &[words_len]).unwrap();
+        self.partition.write(1, words).unwrap();
     }
 }
 

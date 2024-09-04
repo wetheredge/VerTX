@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
+pub(super) const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
 const PARTITION_TABLE_ADDRESS: u32 = 0x8000;
 const PARTITION_TABLE_SIZE: usize = 0xC00;
 
@@ -141,14 +141,12 @@ impl Partition {
         }
     }
 
-    #[allow(unused)]
     pub(super) fn erase_sector(&mut self, sector: u32) -> Result<(), i32> {
         assert!(sector < self.sectors());
         // SAFETY: `assert!` prevents overflowing flash
         unsafe { esp_storage::ll::spiflash_erase_sector(sector) }
     }
 
-    #[allow(unused)]
     pub(super) fn write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;
@@ -159,6 +157,7 @@ impl Partition {
         unsafe { esp_storage::ll::spiflash_write(start, data.as_ptr(), data.len() as u32 * 4) }
     }
 
+    #[allow(unused)]
     pub(super) fn erase_and_write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;

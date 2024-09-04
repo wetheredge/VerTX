@@ -1,8 +1,6 @@
 #![allow(clippy::host_endian_bytes)]
 #![warn(clippy::big_endian_bytes, clippy::little_endian_bytes)]
 
-use alloc::vec;
-
 use embassy_sync::mutex::Mutex;
 use portable_atomic::{AtomicBool, Ordering};
 use vertx_config::update;
@@ -41,14 +39,10 @@ impl Manager {
 
         loog::info!("Writing configuration");
 
-        let encoded = vertx_config::storage::postcard::to_vec(&self.config).await;
-
-        let mut data = vec![0; 1 + encoded.len().div_ceil(4)];
-        data[0] = encoded.len() as u32;
-        bytemuck::cast_slice_mut(&mut data)[4..(4 + encoded.len())].copy_from_slice(&encoded);
+        let data = vertx_config::storage::postcard::to_vec(&self.config).await;
 
         let mut storage = self.storage.lock().await;
-        storage.save(&data);
+        storage.save(data);
     }
 
     pub fn config(&self) -> &crate::Config {

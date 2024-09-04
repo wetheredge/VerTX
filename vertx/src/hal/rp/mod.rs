@@ -1,5 +1,6 @@
 mod leds;
 
+use alloc::vec::Vec;
 use core::future::Future;
 
 use embassy_executor::Spawner;
@@ -92,7 +93,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
         None
     }
 
-    fn save(&mut self, _data: &[u32]) {
+    fn save(&mut self, _data: Vec<u8>) {
         todo!()
     }
 }
