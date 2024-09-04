@@ -48,17 +48,19 @@ const [state, setState] = createStore<State>({
 const setStatus = (status: ApiStatus) => setState('status', status);
 
 export { state as api };
-export const request = (request: Request) =>
+export const request = (request: Request) => {
+	import.meta.env.DEV && console.debug('request', request);
 	socket.send(encodeRequest(request));
+};
 
 const configUpdates = new Map<number, (result: ConfigUpdateResult) => void>();
-let updateId = Date.now() & 0xffffffff;
+let updateId = Date.now() >>> 0;
 export async function updateConfig(
 	key: string,
 	update: ConfigUpdate,
 ): Promise<ConfigUpdateResult> {
 	const id = updateId;
-	updateId = (updateId + 1) % 0x1_0000_0000;
+	updateId = (updateId + 1) >>> 0;
 
 	request({
 		kind: RequestKind.ConfigUpdate,
@@ -90,6 +92,7 @@ export function initApi(host: string) {
 		async ({ data }: MessageEvent<string | Blob>) => {
 			if (data instanceof Blob) {
 				const response = parseResponse(await data.arrayBuffer());
+				import.meta.env.DEV && console.debug('response', response);
 				if (response.kind === ResponseKind.Config) {
 					setState('config', response.payload);
 				} else if (response.kind === ResponseKind.ConfigUpdate) {

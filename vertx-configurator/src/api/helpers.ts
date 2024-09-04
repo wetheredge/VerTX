@@ -73,12 +73,12 @@ export class DataWriter {
 	}
 
 	varint(x: number) {
+		let remaining = x >>> 0;
 		let done: boolean;
 		do {
-			done = x <= 0x7f;
-			this.u8(done ? x : (x & 0x7f) | 0x80);
-			// biome-ignore lint/style/noParameterAssign:
-			x >>= 7;
+			done = remaining <= 0x7f;
+			this.u8(done ? remaining : (remaining & 0x7f) | 0x80);
+			remaining >>>= 7;
 		} while (!done);
 	}
 
