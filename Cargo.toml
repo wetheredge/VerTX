@@ -31,7 +31,7 @@ esp-alloc = "=0.4.0"
 esp-backtrace = "=0.14.1"
 esp-hal = "=0.20.1"
 esp-hal-embassy = { version = "=0.3.0", default-features = false }
-esp-hal-smartled = "=0.12.0"
+esp-hal-smartled = "=0.13.0"
 esp-println = { version = "=0.10.0", default-features = false }
 heapless = "=0.8.0"
 log = "=0.4.22"
