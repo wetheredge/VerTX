@@ -12,16 +12,23 @@ pub(crate) use self::implementation::init;
 #[cfg(not(feature = "backpack-boot-mode"))]
 pub(crate) use self::implementation::set_boot_mode;
 
+macro_rules! cfg_feature {
+    ($feat:literal; $($i:item)+) => {
+        $(#[cfg(feature = $feat)] $i)+
+    };
+}
+
 pub(crate) type Reset = impl traits::Reset;
 pub(crate) type Rng = impl rand::Rng;
 pub(crate) type LedDriver = impl traits::LedDriver<Error = impl Debug>;
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
 pub(crate) type ModeButton = impl traits::ModeButton;
 
-#[cfg(feature = "network-native")]
-pub(crate) type Network = impl vertx_network::Hal;
-#[cfg(feature = "network-native")]
-pub(crate) type NetworkDriver = <Network as vertx_network::Hal>::Driver;
+cfg_feature! {
+    "network-native";
+    pub(crate) type Network = impl vertx_network::Hal;
+    pub(crate) type NetworkDriver = <Network as vertx_network::Hal>::Driver;
+}
 
 #[cfg(feature = "network-native")]
 const _: () = {
@@ -29,12 +36,13 @@ const _: () = {
     assert!(Network::SUPPORTS_HOME || Network::SUPPORTS_FIELD);
 };
 
-#[cfg(feature = "backpack")]
-pub(crate) type BackpackTx =
-    impl embedded_io_async::Write<Error = impl loog::DebugFormat + embedded_io_async::Error>;
-#[cfg(feature = "backpack")]
-pub(crate) type BackpackRx =
-    impl embedded_io_async::Read<Error = impl loog::DebugFormat + embedded_io_async::Error>;
+cfg_feature! {
+    "backpack";
+    pub(crate) type BackpackTx =
+        impl embedded_io_async::Write<Error = impl loog::DebugFormat + embedded_io_async::Error>;
+    pub(crate) type BackpackRx =
+        impl embedded_io_async::Read<Error = impl loog::DebugFormat + embedded_io_async::Error>;
+}
 
 #[cfg(feature = "backpack")]
 pub(crate) struct Backpack {
