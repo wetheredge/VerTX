@@ -115,7 +115,7 @@ vertx-backpack-ipc = { workspace = true, optional = true }
 vertx-server = { workspace = true, optional = true }
 
 # chip-esp
-bytemuck = { version = "=1.16.3", features = ["min_const_generics"], optional = true }
+bytemuck = { version = "=1.18.0", features = ["min_const_generics"], optional = true }
 esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
 esp-hal = { workspace = true, features = ["async"], optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
