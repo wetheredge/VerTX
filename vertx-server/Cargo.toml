@@ -9,7 +9,7 @@ license.workspace = true
 std = ["picoserve/std"]
 
 [dependencies]
-edge-dhcp = "=0.2.0"
+edge-dhcp = "=0.3.0"
 embassy-futures = { workspace = true }
 embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname", "udp"] }
 embassy-time = { workspace = true }
