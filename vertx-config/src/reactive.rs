@@ -53,7 +53,7 @@ impl<T, M: RawMutex> From<T> for Reactive<T, M> {
     }
 }
 
-impl<T: ?Sized + Default, M: RawMutex, const N: usize> Default for Reactive<T, M, N> {
+impl<T: Default, M: RawMutex, const N: usize> Default for Reactive<T, M, N> {
     fn default() -> Self {
         Self {
             updated: PubSubChannel::new(),
@@ -64,7 +64,7 @@ impl<T: ?Sized + Default, M: RawMutex, const N: usize> Default for Reactive<T, M
 
 impl<T, M> Storage for Reactive<T, M>
 where
-    T: ?Sized + Storage + Clone,
+    T: Storage + Clone,
     M: RawMutex,
 {
     async fn save<S: Serializer>(&self, serializer: S) {
@@ -79,7 +79,7 @@ where
 
 impl<T, M> UpdateRef for Reactive<T, M>
 where
-    T: ?Sized + Clone + UpdateMut,
+    T: Clone + UpdateMut,
     M: RawMutex,
 {
     async fn update_ref<'a>(&self, key: &'a str, update: Update<'a>) -> update::Result {
