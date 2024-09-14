@@ -8,6 +8,8 @@ includes:
       chip: "{{.VERTX_CHIP}}"
 
 dotenv:
+  - ../.env
+  - .env
   - ../.env.target
 
 tasks:
@@ -54,6 +56,12 @@ tasks:
     internal: true
     cmd: cp ../target/{{get (get .all_chip_data .VERTX_CHIP) "target"}}/{{.profile}}/vertx ../target/vertx
     silent: true
+
+  flash:
+    - task: embedded:flash
+      vars:
+        flash: 2mb
+        bin: ../target/vertx
 
   simulator:check:
     cmds:

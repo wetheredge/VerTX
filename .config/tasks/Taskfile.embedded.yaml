@@ -14,3 +14,12 @@ tasks:
     vars:
       chip_data:
         ref: get .all_chip_data .chip
+
+  flash:
+    - task: flash:{{if hasPrefix "esp" .chip}}esp{{else}}probe-rs{{end}}
+      vars:
+        flash: { ref: .flash }
+        bin: { ref: .bin }
+  flash:esp: cargo bin espflash flash --baud 460800 --flash-size {{.flash}} --monitor {{.bin}}
+  # TODO: cargo bin
+  flash:probe-rs: probe-rs run --chip {{.chip}} {{.bin}}
