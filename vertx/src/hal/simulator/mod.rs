@@ -15,7 +15,6 @@ use vertx_simulator_ipc as ipc;
 
 pub(crate) fn init(_spawner: Spawner) -> super::Init {
     static BACKPACK_RX: Channel<crate::mutex::MultiCore, Vec<u8>, 10> = Channel::new();
-    static BACKPACK_ACK: backpack::AckSignal = backpack::AckSignal::new();
     static MODE_BUTTON: Signal<crate::mutex::MultiCore, ()> = Signal::new();
 
     thread::Builder::new()
@@ -44,7 +43,6 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
                                     BACKPACK_RX.try_send(chunk.into_owned()).unwrap();
                                 }
                                 ipc::Message::Simulator(message) => match message {
-                                    ipc::ToVertx::BackpackAck => BACKPACK_ACK.signal(()),
                                     ipc::ToVertx::ModeButtonPressed => MODE_BUTTON.signal(()),
                                 },
                             }
@@ -66,7 +64,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         led_driver: LedDriver,
         config_storage: ConfigStorage::new(),
         mode_button: ModeButton(&MODE_BUTTON),
-        backpack: backpack::new(BACKPACK_RX.receiver(), &BACKPACK_ACK),
+        backpack: backpack::new(BACKPACK_RX.receiver()),
     }
 }
 

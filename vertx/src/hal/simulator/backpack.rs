@@ -2,19 +2,16 @@ use std::convert::Infallible;
 use std::vec::Vec;
 
 use embassy_sync::channel;
-use embassy_sync::signal::Signal;
 use vertx_simulator_ipc as ipc;
 
 use crate::hal::Backpack;
 
 type RxReceiver = channel::Receiver<'static, crate::mutex::MultiCore, Vec<u8>, 10>;
-pub(super) type AckSignal = Signal<crate::mutex::MultiCore, ()>;
 
-pub(super) fn new(rx: RxReceiver, ack: &'static AckSignal) -> Backpack {
+pub(super) fn new(rx: RxReceiver) -> Backpack {
     Backpack {
         tx: Tx,
         rx: Rx::new(rx),
-        ack: Ack(ack),
     }
 }
 
@@ -69,13 +66,5 @@ impl embedded_io_async::Read for Rx {
         }
 
         Ok(len)
-    }
-}
-
-pub(super) struct Ack(&'static AckSignal);
-
-impl crate::hal::traits::BackpackAck for Ack {
-    async fn wait(&mut self) {
-        self.0.wait().await;
     }
 }

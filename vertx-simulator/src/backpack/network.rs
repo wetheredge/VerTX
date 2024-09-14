@@ -53,7 +53,7 @@ pub(super) async fn start(
     println!("Listening on http://{host}:{port}");
 
     let (host, port) = config.vite_addr();
-    println!("Connecting to http://{host}:{port}");
+    println!("Proxying http://{host}:{port}");
 
     super::send(&mut tx, ToMain::NetworkUp);
 

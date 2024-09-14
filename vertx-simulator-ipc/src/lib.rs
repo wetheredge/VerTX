@@ -14,7 +14,6 @@ pub enum Message<'a, T> {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ToVertx {
-    BackpackAck,
     ModeButtonPressed,
 }
 
