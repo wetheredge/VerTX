@@ -21,7 +21,7 @@ runs:
       run: rm rust-toolchain.toml
       shell: bash
     - if: steps.env.outputs.toolchain == 'xtensa'
-      uses: esp-rs/xtensa-toolchain@v1.5.2
+      uses: esp-rs/xtensa-toolchain@v1.5.3
       with:
         buildtargets: ${{ inputs.chip }}
         default: true
