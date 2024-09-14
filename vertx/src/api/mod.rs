@@ -53,17 +53,18 @@ impl vertx_network::Api for Api {
             }
         };
 
-        loog::debug!("Received api request: {request:?}");
+        // FIXME:
+        // loog::debug!("Received api request: {request:?}");
 
         let response = match request {
             Request::ProtocolVersion => Some(Response::PROTOCOL_VERSION),
             Request::BuildInfo => Some(include!(concat!(env!("OUT_DIR"), "/build_info.rs")).into()),
             Request::PowerOff => {
-                self.reset.shut_down().await;
+                self.reset.shut_down();
                 None
             }
             Request::Reboot => {
-                self.reset.reboot().await;
+                self.reset.reboot();
                 None
             }
             Request::ExitConfigurator => {

@@ -2,11 +2,10 @@ chip = "rp2040"
 
 [pins]
 mode = 23
-leds = 25
+leds = 3
 analog = []
 switches = []
 
 [pins.backpack]
-tx = 0
-rx = 1
-ack = 2
+tx = 4
+rx = 5

@@ -16,9 +16,10 @@ pub(crate) fn get_start(
     rng: Rng,
     network: vertx_network_esp::Hal,
     api: &'static Api,
+    ipc: &'static crate::ipc::Context,
 ) -> Start {
     move |config| {
-        spawner.must_spawn(run(spawner, config, rng, network, api));
+        spawner.must_spawn(run(spawner, config, rng, network, api, ipc));
     }
 }
 
@@ -29,11 +30,12 @@ async fn run(
     rng: Rng,
     hal: vertx_network_esp::Hal,
     api: &'static Api,
+    ipc: &'static crate::ipc::Context,
 ) {
     let seed = get_seed(rng);
 
     let resources = make_static!(vertx_server::Resources::<{ WORKERS + 2 }>::new());
-    let (context, dhcp_context) = vertx_server::init(resources, config, seed, hal).await;
+    let (context, dhcp_context, wait) = vertx_server::init(resources, config, seed, hal);
     let context = make_static!(context);
 
     spawner.must_spawn(network(context));
@@ -46,6 +48,9 @@ async fn run(
     for id in 0..WORKERS {
         spawner.must_spawn(http(id, context, router, api));
     }
+
+    wait.wait_for_network(context).await;
+    ipc.send_network_up().await;
 }
 
 #[task]
@@ -58,7 +63,7 @@ async fn dhcp(context: &'static Context, dhcp: DhcpContext) -> ! {
     vertx_server::tasks::dhcp(context, dhcp).await
 }
 
-#[task]
+#[task(pool_size = WORKERS)]
 async fn http(
     id: usize,
     context: &'static Context,

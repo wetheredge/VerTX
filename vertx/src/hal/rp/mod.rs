@@ -5,7 +5,7 @@ use core::future::Future;
 
 use embassy_executor::Spawner;
 use embassy_rp::clocks::RoscRng;
-use embassy_rp::peripherals::{PIO0, UART0};
+use embassy_rp::peripherals::{PIO0, UART1};
 use embassy_rp::pio::{self, Pio};
 use embassy_rp::uart::{self, BufferedUart};
 use embassy_rp::watchdog::Watchdog;
@@ -15,7 +15,7 @@ use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
-    UART0_IRQ => uart::BufferedInterruptHandler<UART0>;
+    UART1_IRQ => uart::BufferedInterruptHandler<UART1>;
 });
 
 pub(crate) fn init(_spawner: Spawner) -> super::Init {
@@ -44,7 +44,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         let tx_buffer = make_static!([0; 32]);
         let rx_buffer = make_static!([0; 32]);
         let uart = BufferedUart::new(
-            p.UART0,
+            p.UART1,
             Irqs,
             pins!(p, backpack.tx),
             pins!(p, backpack.rx),
@@ -54,9 +54,7 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
         );
         let (tx, rx) = uart.split();
 
-        let ack = gpio::Input::new(pins!(p, backpack.ack), gpio::Pull::Up);
-
-        super::Backpack { tx, rx, ack }
+        super::Backpack { tx, rx }
     };
 
     super::Init {
@@ -100,6 +98,6 @@ impl super::traits::ConfigStorage for ConfigStorage {
 
 impl super::traits::ModeButton for gpio::Input<'_> {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
-        self.wait_for_falling_edge()
+        self.wait_for_rising_edge()
     }
 }

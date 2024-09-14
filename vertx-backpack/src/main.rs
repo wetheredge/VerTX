@@ -11,7 +11,6 @@ mod network;
 use core::mem::MaybeUninit;
 
 use embassy_executor::Spawner;
-use embassy_time::Timer;
 use esp_backtrace as _;
 use esp_hal::clock::ClockControl;
 use esp_hal::gpio;
@@ -22,9 +21,8 @@ use esp_hal::system::SystemControl;
 use esp_hal::timer::{timg, OneShotTimer, PeriodicTimer};
 use esp_hal::uart::config::Config as UartConfig;
 use esp_hal::uart::Uart;
-use portable_atomic::{AtomicBool, AtomicU8, Ordering};
+use portable_atomic::{AtomicU8, Ordering};
 use static_cell::make_static;
-use vertx_backpack_ipc::ToMain;
 
 use self::api::Api;
 
@@ -65,17 +63,20 @@ async fn main(spawner: Spawner) {
     let timers = make_static!([OneShotTimer::new(timg0.timer0.into())]);
     esp_hal_embassy::init(&clocks, timers);
 
-    #[cfg(any(feature = "chip-esp32", feature = "chip-esp32s3"))]
-    let (tx, rx) = (io.pins.gpio4, io.pins.gpio5);
+    #[cfg(feature = "chip-esp32")]
+    let (tx, rx) = (io.pins.gpio16, io.pins.gpio17);
     #[cfg(feature = "chip-esp32c3")]
     let (tx, rx) = (io.pins.gpio21, io.pins.gpio20);
+    #[cfg(feature = "chip-esp32s3")]
+    let (tx, rx) = (io.pins.gpio4, io.pins.gpio5);
     let config = UartConfig::default().baudrate(vertx_backpack_ipc::BAUDRATE);
-    let (tx, rx) = Uart::new_async_with_config(peripherals.UART0, config, &clocks, tx, rx)
-        .unwrap()
-        .split();
+    let mut uart = Uart::new_async_with_config(peripherals.UART1, config, &clocks, tx, rx).unwrap();
 
-    let ipc_tx_channel = make_static!(ipc::TxChannel::new());
-    spawner.must_spawn(ipc::tx(tx, ipc_tx_channel.receiver()));
+    #[ram(rtc_fast, persistent)]
+    static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
+
+    let ipc = ipc::init(&mut uart, BOOT_MODE.load(Ordering::Relaxed)).await;
+    let ipc = make_static!(ipc);
 
     let network = vertx_network_esp::Hal::new(
         spawner,
@@ -86,32 +87,16 @@ async fn main(spawner: Spawner) {
         peripherals.WIFI,
     );
     let api_responses = make_static!(api::ResponseChannel::new());
-    let api = make_static!(Api::new(ipc_tx_channel.sender(), api_responses.receiver()));
-    let start_network = network::get_start(spawner, rng, network, api);
+    let api = make_static!(Api::new(ipc, api_responses.receiver()));
+    let start_network = network::get_start(spawner, rng, network, api, ipc);
 
-    #[ram(rtc_fast, persistent)]
-    static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
-    static INIT_ACKED: AtomicBool = AtomicBool::new(false);
-
-    #[cfg(feature = "chip-esp32s3")]
-    let ack = io.pins.gpio6;
-    let ack = gpio::AnyOutput::new(ack, gpio::Level::Low);
+    let (tx, rx) = uart.split();
+    spawner.must_spawn(ipc::tx(tx, ipc));
     spawner.must_spawn(ipc::rx(
         rx,
         &BOOT_MODE,
-        &INIT_ACKED,
         start_network,
         api_responses.sender(),
-        ack,
+        ipc,
     ));
-
-    loop {
-        let boot_mode = BOOT_MODE.load(Ordering::Relaxed);
-        ipc_tx_channel.send(ToMain::Init { boot_mode }).await;
-
-        Timer::after_millis(500).await;
-        if INIT_ACKED.load(Ordering::Relaxed) {
-            break;
-        }
-    }
 }

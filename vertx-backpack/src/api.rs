@@ -2,20 +2,19 @@ use alloc::vec::Vec;
 
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel;
-use vertx_backpack_ipc::ToMain;
 
 pub(crate) type ResponseChannel = channel::Channel<NoopRawMutex, Vec<u8>, 10>;
 pub(crate) type ResponseSender = channel::Sender<'static, NoopRawMutex, Vec<u8>, 10>;
 pub(crate) type ResponseReceiver = channel::Receiver<'static, NoopRawMutex, Vec<u8>, 10>;
 
 pub(crate) struct Api {
-    tx: crate::ipc::TxSender,
+    ipc: &'static crate::ipc::Context,
     rx: ResponseReceiver,
 }
 
 impl Api {
-    pub(crate) fn new(tx: crate::ipc::TxSender, rx: ResponseReceiver) -> Self {
-        Self { tx, rx }
+    pub(crate) fn new(ipc: &'static crate::ipc::Context, rx: ResponseReceiver) -> Self {
+        Self { ipc, rx }
     }
 }
 
@@ -34,7 +33,7 @@ impl vertx_network::Api for Api {
     }
 
     async fn handle<'b>(&self, request: &[u8], _buffer: &'b mut Self::Buffer) -> Option<&'b [u8]> {
-        self.tx.send(ToMain::ApiRequest(request.to_vec())).await;
+        self.ipc.send_api_request(request.to_vec()).await;
         None
     }
 }

@@ -35,14 +35,11 @@ pub(crate) type BackpackTx =
 #[cfg(feature = "backpack")]
 pub(crate) type BackpackRx =
     impl embedded_io_async::Read<Error = impl loog::DebugFormat + embedded_io_async::Error>;
-#[cfg(feature = "backpack")]
-pub(crate) type BackpackAck = impl traits::BackpackAck;
 
 #[cfg(feature = "backpack")]
 pub(crate) struct Backpack {
     pub(crate) tx: BackpackTx,
     pub(crate) rx: BackpackRx,
-    pub(crate) ack: BackpackAck,
 }
 
 pub(crate) struct Init {
@@ -93,25 +90,5 @@ pub(crate) mod traits {
 
     pub(crate) trait ModeButton {
         fn wait_for_pressed(&mut self) -> impl Future<Output = ()>;
-    }
-
-    #[cfg(feature = "backpack")]
-    pub(crate) trait BackpackAck {
-        /// Wait for backpack ack line to be pulled low.
-        async fn wait(&mut self);
-    }
-
-    #[cfg(feature = "backpack")]
-    impl<T> BackpackAck for T
-    where
-        T: embedded_hal_async::digital::Wait
-            + embedded_hal::digital::ErrorType<Error = core::convert::Infallible>,
-    {
-        async fn wait(&mut self) {
-            match self.wait_for_falling_edge().await {
-                Ok(()) => {}
-                Err(err) => match err {},
-            };
-        }
     }
 }

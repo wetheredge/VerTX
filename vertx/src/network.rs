@@ -58,7 +58,7 @@ pub async fn run(
     rng: &mut crate::hal::Rng,
     api: &'static crate::api::Api,
     #[cfg(feature = "network-native")] network: crate::hal::Network,
-    #[cfg(feature = "network-backpack")] backpack: &crate::backpack::Backpack,
+    #[cfg(feature = "network-backpack")] backpack: crate::backpack::Backpack,
 ) -> Result<(), Error> {
     let config = config.network.boot();
 
@@ -82,13 +82,14 @@ pub async fn run(
     };
 
     #[cfg(feature = "network-native")]
-    spawner.must_spawn(native::run(
+    native::run(
         spawner,
         server_config,
         rand::RngCore::next_u64(rng),
         network,
         api,
-    ));
+    )
+    .await;
     #[cfg(not(feature = "network-native"))]
     let _ = (spawner, rng);
 
@@ -111,7 +112,6 @@ mod native {
     vertx_server::get_router!(get_router -> Router<Api>);
     type Context = vertx_server::Context<crate::hal::NetworkDriver>;
 
-    #[task]
     pub(super) async fn run(
         spawner: Spawner,
         config: vertx_network::Config,
@@ -120,7 +120,7 @@ mod native {
         api: &'static Api,
     ) {
         let resources = make_static!(vertx_server::Resources::<{ WORKERS + 2 }>::new());
-        let (context, dhcp_context) = vertx_server::init(resources, config, seed, hal).await;
+        let (context, dhcp_context, wait) = vertx_server::init(resources, config, seed, hal);
         let context = make_static!(context);
 
         spawner.must_spawn(network(context));
@@ -133,6 +133,8 @@ mod native {
         for id in 0..WORKERS {
             spawner.must_spawn(http(id, context, router, api));
         }
+
+        wait.wait_for_network(context).await;
     }
 
     #[task]
@@ -145,7 +147,7 @@ mod native {
         vertx_server::tasks::dhcp(context, dhcp).await
     }
 
-    #[task]
+    #[task(pool_size = WORKERS)]
     async fn http(
         id: usize,
         context: &'static Context,

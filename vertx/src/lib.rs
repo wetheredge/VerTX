@@ -52,9 +52,14 @@ pub async fn main(spawner: Spawner) {
     } = hal::init(spawner);
 
     #[cfg(feature = "backpack")]
-    let backpack = make_static!(backpack::Backpack::new(spawner, backpack));
+    let backpack = backpack::Backpack::new(spawner, backpack);
     #[cfg(feature = "backpack-boot-mode")]
-    let boot_mode = backpack.boot_mode().await;
+    let boot_mode = {
+        loog::debug!("Waiting on boot mode from backpack…");
+        let mode = backpack.boot_mode().await;
+        loog::debug!("Received boot mode");
+        mode
+    };
 
     let mode = make_static!(mode::Channel::new());
 
@@ -66,7 +71,7 @@ pub async fn main(spawner: Spawner) {
         reset,
         config_manager,
         #[cfg(feature = "backpack")]
-        backpack
+        backpack.clone(),
     ));
 
     spawner.must_spawn(change_mode(boot_mode, reset, mode_button));

@@ -7,25 +7,22 @@ use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
 pub const BAUDRATE: u32 = 115_200;
+pub const INIT: [u8; 6] = *b"VerTX\0";
 
 #[derive(Debug, Serialize, Deserialize)]
+#[repr(u8)]
 pub enum ToBackpack {
-    InitAck,
-    SetBootMode(u8),
+    SetBootMode(u8) = 1,
     StartNetwork(vertx_network::Config),
     ApiResponse(Vec<u8>),
+    ShutDown,
     Reboot,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum NetworkKind {
-    Home,
-    Field,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
+#[repr(u8)]
 pub enum ToMain {
-    Init { boot_mode: u8 },
-    NetworkUp,
+    NetworkUp = 1,
     ApiRequest(Vec<u8>),
+    PowerAck,
 }

@@ -1,5 +1,3 @@
-use core::future;
-
 use embassy_executor::{task, Spawner};
 use embassy_sync::signal::Signal;
 
@@ -12,7 +10,7 @@ type ResetSignal = Signal<crate::mutex::MultiCore, Kind>;
 pub(crate) struct Manager {
     reset: &'static ResetSignal,
     #[cfg(feature = "backpack-boot-mode")]
-    backpack: &'static Backpack,
+    backpack: Backpack,
 }
 
 impl Manager {
@@ -20,7 +18,7 @@ impl Manager {
         spawner: Spawner,
         hal: crate::hal::Reset,
         config: &'static crate::config::Manager,
-        #[cfg(feature = "backpack")] backpack: &'static Backpack,
+        #[cfg(feature = "backpack")] backpack: Backpack,
     ) -> Self {
         static RESET: ResetSignal = Signal::new();
         let signal = &RESET;
@@ -30,7 +28,7 @@ impl Manager {
             signal,
             config,
             #[cfg(feature = "backpack")]
-            backpack,
+            backpack.clone(),
         ));
 
         Self {
@@ -40,23 +38,21 @@ impl Manager {
         }
     }
 
-    pub(crate) async fn reboot_into(&self, mode: BootMode) -> ! {
+    pub(crate) async fn reboot_into(&self, mode: BootMode) {
         let mode = mode as u8;
         #[cfg(feature = "backpack-boot-mode")]
         self.backpack.set_boot_mode(mode).await;
         #[cfg(not(feature = "backpack-boot-mode"))]
         crate::hal::set_boot_mode(mode);
-        self.reboot().await
+        self.reboot();
     }
 
-    pub(crate) async fn reboot(&self) -> ! {
+    pub(crate) fn reboot(&self) {
         self.reset.signal(Kind::Reboot);
-        future::pending().await
     }
 
-    pub(crate) async fn shut_down(&self) -> ! {
+    pub(crate) fn shut_down(&self) {
         self.reset.signal(Kind::ShutDown);
-        future::pending().await
     }
 }
 
@@ -99,7 +95,7 @@ async fn reset(
     mut hal: crate::hal::Reset,
     reset: &'static ResetSignal,
     config: &'static crate::config::Manager,
-    #[cfg(feature = "backpack")] backpack: &'static Backpack,
+    #[cfg(feature = "backpack")] backpack: Backpack,
 ) -> ! {
     let kind = reset.wait().await;
 
@@ -111,11 +107,9 @@ async fn reset(
     {
         use embassy_futures::join::join;
         match kind {
-            Kind::Reboot => {
-                join(config_saved, backpack.reboot()).await;
-            }
-            Kind::ShutDown => config_saved.await,
-        }
+            Kind::Reboot => join(config_saved, backpack.reboot()).await,
+            Kind::ShutDown => join(config_saved, backpack.shut_down()).await,
+        };
     }
 
     match kind {

@@ -1,52 +1,50 @@
 use embassy_executor::{task, Spawner};
+use embassy_futures::select;
 use embassy_sync::channel;
 use embassy_sync::once_lock::OnceLock;
 use embassy_sync::signal::Signal;
+use embassy_time::{Duration, Ticker};
 use embedded_io_async::{Read, Write};
-use portable_atomic::{AtomicUsize, Ordering};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use static_cell::make_static;
-use vertx_backpack_ipc::{ToBackpack, ToMain};
+use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};
 use vertx_network::Api as _;
 
 use crate::api::Api;
-use crate::hal::traits::BackpackAck as _;
 
 type TxChannel = channel::Channel<crate::mutex::SingleCore, ToBackpack, 10>;
 type TxSender = channel::Sender<'static, crate::mutex::SingleCore, ToBackpack, 10>;
 type TxReceiver = channel::Receiver<'static, crate::mutex::SingleCore, ToBackpack, 10>;
 
-type AckSignal = Signal<crate::mutex::SingleCore, ()>;
+type NetworkUp = Signal<crate::mutex::SingleCore, ()>;
+type PowerAck = Signal<crate::mutex::SingleCore, ()>;
 
 #[cfg(feature = "network-backpack")]
 static API: OnceLock<&'static Api> = OnceLock::new();
 #[cfg(feature = "backpack-boot-mode")]
 static BOOT_MODE: OnceLock<u8> = OnceLock::new();
-static SENT: AtomicUsize = AtomicUsize::new(0);
-static ACKED: AtomicUsize = AtomicUsize::new(0);
 
+#[derive(Clone)]
 pub(crate) struct Backpack {
     tx: TxSender,
-    ack: &'static AckSignal,
+    network_up: &'static NetworkUp,
+    power_ack: &'static PowerAck,
 }
 
 impl Backpack {
     pub(crate) fn new(spawner: Spawner, backpack: crate::hal::Backpack) -> Self {
         let channel = make_static!(TxChannel::new());
-        let ack_signal = make_static!(AckSignal::new());
+        let network_up = make_static!(Signal::new());
+        let power_ack = make_static!(Signal::new());
 
-        spawner.must_spawn(tx_handler(backpack.tx, channel.receiver()));
-        spawner.must_spawn(rx_handler(
-            spawner,
-            backpack.rx,
-            channel.sender(),
-            backpack.ack,
-            ack_signal,
+        spawner.must_spawn(init_and_tx(
+            spawner, backpack, channel, network_up, power_ack,
         ));
 
         Self {
             tx: channel.sender(),
-            ack: ack_signal,
+            network_up,
+            power_ack,
         }
     }
 
@@ -57,30 +55,81 @@ impl Backpack {
 
     #[cfg(feature = "backpack-boot-mode")]
     pub(crate) async fn set_boot_mode(&self, mode: u8) {
-        self.send(ToBackpack::SetBootMode(mode)).await;
+        self.tx.send(ToBackpack::SetBootMode(mode)).await;
+    }
+
+    pub(crate) async fn shut_down(&self) {
+        self.tx.send(ToBackpack::ShutDown).await;
+        self.power_ack.wait().await;
     }
 
     pub(crate) async fn reboot(&self) {
-        self.send(ToBackpack::Reboot).await;
+        self.tx.send(ToBackpack::Reboot).await;
+        self.power_ack.wait().await;
     }
 
     #[cfg(feature = "network-backpack")]
     pub(crate) async fn start_network(&self, config: vertx_network::Config, api: &'static Api) {
         API.init(api).map_err(|_| ()).unwrap();
-        self.send(ToBackpack::StartNetwork(config)).await;
-    }
-
-    async fn send(&self, message: ToBackpack) {
-        let id = SENT.fetch_add(1, Ordering::Relaxed);
-        self.tx.send(message).await;
-
-        while ACKED.load(Ordering::Relaxed) < id {
-            self.ack.wait().await;
-        }
+        self.tx.send(ToBackpack::StartNetwork(config)).await;
+        self.network_up.wait().await;
     }
 }
 
 #[task]
+async fn init_and_tx(
+    spawner: Spawner,
+    mut backpack: crate::hal::Backpack,
+    messages: &'static TxChannel,
+    network_up: &'static NetworkUp,
+    power_ack: &'static PowerAck,
+) -> ! {
+    init(&mut backpack).await;
+
+    let crate::hal::Backpack { tx, rx } = backpack;
+    spawner.must_spawn(rx_handler(rx, messages.sender(), network_up, power_ack));
+    tx_handler(tx, messages.receiver()).await
+}
+
+async fn init(backpack: &mut crate::hal::Backpack) {
+    let mut ticker = Ticker::every(Duration::from_millis(10));
+    loop {
+        backpack.tx.write_all(&INIT).await.unwrap();
+
+        let mut init = [0; INIT.len()];
+        match select::select(ticker.next(), backpack.rx.read(&mut init)).await {
+            select::Either::First(()) => {}
+            select::Either::Second(len) => {
+                let Ok(mut len) = len else {
+                    continue;
+                };
+
+                if init[0] == INIT[0] {
+                    while len < init.len() {
+                        match backpack.rx.read(&mut init[len..]).await {
+                            Ok(new_len) => len += new_len,
+                            Err(_) => continue,
+                        }
+                    }
+
+                    // Successfully rxed repeated INIT message
+                    if init == INIT {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    let mut boot_mode = [0];
+    // This should always return a byte, so no need to use read_exact or manually
+    // retry
+    backpack.rx.read(&mut boot_mode).await.unwrap();
+    #[cfg(feature = "backpack-boot-mode")]
+    BOOT_MODE.init(boot_mode[0]).unwrap();
+    let _ = boot_mode;
+}
+
 async fn tx_handler(mut tx: crate::hal::BackpackTx, messages: TxReceiver) -> ! {
     let mut buffer = [0; 256];
 
@@ -105,13 +154,11 @@ async fn tx_handler(mut tx: crate::hal::BackpackTx, messages: TxReceiver) -> ! {
 
 #[task]
 async fn rx_handler(
-    spawner: Spawner,
     mut rx: crate::hal::BackpackRx,
     tx: TxSender,
-    ack: crate::hal::BackpackAck,
-    ack_signal: &'static AckSignal,
-) {
-    let mut spawn_ack_handler = Some(|| spawner.must_spawn(ack_handler(ack, ack_signal)));
+    network_up: &'static NetworkUp,
+    power_ack: &'static PowerAck,
+) -> ! {
     let mut api_buffer = Api::buffer();
 
     let mut ever_success = false;
@@ -139,17 +186,8 @@ async fn rx_handler(
                 FeedResult::Success { data, remaining } => {
                     ever_success = true;
                     match data {
-                        #[allow(unused)]
-                        ToMain::Init { boot_mode } => {
-                            spawn_ack_handler.take().unwrap()();
-
-                            #[cfg(feature = "backpack-boot-mode")]
-                            BOOT_MODE.init(boot_mode).unwrap();
-                            tx.send(ToBackpack::InitAck).await;
-                        }
-
                         #[cfg(feature = "network-backpack")]
-                        ToMain::NetworkUp => loog::info!("Network started"),
+                        ToMain::NetworkUp => network_up.signal(()),
                         #[cfg(not(feature = "network-backpack"))]
                         ToMain::NetworkUp => {
                             loog::error!("Ignoring NetworkUp message from backpack")
@@ -170,20 +208,13 @@ async fn rx_handler(
                         ToMain::ApiRequest(_) => {
                             loog::error!("Ignoring ApiRequest message from backpack")
                         }
+
+                        ToMain::PowerAck => power_ack.signal(()),
                     }
 
                     remaining
                 }
             }
         }
-    }
-}
-
-#[task]
-async fn ack_handler(mut ack: crate::hal::BackpackAck, signal: &'static AckSignal) -> ! {
-    loop {
-        ack.wait().await;
-        ACKED.add(1, Ordering::Relaxed);
-        signal.signal(());
     }
 }

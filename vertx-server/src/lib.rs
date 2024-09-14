@@ -5,6 +5,8 @@ extern crate alloc;
 
 mod configurator;
 
+use core::marker::PhantomData;
+
 use embassy_net::driver::Driver;
 use embassy_net::udp::{PacketMetadata, UdpSocket};
 use embassy_net::{Ipv4Address, Ipv4Cidr};
@@ -59,12 +61,34 @@ impl<const SOCKETS: usize> Default for Resources<SOCKETS> {
 #[repr(transparent)]
 pub struct Context<D: Driver>(embassy_net::Stack<D>);
 
-pub async fn init<H: vertx_network::Hal, const SOCKETS: usize>(
+pub struct Wait<H> {
+    is_home: bool,
+    _hal: PhantomData<H>,
+}
+
+impl<H: vertx_network::Hal> Wait<H> {
+    pub async fn wait_for_network(self, context: &Context<H::Driver>) {
+        let Context(stack) = context;
+
+        if self.is_home {
+            stack.wait_config_up().await;
+        } else {
+            loop {
+                if stack.is_link_up() {
+                    break;
+                }
+                Timer::after(Duration::from_millis(500)).await;
+            }
+        }
+    }
+}
+
+pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
     resources: &'static mut Resources<SOCKETS>,
     config: Config,
     seed: u64,
     hal: H,
-) -> (Context<H::Driver>, Option<tasks::DhcpContext>) {
+) -> (Context<H::Driver>, Option<tasks::DhcpContext>, Wait<H>) {
     let is_home = matches!(config, Config::Home { .. });
 
     let (driver, stack_config, dhcp_address) = match config {
@@ -103,20 +127,13 @@ pub async fn init<H: vertx_network::Hal, const SOCKETS: usize>(
     let Resources(resources) = resources;
     let stack = embassy_net::Stack::new(driver, stack_config, resources, seed);
 
-    if is_home {
-        stack.wait_config_up().await;
-    } else {
-        loop {
-            if stack.is_link_up() {
-                break;
-            }
-            Timer::after(Duration::from_millis(500)).await;
-        }
-    }
-
     let context = Context(stack);
+    let wait = Wait {
+        is_home,
+        _hal: PhantomData,
+    };
 
-    (context, dhcp_address.map(tasks::DhcpContext))
+    (context, dhcp_address.map(tasks::DhcpContext), wait)
 }
 
 pub mod tasks {
