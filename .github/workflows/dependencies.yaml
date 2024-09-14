@@ -29,6 +29,7 @@ jobs:
       - uses: asdf-vm/actions/setup@v3
       - name: Install asdf plugins
         run: |
+          asdf plugin add actionlint https://github.com/crazy-matt/asdf-actionlint
           asdf plugin add bun https://github.com/cometkim/asdf-bun
           asdf plugin add task https://github.com/particledecay/asdf-task
           asdf plugin add typos https://github.com/aschiavon91/asdf-typos
