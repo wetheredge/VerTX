@@ -11,7 +11,7 @@ postcard = { workspace = true, features = ["use-std"] }
 relm4 = { version = "=0.9.0", features = ["libadwaita", "gnome_45"] }
 relm4-icons = { version = "=0.9.0", features = ["icon-development-kit"] }
 tokio = { workspace = true, features = ["macros", "io-util", "process"] }
-tokio-tungstenite = "=0.23.1"
+tokio-tungstenite = "=0.24.0"
 tokio-util = "=0.7.11"
 vertx-backpack-ipc = { workspace = true }
 vertx-simulator-ipc = { workspace = true }
