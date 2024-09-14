@@ -141,7 +141,7 @@ vertx-simulator-ipc = { workspace = true, optional = true }
 [build-dependencies]
 basic-toml = "=0.1.9"
 cargo_toml = "=0.20.4"
-prettyplease = "=0.2.20"
+prettyplease = "=0.2.22"
 serde = { workspace = true, features = ["derive"] }
 
 [[bin]]
