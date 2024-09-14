@@ -13,7 +13,7 @@ fn main() -> io::Result<()> {
     if env::var_os("CARGO_FEATURE_SIMULATOR").is_some() {
         build_info(&out_dir, &root, "simulator")
     } else {
-        let target_name = env::var("VERTX_TARGET").unwrap();
+        let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
         println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
         memory_layout(&out_dir, &root)?;
