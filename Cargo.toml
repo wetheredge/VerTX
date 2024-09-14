@@ -52,7 +52,7 @@ vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "=0.6.2", locked = true }
-cargo-nextest = { version = "=0.9.72", locked = true }
+cargo-nextest = { version = "=0.9.78", locked = true }
 dprint = { version = "=0.47.2", locked = true }
 espflash = { version = "=3.1.0", locked = true }
 
