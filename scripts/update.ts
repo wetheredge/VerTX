@@ -100,7 +100,7 @@ async function cargoBin(state: CargoState) {
 async function dprint() {
 	const { dep } = group('dprint');
 
-	const path = '.dprint.json';
+	const path = '.config/dprint.json';
 	const pattern =
 		/https:\/\/plugins\.dprint\.dev\/(?<name>\w+)-(?<version>(?:\d+\.){2}\d+)\.wasm/;
 
