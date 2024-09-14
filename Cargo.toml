@@ -39,7 +39,7 @@ loog.git = "https://github.com/wetheredge/loog.git"
 picoserve = "=0.12.2"
 portable-atomic = "=1.7.0"
 postcard = { version = "=1.0.10", default-features = false }
-quote = "=1.0.36"
+quote = "=1.0.37"
 serde = { version = "=1.0.204", default-features = false }
 static_cell = "=2.1.0"
 tokio = "=1.39.2"
