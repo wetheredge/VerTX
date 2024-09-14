@@ -42,7 +42,7 @@ postcard = { version = "=1.0.10", default-features = false }
 quote = "=1.0.37"
 serde = { version = "=1.0.210", default-features = false }
 static_cell = "=2.1.0"
-tokio = "=1.39.2"
+tokio = "=1.40.0"
 vertx-backpack-ipc.path = "vertx-backpack-ipc"
 vertx-config.path = "vertx-config"
 vertx-network.path = "vertx-network"
