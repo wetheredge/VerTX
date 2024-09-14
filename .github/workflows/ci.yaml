@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.7
       - name: Install cargo-machete
-        uses: taiki-e/install-action@v2.42.16
+        uses: taiki-e/install-action@v2.43.6
         with:
           tool: cargo-machete@0.6.2 # dep:cargo-bin:cargo-machete
       - run: cargo machete
@@ -195,7 +195,7 @@ jobs:
       - uses: actions/checkout@v4.1.7
       - uses: Swatinem/rust-cache@v2.7.3
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2.42.16
+        uses: taiki-e/install-action@v2.43.6
         with:
           tool: nextest@0.9.72 # dep:cargo-bin:cargo-nextest
       - run: cargo nextest run
