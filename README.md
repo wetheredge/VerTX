@@ -25,8 +25,8 @@ Non-goals:
   - ExpressLRS configuration will be implemented natively
 
 [^1]: This project uses the term _handset_ to mean the hardware & software
-responsible for reading the control inputs, mixing, etc and _transmitter_
-exclusively for the ELRS transmitter module.
+    responsible for reading the control inputs, mixing, etc and _transmitter_
+    exclusively for the ELRS transmitter module.
 
 ## Development
 

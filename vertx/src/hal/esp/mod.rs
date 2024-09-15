@@ -12,10 +12,9 @@ use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::system::SystemControl;
-use esp_hal::timer::{timg, OneShotTimer, PeriodicTimer};
+use esp_hal::timer::timg;
 use esp_hal_smartled::SmartLedsAdapter;
 use portable_atomic::{AtomicU8, Ordering};
-use static_cell::make_static;
 use {esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;
@@ -29,13 +28,12 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
     let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
     let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
-    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks, None).unwrap();
+    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks).unwrap();
     let rng = Rng::new(peripherals.RNG);
-    let timg0 = timg::TimerGroup::new(peripherals.TIMG0, &clocks, None);
-    let timg1 = timg::TimerGroup::new(peripherals.TIMG1, &clocks, None);
+    let timg0 = timg::TimerGroup::new(peripherals.TIMG0, &clocks);
+    let timg1 = timg::TimerGroup::new(peripherals.TIMG1, &clocks);
 
-    let timers = make_static!([OneShotTimer::new(timg0.timer0.into())]);
-    esp_hal_embassy::init(&clocks, timers);
+    esp_hal_embassy::init(&clocks, timg0.timer0);
 
     let led_driver = SmartLedsAdapter::new(
         rmt.channel0,
@@ -64,7 +62,7 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
             spawner,
             clocks,
             rng,
-            PeriodicTimer::new(timg1.timer0.into()),
+            timg1.timer0.into(),
             peripherals.RADIO_CLK,
             peripherals.WIFI,
         ),

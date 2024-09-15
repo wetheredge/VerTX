@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(asm_experimental_arch)]
+#![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
 
 use core::mem::MaybeUninit;
@@ -9,7 +10,7 @@ use core::mem::MaybeUninit;
 use embassy_executor::main;
 use embassy_executor::Spawner;
 #[cfg(feature = "chip-esp")]
-use esp_hal::prelude::{entry, main};
+use esp_hal::prelude::main;
 
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();

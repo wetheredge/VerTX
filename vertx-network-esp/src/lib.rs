@@ -1,4 +1,5 @@
 #![no_std]
+#![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
 #![allow(missing_debug_implementations)]
 
@@ -16,7 +17,7 @@ pub struct Hal {
     spawner: Spawner,
     clocks: Clocks<'static>,
     rng: Rng,
-    timer: PeriodicTimer<ErasedTimer>,
+    timer: ErasedTimer,
     radio_clocks: peripherals::RADIO_CLK,
     wifi: peripherals::WIFI,
 }
@@ -26,7 +27,7 @@ impl Hal {
         spawner: Spawner,
         clocks: Clocks<'static>,
         rng: Rng,
-        timer: PeriodicTimer<ErasedTimer>,
+        timer: ErasedTimer,
         radio_clocks: peripherals::RADIO_CLK,
         wifi: peripherals::WIFI,
     ) -> Self {
@@ -51,7 +52,7 @@ impl vertx_network::Hal for Hal {
         let spawner = self.spawner;
         let init = esp_wifi::initialize(
             EspWifiInitFor::Wifi,
-            self.timer,
+            PeriodicTimer::new(self.timer),
             self.rng,
             self.radio_clocks,
             &self.clocks,
