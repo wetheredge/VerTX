@@ -10,7 +10,7 @@ use core::mem::MaybeUninit;
 use embassy_executor::main;
 use embassy_executor::Spawner;
 #[cfg(feature = "chip-esp")]
-use esp_hal::prelude::{entry, main};
+use esp_hal::prelude::main;
 
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
