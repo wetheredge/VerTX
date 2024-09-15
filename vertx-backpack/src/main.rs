@@ -19,7 +19,7 @@ use esp_hal::peripherals::Peripherals;
 use esp_hal::prelude::*;
 use esp_hal::rng::Rng;
 use esp_hal::system::SystemControl;
-use esp_hal::timer::{timg, OneShotTimer, PeriodicTimer};
+use esp_hal::timer::timg;
 use esp_hal::uart::config::Config as UartConfig;
 use esp_hal::uart::Uart;
 use portable_atomic::{AtomicU8, Ordering};
@@ -58,11 +58,10 @@ async fn main(spawner: Spawner) {
     let clocks = ClockControl::max(system.clock_control).freeze();
     let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
     let rng = Rng::new(peripherals.RNG);
-    let timg0 = timg::TimerGroup::new(peripherals.TIMG0, &clocks, None);
-    let timg1 = timg::TimerGroup::new(peripherals.TIMG1, &clocks, None);
+    let timg0 = timg::TimerGroup::new(peripherals.TIMG0, &clocks);
+    let timg1 = timg::TimerGroup::new(peripherals.TIMG1, &clocks);
 
-    let timers = make_static!([OneShotTimer::new(timg0.timer0.into())]);
-    esp_hal_embassy::init(&clocks, timers);
+    esp_hal_embassy::init(&clocks, timg0.timer0);
 
     #[cfg(feature = "chip-esp32")]
     let (tx, rx) = (io.pins.gpio16, io.pins.gpio17);
@@ -83,7 +82,7 @@ async fn main(spawner: Spawner) {
         spawner,
         clocks,
         rng,
-        PeriodicTimer::new(timg1.timer0.into()),
+        timg1.timer0.into(),
         peripherals.RADIO_CLK,
         peripherals.WIFI,
     );
