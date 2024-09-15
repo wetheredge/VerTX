@@ -1,8 +1,5 @@
 version: 3
 
-vars:
-  nightly: nightly-2024-06-08
-
 tasks:
   default:
     silent: true
@@ -16,7 +13,6 @@ tasks:
     desc: Setup needed after first clone and dependency updates
     cmds:
       - git config --local include.path ../.config/git/config
-      - rustup toolchain install {{.nightly}} --profile minimal --component rustfmt,clippy --target thumbv6m-none-eabi
       - cargo bin --install
       - cargo bin --sync-aliases
       - bun install
@@ -30,7 +26,7 @@ tasks:
   fmt:
     desc: Format everything
     cmds:
-      - cargo +{{.nightly}} fmt --all
+      - cargo fmt --all
       - cargo bin dprint --config .config/dprint.json fmt
       - bun run biome format --config-path=.config/biome.json --write .
 

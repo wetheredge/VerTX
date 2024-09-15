@@ -5,13 +5,8 @@ inputs:
   chip:
     description: Which chip to set up
     required: true
-  components:
-    description: Which rustup components to install
 
 outputs:
-  toolchain:
-    description: Rust toolchain name
-    value: ${{ steps.env.outputs.toolchain }}
   target:
     description: Rust target name
     value: ${{ steps.env.outputs.target }}
@@ -20,16 +15,15 @@ runs:
   using: composite
   steps:
     - id: env
-      run: jq --raw-output '.nightly as $nightly | .chips.${{ inputs.chip }} | "toolchain=\(if .toolchain == "$nightly" then $nightly else .toolchain end)\ntarget=\(.target)"' "$GITHUB_WORKSPACE/.config/toolchains.json" >> "$GITHUB_OUTPUT"
+      run: jq --raw-output '.xtensa as $xtensa | .chips.${{ inputs.chip }} | "xtensa=\($xtensa)\ntoolchain=\(.toolchain)\ntarget=\(.target)"' "$GITHUB_WORKSPACE/.config/toolchains.json" >> "$GITHUB_OUTPUT"
       shell: bash
-    - uses: esp-rs/xtensa-toolchain@v1.5.2
-      if: steps.env.outputs.toolchain == 'esp'
+    - if: steps.env.outputs.toolchain == 'xtensa'
+      run: rm rust-toolchain.toml
+      shell: bash
+    - if: steps.env.outputs.toolchain == 'xtensa'
+      uses: esp-rs/xtensa-toolchain@v1.5.2
       with:
         buildtargets: ${{ inputs.chip }}
         default: true
         ldproxy: false
-    - run: |
-        rustup toolchain install '${{ steps.env.outputs.toolchain }}' --profile minimal '${{ inputs.components && format('--component={0}', inputs.components) || '' }}'
-        rustup default '${{ steps.env.outputs.toolchain }}'
-      if: steps.env.outputs.toolchain != 'esp'
-      shell: bash
+        version: ${{ steps.env.outputs.xtensa }}

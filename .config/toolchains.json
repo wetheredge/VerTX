@@ -1,24 +1,21 @@
 {
-	"nightly": "nightly-2024-06-08",
+	"xtensa": "1.80.0.0",
 	"chips": {
 		"esp32": {
-			"toolchain": "esp",
+			"toolchain": "xtensa",
 			"target": "xtensa-esp32-none-elf"
 		},
 		"esp32c3": {
-			"toolchain": "$nightly",
 			"target": "riscv32imc-unknown-none-elf"
 		},
 		"esp32s3": {
-			"toolchain": "esp",
+			"toolchain": "xtensa",
 			"target": "xtensa-esp32s3-none-elf"
 		},
 		"rp2040": {
-			"toolchain": "$nightly",
 			"target": "thumbv6m-none-eabi"
 		},
 		"stm32f407": {
-			"toolchain": "$nightly",
 			"target": "thumbv7em-none-eabihf"
 		}
 	}

@@ -1,8 +1,8 @@
 version: 3
 
 vars:
-  nightly: nightly-2024-06-08
-  raw_chip_data: '{"esp32":{"target":"xtensa-esp32-none-elf","toolchain":"esp"},"esp32c3":{"target":"riscv32imc-unknown-none-elf","toolchain":"nightly-2024-06-08"},"esp32s3":{"target":"xtensa-esp32s3-none-elf","toolchain":"esp"},"rp2040":{"target":"thumbv6m-none-eabi","toolchain":"nightly-2024-06-08"},"stm32f407":{"target":"thumbv7em-none-eabihf","toolchain":"nightly-2024-06-08"}}'
+  xtensa_toolchain: '{{default "esp-vertx" .VERTX_ESP_TOOLCHAIN}}'
+  raw_chip_data: '{"esp32":{"toolchain":"xtensa","target":"xtensa-esp32-none-elf"},"esp32c3":{"target":"riscv32imc-unknown-none-elf"},"esp32s3":{"toolchain":"xtensa","target":"xtensa-esp32s3-none-elf"},"rp2040":{"target":"thumbv6m-none-eabi"},"stm32f407":{"target":"thumbv7em-none-eabihf"}}'
   all_chip_data:
     ref: fromJson .raw_chip_data
 
@@ -10,7 +10,7 @@ tasks:
   cargo:
     requires:
       vars: [command, chip]
-    cmd: cargo +{{.chip_data.toolchain}} {{.command}} -Zbuild-std=alloc,core --target {{.chip_data.target}} -F chip-{{.chip}} {{.args}}
+    cmd: cargo{{if eq .chip_data.toolchain "xtensa"}} +{{.xtensa_toolchain}}{{end}} {{.command}} -Zbuild-std=alloc,core --target {{.chip_data.target}} -F chip-{{.chip}} {{.args}}
     vars:
       chip_data:
         ref: get .all_chip_data .chip

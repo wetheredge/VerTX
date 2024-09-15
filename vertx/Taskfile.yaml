@@ -76,6 +76,6 @@ tasks:
 
   simulator:cargo:
     internal: true
-    cmd: cargo +{{.nightly}} {{.command}} --bin simulator -F simulator
+    cmd: cargo {{.command}} --bin simulator -F simulator
 
   :*: cd .. && task {{index .MATCH 0}}

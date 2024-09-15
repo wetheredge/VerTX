@@ -46,10 +46,11 @@ exclusively for the ELRS transmitter module.
 After installing the above list:
 
 ```shell
-# Install Rust esp toolchain
-$ espup install -t esp32s3 -v 1.79.0.0
+# If using a different name, add VERTX_ESP_TOOLCHAIN=<name> to <repo root>/.env
+$ espup install --toolchain-version 1.80.0.0 --targets esp32,esp32s3 --name esp-vertx
 
-# Install asdf plugins if necessary
+# Install asdf plugins
+$ asdf plugin add actionlint https://github.com/crazy-matt/asdf-actionlint
 $ asdf plugin add bun https://github.com/cometkim/asdf-bun
 $ asdf plugin add task https://github.com/particledecay/asdf-task
 $ asdf plugin add typos https://github.com/aschiavon91/asdf-typos
@@ -59,6 +60,8 @@ $ task setup
 
 # On Linux, remember to load the esp toolchain environment before building vertx
 $ . ~/export-esp.sh
+# Or, add it to .env
+$ sed -E 's/^export |"//g' ~/export-esp.sh >> .env
 ```
 
 #### Or, use the devcontainer
