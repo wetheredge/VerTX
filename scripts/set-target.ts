@@ -19,7 +19,11 @@ const targets = new Glob('*.toml').scanSync({ cwd: targetsDir });
 const choices = Array.from(targets)
 	.toSorted()
 	.map((path) => ({ value: path.replace(/\.\w+$/, '') }));
-const targetName = await select({ message: 'Choose a target:', choices });
+const targetName = await select({
+	message: 'Choose a target:',
+	choices,
+	default: import.meta.env.VERTX_TARGET,
+});
 const target: Target = await import(`${targetsDir}/${targetName}.toml`);
 
 const env: Record<string, string> = {
@@ -29,7 +33,11 @@ const env: Record<string, string> = {
 
 if ('backpack' in target.pins) {
 	const choices = BACKPACK_CHIPS.map((name) => ({ name, value: name }));
-	const chip = await select({ message: 'Choose a backpack chip:', choices });
+	const chip = await select({
+		message: 'Choose a backpack chip:',
+		choices,
+		default: import.meta.env.VERTX_BACKPACK_CHIP,
+	});
 	env.VERTX_BACKPACK_CHIP = chip;
 }
 

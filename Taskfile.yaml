@@ -1,5 +1,9 @@
 version: 3
 
+dotenv:
+  # Used to set defaults in set-target
+  - .env.target
+
 tasks:
   default:
     silent: true
