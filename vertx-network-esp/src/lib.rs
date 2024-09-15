@@ -1,4 +1,5 @@
 #![no_std]
+#![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
 #![allow(missing_debug_implementations)]
 

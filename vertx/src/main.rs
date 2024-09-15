@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(asm_experimental_arch)]
+#![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
 
 use core::mem::MaybeUninit;
