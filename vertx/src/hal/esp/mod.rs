@@ -117,13 +117,12 @@ impl super::traits::ConfigStorage for ConfigStorage {
     }
 
     fn save(&mut self, mut data: Vec<u8>) {
-        // Round up to the nearest u32
-        data.resize(((data.len() + 3) / 4) * 4, 0);
+        data.resize(data.len().next_multiple_of(4), 0);
 
         let words = bytemuck::cast_slice(&data);
 
         let words_len = words.len() as u32;
-        let sectors = (words_len + 1) / (flash::SECTOR_BYTES / 4);
+        let sectors = words_len.div_ceil(flash::SECTOR_BYTES / 4);
         for i in 0..sectors {
             self.partition.erase_sector(i).unwrap();
         }
