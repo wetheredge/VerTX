@@ -22,7 +22,7 @@ export type NetworkConfig<Kind extends NetworkKind> = NetworkConfigBase<Kind> &
 type AnyNetworkConfig = NetworkConfig<NetworkKind>;
 
 export const enum ToBackpackKind {
-	SetBootMode = 1,
+	SetBootMode,
 	StartNetwork,
 	ApiResponse,
 	ShutDown,
@@ -83,7 +83,7 @@ export function decode(data: DataView): ToBackpack {
 }
 
 export const enum ToMainKind {
-	NetworkUp = 1,
+	NetworkUp,
 	ApiRequest,
 	PowerAck,
 }
