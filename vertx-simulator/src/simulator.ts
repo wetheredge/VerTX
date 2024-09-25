@@ -31,7 +31,7 @@ export function getModule(): Promise<SimulatorModule> {
 export type Callbacks = {
 	setStatusLed: (color: string) => void;
 	shutDown: () => void;
-	reboot: () => void;
+	reboot: (bootMode: number) => void;
 };
 
 export class Simulator {
@@ -43,16 +43,14 @@ export class Simulator {
 
 	constructor(module: SimulatorModule, callbacks: Callbacks, bootMode = 0) {
 		if (globalName in globalThis) {
-			console.warn('Stopping existing Simulator instance');
-			// @ts-ignore
-			const old: Simulator = globalThis[globalName];
-			old.stop();
+			throw new Error('Simulator is already running');
 		}
 
 		this.backpackRx = this.backpackRx.bind(this);
 		this.loadConfig = this.loadConfig.bind(this);
 		this.saveConfig = this.saveConfig.bind(this);
 		this.setStatusLed = this.setStatusLed.bind(this);
+		this.powerOff = this.powerOff.bind(this);
 
 		this.#backpackDecode = createStreamDecoder((raw) => {
 			const message = decode(
@@ -100,20 +98,14 @@ export class Simulator {
 				throw new Error('TODO: api response');
 			case ToBackpackKind.ShutDown:
 			case ToBackpackKind.Reboot:
-				if (message.kind === ToBackpackKind.ShutDown) {
-					this.#callbacks.shutDown();
-				} else {
-					this.#callbacks.reboot();
-				}
 				this.send({ kind: ToMainKind.PowerAck });
-				this.stop();
 				break;
 		}
 	}
 
 	// Used from wasm:
 
-	backpackRx(raw: Uint8Array) {
+	private backpackRx(raw: Uint8Array) {
 		if (this.#backpackInitted) {
 			this.#backpackDecode(raw);
 		} else if (raw.byteLength === INIT.length) {
@@ -133,15 +125,26 @@ export class Simulator {
 		}
 	}
 
-	loadConfig() {
+	private loadConfig() {
 		return null;
 	}
 
-	saveConfig(config: Uint8Array) {
+	private saveConfig(config: Uint8Array) {
 		console.log('config', config);
 	}
 
-	setStatusLed(r: number, g: number, b: number) {
+	private setStatusLed(r: number, g: number, b: number) {
 		this.#callbacks.setStatusLed(`rgb(${r} ${g} ${b})`);
+	}
+
+	private powerOff(restart: boolean) {
+		this.stop();
+		setTimeout(() => {
+			if (restart) {
+				this.#callbacks.reboot(this.#bootMode);
+			} else {
+				this.#callbacks.shutDown();
+			}
+		}, 0);
 	}
 }

@@ -78,7 +78,14 @@ tasks:
 
   simulator:bindgen:
     internal: true
-    cmd: wasm-bindgen --out-dir ../target/simulator --target web ../target/wasm32-unknown-unknown/{{.profile}}/vertx.wasm
+    cmds:
+      - wasm-bindgen --out-dir ../target/simulator --target web ../target/wasm32-unknown-unknown/{{.profile}}/vertx.wasm
+      # XXX: This can be dropped when any of the following happen:
+      # - esp-wifi supports deinitialization of wifi and the reboot-to-toggle-configurator thing is removed
+      # - embassy-time can run in a Worker, allowing restarts to happen by creating a new Worker thread 
+      # - wasm-bindgen generates more usable JS bindings
+      # - even uglier hacks get written to cobble together something smarter out of what wasm-bindgen generates
+      - sed -i 's/if (wasm !== undefined) return wasm;//' ../target/simulator/vertx.js
 
   simulator:cargo:
     internal: true

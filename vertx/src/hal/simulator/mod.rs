@@ -1,6 +1,7 @@
 mod backpack;
 
 use std::future::Future;
+use std::panic;
 use std::vec::Vec;
 
 use embassy_executor::Spawner;
@@ -63,12 +64,14 @@ struct Reset;
 impl super::traits::Reset for Reset {
     fn shut_down(&mut self) -> ! {
         ipc2::power_off(false);
-        panic!("Shut down");
+        let _ = panic::take_hook();
+        panic!()
     }
 
     fn reboot(&mut self) -> ! {
         ipc2::power_off(true);
-        panic!("Reboot");
+        let _ = panic::take_hook();
+        panic!()
     }
 }
 

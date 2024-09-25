@@ -17,12 +17,10 @@ const callbacks: Callbacks = {
 		statusLed.style.color = color;
 	},
 	shutDown() {
-		console.info('shut down');
 		simulator = null;
 	},
-	reboot() {
-		console.info('reboot');
-		start();
+	reboot(bootMode) {
+		start(bootMode);
 	},
 };
 
@@ -40,7 +38,7 @@ configuratorButton.addEventListener('click', () => {
 	}
 });
 
-function start() {
-	simulator = new Simulator(module, callbacks);
+function start(bootMode?: number) {
+	simulator = new Simulator(module, callbacks, bootMode);
 	configuratorButton.disabled = false;
 }
