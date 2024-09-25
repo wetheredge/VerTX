@@ -1,0 +1,147 @@
+import { createBlockEncoder, createStreamDecoder } from 'ucobs';
+import {
+	backpackTx,
+	initSync,
+	modeButtonPressed,
+} from '../../target/simulator/vertx.js';
+import wasmUrl from '../../target/simulator/vertx_bg.wasm?url';
+import {
+	INIT,
+	type ToBackpack,
+	ToBackpackKind,
+	type ToMain,
+	ToMainKind,
+	decode,
+	encode,
+} from './backpack-ipc';
+
+const globalName = 'Vertx';
+
+declare const SimulatorModuleTag: unique symbol;
+export type SimulatorModule = {
+	[SimulatorModuleTag]: true;
+} & WebAssembly.Module;
+
+export function getModule(): Promise<SimulatorModule> {
+	return WebAssembly.compileStreaming(
+		fetch(wasmUrl),
+	) as Promise<SimulatorModule>;
+}
+
+export type Callbacks = {
+	setStatusLed: (color: string) => void;
+	shutDown: () => void;
+	reboot: () => void;
+};
+
+export class Simulator {
+	#backpackInitted = false;
+	#bootMode: number;
+	#callbacks: Callbacks;
+	#backpackDecode: (data: Uint8Array) => void;
+	#backpackEncode: (data: Uint8Array) => void;
+
+	constructor(module: SimulatorModule, callbacks: Callbacks, bootMode = 0) {
+		if (globalName in globalThis) {
+			console.warn('Stopping existing Simulator instance');
+			// @ts-ignore
+			const old: Simulator = globalThis[globalName];
+			old.stop();
+		}
+
+		this.backpackRx = this.backpackRx.bind(this);
+		this.loadConfig = this.loadConfig.bind(this);
+		this.saveConfig = this.saveConfig.bind(this);
+		this.setStatusLed = this.setStatusLed.bind(this);
+
+		this.#backpackDecode = createStreamDecoder((raw) => {
+			const message = decode(
+				new DataView(raw.buffer, raw.byteOffset, raw.byteLength),
+			);
+			this.#backpackRxMessage(message);
+		});
+		this.#backpackEncode = createBlockEncoder((chunk) => {
+			backpackTx(chunk);
+		});
+
+		// @ts-ignore
+		globalThis[globalName] = this;
+
+		initSync({ module });
+		this.#bootMode = bootMode;
+		this.#callbacks = callbacks;
+	}
+
+	send(message: ToMain) {
+		if (!this.#backpackInitted) {
+			throw new Error('Not yet initialized');
+		}
+
+		this.#backpackEncode(encode(message));
+	}
+
+	modeButtonPressed() {
+		modeButtonPressed();
+	}
+
+	stop() {
+		// @ts-ignore
+		delete globalThis[globalName];
+	}
+
+	#backpackRxMessage(message: ToBackpack) {
+		switch (message.kind) {
+			case ToBackpackKind.SetBootMode:
+				this.#bootMode = message.payload;
+				break;
+			case ToBackpackKind.StartNetwork:
+				throw new Error('TODO: start network');
+			case ToBackpackKind.ApiResponse:
+				throw new Error('TODO: api response');
+			case ToBackpackKind.ShutDown:
+			case ToBackpackKind.Reboot:
+				if (message.kind === ToBackpackKind.ShutDown) {
+					this.#callbacks.shutDown();
+				} else {
+					this.#callbacks.reboot();
+				}
+				this.send({ kind: ToMainKind.PowerAck });
+				this.stop();
+				break;
+		}
+	}
+
+	// Used from wasm:
+
+	backpackRx(raw: Uint8Array) {
+		if (this.#backpackInitted) {
+			this.#backpackDecode(raw);
+		} else if (raw.byteLength === INIT.length) {
+			for (let i = 0; i < INIT.length; i++) {
+				if (raw[i] !== INIT[i]) {
+					console.warn('Invalid backpack init message received');
+					return;
+				}
+			}
+
+			const data = new Uint8Array(INIT.length + 1);
+			data.set(INIT);
+			data[INIT.length] = this.#bootMode;
+
+			backpackTx(data);
+			this.#backpackInitted = true;
+		}
+	}
+
+	loadConfig() {
+		return null;
+	}
+
+	saveConfig(config: Uint8Array) {
+		console.log('config', config);
+	}
+
+	setStatusLed(r: number, g: number, b: number) {
+		this.#callbacks.setStatusLed(`rgb(${r} ${g} ${b})`);
+	}
+}

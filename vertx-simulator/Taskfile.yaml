@@ -1,20 +1,46 @@
 version: 3
 
-dotenv:
-  - ../.env
-
 tasks:
   default:
     cmd: task --list-all --sort none
     silent: true
 
-  check: cargo clippy {{.CLI_ARGS}}
-  build: cargo build {{.CLI_ARGS}}
+  check:
+    - bun run biome ci .
+    - task: check:tsc
+
+  check:tsc:
+    internal: true
+    cmd: bun run tsc
+    sources:
+      - ../bun.lockb
+      - ../.config/tsconfig.*
+      - src/**/*
+      - '*.config.*'
+      - tsconfig.*
+
+  build:
+    deps: [check]
+    env:
+      NODE_ENV: production
+    cmds:
+      - bun run vite build
+    sources:
+      - package.json
+      - bun.lockb
+      - index.html
+      - src/**/*
+      - '*.config.*'
+      - tsconfig.*
+    generates:
+      - dist/**/*
 
   run:
-    desc: Needs configurator/run running for networking to work correctly
-    cmds:
-      - cd ../vertx && task simulator:build
-      - cargo run {{.CLI_ARGS}}
+    desc: Run a development server
+    cmd: bun run vite
+
+  preview:
+    deps: [build]
+    cmd: bun run vite preview
 
   :*: cd .. && task {{index .MATCH 0}}

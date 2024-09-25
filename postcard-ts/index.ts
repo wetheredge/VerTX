@@ -1,10 +1,10 @@
-export class DataReader {
+export class Reader {
 	readonly #view: DataView;
 	readonly #textDecoder = new TextDecoder();
 	#index = 0;
 
-	constructor(buffer: ArrayBuffer) {
-		this.#view = new DataView(buffer);
+	constructor(data: DataView) {
+		this.#view = data;
 	}
 
 	boolean(): boolean {
@@ -48,9 +48,16 @@ export class DataReader {
 		this.#index += length;
 		return s;
 	}
+
+	byteArray(): Uint8Array {
+		const start = this.#index;
+		const length = this.varint();
+		this.#index += length;
+		return new Uint8Array(this.#view.buffer.slice(start, start + length));
+	}
 }
 
-export class DataWriter {
+export class Writer {
 	readonly #view: DataView;
 	readonly #textEncoder = new TextEncoder();
 	#index = 0;
@@ -88,5 +95,12 @@ export class DataWriter {
 		const view = new Uint8Array(this.#view.buffer);
 		view.set(encoded, this.#index);
 		this.#index += encoded.length;
+	}
+
+	byteArray(bytes: Uint8Array) {
+		this.varint(bytes.byteLength);
+		const view = new Uint8Array(this.#view.buffer);
+		view.set(bytes, this.#index);
+		this.#index += bytes.byteLength;
 	}
 }

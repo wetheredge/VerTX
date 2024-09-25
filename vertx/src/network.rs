@@ -55,8 +55,8 @@ pub async fn run(
     spawner: Spawner,
     is_home: bool,
     config: &'static crate::Config,
-    rng: &mut crate::hal::Rng,
     api: &'static crate::api::Api,
+    #[cfg(feature = "network-native")] rng: &mut crate::hal::Rng,
     #[cfg(feature = "network-native")] network: crate::hal::Network,
     #[cfg(feature = "network-backpack")] backpack: crate::backpack::Backpack,
 ) -> Result<(), Error> {
@@ -91,7 +91,7 @@ pub async fn run(
     )
     .await;
     #[cfg(not(feature = "network-native"))]
-    let _ = (spawner, rng);
+    let _ = spawner;
 
     #[cfg(feature = "network-backpack")]
     backpack.start_network(server_config, api).await;

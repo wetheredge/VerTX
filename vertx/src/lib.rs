@@ -35,12 +35,17 @@ struct Config {
     expert: Mutex<mutex::SingleCore, bool>,
 }
 
+#[cfg_attr(target_arch = "wasm32", embassy_executor::main)]
 pub async fn main(spawner: Spawner) {
+    #[cfg(target_arch = "wasm32")]
+    console_error_panic_hook::set_once();
+    #[cfg(target_arch = "wasm32")]
+    wasm_logger::init(wasm_logger::Config::new(loog::log::Level::max()));
+
     loog::info!("Starting VerTX");
 
     let hal::Init {
         reset,
-        mut rng,
         #[cfg(not(feature = "backpack-boot-mode"))]
         boot_mode,
         led_driver,
@@ -48,7 +53,9 @@ pub async fn main(spawner: Spawner) {
         mode_button,
         #[cfg(feature = "backpack")]
         backpack,
-        #[cfg(not(feature = "network-backpack"))]
+        #[cfg(feature = "network-native")]
+        mut rng,
+        #[cfg(feature = "network-native")]
         network,
     } = hal::init(spawner);
 
@@ -89,8 +96,9 @@ pub async fn main(spawner: Spawner) {
             spawner,
             is_home,
             config,
-            &mut rng,
             api,
+            #[cfg(feature = "network-native")]
+            &mut rng,
             #[cfg(feature = "network-native")]
             network,
             #[cfg(feature = "network-backpack")]

@@ -1,5 +1,5 @@
+import { Reader, Writer } from 'postcard';
 import { unreachable } from '../utils';
-import { DataReader, DataWriter } from './helpers';
 
 export const PROTOCOL: string = 'v0';
 const REQUEST_BUFFER_SIZE = 100;
@@ -47,7 +47,7 @@ export type ConfigUpdate =
 	| { kind: ConfigUpdateKind.Unsigned; update: number };
 
 export function encodeRequest(request: Request): ArrayBuffer {
-	const writer = new DataWriter(REQUEST_BUFFER_SIZE);
+	const writer = new Writer(REQUEST_BUFFER_SIZE);
 
 	writer.varint(request.kind);
 	switch (request.kind) {
@@ -177,7 +177,7 @@ export type ResponsePayload<Kind extends ResponseKind> = Extract<
 >['payload'];
 
 export function parseResponse(buffer: ArrayBuffer): Response {
-	const reader = new DataReader(buffer);
+	const reader = new Reader(new DataView(buffer));
 
 	const kind = reader.u8() as ResponseKind;
 	switch (kind) {
@@ -275,7 +275,7 @@ function invalidConfigKind(kind: never): never {
 }
 
 function parseConfig(
-	reader: DataReader,
+	reader: Reader,
 	config: Config = {},
 	root?: string,
 ): Config {

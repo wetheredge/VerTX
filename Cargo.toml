@@ -10,8 +10,6 @@ members = [
     "vertx-network",
     "vertx-network-esp",
     "vertx-server",
-    "vertx-simulator",
-    "vertx-simulator-ipc",
 ]
 
 [workspace.package]
@@ -44,7 +42,6 @@ vertx-config.path = "vertx-config"
 vertx-network.path = "vertx-network"
 vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
-vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "=0.6.2", locked = true }
@@ -75,7 +72,7 @@ unsafe-op-in-unsafe-fn = "forbid"
 
 [workspace.lints.clippy]
 alloc_instead_of_core = "warn"
-as_underscore = "forbid"
+as_underscore = "deny"
 cast_lossless = "warn"
 cloned_instead_of_copied = "warn"
 empty_drop = "warn"
