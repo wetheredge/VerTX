@@ -119,7 +119,7 @@ bytemuck = { version = "=1.18.0", features = ["min_const_generics"], optional = 
 esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
 esp-hal = { workspace = true, features = ["async"], optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
-esp-hal-smartled = { workspace = true, optional = true }
+esp-hal-smartled = { version = "=0.13.0", optional = true }
 esp-println = { workspace = true, features = ["defmt-espflash", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.3.0", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, optional = true }

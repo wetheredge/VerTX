@@ -15,7 +15,7 @@ embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname"
 embassy-time = { workspace = true }
 heapless = { workspace = true }
 log = { workspace = true }
-picoserve = { workspace = true, features = ["embassy"] }
+picoserve = { version = "=0.12.2", features = ["embassy"] }
 vertx-network = { workspace = true }
 
 [build-dependencies]
