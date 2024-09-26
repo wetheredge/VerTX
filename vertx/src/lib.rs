@@ -35,13 +35,7 @@ struct Config {
     expert: Mutex<mutex::SingleCore, bool>,
 }
 
-#[cfg_attr(target_arch = "wasm32", embassy_executor::main)]
 pub async fn main(spawner: Spawner) {
-    #[cfg(target_arch = "wasm32")]
-    console_error_panic_hook::set_once();
-    #[cfg(target_arch = "wasm32")]
-    wasm_logger::init(wasm_logger::Config::new(loog::log::Level::max()));
-
     loog::info!("Starting VerTX");
 
     let hal::Init {
@@ -141,4 +135,15 @@ async fn change_mode(
     };
 
     reset.reboot_into(mode).await;
+}
+
+#[cfg(feature = "simulator")]
+mod simulator {
+    #[embassy_executor::main]
+    async fn main(spawner: embassy_executor::Spawner) {
+        console_error_panic_hook::set_once();
+        wasm_logger::init(wasm_logger::Config::new(loog::log::Level::max()));
+
+        super::main(spawner).await;
+    }
 }
