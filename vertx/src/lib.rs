@@ -137,8 +137,12 @@ async fn change_mode(
     reset.reboot_into(mode).await;
 }
 
-#[cfg(feature = "simulator")]
+#[cfg(all(feature = "simulator", target_arch = "wasm32"))]
 mod simulator {
+    /// SAFETY: The runtime environment must be single-threaded WASM.
+    #[global_allocator]
+    static ALLOCATOR: talc::TalckWasm = unsafe { talc::TalckWasm::new_global() };
+
     #[embassy_executor::main]
     async fn main(spawner: embassy_executor::Spawner) {
         console_error_panic_hook::set_once();

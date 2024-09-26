@@ -2496,6 +2496,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "talc"
+version = "4.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04be12ec299aadd63a0bf781d893e4b6139d33cdca6dcd6f6be31f849cedcac8"
+dependencies = [
+ "lock_api",
+]
+
+[[package]]
 name = "term"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2714,6 +2723,7 @@ dependencies = [
  "serde",
  "smart-leds",
  "static_cell",
+ "talc",
  "vertx-backpack-ipc",
  "vertx-config",
  "vertx-network",
