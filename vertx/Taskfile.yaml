@@ -76,19 +76,33 @@ tasks:
       - task: simulator:bindgen
         vars: { profile: debug }
 
+  simulator:build:release:
+    cmds:
+      - task: simulator:cargo
+        vars: { command: build --release }
+      - task: simulator:bindgen
+        vars: { profile: release }
+      - task: simulator:optimize
+
   simulator:bindgen:
     internal: true
+    dir: ../target
     cmds:
-      - wasm-bindgen --out-dir ../target/simulator --target web ../target/wasm32-unknown-unknown/{{.profile}}/vertx.wasm
+      - wasm-bindgen --out-dir simulator --target web wasm32-unknown-unknown/{{.profile}}/vertx.wasm
       # XXX: This can be dropped when any of the following happen:
       # - esp-wifi supports deinitialization of wifi and the reboot-to-toggle-configurator thing is removed
       # - embassy-time can run in a Worker, allowing restarts to happen by creating a new Worker thread 
       # - wasm-bindgen generates more usable JS bindings
       # - even uglier hacks get written to cobble together something smarter out of what wasm-bindgen generates
-      - sed -i 's/if (wasm !== undefined) return wasm;//' ../target/simulator/vertx.js
+      - sed -i 's/if (wasm !== undefined) return wasm;//' simulator/vertx.js
+
+  simulator:optimize:
+    internal: true
+    dir: ../target/simulator
+    cmd: cargo bin wasm-opt -O3 --converge --const-hoisting --dae-optimizing --optimize-added-constants-propagate --optimize-instructions --reorder-functions --reorder-locals --strip-target-features --strip-producers --minify-imports-and-exports-and-modules --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
 
   simulator:cargo:
     internal: true
-    cmd: cargo {{.command}} --target wasm32-unknown-unknown --lib -F simulator
+    cmd: cargo {{.command}} --target wasm32-unknown-unknown --lib -F simulator {{.CLI_ARGS}}
 
   :*: cd .. && task {{index .MATCH 0}}
