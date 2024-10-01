@@ -4,7 +4,7 @@ use crate::storage::{self, Storage};
 use crate::update::{self, UpdateMut};
 
 macro_rules! def {
-    ($name:ident, $native:ty, $update:ident, $serialize:ident) => {
+    ($name:ident, $native:ty) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct $name<const MIN: $native, const MAX: $native> {
             inner: $native,
@@ -25,7 +25,7 @@ macro_rules! def {
 
         impl<const MIN: $native, const MAX: $native> Storage for $name<MIN, MAX> {
             async fn save<S: storage::Serializer>(&self, serializer: S) {
-                serializer.$serialize(self.inner.into());
+                serializer.integer(self.inner.into());
             }
 
             fn load(from: storage::Stored<'_>) -> Self {
@@ -45,7 +45,7 @@ macro_rules! def {
                     return Err(update::Error::KeyNotFound);
                 }
 
-                let update::Update::$update(update) = update else {
+                let update::Update::Integer(update) = update else {
                     return Err(update::Error::InvalidType);
                 };
 
@@ -64,9 +64,9 @@ macro_rules! def {
     };
 }
 
-def!(U8, u8, Unsigned, unsigned);
-def!(I8, i8, Signed, signed);
-def!(U16, u16, Unsigned, unsigned);
-def!(I16, i16, Signed, signed);
-def!(U32, u32, Unsigned, unsigned);
-def!(I32, i32, Signed, signed);
+def!(U8, u8);
+def!(I8, i8);
+def!(U16, u16);
+def!(I16, i16);
+def!(U32, u32);
+def!(I32, i32);

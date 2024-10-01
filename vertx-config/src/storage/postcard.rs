@@ -22,8 +22,7 @@ pub fn from_slice<T: Storage + Default>(data: &[u8]) -> ::postcard::Result<T> {
 enum Kind {
     Boolean,
     String,
-    Unsigned,
-    Signed,
+    Integer,
     Float,
     Struct,
 }
@@ -31,7 +30,7 @@ enum Kind {
 pub struct Postcard<'a>(&'a mut Vec<u8>);
 
 impl Postcard<'_> {
-    fn write_varuint(&mut self, mut x: usize) {
+    fn write_varuint(&mut self, mut x: u64) {
         while x > 0x7F {
             self.0.push(0x80 | (x as u8 & 0x7F));
             x >>= 7;
@@ -39,12 +38,12 @@ impl Postcard<'_> {
         self.0.push(x as u8);
     }
 
-    fn write_varint(&mut self, x: isize) {
-        self.write_varuint(((x << 1) ^ (x >> (isize::BITS - 1))) as usize);
+    fn write_varint(&mut self, x: i64) {
+        self.write_varuint(((x << 1) ^ (x >> (i64::BITS - 1))) as u64);
     }
 
     fn write_str(&mut self, s: &str) {
-        self.write_varuint(s.len());
+        self.write_varuint(s.len() as u64);
         self.0.extend_from_slice(s.as_bytes());
     }
 }
@@ -62,14 +61,9 @@ impl super::Serializer for &mut Postcard<'_> {
         self.write_str(s);
     }
 
-    fn unsigned(self, u: u32) {
-        self.0.push(Kind::Unsigned.into());
-        self.write_varuint(u as usize);
-    }
-
-    fn signed(self, i: i32) {
-        self.0.push(Kind::Signed.into());
-        self.write_varint(i as isize);
+    fn integer(self, x: i64) {
+        self.0.push(Kind::Integer.into());
+        self.write_varint(x);
     }
 
     fn float(self, f: f32) {
@@ -79,7 +73,7 @@ impl super::Serializer for &mut Postcard<'_> {
 
     fn structure(self, fields: usize) -> Self::StructSerializer {
         self.0.push(Kind::Struct.into());
-        self.write_varuint(fields);
+        self.write_varuint(fields as u64);
         self
     }
 }
@@ -160,23 +154,23 @@ mod tests {
             ("bool_true", Stored::Boolean(true)),
             ("string_empty", Stored::String("")),
             ("string", Stored::String("test")),
-            ("u8_0", Stored::Unsigned(0)),
-            ("u8_max", Stored::Unsigned(u8::MAX.into())),
-            ("i8_0", Stored::Signed(0)),
-            ("i8_neg", Stored::Signed(-3)),
-            ("i8_max", Stored::Signed(i8::MAX.into())),
-            ("u16_0", Stored::Unsigned(0)),
-            ("u16_small", Stored::Unsigned(0x101)),
-            ("u16_max", Stored::Unsigned(u16::MAX.into())),
-            ("i16_0", Stored::Signed(0)),
-            ("i16_neg", Stored::Signed(-3)),
-            ("i16_max", Stored::Signed(i16::MAX.into())),
-            ("u32_0", Stored::Unsigned(0)),
-            ("u32_small", Stored::Unsigned(0x101)),
-            ("u32_max", Stored::Unsigned(u32::MAX)),
-            ("i32_0", Stored::Signed(0)),
-            ("i32_neg", Stored::Signed(-3)),
-            ("i32_max", Stored::Signed(i32::MAX)),
+            ("u8_0", Stored::Integer(0)),
+            ("u8_max", Stored::Integer(u8::MAX.into())),
+            ("i8_0", Stored::Integer(0)),
+            ("i8_neg", Stored::Integer(-3)),
+            ("i8_max", Stored::Integer(i8::MAX.into())),
+            ("u16_0", Stored::Integer(0)),
+            ("u16_small", Stored::Integer(0x101)),
+            ("u16_max", Stored::Integer(u16::MAX.into())),
+            ("i16_0", Stored::Integer(0)),
+            ("i16_neg", Stored::Integer(-3)),
+            ("i16_max", Stored::Integer(i16::MAX.into())),
+            ("u32_0", Stored::Integer(0)),
+            ("u32_small", Stored::Integer(0x101)),
+            ("u32_max", Stored::Integer(u32::MAX.into())),
+            ("i32_0", Stored::Integer(0)),
+            ("i32_neg", Stored::Integer(-3)),
+            ("i32_max", Stored::Integer(i32::MAX.into())),
             ("f32_0", Stored::Float(0.0)),
             ("f32_neg", Stored::Float(-f32::consts::PI)),
             ("f32_pos", Stored::Float(f32::consts::PI)),

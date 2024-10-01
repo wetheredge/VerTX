@@ -13,8 +13,7 @@ pub trait Serializer {
 
     fn boolean(self, b: bool);
     fn string(self, s: &str);
-    fn unsigned(self, u: u32);
-    fn signed(self, i: i32);
+    fn integer(self, x: i64);
     fn float(self, f: f32);
     fn structure(self, fields: usize) -> Self::StructSerializer;
 }
@@ -28,8 +27,7 @@ pub trait StructSerializer {
 pub enum Stored<'a> {
     Boolean(bool),
     String(&'a str),
-    Unsigned(u32),
-    Signed(i32),
+    Integer(i64),
     Float(f32),
     Struct(#[serde(borrow)] Vec<(&'a str, Stored<'a>)>),
 }

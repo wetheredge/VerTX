@@ -18,8 +18,7 @@ impl<T: UpdateRef> UpdateMut for T {
 pub enum Update<'a> {
     Boolean(bool),
     String(&'a str),
-    Unsigned(u32),
-    Signed(i32),
+    Integer(i64),
     Float(f32),
 }
 

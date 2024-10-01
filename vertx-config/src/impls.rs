@@ -37,14 +37,14 @@ macro_rules! impl_config {
             }
         }
     };
-    (int $kind:ident($($t:ty),+), $serialize:ident) => {$(
+    (Integer($($t:ty),+)) => {$(
         impl Storage for $t {
             async fn save<S: Serializer>(&self, serializer: S) {
-                serializer.$serialize((*self).into());
+                serializer.integer((*self).into());
             }
 
             fn load(from: Stored<'_>) -> Self {
-                if let Stored::$kind(from) = from {
+                if let Stored::Integer(from) = from {
                     if from >= Self::MIN.into() && from <= Self::MAX.into() {
                         return from as $t;
                     }
@@ -60,7 +60,7 @@ macro_rules! impl_config {
                     return Err(update::Error::KeyNotFound);
                 }
 
-                let Update::$kind(update) = update else {
+                let Update::Integer(update) = update else {
                     return Err(update::Error::InvalidType);
                 };
 
@@ -80,9 +80,8 @@ macro_rules! impl_config {
 }
 
 impl_config!(Boolean(bool), boolean);
-impl_config!(int Unsigned(u8, u16, u32), unsigned);
-impl_config!(int Signed(i8, i16, i32), signed);
 impl_config!(Float(f32), float);
+impl_config!(Integer(u8, i8, u16, i16, u32, i32));
 
 impl Storage for alloc::string::String {
     async fn save<S: Serializer>(&self, serializer: S) {
