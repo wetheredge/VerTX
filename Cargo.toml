@@ -34,7 +34,7 @@ esp-println = { version = "=0.11.0", default-features = false }
 heapless = "=0.8.0"
 log = "=0.4.22"
 loog.git = "https://github.com/wetheredge/loog.git"
-portable-atomic = "=1.7.0"
+portable-atomic = "=1.9.0"
 postcard = { version = "=1.0.10", default-features = false }
 serde = { version = "=1.0.210", default-features = false }
 static_cell = "=2.1.0"
