@@ -11,7 +11,6 @@ mod api;
 mod backpack;
 mod config;
 mod crsf;
-mod display;
 mod hal;
 mod leds;
 mod mode;
@@ -20,20 +19,11 @@ mod network;
 mod reset;
 
 use embassy_executor::{task, Spawner};
-use embassy_sync::mutex::Mutex;
 use static_cell::make_static;
 
+use crate::config::RootConfig as Config;
 pub(crate) use crate::mode::Mode;
 use crate::reset::BootMode;
-
-#[derive(Default, vertx_config::Storage, vertx_config::UpdateRef)]
-struct Config {
-    name: Mutex<mutex::SingleCore, heapless::String<20>>,
-    leds: leds::Config,
-    display: display::Config,
-    network: network::Config,
-    expert: Mutex<mutex::SingleCore, bool>,
-}
 
 pub async fn main(spawner: Spawner) {
     loog::info!("Starting VerTX");
@@ -64,7 +54,7 @@ pub async fn main(spawner: Spawner) {
 
     let mode = make_static!(mode::Channel::new());
 
-    let config_manager = make_static!(config::Manager::new(config_storage));
+    let config_manager = make_static!(config::Manager::load(config_storage));
     let config = config_manager.config();
 
     let reset = make_static!(reset::Manager::new(

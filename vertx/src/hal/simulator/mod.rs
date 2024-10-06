@@ -130,16 +130,18 @@ impl ConfigStorage {
 }
 
 impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T> {
+    fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
         match fs::read(&self.0) {
-            Ok(contents) => Some(parse(&contents)),
+            Ok(contents) => parse(&contents),
             Err(err) if err.kind() == io::ErrorKind::NotFound => None,
             Err(err) => panic!("Failed to read config file: {err:?}"),
         }
     }
 
-    fn save(&mut self, data: Vec<u8>) {
-        fs::write(&self.0, data).unwrap();
+    fn save(&mut self, config: &crate::config::Manager) {
+        let mut buffer = [0; crate::config::BYTE_LENGTH];
+        let len = config.serialize(&mut buffer).unwrap();
+        fs::write(&self.0, &buffer[0..len]).unwrap();
     }
 }
 

@@ -1,6 +1,5 @@
 mod leds;
 
-use alloc::vec::Vec;
 use core::future::Future;
 
 use embassy_executor::Spawner;
@@ -86,12 +85,12 @@ impl super::traits::Reset for Reset {
 struct ConfigStorage {}
 
 impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, _parse: impl FnOnce(&[u8]) -> T) -> Option<T> {
+    fn load<T>(&self, _parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
         // TODO
         None
     }
 
-    fn save(&mut self, _data: Vec<u8>) {
+    fn save(&mut self, _config: &crate::config::Manager) {
         todo!()
     }
 }

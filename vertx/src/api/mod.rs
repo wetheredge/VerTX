@@ -73,13 +73,12 @@ impl vertx_network::Api for Api {
             }
             Request::CheckForUpdate => todo!(),
             Request::GetConfig => {
-                let config = self.config.config();
-                let config = vertx_config::storage::postcard::to_vec(config).await;
+                let mut config = bytemuck::allocation::zeroed_slice_box(crate::config::BYTE_LENGTH);
+                self.config.serialize(&mut config).unwrap();
                 Some(Response::Config { config })
             }
-            Request::ConfigUpdate { id, key, value } => {
-                use vertx_config::update::UpdateRef;
-                let result = self.config.update_ref(key, value).await.into();
+            Request::ConfigUpdate { id, update } => {
+                let result = self.config.update(update).await.into();
                 Some(Response::ConfigUpdate { id, result })
             }
         };

@@ -1,6 +1,8 @@
-use alloc::vec::Vec;
+use alloc::boxed::Box;
 
 use serde::{Deserialize, Serialize};
+
+use crate::config::UpdateError;
 
 pub(crate) const VERSION_MAJOR: u8 = 0;
 pub(crate) const VERSION_MINOR: u8 = 0;
@@ -17,8 +19,8 @@ pub enum Request<'a> {
     GetConfig,
     ConfigUpdate {
         id: u32,
-        key: &'a str,
-        value: vertx_config::update::Update<'a>,
+        #[serde(borrow)]
+        update: crate::config::Update<'a>,
     },
     // StreamInputs,
     // StreamMixer,
@@ -87,7 +89,7 @@ response! {
         timing_drift: f32,
     },
     Config {
-        config: Vec<u8>,
+        config: Box<[u8]>,
     },
     ConfigUpdate {
         id: u32,
@@ -107,24 +109,16 @@ impl Response {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 pub enum ConfigUpdateResult {
     Ok,
-    KeyNotFound,
-    InvalidType,
-    InvalidValue,
     TooSmall { min: i64 },
     TooLarge { max: i64 },
 }
 
-impl From<vertx_config::update::Result> for ConfigUpdateResult {
-    fn from(from: vertx_config::update::Result) -> Self {
-        use vertx_config::update::Error;
-
+impl From<Result<(), UpdateError>> for ConfigUpdateResult {
+    fn from(from: Result<(), UpdateError>) -> Self {
         match from {
             Ok(()) => Self::Ok,
-            Err(Error::KeyNotFound) => Self::KeyNotFound,
-            Err(Error::InvalidType) => Self::InvalidType,
-            Err(Error::InvalidValue) => Self::InvalidValue,
-            Err(Error::TooSmall { min }) => Self::TooSmall { min },
-            Err(Error::TooLarge { max }) => Self::TooLarge { max },
+            Err(UpdateError::TooSmall { min }) => Self::TooSmall { min },
+            Err(UpdateError::TooLarge { max }) => Self::TooLarge { max },
         }
     }
 }

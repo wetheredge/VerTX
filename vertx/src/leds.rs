@@ -2,25 +2,11 @@ use embassy_executor::task;
 use embassy_futures::select;
 use embassy_time::{Duration, Timer};
 use smart_leds::{colors, RGB8};
-use vertx_config::minmax;
 
 use crate::hal::traits::LedDriver;
 use crate::Mode;
 
 pub const MAX_LEDS: usize = 1;
-
-#[derive(vertx_config::UpdateRef, vertx_config::Storage)]
-pub struct Config {
-    brightness: vertx_config::Reactive<minmax::U8<10, { u8::MAX }>, crate::mutex::SingleCore>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            brightness: minmax::U8::MIN.into(),
-        }
-    }
-}
 
 macro_rules! color_array {
     (static $name:ident = [ $(($r:expr, $g:expr, $b:expr)),* $(,)? ]) => {
@@ -130,15 +116,15 @@ impl Effect {
 
 #[task]
 pub async fn run(
-    config: &'static crate::Config,
+    config: crate::Config,
     mut driver: crate::hal::LedDriver,
     mut mode: crate::mode::Subscriber<'static>,
 ) -> ! {
     loog::info!("Starting leds()");
-    let config = &config.leds;
+    let config = config.leds();
 
     let mut effect = Effect::default();
-    let mut brightness_subscriber = config.brightness.subscriber().unwrap();
+    let brightness_subscriber = config.brightness().subscribe().unwrap();
 
     let mut leds = [RGB8::new(0, 0, 0); MAX_LEDS];
     loop {
@@ -160,7 +146,7 @@ pub async fn run(
                 select::Either::Second(effect) => effect,
             }
         } else {
-            match select::select(brightness_subscriber.wait(), mode.next()).await {
+            match select::select(brightness_subscriber.updated(), mode.next()).await {
                 select::Either::First(()) => continue,
                 select::Either::Second(effect) => effect,
             }

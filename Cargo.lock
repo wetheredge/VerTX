@@ -3425,7 +3425,6 @@ dependencies = [
  "smart-leds",
  "static_cell",
  "vertx-backpack-ipc",
- "vertx-config",
  "vertx-network",
  "vertx-network-esp",
  "vertx-server",
@@ -3460,30 +3459,6 @@ version = "0.0.0"
 dependencies = [
  "serde",
  "vertx-network",
-]
-
-[[package]]
-name = "vertx-config"
-version = "0.0.0"
-dependencies = [
- "embassy-sync 0.6.0",
- "heapless",
- "num_enum 0.7.3",
- "postcard",
- "serde",
- "tokio",
- "vertx-config-macros",
-]
-
-[[package]]
-name = "vertx-config-macros"
-version = "0.0.0"
-dependencies = [
- "proc-macro-crate",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 2.0.77",
 ]
 
 [[package]]

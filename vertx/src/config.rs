@@ -1,60 +1,170 @@
-#![allow(clippy::host_endian_bytes)]
-#![warn(clippy::big_endian_bytes, clippy::little_endian_bytes)]
+use core::cell::RefCell;
+use core::future::{self, Future};
+use core::marker::PhantomData;
+use core::{mem, task};
 
-use embassy_sync::mutex::Mutex;
-use portable_atomic::{AtomicBool, Ordering};
-use vertx_config::update;
+use embassy_sync::blocking_mutex::Mutex;
+use serde::{Deserialize, Serialize};
 
 use crate::hal::traits::ConfigStorage as _;
 use crate::hal::ConfigStorage;
 
+const SUBSCRIPTIONS: usize = 1;
+
+struct ManagerState {
+    modified: bool,
+    config: RawConfig,
+    storage: ConfigStorage,
+    subscriptions: heapless::Vec<(usize, Subscription), SUBSCRIPTIONS>,
+}
+
 pub struct Manager {
-    modified: AtomicBool,
-    storage: Mutex<crate::mutex::SingleCore, ConfigStorage>,
-    config: crate::Config,
+    state: Mutex<crate::mutex::SingleCore, RefCell<ManagerState>>,
 }
 
 impl Manager {
-    pub fn new(storage: ConfigStorage) -> Self {
-        let config = match storage.load(vertx_config::storage::postcard::from_slice) {
-            Some(Ok(config)) => config,
-            Some(Err(err)) => {
-                loog::error!("Failed to load config: {err}");
-                Default::default()
-            }
-            None => Default::default(),
-        };
+    pub fn load(storage: ConfigStorage) -> Self {
+        let raw = storage
+            .load(|bytes| {
+                match RawConfig::deserialize(bytes) {
+                    Err(LoadError::WrongVersion) => loog::error!("Invalid config version"),
+                    Err(LoadError::Postcard(err)) => loog::error!("Failed to load config: {err}"),
+                    Ok(raw) => return Some(raw),
+                }
+
+                None
+            })
+            .unwrap_or_default();
 
         Self {
-            modified: AtomicBool::new(false),
-            storage: Mutex::new(storage),
-            config,
+            state: Mutex::new(RefCell::new(ManagerState {
+                modified: false,
+                config: raw,
+                storage,
+                subscriptions: heapless::Vec::new(),
+            })),
         }
+    }
+
+    pub async fn update(&self, update: Update<'_>) -> Result<(), UpdateError> {
+        self.state.lock(|state| {
+            let mut state = state.borrow_mut();
+            state.config.update(update).map(|key| {
+                for (sub_key, sub) in &mut state.subscriptions {
+                    if *sub_key == key {
+                        let old_sub = mem::replace(sub, Subscription::Updated);
+                        if let Subscription::Waiting(w) = old_sub {
+                            w.wake();
+                        }
+                    }
+                }
+            })
+        })
     }
 
     pub async fn save(&self) {
-        if !self.modified.swap(false, Ordering::AcqRel) {
-            return;
+        self.state.lock(|state| {
+            let mut state = state.borrow_mut();
+            let state = &mut *state;
+
+            if !state.modified {
+                return;
+            }
+
+            loog::info!("Writing configuration");
+            state.storage.save(self);
+        });
+    }
+
+    pub const fn config(&'static self) -> RootConfig {
+        View {
+            manager: self,
+            _key: PhantomData,
         }
-
-        loog::info!("Writing configuration");
-
-        let data = vertx_config::storage::postcard::to_vec(&self.config).await;
-
-        let mut storage = self.storage.lock().await;
-        storage.save(data);
     }
 
-    pub fn config(&self) -> &crate::Config {
-        &self.config
+    pub fn serialize(&self, buffer: &mut [u8]) -> postcard::Result<usize> {
+        self.state
+            .lock(|state| state.borrow().config.serialize(buffer))
+    }
+
+    pub fn subscribe(&'static self, key: usize) -> Option<Subscriber> {
+        self.state.lock(|state| {
+            let mut state = state.borrow_mut();
+            (state.subscriptions.len() < SUBSCRIPTIONS).then(|| {
+                state.subscriptions.push((key, Subscription::None)).unwrap();
+                Subscriber {
+                    manager: self,
+                    subscription: state.subscriptions.len() - 1,
+                }
+            })
+        })
+    }
+
+    fn poll(&self, id: usize, ctx: &mut task::Context<'_>) -> task::Poll<()> {
+        self.state.lock(|state| {
+            let mut state = state.borrow_mut();
+            let sub = state.subscriptions.get_mut(id).unwrap();
+            let key = sub.0;
+            match sub.1.clone() {
+                Subscription::None => {
+                    *sub = (key, Subscription::Waiting(ctx.waker().clone()));
+                    task::Poll::Pending
+                }
+                Subscription::Waiting(w) => {
+                    if !w.will_wake(ctx.waker()) {
+                        *sub = (key, Subscription::Waiting(ctx.waker().clone()));
+                        w.wake();
+                    }
+                    task::Poll::Pending
+                }
+                Subscription::Updated => task::Poll::Ready(()),
+            }
+        })
     }
 }
 
-impl vertx_config::UpdateRef for Manager {
-    async fn update_ref<'a>(&self, key: &'a str, update: update::Update<'a>) -> update::Result {
-        // TODO: prevent saving while updating
-        self.modified.store(true, Ordering::Release);
-        self.config().update_ref(key, update).await?;
-        Ok(())
+pub(crate) struct Subscriber {
+    manager: &'static Manager,
+    subscription: usize,
+}
+
+impl Subscriber {
+    pub fn updated(&self) -> impl Future<Output = ()> + '_ {
+        future::poll_fn(move |ctx| self.manager.poll(self.subscription, ctx))
     }
 }
+
+pub type RootConfig = View<key::Root>;
+
+#[derive(Clone, Copy)]
+pub(crate) struct View<K> {
+    manager: &'static Manager,
+    _key: PhantomData<K>,
+}
+
+pub(crate) struct LockedView<'a, K> {
+    config: &'a RawConfig,
+    _key: PhantomData<K>,
+}
+
+#[derive(Debug, Clone)]
+enum Subscription {
+    None,
+    Waiting(task::Waker),
+    Updated,
+}
+
+#[derive(Debug, Clone)]
+enum LoadError {
+    WrongVersion,
+    Postcard(postcard::Error),
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+pub enum UpdateError {
+    TooLarge { max: i64 },
+    TooSmall { min: i64 },
+}
+
+include!(concat!(env!("OUT_DIR"), "/config_codegen.rs"));

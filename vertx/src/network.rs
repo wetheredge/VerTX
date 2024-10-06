@@ -1,50 +1,5 @@
 use embassy_executor::Spawner;
 
-pub type Config = vertx_config::BootSnapshot<raw_config::RawConfig, crate::mutex::SingleCore>;
-
-mod raw_config {
-    use core::fmt;
-
-    use heapless::String;
-    use vertx_network::{Password, Ssid};
-
-    #[derive(Clone, vertx_config::UpdateMut, vertx_config::Storage)]
-    pub struct RawConfig {
-        pub(super) hostname: String<32>,
-        pub(super) password: Password,
-        pub(super) home_ssid: Ssid,
-        pub(super) home_password: Password,
-    }
-
-    impl fmt::Debug for RawConfig {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            f.debug_struct("RawConfig")
-                .field("hostname", &self.hostname)
-                .field("password", &"***")
-                .field("home_ssid", &"***")
-                .field("home_password", &"***")
-                .finish()
-        }
-    }
-
-    impl Default for RawConfig {
-        fn default() -> Self {
-            Self {
-                hostname: "vertx".try_into().unwrap(),
-                password: "vertxvertx".try_into().unwrap(),
-                home_ssid: String::new(),
-                home_password: String::new(),
-            }
-        }
-    }
-
-    impl RawConfig {
-        pub(super) fn valid_home(&self) -> bool {
-            !self.home_ssid.is_empty() && !self.home_password.is_empty()
-        }
-    }
-}
-
 pub enum Error {
     InvalidHomeConfig,
 }
@@ -54,32 +9,36 @@ const STATIC_ADDRESS: [u8; 4] = [10, 0, 0, 1];
 pub async fn run(
     spawner: Spawner,
     is_home: bool,
-    config: &'static crate::Config,
+    config: crate::Config,
     rng: &mut crate::hal::Rng,
     api: &'static crate::api::Api,
     #[cfg(feature = "network-native")] network: crate::hal::Network,
     #[cfg(feature = "network-backpack")] backpack: crate::backpack::Backpack,
 ) -> Result<(), Error> {
-    let config = config.network.boot();
+    let server_config = config.network().lock(|config| {
+        if is_home {
+            let home = config.home();
+            let ssid = home.ssid();
+            let password = home.password();
 
-    let server_config = if is_home {
-        if !config.valid_home() {
-            loog::error!("Invalid home network config");
-            return Err(Error::InvalidHomeConfig);
+            if ssid.is_empty() || password.is_empty() {
+                loog::error!("Invalid home network config");
+                Err(Error::InvalidHomeConfig)
+            } else {
+                Ok(vertx_network::Config::Home {
+                    ssid: ssid.clone(),
+                    password: password.clone(),
+                    hostname: "vertx".try_into().unwrap(),
+                })
+            }
+        } else {
+            Ok(vertx_network::Config::Field {
+                ssid: "VerTX".try_into().unwrap(),
+                password: config.password().clone(),
+                address: STATIC_ADDRESS,
+            })
         }
-
-        vertx_network::Config::Home {
-            ssid: config.home_ssid.clone(),
-            password: config.home_password.clone(),
-            hostname: "vertx".try_into().unwrap(),
-        }
-    } else {
-        vertx_network::Config::Field {
-            ssid: "VerTX".try_into().unwrap(),
-            password: config.password.clone(),
-            address: STATIC_ADDRESS,
-        }
-    };
+    })?;
 
     #[cfg(feature = "network-native")]
     native::run(

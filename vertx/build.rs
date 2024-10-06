@@ -7,20 +7,31 @@ use std::process::Command;
 use serde::Deserialize;
 
 fn main() -> io::Result<()> {
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let root = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let out_dir = &env::var("OUT_DIR").unwrap();
+    let root = &env::var("CARGO_MANIFEST_DIR").unwrap();
+
+    config_codegen(out_dir, root)?;
 
     if env::var_os("CARGO_FEATURE_SIMULATOR").is_some() {
-        build_info(&out_dir, &root, "simulator")
+        build_info(out_dir, root, "simulator")
     } else {
         let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
         println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
-        memory_layout(&out_dir, &root)?;
+        memory_layout(out_dir, root)?;
         link_args();
-        build_info(&out_dir, &root, &target_name)?;
-        pins(&out_dir, &root, &target_name)
+        build_info(out_dir, root, &target_name)?;
+        pins(out_dir, root, &target_name)
     }
+}
+
+fn config_codegen(out_dir: &str, root: &str) -> io::Result<()> {
+    let path = format!("{root}/../vertx-config/out/config.rs");
+    println!("cargo::rerun-if-changed={path}");
+    fs::write(
+        &format!("{out_dir}/config_codegen.rs"),
+        format!("include!({path:?});"),
+    )
 }
 
 fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {
