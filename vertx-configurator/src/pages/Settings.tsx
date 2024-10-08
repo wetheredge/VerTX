@@ -1,52 +1,52 @@
 import { For, type JSX, Show, createUniqueId, splitProps } from 'solid-js';
 import {
-	ConfigUpdateKind,
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
 	api,
 	configUpdateResultToString,
 	updateConfig,
 } from '../api';
+import {
+	type BooleanSettings,
+	type Config,
+	type EnumSettings,
+	type IntegerSettings,
+	type StringSettings,
+	configKeys,
+} from '../config';
 import * as styles from './Settings.css';
 
-const wifiCountries = [
-	{ value: 'ca', label: 'Canada' },
-	{ value: 'cn', label: 'China' },
-	{ value: 'jp', label: 'Japan' },
-	{ value: 'us', label: 'United States' },
-];
-
-type Handler<E> = (
-	key: string,
+type Handler<Key extends keyof Config, E> = (
+	key: Key,
 	reset: () => void,
 ) => JSX.ChangeEventHandlerUnion<E, Event>;
 
-const handleString: Handler<HTMLInputElement | HTMLSelectElement> =
+const handleString: Handler<
+	StringSettings,
+	HTMLInputElement | HTMLSelectElement
+> =
 	(key, reset) =>
 	async ({ target }) => {
-		const result = await updateConfig(key, {
-			kind: ConfigUpdateKind.String,
-			update: target.value,
-		});
+		const result = await updateConfig({ key, value: target.value });
 		reset();
 		handleUpdateResult(key, result);
 	};
 
-const handleInteger: Handler<HTMLInputElement | HTMLSelectElement> =
+const handleInteger: Handler<
+	IntegerSettings | EnumSettings,
+	HTMLInputElement | HTMLSelectElement
+> =
 	(key, reset) =>
 	async ({ target }) => {
-		let update = Number.parseInt(target.value);
+		let value = Number.parseInt(target.value);
 		if ('max' in target) {
-			update = Math.min(update, Number.parseInt(target.max));
+			value = Math.min(value, Number.parseInt(target.max));
 		}
 		if ('min' in target) {
-			update = Math.max(update, Number.parseInt(target.min));
+			value = Math.max(value, Number.parseInt(target.min));
 		}
-		target.value = update.toString();
-		const result = await updateConfig(key, {
-			kind: ConfigUpdateKind.Unsigned,
-			update,
-		});
+		target.value = value.toString();
+		const result = await updateConfig({ key, value });
 		reset();
 		handleUpdateResult(key, result);
 	};
@@ -58,13 +58,13 @@ export default function Settings() {
 				id={styles.advancedState}
 				type="checkbox"
 				hidden
-				checked={api.config.expert === true}
+				checked={api.config[configKeys.expert]}
 			/>
 
 			<h1>Settings</h1>
 
 			<SettingInput
-				key="name"
+				key={configKeys.name}
 				label="Device name"
 				description="Used in the Wi-Fi SSID to differentiate this VerTX handset from any others in range."
 				type="text"
@@ -73,7 +73,7 @@ export default function Settings() {
 			/>
 
 			<SettingInput
-				key="leds.brightness"
+				key={configKeys.leds.brightness}
 				label="Status LED brightness"
 				type="number"
 				min={10}
@@ -87,7 +87,7 @@ export default function Settings() {
 			<h2>Display</h2>
 
 			<SettingInput
-				key="display.brightness"
+				key={configKeys.display.brightness}
 				label="Brightness"
 				type="number"
 				min={1}
@@ -95,7 +95,7 @@ export default function Settings() {
 				handler={handleInteger}
 			/>
 			<SettingSelect
-				key="display.font_size"
+				key={configKeys.display.fontSize}
 				label="Font size"
 				options={[
 					{ value: 7, label: '7px' },
@@ -106,16 +106,9 @@ export default function Settings() {
 
 			<h2>Wi-Fi</h2>
 
-			<SettingSelect
-				key="wifi.region"
-				label="Country"
-				description=""
-				options={wifiCountries}
-				handler={handleString}
-			/>
 			<SettingInput
 				advanced
-				key="wifi.password"
+				key={configKeys.network.password}
 				label="Password"
 				type="password"
 				maxlength={64}
@@ -125,14 +118,14 @@ export default function Settings() {
 			<h3>Home</h3>
 
 			<SettingInput
-				key="wifi.home_ssid"
+				key={configKeys.network.home.ssid}
 				label="SSID"
 				type="text"
 				maxlength={32}
 				handler={handleString}
 			/>
 			<SettingInput
-				key="wifi.home_password"
+				key={configKeys.network.home.password}
 				label="Password"
 				type="password"
 				maxlength={64}
@@ -142,7 +135,7 @@ export default function Settings() {
 			<h2 id={styles.dangerId}>Danger zone</h2>
 
 			<SettingCheckbox
-				key="expert"
+				key={configKeys.expert}
 				label="Enable advanced settings"
 				description="These settings are unnecessary for most users and can easily cause problems if configured incorrectly."
 			/>
@@ -150,26 +143,25 @@ export default function Settings() {
 	);
 }
 
-type SettingProps<E> = {
+type SettingProps<Key extends keyof Config, E> = {
 	advanced?: boolean;
-	key: string;
+	key: Key;
 	label: string;
 	description?: string;
-	handler: Handler<E>;
+	handler: Handler<Key, E>;
 };
 
-const keyToId = import.meta.env.PROD
-	? () => createUniqueId()
-	: (key: string) => `setting-${key.replaceAll('.', '-')}`;
-const descriptionId = import.meta.env.PROD
-	? (id: string) => `${id}d`
-	: (id: string) => id.replace('setting', 'description');
+const descriptionId = (id: string) => `${id}d`;
 
-type InputProps =
-	| { type: 'text' | 'password'; minlength?: number; maxlength?: number }
-	| { type: 'number'; min?: number; max?: number; step?: number };
-function SettingInput(props: SettingProps<HTMLInputElement> & InputProps) {
-	const id = keyToId(props.key);
+type InputProps<Key> = Key extends StringSettings
+	? { type: 'text' | 'password'; minlength?: number; maxlength?: number }
+	: Key extends IntegerSettings
+		? { type: 'number'; min?: number; max?: number; step?: number }
+		: never;
+function SettingInput<Key extends StringSettings | IntegerSettings>(
+	props: SettingProps<Key, HTMLInputElement> & InputProps<Key>,
+) {
+	const id = createUniqueId();
 	const [baseProps, , inputProps] = splitProps(
 		props,
 		['advanced', 'key', 'label', 'description'],
@@ -177,7 +169,7 @@ function SettingInput(props: SettingProps<HTMLInputElement> & InputProps) {
 	);
 
 	let input!: HTMLInputElement;
-	const value = () => api.config[props.key]?.toString();
+	const value = () => api.config[props.key]?.toString() ?? '';
 	const resetInput = () => {
 		input.value = value();
 	};
@@ -196,12 +188,12 @@ function SettingInput(props: SettingProps<HTMLInputElement> & InputProps) {
 	);
 }
 
-function SettingSelect<V extends string | number>(
-	props: SettingProps<HTMLSelectElement> & {
+function SettingSelect<Key extends EnumSettings, V extends string | number>(
+	props: SettingProps<Key, HTMLSelectElement> & {
 		options: Array<{ value: V; label: string }>;
 	},
 ) {
-	const id = keyToId(props.key);
+	const id = createUniqueId();
 	const [baseProps] = splitProps(props, [
 		'advanced',
 		'key',
@@ -210,7 +202,7 @@ function SettingSelect<V extends string | number>(
 	]);
 
 	let input!: HTMLSelectElement;
-	const value = () => api.config[props.key]?.toString();
+	const value = () => api.config[props.key]?.toString() ?? '';
 	const resetInput = () => {
 		input.value = value();
 	};
@@ -255,11 +247,13 @@ function SettingBase(props: {
 	);
 }
 
-function SettingCheckbox(props: Omit<SettingProps<never>, 'handler'>) {
-	const id = keyToId(props.key);
+function SettingCheckbox<Key extends BooleanSettings>(
+	props: Omit<SettingProps<Key, never>, 'handler'>,
+) {
+	const id = createUniqueId();
 
 	let input!: HTMLInputElement;
-	const checked = () => api.config[props.key] === true;
+	const checked = () => api.config[props.key];
 
 	return (
 		<div
@@ -272,11 +266,11 @@ function SettingCheckbox(props: Omit<SettingProps<never>, 'handler'>) {
 				aria-describedby={props.description && descriptionId(id)}
 				checked={checked()}
 				onChange={async ({ target }) => {
-					const result = await updateConfig(props.key, {
-						kind: ConfigUpdateKind.Boolean,
-						update: target.checked,
+					const result = await updateConfig({
+						key: props.key,
+						value: target.checked,
 					});
-					input.checked = checked();
+					input.checked = checked() ?? false;
 					handleUpdateResult(props.key, result);
 				}}
 				ref={input}
@@ -289,7 +283,7 @@ function SettingCheckbox(props: Omit<SettingProps<never>, 'handler'>) {
 	);
 }
 
-function handleUpdateResult(key: string, result: ConfigUpdateResult) {
+function handleUpdateResult(key: keyof Config, result: ConfigUpdateResult) {
 	if (result.result !== ConfigUpdateResultKind.Ok) {
 		console.error(
 			`Failed to save '${key}':`,

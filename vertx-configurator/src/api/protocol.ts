@@ -1,5 +1,6 @@
+import { Reader, Writer } from 'postcard';
+import { type Config, type Update, encodeUpdate, parseConfig } from '../config';
 import { unreachable } from '../utils';
-import { DataReader, DataWriter } from './helpers';
 
 export const PROTOCOL: string = 'v0';
 const REQUEST_BUFFER_SIZE = 100;
@@ -27,10 +28,7 @@ export type Request =
 	| { kind: RequestKind.GetConfig }
 	| {
 			kind: RequestKind.ConfigUpdate;
-			payload: {
-				id: number;
-				key: string;
-			} & ConfigUpdate;
+			payload: { id: number } & Update;
 	  };
 
 export const enum ConfigUpdateKind {
@@ -41,15 +39,10 @@ export const enum ConfigUpdateKind {
 	// Float,
 }
 
-export type ConfigUpdate =
-	| { kind: ConfigUpdateKind.Boolean; update: boolean }
-	| { kind: ConfigUpdateKind.String; update: string }
-	| { kind: ConfigUpdateKind.Unsigned; update: number };
-
 export function encodeRequest(request: Request): ArrayBuffer {
-	const writer = new DataWriter(REQUEST_BUFFER_SIZE);
+	const writer = new Writer(REQUEST_BUFFER_SIZE);
 
-	writer.varint(request.kind);
+	writer.varuint(request.kind);
 	switch (request.kind) {
 		case RequestKind.ProtocolVersion:
 		case RequestKind.BuildInfo:
@@ -60,26 +53,10 @@ export function encodeRequest(request: Request): ArrayBuffer {
 		case RequestKind.GetConfig:
 			break;
 
-		case RequestKind.ConfigUpdate: {
-			const { id, key, kind, update } = request.payload;
-			writer.varint(id);
-			writer.string(key);
-			writer.u8(kind);
-			switch (kind) {
-				case ConfigUpdateKind.Boolean:
-					writer.boolean(update);
-					break;
-				case ConfigUpdateKind.String:
-					writer.string(update);
-					break;
-				case ConfigUpdateKind.Unsigned:
-					writer.varint(update);
-					break;
-				default:
-					unreachable(kind);
-			}
+		case RequestKind.ConfigUpdate:
+			writer.varuint(request.payload.id);
+			encodeUpdate(writer, request.payload);
 			break;
-		}
 
 		default:
 			unreachable(request);
@@ -137,21 +114,14 @@ export type Response =
 			payload: { id: number } & ConfigUpdateResult;
 	  };
 
-export type Config = Record<string, boolean | number | string>;
-
 export enum ConfigUpdateResultKind {
 	Ok,
-	KeyNotFound,
-	InvalidType,
-	InvalidValue,
 	TooSmall,
 	TooLarge,
 }
 
 export type ConfigUpdateResult =
 	| { result: ConfigUpdateResultKind.Ok }
-	| { result: ConfigUpdateResultKind.KeyNotFound }
-	| { result: ConfigUpdateResultKind.InvalidType }
 	| { result: ConfigUpdateResultKind.TooSmall; min: number }
 	| { result: ConfigUpdateResultKind.TooLarge; max: number };
 
@@ -159,8 +129,6 @@ export function configUpdateResultToString(result: ConfigUpdateResult): string {
 	const name = ConfigUpdateResultKind[result.result];
 	switch (result.result) {
 		case ConfigUpdateResultKind.Ok:
-		case ConfigUpdateResultKind.KeyNotFound:
-		case ConfigUpdateResultKind.InvalidType:
 			return name;
 		case ConfigUpdateResultKind.TooSmall:
 			return `${name} { min: ${result.min} }`;
@@ -176,8 +144,8 @@ export type ResponsePayload<Kind extends ResponseKind> = Extract<
 	{ kind: Kind; payload: unknown }
 >['payload'];
 
-export function parseResponse(buffer: ArrayBuffer): Response {
-	const reader = new DataReader(buffer);
+export function parseResponse(buffer: DataView): Response {
+	const reader = new Reader(buffer);
 
 	const kind = reader.u8() as ResponseKind;
 	switch (kind) {
@@ -207,35 +175,29 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 			return {
 				kind,
 				payload: {
-					batteryVoltage: reader.varint() / 100,
+					batteryVoltage: reader.varuint() / 100,
 					idleTime: reader.f32(),
 					timingDrift: reader.f32(),
 				},
 			};
 		case ResponseKind.Config:
-			reader.varint(); // Ignore config byte array length
-			if (reader.u8() !== ConfigKind.Struct) {
-				throw new Error('Invalid config');
-			}
+			reader.varuint(); // Ignore config byte array length
 			return {
 				kind,
 				payload: parseConfig(reader),
 			};
 		case ResponseKind.ConfigUpdate: {
-			const id = reader.varint();
+			const id = reader.varuint();
 			const result = reader.u8() as ConfigUpdateResultKind;
 			const rest: Record<string, unknown> = {};
 			switch (result) {
 				case ConfigUpdateResultKind.Ok:
-				case ConfigUpdateResultKind.KeyNotFound:
-				case ConfigUpdateResultKind.InvalidType:
-				case ConfigUpdateResultKind.InvalidValue:
 					break;
 				case ConfigUpdateResultKind.TooSmall:
-					rest.min = reader.varint();
+					rest.min = reader.varuint();
 					break;
 				case ConfigUpdateResultKind.TooLarge:
-					rest.max = reader.varint();
+					rest.max = reader.varuint();
 					break;
 
 				default:
@@ -259,53 +221,4 @@ export function parseResponse(buffer: ArrayBuffer): Response {
 
 function invalidResponseKind(kind: never): never {
 	throw new Error(`Invalid response kind: ${kind}`);
-}
-
-const enum ConfigKind {
-	Boolean,
-	String,
-	Unsigned,
-	Signed,
-	Float,
-	Struct,
-}
-
-function invalidConfigKind(kind: never): never {
-	throw new Error(`Invalid config kind: ${kind}`);
-}
-
-function parseConfig(
-	reader: DataReader,
-	config: Config = {},
-	root?: string,
-): Config {
-	const path = root ? `${root}.` : '';
-	for (let i = reader.varint(); i > 0; i--) {
-		const field = `${path}${reader.string()}`;
-		const kind = reader.u8() as ConfigKind;
-		switch (kind) {
-			case ConfigKind.Boolean:
-				config[field] = reader.boolean();
-				break;
-			case ConfigKind.String:
-				config[field] = reader.string();
-				break;
-			case ConfigKind.Unsigned:
-				config[field] = reader.varint();
-				break;
-			case ConfigKind.Signed:
-				throw new Error('unimplemented');
-			case ConfigKind.Float:
-				config[field] = reader.f32();
-				break;
-			case ConfigKind.Struct:
-				parseConfig(reader, config, field);
-				break;
-
-			default:
-				invalidConfigKind(kind);
-		}
-	}
-
-	return config;
 }

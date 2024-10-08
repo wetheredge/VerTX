@@ -1,9 +1,8 @@
 import { makeReconnectingWS } from '@solid-primitives/websocket';
 import { onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
+import type { Config, Update } from '../config';
 import {
-	type Config,
-	type ConfigUpdate,
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
 	type Request,
@@ -15,7 +14,6 @@ import {
 } from './protocol';
 
 export {
-	type ConfigUpdate,
 	ConfigUpdateKind,
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
@@ -33,7 +31,7 @@ export const enum ApiStatus {
 	LostConnection,
 }
 
-type State = { status: ApiStatus; config: Config } & {
+type State = { status: ApiStatus; config: Partial<Config> } & {
 	[Kind in Exclude<
 		ResponseKind,
 		ResponseKind.Config | ResponseKind.ConfigUpdate
@@ -43,7 +41,7 @@ type State = { status: ApiStatus; config: Config } & {
 let socket!: WebSocket;
 const [state, setState] = createStore<State>({
 	status: ApiStatus.Connecting,
-	config: {},
+	config: {} as Partial<Config>,
 });
 const setStatus = (status: ApiStatus) => setState('status', status);
 
@@ -54,24 +52,23 @@ export const request = (request: Request) => {
 };
 
 const configUpdates = new Map<number, (result: ConfigUpdateResult) => void>();
-let updateId = Date.now() >>> 0;
+let updateId = Date.now() & 0xffff;
 export async function updateConfig(
-	key: string,
-	update: ConfigUpdate,
+	update: Update,
 ): Promise<ConfigUpdateResult> {
 	const id = updateId;
 	updateId = (updateId + 1) >>> 0;
 
 	request({
 		kind: RequestKind.ConfigUpdate,
-		payload: { ...update, id, key },
+		payload: { id, ...update },
 	});
 
 	const result = await new Promise<ConfigUpdateResult>((resolve) =>
 		configUpdates.set(id, resolve),
 	);
 	if (result.result === ConfigUpdateResultKind.Ok) {
-		setState('config', key, update.update);
+		setState('config', update.key, update.value);
 	}
 	return result;
 }
@@ -91,7 +88,9 @@ export function initApi(host: string) {
 		'message',
 		async ({ data }: MessageEvent<string | Blob>) => {
 			if (data instanceof Blob) {
-				const response = parseResponse(await data.arrayBuffer());
+				const response = parseResponse(
+					new DataView(await data.arrayBuffer()),
+				);
 				import.meta.env.DEV && console.debug('response', response);
 				if (response.kind === ResponseKind.Config) {
 					setState('config', response.payload);

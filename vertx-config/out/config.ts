@@ -1,4 +1,4 @@
-import { Reader, Writer } from 'postcard';
+import type { Reader, Writer } from 'postcard';
 
 export const configKeys = {
 	name: 0,
@@ -42,7 +42,7 @@ export function parseConfig(reader: Reader): Config {
 		reader.string(),
 		reader.u8(),
 		reader.u8(),
-		reader.varint() as FontSize,
+		reader.varuint() as FontSize,
 		reader.string(),
 		reader.string(),
 		reader.string(),
@@ -51,28 +51,35 @@ export function parseConfig(reader: Reader): Config {
 	];
 }
 
-export function update<Key extends keyof Config>(
-	key: Key,
-	value: Config[Key],
-): ArrayBuffer {
-	const writer = new Writer(74);
-	switch (key) {
+export type StringSettings = 0 | 4 | 5 | 6 | 7;
+export type IntegerSettings = 1 | 2;
+export type EnumSettings = 3;
+export type BooleanSettings = 8;
+
+export type Update =
+	| { key: StringSettings; value: string }
+	| { key: IntegerSettings | EnumSettings; value: number }
+	| { key: BooleanSettings; value: boolean };
+
+export function encodeUpdate(writer: Writer, update: Update): ArrayBuffer {
+	writer.varuint(update.key);
+	switch (update.key) {
 		case 0:
 		case 4:
 		case 5:
 		case 6:
 		case 7:
-			writer.string(value);
+			writer.string(update.value);
 			break;
 		case 1:
 		case 2:
-			writer.u8(value);
+			writer.u8(update.value);
 			break;
 		case 3:
-			writer.varuint(value);
+			writer.varuint(update.value);
 			break;
 		case 8:
-			writer.boolean(value);
+			writer.boolean(update.value);
 			break;
 	}
 	return writer.done();

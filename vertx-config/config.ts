@@ -1,4 +1,4 @@
-import * as types from './types';
+import * as types from './src/types';
 
 export const version = 1;
 

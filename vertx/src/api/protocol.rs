@@ -18,7 +18,7 @@ pub enum Request<'a> {
     CheckForUpdate,
     GetConfig,
     ConfigUpdate {
-        id: u32,
+        id: u16,
         #[serde(borrow)]
         update: crate::config::Update<'a>,
     },
@@ -92,7 +92,7 @@ response! {
         config: Box<[u8]>,
     },
     ConfigUpdate {
-        id: u32,
+        id: u16,
         result: ConfigUpdateResult,
     },
     // Inputs,

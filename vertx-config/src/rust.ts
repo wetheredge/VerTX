@@ -1,21 +1,13 @@
-import type { BunFile, FileSink } from 'bun';
-import * as current from './config';
-import * as old from './config.old';
-import * as types from './types';
+import {
+	type ConfigMeta,
+	type Path,
+	getWriter,
+	toPascalCase,
+	toSnakeCase,
+	visit,
+} from './utilities';
 
-await Promise.all([
-	rust(current, 'out/config.rs'),
-	rust(current, 'out/current.rs', true),
-	rust(old, 'out/old.rs', true),
-	typescript(current.config, 'out/config.ts'),
-]);
-
-type ConfigMeta = {
-	config: types.Config;
-	version: number;
-};
-
-async function rust(
+export async function rust(
 	{ config, version }: ConfigMeta,
 	outFile: string,
 	migration = false,
@@ -144,7 +136,6 @@ async function rust(
 		// Update enum
 		outln`#[derive(Debug, Clone, ::serde::Deserialize)]`;
 		outln`#[allow(non_camel_case_types)]`;
-		outln`#[serde(tag = "key", content = "value")]`;
 		outln`pub(crate) enum Update<'a> {`;
 		const updateVariant = (path: Path, type: string) =>
 			outln`${getRawKeyType(path)}(${type}),`;
@@ -222,197 +213,4 @@ async function rust(
 	outln`}`;
 
 	await writer.end();
-}
-
-async function typescript(config: types.Config, outFile: string) {
-	const { writer, out, outln } = getWriter(Bun.file(outFile));
-
-	const integerToPostcard = ({ raw }: { raw: types.RawInteger }) =>
-		['u8', 'i8'].includes(raw)
-			? raw
-			: raw.startsWith('u')
-				? 'varuint'
-				: 'varint';
-
-	outln`import { Reader, Writer } from "postcard";\n`;
-
-	outln`export const configKeys = {`;
-	visit(config, {
-		// biome-ignore lint/style/noNonNullAssertion: is known to be non-empty
-		leaf: (path: NonEmptyPath, i: number) => outln`${path.at(-1)!}: ${i},`,
-		// biome-ignore lint/style/noNonNullAssertion: checked first
-		startNested: (path) => path.length > 0 && out`${path.at(-1)!}: {\n`,
-		endNested: (path) => path.length > 0 && outln`},`,
-	});
-	outln`} as const;\n`;
-
-	outln`export type Config = {`;
-	const type = (type: string, i: number) => outln`\t${i}: ${type}`;
-	visit(config, {
-		string: (_p, _v, i) => type('string', i),
-		integer: (_p, _v, i) => type('number', i),
-		enumeration: (_path, { name }, i) => type(name, i),
-		boolean: (_p, _v, i) => type('boolean', i),
-	});
-	outln`};\n`;
-
-	visit(config, {
-		enumeration(_path, value) {
-			outln`export const enum ${value.name} {`;
-			for (const variant of value.variants) {
-				outln`${variant.ident},`;
-			}
-			outln`}\n`;
-		},
-	});
-
-	outln`export function parseConfig(reader: Reader): Config {`;
-	outln`\treturn [`;
-	const readType = (type: string, as?: string) => {
-		out`\t\treader.${type}()`;
-		if (as != null) {
-			out` as ${as}`;
-		}
-		outln`,`;
-	};
-	visit(config, {
-		string: () => readType('string'),
-		integer: (_path, value) => readType(integerToPostcard(value)),
-		enumeration: (_path, { name }) => readType('varint', name),
-		boolean: () => readType('boolean'),
-	});
-	outln`\t];`;
-	outln`}\n`;
-
-	const updateTypes = ['string', 'u8', 'i8', 'varint', 'varuint', 'boolean'];
-	const updates: Record<string, Array<number>> = Object.fromEntries(
-		updateTypes.map((key) => [key, []]),
-	);
-	let maxStringLength = 0;
-	visit(config, {
-		string: (_p, { length }, i) => {
-			maxStringLength = Math.max(maxStringLength, length);
-			return updates.string.push(i);
-		},
-		integer: (_p, v, i) => updates[integerToPostcard(v)].push(i),
-		enumeration: (_p, _v, i) => updates.varuint.push(i),
-		boolean: (_p, _v, i) => updates.boolean.push(i),
-	});
-	outln`export function update<Key extends keyof Config>(key: Key, value: Config[Key]): ArrayBuffer {`;
-	outln`const writer = new Writer(${maxStringLength + 10});`;
-	outln`switch (key) {`;
-	for (const [type, keys] of Object.entries(updates)) {
-		for (const i of keys) {
-			outln`case ${i}:`;
-		}
-		if (keys.length > 0) {
-			outln`writer.${type}(value); break;`;
-		}
-	}
-	outln`}`;
-	outln`return writer.done();`;
-	outln`}`;
-
-	await writer.end();
-}
-
-type Out = (
-	s: TemplateStringsArray,
-	...args: Array<{ toString(): string }>
-) => void;
-function getWriter(outFile: BunFile): {
-	writer: FileSink;
-	out: Out;
-	outln: Out;
-} {
-	const writer = outFile.writer();
-	const out: Out = (segments, ...args) =>
-		segments.forEach((s, i) => {
-			writer.write(s);
-			if (i < args.length) {
-				writer.write(args[i].toString());
-			}
-		});
-	const outln: Out = (segments, ...args) => {
-		out(segments, ...args);
-		out`\n`;
-	};
-	return { writer, out, outln };
-}
-
-type Path = Array<string>;
-type NonEmptyPath = [...Array<string>, string];
-type Visitor = {
-	[Key in keyof types.Leaf]?: (
-		path: NonEmptyPath,
-		value: types.Leaf[Key],
-		index: number,
-	) => void;
-} & {
-	leaf?: (path: NonEmptyPath, index: number) => void;
-	startNested?: (
-		path: Path,
-		keys: Array<{ key: string; isLeaf: boolean }>,
-	) => void;
-	endNested?: (path: Path) => void;
-};
-export function visit(config: types.Config, visitor: Visitor) {
-	const getKeys = (value: types.Config) =>
-		Object.entries(value).map(([key, value]) => ({
-			key,
-			isLeaf: value.type != null,
-		}));
-	const visitLeaf = (path: NonEmptyPath, _: unknown, i: number) =>
-		visitor.leaf?.(path, i);
-	const visitString = visitor.string ?? visitLeaf;
-	const visitInteger = visitor.integer ?? visitLeaf;
-	const visitEnumeration = visitor.enumeration ?? visitLeaf;
-	const visitBoolean = visitor.boolean ?? visitLeaf;
-
-	let i = 0;
-	const impl = (config: types.Config, parent: Path = []) => {
-		for (const [key, value] of Object.entries(config)) {
-			const path: NonEmptyPath = [...parent, key];
-			if (value.type == null) {
-				const keys = getKeys(value);
-				visitor.startNested?.(path, keys);
-				impl(value, path);
-				visitor.endNested?.(path);
-			} else if (types.isString(value)) {
-				visitString(path, value, i++);
-			} else if (types.isInteger(value)) {
-				visitInteger(path, value, i++);
-			} else if (types.isEnumeration(value)) {
-				visitEnumeration(path, value, i++);
-			} else if (types.isBoolean(value)) {
-				visitBoolean(path, value, i++);
-			} else {
-				unreachable(value);
-			}
-		}
-	};
-
-	visitor.startNested?.([], getKeys(config));
-	impl(config);
-	visitor.endNested?.([]);
-}
-
-function splitCamelCase(camel: string): Array<string> {
-	return camel.split(/(?=[A-Z])/);
-}
-
-function toPascalCase(camel: string): string {
-	return splitCamelCase(camel)
-		.map((x) => x[0].toUpperCase() + x.substring(1))
-		.join('');
-}
-
-function toSnakeCase(camel: string): string {
-	return splitCamelCase(camel)
-		.map((x) => x.toLowerCase())
-		.join('_');
-}
-
-function unreachable(x: never): never {
-	throw new Error('Reached unreachable: ', x);
 }

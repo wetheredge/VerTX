@@ -7,7 +7,7 @@ tasks:
 
   check:
     cmds:
-      - bun run biome ci *.ts
+      - bun run biome ci *.ts src/*.ts
       - task: check:tsc
 
   check:tsc:
@@ -18,15 +18,17 @@ tasks:
       - ../.config/tsconfig.*
       - tsconfig.*
       - '*.ts'
+      - src/**.ts
 
   codegen:
     cmds:
       - rm -rf out && mkdir out
-      - bun run generate.ts
+      - bun run src/generate.ts
       - rustfmt --edition 2021 out/config.rs out/current.rs out/old.rs
       - bun run biome format --config-path=../.config/biome.json --write out/config.ts
     sources:
       - '*.ts'
+      - 'src/**.ts'
     generates:
       - 'out/*'
 

@@ -512,7 +512,6 @@ impl ::core::ops::Deref for super::LockedView<'_, key::Root_Expert> {
 
 #[derive(Debug, Clone, ::serde::Deserialize)]
 #[allow(non_camel_case_types)]
-#[serde(tag = "key", content = "value")]
 pub(crate) enum Update<'a> {
     #[serde(borrow)]
     Root_Name(&'a str),
