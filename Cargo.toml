@@ -34,7 +34,7 @@ esp-println = { version = "=0.11.0", default-features = false }
 heapless = "=0.8.0"
 log = "=0.4.22"
 loog.git = "https://github.com/wetheredge/loog.git"
-portable-atomic = "=1.7.0"
+portable-atomic = "=1.9.0"
 postcard = { version = "=1.0.10", default-features = false }
 serde = { version = "=1.0.210", default-features = false }
 static_cell = "=2.1.0"
@@ -47,7 +47,7 @@ vertx-server.path = "vertx-server"
 vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
 [workspace.metadata.bin]
-cargo-machete = { version = "=0.6.2", locked = true }
+cargo-machete = { version = "=0.7.0", locked = true }
 cargo-nextest = { version = "=0.9.78", locked = true }
 dprint = { version = "=0.47.2", locked = true }
 espflash = { version = "=3.1.1", locked = true }
