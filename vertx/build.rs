@@ -10,8 +10,6 @@ fn main() -> io::Result<()> {
     let out_dir = &env::var("OUT_DIR").unwrap();
     let root = &env::var("CARGO_MANIFEST_DIR").unwrap();
 
-    config_codegen(out_dir, root)?;
-
     if env::var_os("CARGO_FEATURE_SIMULATOR").is_some() {
         build_info(out_dir, root, "simulator")
     } else {
@@ -23,15 +21,6 @@ fn main() -> io::Result<()> {
         build_info(out_dir, root, &target_name)?;
         pins(out_dir, root, &target_name)
     }
-}
-
-fn config_codegen(out_dir: &str, root: &str) -> io::Result<()> {
-    let path = format!("{root}/../vertx-config/out/config.rs");
-    println!("cargo::rerun-if-changed={path}");
-    fs::write(
-        &format!("{out_dir}/config_codegen.rs"),
-        format!("include!({path:?});"),
-    )
 }
 
 fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {

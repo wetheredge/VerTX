@@ -8,9 +8,6 @@
 		"rules": {
 			"correctness": {
 				"noNodejsModules": "off"
-			},
-			"style": {
-				"noDefaultExport": "off"
 			}
 		}
 	}

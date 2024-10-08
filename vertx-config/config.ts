@@ -1,8 +1,8 @@
 import * as types from './types';
 
-export const version = 0;
+export const version = 1;
 
-export default {
+export const config = {
 	name: types.string(20),
 	leds: {
 		brightness: types.integer('u8', { min: 10 }),

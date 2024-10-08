@@ -1,0 +1,41 @@
+version: 3
+
+vars:
+  target: --target wasm32-unknown-unknown
+
+tasks:
+  default:
+    cmd: task --list-all --sort none
+    silent: true
+
+  check:
+    - task: check:up
+    - task: check:down
+    - bun run biome ci .
+    - task: check:tsc
+
+  check:*: cargo clippy {{.target}} -F {{index .MATCH 0}}
+
+  check:tsc:
+    internal: true
+    cmd: bun run tsc
+    sources:
+      - ../.config/tsconfig.*
+      - tsconfig.*
+      - '**.ts'
+
+  build:
+    - task: build:up
+    - task: build:down
+
+  build:*:
+    vars:
+      direction: '{{index .MATCH 0}}'
+    env:
+      RUSTFLAGS: -Cpanic=abort -Copt-level=z
+    cmds:
+      - cargo build --release {{.target}} -F {{.direction}}
+      # TODO: add to auto-installed dev tools
+      - wasm-opt -Oz --strip-producers --output ../target/migrate-{{.direction}}.wasm ../target/wasm32-unknown-unknown/release/vertx_config_migrate.wasm
+
+  :*: cd .. && task {{index .MATCH 0}}

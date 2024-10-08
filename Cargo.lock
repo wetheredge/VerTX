@@ -3462,6 +3462,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "vertx-config-migrate"
+version = "0.0.0"
+dependencies = [
+ "heapless",
+ "postcard",
+ "serde",
+]
+
+[[package]]
 name = "vertx-crsf"
 version = "0.0.0"
 dependencies = [

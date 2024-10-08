@@ -19,15 +19,12 @@ tasks:
       - tsconfig.*
       - '*.ts'
 
-  run:
-    vars:
-      rust: out/config.rs
-      typescript: out/config.ts
+  codegen:
     cmds:
       - rm -rf out && mkdir out
-      - bun run generate.ts {{.rust}} {{.typescript}}
-      - rustfmt --edition 2021 {{.rust}}
-      - bun run biome format --config-path=../.config/biome.json --write {{.typescript}}
+      - bun run generate.ts
+      - rustfmt --edition 2021 out/config.rs out/current.rs out/old.rs
+      - bun run biome format --config-path=../.config/biome.json --write out/config.ts
     sources:
       - '*.ts'
     generates:

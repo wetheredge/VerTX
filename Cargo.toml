@@ -4,6 +4,7 @@ members = [
     "vertx",
     "vertx-backpack",
     "vertx-backpack-ipc",
+    "vertx-config-migrate",
     "vertx-crsf",
     "vertx-network",
     "vertx-network-esp",

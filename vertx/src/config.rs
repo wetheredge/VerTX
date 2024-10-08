@@ -1,3 +1,10 @@
+mod codegen {
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../vertx-config/out/config.rs"
+    ));
+}
+
 use core::cell::RefCell;
 use core::future::{self, Future};
 use core::marker::PhantomData;
@@ -6,8 +13,12 @@ use core::{mem, task};
 use embassy_sync::blocking_mutex::Mutex;
 use serde::{Deserialize, Serialize};
 
+use self::codegen::{DeserializeError, RawConfig};
+pub(crate) use self::codegen::{Update, BYTE_LENGTH};
 use crate::hal::traits::ConfigStorage as _;
 use crate::hal::ConfigStorage;
+
+pub(crate) type RootConfig = View<codegen::key::Root>;
 
 const SUBSCRIPTIONS: usize = 1;
 
@@ -27,8 +38,10 @@ impl Manager {
         let raw = storage
             .load(|bytes| {
                 match RawConfig::deserialize(bytes) {
-                    Err(LoadError::WrongVersion) => loog::error!("Invalid config version"),
-                    Err(LoadError::Postcard(err)) => loog::error!("Failed to load config: {err}"),
+                    Err(DeserializeError::WrongVersion) => loog::error!("Invalid config version"),
+                    Err(DeserializeError::Postcard(err)) => {
+                        loog::error!("Failed to load config: {err}");
+                    }
                     Ok(raw) => return Some(raw),
                 }
 
@@ -135,8 +148,6 @@ impl Subscriber {
     }
 }
 
-pub type RootConfig = View<key::Root>;
-
 #[derive(Clone, Copy)]
 pub(crate) struct View<K> {
     manager: &'static Manager,
@@ -155,16 +166,8 @@ enum Subscription {
     Updated,
 }
 
-#[derive(Debug, Clone)]
-enum LoadError {
-    WrongVersion,
-    Postcard(postcard::Error),
-}
-
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum UpdateError {
     TooLarge { max: i64 },
     TooSmall { min: i64 },
 }
-
-include!(concat!(env!("OUT_DIR"), "/config_codegen.rs"));

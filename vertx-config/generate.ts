@@ -1,36 +1,50 @@
 import type { BunFile, FileSink } from 'bun';
-import config, { version } from './config';
+import * as current from './config';
+import * as old from './config.old';
 import * as types from './types';
 
 await Promise.all([
-	rust(Bun.file(Bun.argv[2])),
-	typescript(Bun.file(Bun.argv[3])),
+	rust(current, 'out/config.rs'),
+	rust(current, 'out/current.rs', true),
+	rust(old, 'out/old.rs', true),
+	typescript(current.config, 'out/config.ts'),
 ]);
 
-async function rust(outFile: BunFile) {
-	const { writer, out, outln } = getWriter(outFile);
+type ConfigMeta = {
+	config: types.Config;
+	version: number;
+};
+
+async function rust(
+	{ config, version }: ConfigMeta,
+	outFile: string,
+	migration = false,
+) {
+	const { writer, out, outln } = getWriter(Bun.file(outFile));
 
 	const string = ({ length }: { length: number }) =>
 		`::heapless::String<${length}>`;
+	const getFieldName = (path: Path) => path.join('_');
 	const getRawKeyType = (path: Path) =>
 		['Root', ...path.map(toPascalCase)].join('_');
 	const getKeyType = (path: Path) => `key::${getRawKeyType(path)}`;
 
 	// RawConfig struct
-	outln`#[derive(Debug, Default, Deserialize, Serialize)]`;
-	out`pub(crate) struct RawConfig(`;
+	outln`#[derive(Debug, Default, ::serde::Deserialize, ::serde::Serialize)]`;
+	outln`#[allow(non_snake_case)]`;
+	outln`pub(crate) struct RawConfig {`;
 	const rawConfigField = (path: Path, type: string) =>
-		out`/* ${path.join('.')} */ ${type},`;
+		outln`pub(super) ${getFieldName(path)}: ${type},`;
 	visit(config, {
 		string: (path, value) => rawConfigField(path, string(value)),
 		integer: (path, { raw }) => rawConfigField(path, raw),
 		enumeration: (path, { name }) => rawConfigField(path, name),
 		boolean: (path) => rawConfigField(path, 'bool'),
 	});
-	outln`);\n`;
+	outln`}\n`;
 
 	// 4 for u32 version bytes
-	out`pub const BYTE_LENGTH: usize = 4`;
+	out`pub(crate) const BYTE_LENGTH: usize = 4`;
 	const varintByteLength = { x8: 1, x16: 3, x32: 5, x64: 10, x128: 19 };
 	const usizeByteLength = varintByteLength.x32;
 	visit(config, {
@@ -45,8 +59,8 @@ async function rust(outFile: BunFile) {
 	// Enum declarations
 	visit(config, {
 		enumeration(_path, value) {
-			outln`#[derive(Debug, Default, Clone, Copy, Deserialize, Serialize)]`;
-			outln`pub enum ${value.name} {`;
+			outln`#[derive(Debug, Default, Clone, Copy, ::serde::Deserialize, ::serde::Serialize)]`;
+			outln`pub(crate) enum ${value.name} {`;
 			for (const variant of value.variants) {
 				if (variant.name !== variant.ident) {
 					outln`/// ${variant.name}`;
@@ -60,148 +74,158 @@ async function rust(outFile: BunFile) {
 		},
 	});
 
-	// Typestate keys
-	const typestateKeyStruct = (path: Path) =>
-		outln`#[derive(Clone, Copy)] pub(crate) struct ${getRawKeyType(path)};`;
-	outln`#[allow(non_camel_case_types, unused)]`;
-	outln`mod key {`;
-	visit(config, {
-		leaf: typestateKeyStruct,
-		startNested: typestateKeyStruct,
-	});
-	outln`}\n`;
-
-	// Typestate impls
-	const leafImplBlock = (path: Path, type: string, i: number) => {
-		const keyType = getKeyType(path);
-
-		outln`#[allow(unused)]`;
-		outln`impl View<${keyType}> {`;
-		outln`    pub fn lock<T>(&self, f: impl FnOnce(&${type}) -> T) -> T {`;
-		outln`        self.manager.state.lock(|state| f(&state.borrow().config.${i}))`;
-		outln`    }\n`;
-		outln`    pub fn subscribe(&self) -> Option<Subscriber> {`;
-		outln`        self.manager.subscribe(${i})`;
-		outln`    }`;
+	if (!migration) {
+		// Typestate keys
+		const typestateKeyStruct = (path: Path) =>
+			outln`#[derive(Clone, Copy)] pub(crate) struct ${getRawKeyType(path)};`;
+		outln`#[allow(non_camel_case_types, unused)]`;
+		outln`pub(super) mod key {`;
+		visit(config, {
+			leaf: typestateKeyStruct,
+			startNested: typestateKeyStruct,
+		});
 		outln`}\n`;
 
-		outln`impl ::core::ops::Deref for LockedView<'_, ${keyType}> {`;
-		outln`    type Target = ${type};`;
-		outln`    fn deref(&self) -> &Self::Target {`;
-		outln`        &self.config.${i}`;
-		outln`    }`;
-		outln`}\n`;
-	};
-	visit(config, {
-		startNested(path, keys) {
+		// Typestate impls
+		const leafImplBlock = (path: Path, type: string, i: number) => {
 			const keyType = getKeyType(path);
 
 			outln`#[allow(unused)]`;
-			outln`impl View<${keyType}> {`;
-			outln`    pub fn lock<T>(&self, f: impl FnOnce(LockedView<'_, ${keyType}>) -> T) -> T {`;
-			outln`        self.manager.state.lock(|state| f(LockedView {`;
-			outln`            config: &state.borrow().config,`;
-			outln`            _key: PhantomData,`;
-			outln`        }))`;
+			outln`impl super::View<${keyType}> {`;
+			outln`    pub(crate) fn lock<T>(&self, f: impl FnOnce(&${type}) -> T) -> T {`;
+			outln`        self.manager.state.lock(|state| f(&state.borrow().config.${getFieldName(path)}))`;
 			outln`    }\n`;
-			for (const { key } of keys) {
-				outln`    pub fn ${toSnakeCase(key)}(&self) -> View<${getKeyType([...path, key])}> {`;
-				outln`        View { manager: self.manager, _key: PhantomData }`;
-				outln`    }`;
-			}
+			outln`    pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {`;
+			outln`        self.manager.subscribe(${i})`;
+			outln`    }`;
 			outln`}\n`;
 
-			outln`#[allow(unused)]`;
-			outln`impl LockedView<'_, ${keyType}> {`;
-			for (const { key } of keys) {
-				outln`    pub fn ${toSnakeCase(key)}(&self) -> LockedView<'_, ${getKeyType([...path, key])}> {`;
-				outln`        LockedView { config: self.config, _key: PhantomData }`;
-				outln`    }`;
-			}
+			outln`impl ::core::ops::Deref for super::LockedView<'_, ${keyType}> {`;
+			outln`    type Target = ${type};`;
+			outln`    fn deref(&self) -> &Self::Target {`;
+			outln`        &self.config.${getFieldName(path)}`;
+			outln`    }`;
 			outln`}\n`;
-		},
-		string: (path, value, i) => leafImplBlock(path, string(value), i),
-		integer: (path, { raw }, i) => leafImplBlock(path, raw, i),
-		enumeration: (path, { name }, i) => leafImplBlock(path, name, i),
-		boolean: (path, _, i) => leafImplBlock(path, 'bool', i),
-	});
+		};
+		visit(config, {
+			startNested(path, keys) {
+				const keyType = getKeyType(path);
 
-	// Update enum
-	outln`#[derive(Debug, Clone, ::serde::Deserialize)]`;
-	outln`#[allow(non_camel_case_types)]`;
-	outln`#[serde(tag = "key", content = "value")]`;
-	outln`pub enum Update<'a> {`;
-	const updateVariant = (path: Path, type: string) =>
-		outln`${getRawKeyType(path)}(${type}),`;
-	visit(config, {
-		string: (path) => {
-			outln`#[serde(borrow)]`;
-			updateVariant(path, "&'a str");
-		},
-		integer: (path, { raw }) => updateVariant(path, raw),
-		enumeration: (path, { name }) => updateVariant(path, name),
-		boolean: (path) => updateVariant(path, 'bool'),
-	});
+				outln`#[allow(unused)]`;
+				outln`impl super::View<${keyType}> {`;
+				outln`    pub(crate) fn lock<T>(&self, f: impl FnOnce(super::LockedView<'_, ${keyType}>) -> T) -> T {`;
+				outln`        self.manager.state.lock(|state| f(super::LockedView {`;
+				outln`            config: &state.borrow().config,`;
+				outln`            _key: ::core::marker::PhantomData,`;
+				outln`        }))`;
+				outln`    }\n`;
+				for (const { key } of keys) {
+					outln`    pub(crate) fn ${toSnakeCase(key)}(&self) -> super::View<${getKeyType([...path, key])}> {`;
+					outln`        super::View { manager: self.manager, _key: ::core::marker::PhantomData }`;
+					outln`    }`;
+				}
+				outln`}\n`;
+
+				outln`#[allow(unused)]`;
+				outln`impl super::LockedView<'_, ${keyType}> {`;
+				for (const { key } of keys) {
+					outln`    pub(crate) fn ${toSnakeCase(key)}(&self) -> super::LockedView<'_, ${getKeyType([...path, key])}> {`;
+					outln`        super::LockedView { config: self.config, _key: ::core::marker::PhantomData }`;
+					outln`    }`;
+				}
+				outln`}\n`;
+			},
+			string: (path, value, i) => leafImplBlock(path, string(value), i),
+			integer: (path, { raw }, i) => leafImplBlock(path, raw, i),
+			enumeration: (path, { name }, i) => leafImplBlock(path, name, i),
+			boolean: (path, _, i) => leafImplBlock(path, 'bool', i),
+		});
+
+		// Update enum
+		outln`#[derive(Debug, Clone, ::serde::Deserialize)]`;
+		outln`#[allow(non_camel_case_types)]`;
+		outln`#[serde(tag = "key", content = "value")]`;
+		outln`pub(crate) enum Update<'a> {`;
+		const updateVariant = (path: Path, type: string) =>
+			outln`${getRawKeyType(path)}(${type}),`;
+		visit(config, {
+			string: (path) => {
+				outln`#[serde(borrow)]`;
+				updateVariant(path, "&'a str");
+			},
+			integer: (path, { raw }) => updateVariant(path, raw),
+			enumeration: (path, { name }) => updateVariant(path, name),
+			boolean: (path) => updateVariant(path, 'bool'),
+		});
+		outln`}\n`;
+	}
+
+	outln`#[derive(Debug, Clone)]`;
+	outln`pub(super) enum DeserializeError {`;
+	outln`    WrongVersion,`;
+	outln`    Postcard(postcard::Error),`;
 	outln`}\n`;
 
 	outln`impl RawConfig {`;
 
 	const versionBytes = `u32::to_le_bytes(${version})`;
-	outln`fn deserialize(from: &[u8]) -> Result<Self, LoadError> {`;
+	outln`pub(super) fn deserialize(from: &[u8]) -> Result<Self, DeserializeError> {`;
 	outln`    let (version, from) = from.split_at(4);`;
 	outln`    if version == ${versionBytes} {`;
-	outln`        postcard::from_bytes(from).map_err(LoadError::Postcard)`;
+	outln`        postcard::from_bytes(from).map_err(DeserializeError::Postcard)`;
 	outln`    } else {`;
-	outln`        Err(LoadError::WrongVersion)`;
+	outln`        Err(DeserializeError::WrongVersion)`;
 	outln`    }`;
 	outln`}`;
 
-	outln`fn serialize(&self, buffer: &mut [u8]) -> postcard::Result<usize> {`;
+	outln`pub(super) fn serialize(&self, buffer: &mut [u8]) -> postcard::Result<usize> {`;
 	outln`    let (version, buffer) = buffer.split_at_mut(4);`;
 	outln`    version.copy_from_slice(&${versionBytes});`;
 	outln`    postcard::to_slice(self, buffer).map(|out| out.len() + 4)`;
 	outln`}`;
 
-	outln`fn update(&mut self, update: Update<'_>) -> Result<usize, UpdateError> {`;
-	outln`match update {`;
-	const updateArmStart = (path: Path) =>
-		outln`Update::${getRawKeyType(path)}(update) => {`;
-	const updateArmEnd = (i: number) => {
-		outln`self.${i} = update;`;
-		outln`Ok(${i})`;
+	if (!migration) {
+		outln`pub(super) fn update(&mut self, update: Update<'_>) -> Result<usize, super::UpdateError> {`;
+		outln`match update {`;
+		const updateArmStart = (path: Path, i: number) => {
+			outln`Update::${getRawKeyType(path)}(update) => {`;
+			return () => {
+				outln`self.${getFieldName(path)} = update;`;
+				outln`Ok(${i})`;
+				outln`}`;
+			};
+		};
+		visit(config, {
+			leaf(path, i) {
+				updateArmStart(path, i)();
+			},
+			string(path, { length }, i) {
+				const end = updateArmStart(path, i);
+				outln`let Ok(update) = update.try_into() else { return Err(super::UpdateError::TooLarge { max: ${length} }) };`;
+				end();
+			},
+			integer(path, { min, max }, i) {
+				const end = updateArmStart(path, i);
+				if (min != null) {
+					outln`if update < ${min} { return Err(super::UpdateError::TooSmall { min: ${min} }) };`;
+				}
+				if (max != null) {
+					outln`if update > ${max} { return Err(super::UpdateError::TooLarge { max: ${max} }) };`;
+				}
+				end();
+			},
+		});
 		outln`}`;
-	};
-	visit(config, {
-		leaf(path, i) {
-			updateArmStart(path);
-			updateArmEnd(i);
-		},
-		string(path, { length }, i) {
-			updateArmStart(path);
-			outln`let Ok(update) = update.try_into() else { return Err(UpdateError::TooLarge { max: ${length} }) };`;
-			updateArmEnd(i);
-		},
-		integer(path, { min, max }, i) {
-			updateArmStart(path);
-			if (min != null) {
-				outln`if update < ${min} { return Err(UpdateError::TooSmall { min: ${min} }) };`;
-			}
-			if (max != null) {
-				outln`if update > ${max} { return Err(UpdateError::TooLarge { max: ${max} }) };`;
-			}
-			updateArmEnd(i);
-		},
-	});
-	outln`}`;
-	outln`}`;
+		outln`}`;
+	}
 
 	outln`}`;
 
 	await writer.end();
 }
 
-async function typescript(outFile: BunFile) {
-	const { writer, out, outln } = getWriter(outFile);
+async function typescript(config: types.Config, outFile: string) {
+	const { writer, out, outln } = getWriter(Bun.file(outFile));
 
 	const integerToPostcard = ({ raw }: { raw: types.RawInteger }) =>
 		['u8', 'i8'].includes(raw)

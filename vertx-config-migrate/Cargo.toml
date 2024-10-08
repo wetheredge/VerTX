@@ -1,0 +1,21 @@
+[package]
+name = "vertx-config-migrate"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+up = []
+down = []
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+heapless = { workspace = true, features = ["serde"] }
+postcard = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+
+[lints]
+workspace = true

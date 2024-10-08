@@ -96,7 +96,7 @@ embassy-futures = { workspace = true }
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
 esp-alloc = { workspace = true }
-heapless = { workspace = true }
+heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
 portable-atomic = { workspace = true }
 postcard = { workspace = true }
