@@ -1,12 +1,18 @@
 #![no_std]
 
+extern crate alloc;
+
+pub mod api;
+
 use heapless::String;
+use serde::{Deserialize, Serialize};
+
+pub use self::api::Api;
 
 pub type Ssid = String<32>;
 pub type Password = String<64>;
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Config {
     Home {
         ssid: Ssid,
@@ -18,17 +24,6 @@ pub enum Config {
         password: Password,
         address: [u8; 4],
     },
-}
-
-#[allow(async_fn_in_trait)]
-pub trait Api {
-    type Buffer;
-
-    const NAME: &'static str;
-
-    fn buffer() -> Self::Buffer;
-    async fn next_response<'b>(&self, buffer: &'b mut Self::Buffer) -> &'b [u8];
-    async fn handle<'b>(&self, request: &[u8], buffer: &'b mut Self::Buffer) -> Option<&'b [u8]>;
 }
 
 pub trait Hal: Sized {

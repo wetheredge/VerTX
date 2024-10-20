@@ -86,13 +86,12 @@ simulator = [
     "embedded-io-async/std",
     "rand/std",
     "rand/std_rng",
-    "vertx-server/std",
 ]
 
 [dependencies]
 bytemuck = { version = "=1.18.0", features = ["extern_crate_alloc", "min_const_generics"] }
 embassy-executor = { workspace = true, features = ["nightly"] }
-embassy-futures = { workspace = true }
+embassy-futures = "=0.1.1"
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
 esp-alloc = { workspace = true }
@@ -102,12 +101,13 @@ portable-atomic = { workspace = true }
 postcard = { workspace = true }
 rand = { version = "=0.8.5", default-features = false, features = ["min_const_gen"] }
 serde = { workspace = true, features = ["derive", "alloc"] }
+serde-json-core = { workspace = true }
 smart-leds = "=0.4.0"
 static_cell = { workspace = true, features = ["nightly"] }
 vertx-network = { workspace = true }
 
 # backpack
-embedded-io-async = { version = "=0.6.1", optional = true }
+embedded-io-async = { workspace = true, optional = true }
 vertx-backpack-ipc = { workspace = true, optional = true }
 
 # network-native
@@ -138,8 +138,6 @@ vertx-simulator-ipc = { workspace = true, optional = true }
 
 [build-dependencies]
 basic-toml = "=0.1.9"
-cargo_toml = "=0.20.4"
-prettyplease = "=0.2.22"
 serde = { workspace = true, features = ["derive"] }
 
 [[bin]]

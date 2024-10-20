@@ -12,9 +12,9 @@ use vertx_network::Api as _;
 
 use crate::api::Api;
 
-type TxChannel = channel::Channel<crate::mutex::SingleCore, ToBackpack, 10>;
-type TxSender = channel::Sender<'static, crate::mutex::SingleCore, ToBackpack, 10>;
-type TxReceiver = channel::Receiver<'static, crate::mutex::SingleCore, ToBackpack, 10>;
+type TxChannel = channel::Channel<crate::mutex::SingleCore, ToBackpack<'static>, 10>;
+type TxSender = channel::Sender<'static, crate::mutex::SingleCore, ToBackpack<'static>, 10>;
+type TxReceiver = channel::Receiver<'static, crate::mutex::SingleCore, ToBackpack<'static>, 10>;
 
 type NetworkUp = Signal<crate::mutex::SingleCore, ()>;
 type PowerAck = Signal<crate::mutex::SingleCore, ()>;
@@ -159,8 +159,6 @@ async fn rx_handler(
     network_up: &'static NetworkUp,
     power_ack: &'static PowerAck,
 ) -> ! {
-    let mut api_buffer = Api::buffer();
-
     let mut ever_success = false;
     let mut buffer = [0; 32];
     let mut accumulator = CobsAccumulator::<256>::new();
@@ -174,7 +172,7 @@ async fn rx_handler(
         };
 
         while !chunk.is_empty() {
-            chunk = match accumulator.feed(chunk) {
+            chunk = match accumulator.feed_ref(chunk) {
                 FeedResult::Consumed => break,
                 FeedResult::OverFull(remaining) => remaining,
                 FeedResult::DeserError(remaining) => {
@@ -194,12 +192,10 @@ async fn rx_handler(
                         }
 
                         #[cfg(feature = "network-backpack")]
-                        ToMain::ApiRequest(request) => {
+                        ToMain::ApiRequest { path, method, body } => {
                             if let Some(api) = API.try_get() {
-                                if let Some(response) = api.handle(&request, &mut api_buffer).await
-                                {
-                                    tx.send(ToBackpack::ApiResponse(response.to_vec())).await;
-                                }
+                                let response = api.handle(&path, method, &body).await;
+                                tx.send(ToBackpack::ApiResponse(response)).await;
                             } else {
                                 loog::error!("Got ApiRequest before network was initialized");
                             }

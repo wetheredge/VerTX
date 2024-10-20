@@ -1,1 +1,10 @@
-../.config/tasks/Taskfile.cargo.yaml
+version: 3
+
+tasks:
+  default:
+    cmd: task --list-all --sort none
+    silent: true
+
+  check: cargo clippy {{.CLI_ARGS}}
+
+  :*: cd .. && task {{index .MATCH 0}}

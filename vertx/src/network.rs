@@ -68,7 +68,6 @@ mod native {
 
     const WORKERS: usize = 8;
 
-    vertx_server::get_router!(get_router -> Router<Api>);
     type Context = vertx_server::Context<crate::hal::NetworkDriver>;
 
     pub(super) async fn run(
@@ -88,9 +87,8 @@ mod native {
             spawner.must_spawn(dhcp(context, dhcp_context));
         }
 
-        let router = make_static!(get_router());
         for id in 0..WORKERS {
-            spawner.must_spawn(http(id, context, router, api));
+            spawner.must_spawn(http(id, context, api));
         }
 
         wait.wait_for_network(context).await;
@@ -107,12 +105,7 @@ mod native {
     }
 
     #[task(pool_size = WORKERS)]
-    async fn http(
-        id: usize,
-        context: &'static Context,
-        router: &'static Router,
-        api: &'static Api,
-    ) -> ! {
-        vertx_server::tasks::http(id, context, router, api).await
+    async fn http(id: usize, context: &'static Context, api: &'static Api) -> ! {
+        vertx_server::tasks::http(id, context, api).await
     }
 }

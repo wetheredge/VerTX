@@ -118,6 +118,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "atoi"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f28d99ec8bfea296261ca1af174f24225171fea9664ba9003cbebee704810528"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "atomic-polyfill"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -300,16 +309,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo_toml"
-version = "0.20.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad639525b1c67b6a298f378417b060fbc04618bea559482a8484381cce27d965"
-dependencies = [
- "serde",
- "toml",
-]
-
-[[package]]
 name = "cfg-expr"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -386,12 +385,6 @@ name = "colorchoice"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3fd119d74b830634cea2a0f58bbd0d54540518a14397557951e79340abc28c0"
-
-[[package]]
-name = "const-sha1"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d8a42181e0652c2997ae4d217f25b63c5337a52fd2279736e97b832fa0a3cff"
 
 [[package]]
 name = "cortex-m"
@@ -1909,9 +1902,9 @@ dependencies = [
 
 [[package]]
 name = "httparse"
-version = "1.9.4"
+version = "1.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fcc0b4a115bf80b728eb8ea024ad5bd707b615bfed49e0665b6e0f86fd082d9"
+checksum = "7d71d3574edd2771538b901e6549113b4006ece66150fb69c0fb6d9a2adae946"
 
 [[package]]
 name = "humantime"
@@ -2012,12 +2005,6 @@ name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
-
-[[package]]
-name = "lhash"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "744a4c881f502e98c2241d2e5f50040ac73b30194d64452bb6260393b53f0dc9"
 
 [[package]]
 name = "libadwaita"
@@ -2378,25 +2365,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "picoserve"
-version = "0.12.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "289ba0d65f123eb9c55ee8e34c0227f3c17b4298bb47ef05cbd0caa0e6a06d49"
-dependencies = [
- "const-sha1",
- "data-encoding",
- "embassy-net",
- "embassy-time",
- "embedded-io-async",
- "futures-util",
- "heapless",
- "lhash",
- "ryu",
- "serde",
- "serde-json-core",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2511,16 +2479,6 @@ name = "precomputed-hash"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
-
-[[package]]
-name = "prettyplease"
-version = "0.2.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "479cf940fbbb3426c32c5d5176f62ad57549a0bb84773423ba8be9d089f5faba"
-dependencies = [
- "proc-macro2",
- "syn 2.0.77",
-]
 
 [[package]]
 name = "proc-macro-crate"
@@ -3394,7 +3352,6 @@ version = "0.0.0"
 dependencies = [
  "basic-toml",
  "bytemuck",
- "cargo_toml",
  "cortex-m-rt",
  "defmt-rtt",
  "embassy-executor",
@@ -3419,9 +3376,9 @@ dependencies = [
  "pio",
  "portable-atomic",
  "postcard",
- "prettyplease",
  "rand",
  "serde",
+ "serde-json-core",
  "smart-leds",
  "static_cell",
  "vertx-backpack-ipc",
@@ -3486,6 +3443,7 @@ dependencies = [
  "embassy-net-driver",
  "heapless",
  "serde",
+ "serde-json-core",
 ]
 
 [[package]]
@@ -3505,13 +3463,15 @@ dependencies = [
 name = "vertx-server"
 version = "0.0.0"
 dependencies = [
+ "atoi",
  "edge-dhcp",
- "embassy-futures",
  "embassy-net",
  "embassy-time",
+ "embedded-io-async",
  "heapless",
+ "httparse",
+ "itoa",
  "log",
- "picoserve",
  "serde",
  "serde_json",
  "vertx-network",
