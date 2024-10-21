@@ -6,11 +6,17 @@ use super::{respond, Mime};
 
 include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 
+#[derive(Debug, Clone, Copy)]
+pub(super) enum Outcome<StreamId> {
+    Complete,
+    EventStream(StreamId),
+}
+
 pub(super) async fn respond<R: Read, W: Write<Error = R::Error>, A: Api>(
     request: &mut super::Request<'_, '_, '_, '_, R>,
     response: &mut W,
     api: &A,
-) -> Result<(), W::Error> {
+) -> Result<Outcome<A::StreamId>, W::Error> {
     let accept = request
         .headers()
         .iter()
@@ -27,13 +33,14 @@ pub(super) async fn respond<R: Read, W: Write<Error = R::Error>, A: Api>(
         let method = request.method();
         let body = request.body().await?;
         match api.handle(path, method, body).await {
-            ApiResponse::Ok(Some(body)) => respond::ok(response, &body.mime, &body.body).await,
-            ApiResponse::Ok(None) => respond::ok_default(response).await,
-            ApiResponse::NotFound => respond::not_found(response).await,
-            ApiResponse::BadRequest { reason } => respond::bad_request(response, &reason).await,
+            ApiResponse::Ok(Some(body)) => respond::ok(response, &body.mime, &body.body).await?,
+            ApiResponse::Ok(None) => respond::ok_default(response).await?,
+            ApiResponse::NotFound => respond::not_found(response).await?,
+            ApiResponse::BadRequest { reason } => respond::bad_request(response, &reason).await?,
             ApiResponse::MethodNotAllowed(allow) => {
-                respond::method_not_allowed(response, &allow).await
+                respond::method_not_allowed(response, &allow).await?;
             }
+            ApiResponse::EventStream(id) => return Ok(Outcome::EventStream(id)),
         }
     } else if request.method() == Method::Get {
         let file =
@@ -44,13 +51,15 @@ pub(super) async fn respond<R: Read, W: Write<Error = R::Error>, A: Api>(
             };
 
         if file.mime.is_acceptable(accept) {
-            file.write_response(response).await
+            file.write_response(response).await?;
         } else {
-            respond::not_acceptable(response, &file.mime).await
+            respond::not_acceptable(response, &file.mime).await?;
         }
     } else {
-        respond::method_not_allowed(response, &[Method::Get]).await
+        respond::method_not_allowed(response, &[Method::Get]).await?;
     }
+
+    Ok(Outcome::Complete)
 }
 
 #[derive(Debug)]

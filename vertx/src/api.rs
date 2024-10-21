@@ -2,20 +2,21 @@ use alloc::borrow::Cow;
 use alloc::vec::Vec;
 
 use embassy_executor::{task, Spawner};
-use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Ticker};
 use static_cell::make_static;
 use vertx_network::api::{Body, Method, Response};
 
-pub(crate) type StatusSignal = Signal<crate::mutex::SingleCore, Status>;
+pub(crate) mod events {
+    use embassy_sync::signal::Signal;
 
-#[derive(Debug, Clone, Copy)]
-#[allow(unused)]
-pub(crate) struct Status {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub(crate) enum Id {
+        Status,
+    }
+
     /// Per cell battery voltage in centivolts
-    pub(crate) battery_voltage: u16,
-    pub(crate) idle_time: f32,
-    pub(crate) timing_drift: f32,
+    pub(crate) type Battery = u16;
+    pub(crate) type BatterySignal = Signal<crate::mutex::SingleCore, Battery>;
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -40,8 +41,8 @@ impl From<Result<(), crate::config::UpdateError>> for ConfigUpdateResult {
 pub(crate) struct Api {
     reset: &'static crate::reset::Manager,
     config: &'static crate::config::Manager,
-    #[allow(unused)]
-    status: &'static StatusSignal,
+
+    battery: &'static events::BatterySignal,
 }
 
 impl Api {
@@ -50,19 +51,27 @@ impl Api {
         reset: &'static crate::reset::Manager,
         config: &'static crate::config::Manager,
     ) -> Self {
-        let status_signal = make_static!(StatusSignal::new());
-        spawner.must_spawn(status(status_signal));
+        let battery = make_static!(events::BatterySignal::new());
+        spawner.must_spawn(mock_battery(battery));
 
         Self {
             reset,
             config,
-            status: status_signal,
+
+            battery,
         }
     }
 }
 
 impl vertx_network::Api for Api {
-    async fn handle(&self, path: &str, method: Method, request: &[u8]) -> Response {
+    type StreamId = events::Id;
+
+    async fn handle(
+        &self,
+        path: &str,
+        method: Method,
+        request: &[u8],
+    ) -> Response<'static, Self::StreamId> {
         let path = path.strip_suffix('/').unwrap_or(path);
 
         // TODO
@@ -126,23 +135,48 @@ impl vertx_network::Api for Api {
                 }
                 _ => Response::MethodNotAllowed((&[Method::Get, Method::Patch]).into()),
             },
+            "status" => Response::EventStream(events::Id::Status),
             _ => Response::NotFound,
+        }
+    }
+
+    async fn event<T: vertx_network::api::EventHandler>(
+        &self,
+        stream_id: Self::StreamId,
+        handler: &mut T,
+    ) -> Result<(), T::Error> {
+        match stream_id {
+            events::Id::Status => {
+                let battery = self.battery.wait().await;
+
+                let mut data = [0; 4];
+                if battery >= 500 {
+                    loog::error!("Impossible battery voltage: {battery:?}cV");
+                    data = *b"9.99";
+                } else {
+                    let mut raw = battery;
+                    // TODO: use div_floor
+                    data[3] = (raw as u8 % 10) + b'0';
+                    raw /= 10;
+                    data[2] = (raw as u8 % 10) + b'0';
+                    raw /= 10;
+                    data[1] = b'.';
+                    data[0] = raw as u8 + b'0';
+                }
+
+                handler.send_named(b"vbat", &data).await
+            }
         }
     }
 }
 
 #[task]
-async fn status(status: &'static StatusSignal) {
-    loog::info!("Starting status()");
+async fn mock_battery(battery: &'static events::BatterySignal) {
+    loog::info!("Starting mock_battery()");
 
     let mut ticker = Ticker::every(Duration::from_secs(1));
     loop {
         ticker.next().await;
-
-        status.signal(Status {
-            battery_voltage: 0,
-            idle_time: 0.0,
-            timing_drift: 0.0,
-        });
+        battery.signal(0);
     }
 }

@@ -5,7 +5,7 @@ use core::ops;
 
 use atoi::FromRadix10;
 use embedded_io_async::{Read, Write};
-use vertx_network::api::Method;
+use vertx_network::api::{EventHandler, Method};
 use vertx_network::Api;
 
 pub(crate) async fn run<R, W, A>(
@@ -55,21 +55,65 @@ where
 
             reader: &mut rx,
         };
-        router::respond(&mut request, &mut tx, api).await?;
+        match router::respond(&mut request, &mut tx, api).await? {
+            router::Outcome::Complete => {
+                if close {
+                    return Ok(());
+                }
 
-        if close {
-            return Ok(());
+                let total_len = raw_headers.len() + request.content_length();
+                let mut total_read = buffer.len();
+                while total_read < total_len {
+                    total_read += buffer.read_from(&mut rx).await?;
+                }
+                // How much was read past the end of the request
+                let extra = total_read - total_len;
+                let next_request_offset = buffer.len() - extra;
+                buffer.discard_prefix(next_request_offset);
+            }
+            router::Outcome::EventStream(id) => {
+                tx.write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Type:text/event-stream\r\nCache-Control:no-cache\r\n\r\n",
+                )
+                .await?;
+
+                event_stream(&mut tx, api, id).await?;
+            }
+        }
+    }
+}
+
+async fn event_stream<A: Api, W: Write>(
+    tx: &mut W,
+    api: &A,
+    id: A::StreamId,
+) -> Result<(), W::Error> {
+    loop {
+        struct Handler<W>(W);
+
+        impl<W: Write> EventHandler for Handler<W> {
+            type Error = W::Error;
+
+            async fn send(&mut self, data: &[u8]) -> Result<(), Self::Error> {
+                for line in data.split(|&x| x == b'\n') {
+                    self.0.write_all(b"data:").await?;
+                    self.0.write_all(line).await?;
+                    self.0.write(&[b'\n']).await?;
+                }
+
+                Ok(())
+            }
+
+            async fn send_named(&mut self, name: &[u8], data: &[u8]) -> Result<(), Self::Error> {
+                self.0.write_all(b"event:").await?;
+                self.0.write_all(name).await?;
+                self.0.write(&[b'\n']).await?;
+
+                self.send(data).await
+            }
         }
 
-        let total_len = raw_headers.len() + request.content_length();
-        let mut total_read = buffer.len();
-        while total_read < total_len {
-            total_read += buffer.read_from(&mut rx).await?;
-        }
-        // How much was read past the end of the request
-        let extra = total_read - total_len;
-        let next_request_offset = buffer.len() - extra;
-        buffer.discard_prefix(next_request_offset);
+        api.event(id, &mut Handler(&mut *tx)).await?;
     }
 }
 
