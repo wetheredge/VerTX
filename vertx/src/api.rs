@@ -9,11 +9,6 @@ use vertx_network::api::{Body, Method, Response};
 pub(crate) mod events {
     use embassy_sync::signal::Signal;
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub(crate) enum Id {
-        Status,
-    }
-
     /// Per cell battery voltage in centivolts
     pub(crate) type Battery = u16;
     pub(crate) type BatterySignal = Signal<crate::mutex::SingleCore, Battery>;
@@ -64,14 +59,7 @@ impl Api {
 }
 
 impl vertx_network::Api for Api {
-    type StreamId = events::Id;
-
-    async fn handle(
-        &self,
-        path: &str,
-        method: Method,
-        request: &[u8],
-    ) -> Response<'static, Self::StreamId> {
+    async fn handle(&self, path: &str, method: Method, request: &[u8]) -> Response<'static> {
         let path = path.strip_suffix('/').unwrap_or(path);
 
         // TODO
@@ -135,38 +123,32 @@ impl vertx_network::Api for Api {
                 }
                 _ => Response::MethodNotAllowed((&[Method::Get, Method::Patch]).into()),
             },
-            "status" => Response::EventStream(events::Id::Status),
             _ => Response::NotFound,
         }
     }
 
     async fn event<T: vertx_network::api::EventHandler>(
         &self,
-        stream_id: Self::StreamId,
         handler: &mut T,
     ) -> Result<(), T::Error> {
-        match stream_id {
-            events::Id::Status => {
-                let battery = self.battery.wait().await;
+        let battery = self.battery.wait().await;
 
-                let mut data = [0; 4];
-                if battery >= 500 {
-                    loog::error!("Impossible battery voltage: {battery:?}cV");
-                    data = *b"9.99";
-                } else {
-                    let mut raw = battery;
-                    // TODO: use div_floor
-                    data[3] = (raw as u8 % 10) + b'0';
-                    raw /= 10;
-                    data[2] = (raw as u8 % 10) + b'0';
-                    raw /= 10;
-                    data[1] = b'.';
-                    data[0] = raw as u8 + b'0';
-                }
-
-                handler.send_named(b"vbat", &data).await
-            }
+        let mut data = [0; 4];
+        if battery >= 500 {
+            loog::error!("Impossible battery voltage: {battery:?}cV");
+            data = *b"9.99";
+        } else {
+            let mut raw = battery;
+            // TODO: use div_floor
+            data[3] = (raw as u8 % 10) + b'0';
+            raw /= 10;
+            data[2] = (raw as u8 % 10) + b'0';
+            raw /= 10;
+            data[1] = b'.';
+            data[0] = raw as u8 + b'0';
         }
+
+        handler.send_named(b"vbat", &data).await
     }
 }
 

@@ -100,7 +100,7 @@ pub(crate) async fn rx(
     mut rx: UartRx<'static, peripherals::UART1, Async>,
     boot_mode: &'static AtomicU8,
     start_network: crate::network::Start,
-    api_responses: crate::api::ResponseSender,
+    api: &'static crate::Api,
     context: &'static Context,
 ) -> ! {
     let mut start_network = Some(start_network);
@@ -142,7 +142,10 @@ pub(crate) async fn rx(
                         }
 
                         ToBackpack::ApiResponse(response) => {
-                            api_responses.send(response.into_owned()).await;
+                            api.push_api_response(response.into_owned()).await;
+                        }
+                        ToBackpack::ApiEvent { name, data } => {
+                            api.push_api_event(name.map(Into::into), data.into()).await;
                         }
 
                         ToBackpack::ShutDown => {

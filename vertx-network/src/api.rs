@@ -4,20 +4,8 @@ use serde::{Deserialize, Serialize};
 
 #[allow(async_fn_in_trait)]
 pub trait Api {
-    type StreamId: Copy;
-
-    async fn handle(
-        &self,
-        path: &str,
-        method: Method,
-        request: &[u8],
-    ) -> Response<'static, Self::StreamId>;
-
-    async fn event<T: EventHandler>(
-        &self,
-        stream_id: Self::StreamId,
-        handler: &mut T,
-    ) -> Result<(), T::Error>;
+    async fn handle(&self, path: &str, method: Method, request: &[u8]) -> Response<'static>;
+    async fn event<T: EventHandler>(&self, handler: &mut T) -> Result<(), T::Error>;
 }
 
 #[allow(async_fn_in_trait)]
@@ -29,12 +17,11 @@ pub trait EventHandler {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub enum Response<'a, StreamId> {
+pub enum Response<'a> {
     Ok(Option<Body<'a>>),
     NotFound,
     BadRequest { reason: Cow<'a, [u8]> },
     MethodNotAllowed(Cow<'a, [Method]>),
-    EventStream(StreamId),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -43,7 +30,7 @@ pub struct Body<'a> {
     pub body: Cow<'a, [u8]>,
 }
 
-impl<'a, StreamId> Response<'a, StreamId> {
+impl<'a> Response<'a> {
     pub fn binary(body: &'a [u8]) -> Self {
         let mime = b"application/octet-stream".into();
         let body = body.into();
@@ -51,7 +38,7 @@ impl<'a, StreamId> Response<'a, StreamId> {
     }
 }
 
-impl<StreamId> Response<'_, StreamId> {
+impl Response<'_> {
     pub fn json<T: serde::Serialize>(
         max_len: usize,
         value: T,
@@ -65,7 +52,7 @@ impl<StreamId> Response<'_, StreamId> {
         Ok(Self::Ok(Some(Body { mime, body })))
     }
 
-    pub fn into_owned(self) -> Response<'static, StreamId> {
+    pub fn into_owned(self) -> Response<'static> {
         match self {
             Self::Ok(Some(Body { mime, body })) => Response::Ok(Some(Body {
                 mime: Cow::Owned(mime.into_owned()),
@@ -79,7 +66,6 @@ impl<StreamId> Response<'_, StreamId> {
             Self::MethodNotAllowed(allow) => {
                 Response::MethodNotAllowed(Cow::Owned(allow.into_owned()))
             }
-            Self::EventStream(id) => Response::EventStream(id),
         }
     }
 }

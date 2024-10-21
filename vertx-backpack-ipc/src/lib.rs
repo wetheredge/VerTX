@@ -16,6 +16,10 @@ pub enum ToBackpack<'a> {
     StartNetwork(vertx_network::Config),
     #[serde(borrow)]
     ApiResponse(ApiResponse<'a>),
+    ApiEvent {
+        name: Option<Cow<'a, [u8]>>,
+        data: Cow<'a, [u8]>,
+    },
     ShutDown,
     Reboot,
 }

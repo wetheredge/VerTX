@@ -7,16 +7,16 @@ use super::{respond, Mime};
 include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 
 #[derive(Debug, Clone, Copy)]
-pub(super) enum Outcome<StreamId> {
+pub(super) enum Outcome {
     Complete,
-    EventStream(StreamId),
+    EventStream,
 }
 
 pub(super) async fn respond<R: Read, W: Write<Error = R::Error>, A: Api>(
     request: &mut super::Request<'_, '_, '_, '_, R>,
     response: &mut W,
     api: &A,
-) -> Result<Outcome<A::StreamId>, W::Error> {
+) -> Result<Outcome, W::Error> {
     let accept = request
         .headers()
         .iter()
@@ -29,7 +29,10 @@ pub(super) async fn respond<R: Read, W: Write<Error = R::Error>, A: Api>(
         .and_then(|s| core::str::from_utf8(s).ok())
         .unwrap_or("*/*");
 
-    if let Some(path) = request.path().strip_prefix("/api/") {
+    let path = request.path();
+    if path == "/api/" || path == "/api" {
+        return Ok(Outcome::EventStream);
+    } else if let Some(path) = path.strip_prefix("/api/") {
         let method = request.method();
         let body = request.body().await?;
         match api.handle(path, method, body).await {
@@ -40,7 +43,6 @@ pub(super) async fn respond<R: Read, W: Write<Error = R::Error>, A: Api>(
             ApiResponse::MethodNotAllowed(allow) => {
                 respond::method_not_allowed(response, &allow).await?;
             }
-            ApiResponse::EventStream(id) => return Ok(Outcome::EventStream(id)),
         }
     } else if request.method() == Method::Get {
         let file =

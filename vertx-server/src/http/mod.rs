@@ -71,23 +71,19 @@ where
                 let next_request_offset = buffer.len() - extra;
                 buffer.discard_prefix(next_request_offset);
             }
-            router::Outcome::EventStream(id) => {
+            router::Outcome::EventStream => {
                 tx.write_all(
                     b"HTTP/1.1 200 OK\r\nContent-Type:text/event-stream\r\nCache-Control:no-cache\r\n\r\n",
                 )
                 .await?;
 
-                event_stream(&mut tx, api, id).await?;
+                event_stream(&mut tx, api).await?;
             }
         }
     }
 }
 
-async fn event_stream<A: Api, W: Write>(
-    tx: &mut W,
-    api: &A,
-    id: A::StreamId,
-) -> Result<(), W::Error> {
+async fn event_stream<A: Api, W: Write>(tx: &mut W, api: &A) -> Result<(), W::Error> {
     loop {
         struct Handler<W>(W);
 
@@ -113,7 +109,7 @@ async fn event_stream<A: Api, W: Write>(
             }
         }
 
-        api.event(id, &mut Handler(&mut *tx)).await?;
+        api.event(&mut Handler(&mut *tx)).await?;
     }
 }
 
