@@ -19,3 +19,7 @@ serde = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true
+
+[package.metadata.cargo-machete]
+# All used in generated code
+ignored = ["heapless", "postcard", "serde"]
