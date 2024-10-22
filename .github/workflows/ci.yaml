@@ -56,14 +56,19 @@ jobs:
       matrix:
         crate:
           - vertx-crsf
-        include:
-          - crate: vertx-config
-          - crate: vertx-config
-            args: -F heapless
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: Swatinem/rust-cache@v2.7.3
       - run: cargo clippy --all-targets -p ${{ matrix.crate }} ${{ matrix.args }}
+
+  clippy-config-migrate:
+    name: Clippy (config-migrate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - uses: Swatinem/rust-cache@v2.7.3
+      - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F up
+      - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F down
 
   build-configurator:
     name: Build configurator
@@ -190,7 +195,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        crate: [vertx-config, vertx-crsf]
+        crate:
+          - vertx-crsf
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: Swatinem/rust-cache@v2.7.3
@@ -240,6 +246,7 @@ jobs:
       - toolchains-synced
       - rustfmt
       - clippy
+      - clippy-config-migrate
       - clippy-vertx
       - clippy-vertx-simulator
       - clippy-simulator
