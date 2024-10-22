@@ -9,8 +9,6 @@ members = [
     "vertx-network",
     "vertx-network-esp",
     "vertx-server",
-    "vertx-simulator",
-    "vertx-simulator-ipc",
 ]
 
 [workspace.package]
@@ -43,13 +41,13 @@ vertx-backpack-ipc.path = "vertx-backpack-ipc"
 vertx-network.path = "vertx-network"
 vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
-vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "=0.6.2", locked = true }
 cargo-nextest = { version = "=0.9.78", locked = true }
 dprint = { version = "=0.47.2", locked = true }
 espflash = { version = "=3.1.1", locked = true }
+wasm-opt = { version = "=0.116.1", locked = true }
 
 [profile.dev.package.esp-storage]
 opt-level = 3
@@ -74,7 +72,7 @@ unsafe-op-in-unsafe-fn = "forbid"
 
 [workspace.lints.clippy]
 alloc_instead_of_core = "warn"
-as_underscore = "forbid"
+as_underscore = "deny"
 cast_lossless = "warn"
 cloned_instead_of_copied = "warn"
 empty_drop = "warn"

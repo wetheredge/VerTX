@@ -51,7 +51,19 @@ impl Backpack {
 
     #[cfg(feature = "backpack-boot-mode")]
     pub(crate) async fn boot_mode(&self) -> crate::BootMode {
-        (*BOOT_MODE.get().await).into()
+        use embassy_time::Timer;
+
+        if cfg!(target_arch = "wasm32") {
+            loop {
+                if let Some(&mode) = BOOT_MODE.try_get() {
+                    return mode.into();
+                }
+
+                Timer::after_micros(50).await;
+            }
+        } else {
+            (*BOOT_MODE.get().await).into()
+        }
     }
 
     #[cfg(feature = "backpack-boot-mode")]

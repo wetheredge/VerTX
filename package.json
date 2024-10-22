@@ -3,7 +3,7 @@
 	"name": "vertx",
 	"private": true,
 	"type": "module",
-	"workspaces": ["postcard-ts", "vertx-configurator"],
+	"workspaces": ["postcard-ts", "vertx-configurator", "vertx-simulator"],
 	"devDependencies": {
 		"@biomejs/biome": "1.8.3",
 		"@inquirer/prompts": "5.5.0",

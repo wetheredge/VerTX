@@ -28,4 +28,5 @@ export default defineConfig({
 	server: {
 		strictPort: true,
 	},
+	cacheDir: '.vite',
 });

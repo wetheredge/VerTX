@@ -30,7 +30,6 @@ pub async fn main(spawner: Spawner) {
 
     let hal::Init {
         reset,
-        mut rng,
         #[cfg(not(feature = "backpack-boot-mode"))]
         boot_mode,
         led_driver,
@@ -38,7 +37,9 @@ pub async fn main(spawner: Spawner) {
         mode_button,
         #[cfg(feature = "backpack")]
         backpack,
-        #[cfg(not(feature = "network-backpack"))]
+        #[cfg(feature = "network-native")]
+        mut rng,
+        #[cfg(feature = "network-native")]
         network,
     } = hal::init(spawner);
 
@@ -79,8 +80,9 @@ pub async fn main(spawner: Spawner) {
             spawner,
             is_home,
             config,
-            &mut rng,
             api,
+            #[cfg(feature = "network-native")]
+            &mut rng,
             #[cfg(feature = "network-native")]
             network,
             #[cfg(feature = "network-backpack")]
@@ -123,4 +125,19 @@ async fn change_mode(
     };
 
     reset.reboot_into(mode).await;
+}
+
+#[cfg(all(feature = "simulator", target_arch = "wasm32"))]
+mod simulator {
+    /// SAFETY: The runtime environment must be single-threaded WASM.
+    #[global_allocator]
+    static ALLOCATOR: talc::TalckWasm = unsafe { talc::TalckWasm::new_global() };
+
+    #[embassy_executor::main]
+    async fn main(spawner: embassy_executor::Spawner) {
+        console_error_panic_hook::set_once();
+        wasm_logger::init(wasm_logger::Config::new(loog::log::Level::max()));
+
+        super::main(spawner).await;
+    }
 }

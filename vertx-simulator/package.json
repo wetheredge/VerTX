@@ -1,0 +1,15 @@
+{
+	"$schema": "https://json.schemastore.org/package.json",
+	"name": "vertx-simulator",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"dependencies": {
+		"ucobs": "1.0.0"
+	},
+	"devDependencies": {
+		"postcard": "workspace:*",
+		"vite": "5.4.5",
+		"vite-plugin-wasm": "3.3.0"
+	}
+}

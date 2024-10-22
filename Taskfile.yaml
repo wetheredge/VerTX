@@ -40,6 +40,7 @@ tasks:
     cmds:
       - cargo clean
       - cd vertx-configurator && rm -rf dist
+      - cd vertx-simulator && rm -rf dist
 
   set-target:
     desc: Set the target to build for

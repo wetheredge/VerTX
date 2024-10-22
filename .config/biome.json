@@ -6,6 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
+		"ignore": [".vite/*"],
 		"ignoreUnknown": true
 	},
 	"formatter": {
