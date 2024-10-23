@@ -98,7 +98,7 @@ export const apiStatus = styleVariants({
 		apiStatusBase,
 		{ vars: { [apiStatusHue]: consts.colors.hues.orange.toString() } },
 	],
-	[ApiStatus.LostConnection]: [
+	[ApiStatus.NotConnected]: [
 		apiStatusBase,
 		{ vars: { [apiStatusHue]: consts.colors.hues.red.toString() } },
 	],

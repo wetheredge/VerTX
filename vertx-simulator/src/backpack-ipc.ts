@@ -45,17 +45,17 @@ export function decode(data: DataView): ToBackpack {
 			return { kind, payload: reader.u8() };
 
 		case ToBackpackKind.StartNetwork: {
-			const networkKind = reader.u8() as NetworkKind;
-			if (networkKind <= NetworkKind.Field) {
-				const base: NetworkConfigBase<typeof networkKind> = {
-					network: networkKind,
+			const network = reader.u8() as NetworkKind;
+			if ([NetworkKind.Home, NetworkKind.Field].includes(network)) {
+				const base: NetworkConfigBase<typeof network> = {
+					network,
 					ssid: reader.string(),
 					password: reader.string(),
 				};
 				return {
 					kind,
 					payload:
-						networkKind === NetworkKind.Home
+						network === NetworkKind.Home
 							? { ...base, hostname: reader.string() }
 							: {
 									...base,
@@ -65,7 +65,7 @@ export function decode(data: DataView): ToBackpack {
 								},
 				};
 			}
-			throw new Error(`Invalid NetworkConfig kind: ${networkKind}`);
+			throw new Error(`Invalid NetworkConfig kind: ${network}`);
 		}
 
 		case ToBackpackKind.ApiResponse:
@@ -96,7 +96,7 @@ export type ToMain =
 export function encode(message: ToMain): Uint8Array {
 	const writer = new Writer(256);
 
-	writer.varint(message.kind);
+	writer.varuint(message.kind);
 	switch (message.kind) {
 		case ToMainKind.NetworkUp:
 		case ToMainKind.PowerAck:

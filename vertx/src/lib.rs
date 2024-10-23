@@ -76,7 +76,7 @@ pub async fn main(spawner: Spawner) {
         let is_home = boot_mode == BootMode::ConfiguratorHome;
 
         let api = make_static!(api::Api::new(spawner, reset, config_manager));
-        let network = network::run(
+        let network_running = network::run(
             spawner,
             is_home,
             config,
@@ -88,7 +88,8 @@ pub async fn main(spawner: Spawner) {
             #[cfg(feature = "network-backpack")]
             backpack,
         );
-        match network.await {
+
+        match network_running.await {
             Ok(()) => mode.publish(Mode::Configurator),
             Err(network::Error::InvalidHomeConfig) => {
                 reset.reboot_into(BootMode::ConfiguratorField).await;

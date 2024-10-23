@@ -14,6 +14,7 @@ import {
 	decode,
 	encode,
 } from './backpack-ipc';
+import { unreachable } from './utils';
 
 const globalName = 'Vertx';
 
@@ -100,6 +101,9 @@ export class Simulator {
 			case ToBackpackKind.Reboot:
 				this.send({ kind: ToMainKind.PowerAck });
 				break;
+
+			default:
+				unreachable(message);
 		}
 	}
 

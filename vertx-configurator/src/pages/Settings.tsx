@@ -2,6 +2,7 @@ import { For, type JSX, Show, createUniqueId, splitProps } from 'solid-js';
 import {
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
+	ResponseKind,
 	api,
 	configUpdateResultToString,
 	updateConfig,
@@ -58,7 +59,7 @@ export default function Settings() {
 				id={styles.advancedState}
 				type="checkbox"
 				hidden
-				checked={api.config[configKeys.expert]}
+				checked={api[ResponseKind.Config]?.[configKeys.expert]}
 			/>
 
 			<h1>Settings</h1>
@@ -169,7 +170,7 @@ function SettingInput<Key extends StringSettings | IntegerSettings>(
 	);
 
 	let input!: HTMLInputElement;
-	const value = () => api.config[props.key]?.toString() ?? '';
+	const value = () => api[ResponseKind.Config]?.[props.key]?.toString() ?? '';
 	const resetInput = () => {
 		input.value = value();
 	};
@@ -202,7 +203,7 @@ function SettingSelect<Key extends EnumSettings, V extends string | number>(
 	]);
 
 	let input!: HTMLSelectElement;
-	const value = () => api.config[props.key]?.toString() ?? '';
+	const value = () => api[ResponseKind.Config]?.[props.key]?.toString() ?? '';
 	const resetInput = () => {
 		input.value = value();
 	};
@@ -253,7 +254,7 @@ function SettingCheckbox<Key extends BooleanSettings>(
 	const id = createUniqueId();
 
 	let input!: HTMLInputElement;
-	const checked = () => api.config[props.key];
+	const checked = () => api[ResponseKind.Config]?.[props.key] ?? false;
 
 	return (
 		<div
@@ -270,7 +271,7 @@ function SettingCheckbox<Key extends BooleanSettings>(
 						key: props.key,
 						value: target.checked,
 					});
-					input.checked = checked() ?? false;
+					input.checked = checked();
 					handleUpdateResult(props.key, result);
 				}}
 				ref={input}

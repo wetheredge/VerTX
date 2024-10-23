@@ -1,7 +1,7 @@
 import { makeReconnectingWS } from '@solid-primitives/websocket';
 import { onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
-import type { Config, Update } from '../config';
+import type { Update } from '../config';
 import {
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
@@ -28,20 +28,19 @@ export {
 export const enum ApiStatus {
 	Connecting,
 	Connected,
-	LostConnection,
+	NotConnected,
 }
 
-type State = { status: ApiStatus; config: Partial<Config> } & {
+type State = { status: ApiStatus } & {
 	[Kind in Exclude<
 		ResponseKind,
-		ResponseKind.Config | ResponseKind.ConfigUpdate
+		ResponseKind.ConfigUpdate
 	>]?: ResponsePayload<Kind>;
 };
 
 let socket!: WebSocket;
 const [state, setState] = createStore<State>({
 	status: ApiStatus.Connecting,
-	config: {} as Partial<Config>,
 });
 const setStatus = (status: ApiStatus) => setState('status', status);
 
@@ -64,11 +63,11 @@ export async function updateConfig(
 		payload: { id, ...update },
 	});
 
-	const result = await new Promise<ConfigUpdateResult>((resolve) =>
-		configUpdates.set(id, resolve),
-	);
+	const result = await new Promise<ConfigUpdateResult>((resolve) => {
+		configUpdates.set(id, resolve);
+	});
 	if (result.result === ConfigUpdateResultKind.Ok) {
-		setState('config', update.key, update.value);
+		setState(ResponseKind.Config, update.key, update.value);
 	}
 	return result;
 }
@@ -82,7 +81,7 @@ export function initApi(host: string) {
 	onCleanup(() => socket.close());
 
 	socket.addEventListener('open', () => setStatus(ApiStatus.Connected));
-	socket.addEventListener('close', () => setStatus(ApiStatus.LostConnection));
+	socket.addEventListener('close', () => setStatus(ApiStatus.NotConnected));
 
 	socket.addEventListener(
 		'message',
@@ -93,7 +92,7 @@ export function initApi(host: string) {
 				);
 				import.meta.env.DEV && console.debug('response', response);
 				if (response.kind === ResponseKind.Config) {
-					setState('config', response.payload);
+					setState(ResponseKind.Config, response.payload);
 				} else if (response.kind === ResponseKind.ConfigUpdate) {
 					const { id, ...result } = response.payload;
 					configUpdates.get(id)?.(result);

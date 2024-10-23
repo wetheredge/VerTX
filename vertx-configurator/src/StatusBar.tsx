@@ -6,7 +6,7 @@ import { formatVersion } from './utils';
 const connectionMessage = {
 	[ApiStatus.Connected]: 'Connected',
 	[ApiStatus.Connecting]: 'Connecting',
-	[ApiStatus.LostConnection]: 'Lost connection',
+	[ApiStatus.NotConnected]: 'Not connected',
 };
 
 export function StatusBar() {
