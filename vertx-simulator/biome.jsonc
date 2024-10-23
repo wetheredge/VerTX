@@ -1,0 +1,16 @@
+{
+	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+	"extends": ["../.config/biome.json"],
+	"overrides": [
+		{
+			"include": ["src/ui.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off"
+					}
+				}
+			}
+		}
+	]
+}

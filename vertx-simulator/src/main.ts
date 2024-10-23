@@ -1,44 +1,38 @@
 import './style.css';
 import { type Callbacks, Simulator, getModule } from './simulator';
+import { Ui } from './ui';
 
-const statusLed: HTMLDivElement = document.querySelector('#status-led')!;
-const powerButton: HTMLButtonElement = document.querySelector('#power')!;
-const configuratorButton: HTMLButtonElement =
-	document.querySelector('#config')!;
-
-powerButton.disabled = true;
-configuratorButton.disabled = true;
+let simulator: Simulator | null;
+const ui = new Ui({
+	power() {
+		if (simulator == null) {
+			start();
+		}
+	},
+	configurator() {
+		if (simulator != null) {
+			simulator.modeButtonPressed();
+		}
+	},
+});
 
 const module = await getModule();
-powerButton.disabled = false;
+ui.ready();
 
 const callbacks: Callbacks = {
 	setStatusLed(color) {
-		statusLed.style.color = color;
+		ui.setStatusColor(color);
 	},
 	shutDown() {
 		simulator = null;
+		ui.stop();
 	},
 	reboot(bootMode) {
 		start(bootMode);
 	},
 };
 
-let simulator: Simulator | null;
-
-powerButton.addEventListener('click', () => {
-	if (simulator == null) {
-		start();
-	}
-});
-
-configuratorButton.addEventListener('click', () => {
-	if (simulator != null) {
-		simulator.modeButtonPressed();
-	}
-});
-
 function start(bootMode?: number) {
 	simulator = new Simulator(module, callbacks, bootMode);
-	configuratorButton.disabled = false;
+	ui.start();
 }
