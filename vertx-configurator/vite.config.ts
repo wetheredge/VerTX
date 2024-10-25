@@ -3,6 +3,11 @@ import autoprefixer from 'autoprefixer';
 import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 
+const ports = {
+	port: 8001,
+	strictPort: true,
+};
+
 // biome-ignore lint/style/noDefaultExport: Required by Vite
 export default defineConfig({
 	build: {
@@ -25,8 +30,7 @@ export default defineConfig({
 			plugins: [autoprefixer({})],
 		},
 	},
-	server: {
-		strictPort: true,
-	},
+	server: ports,
+	preview: ports,
 	cacheDir: '.vite',
 });
