@@ -5,10 +5,11 @@
 	"version": "0.0.0",
 	"type": "module",
 	"dependencies": {
+		"postcard": "workspace:*",
 		"ucobs": "1.0.0"
 	},
 	"devDependencies": {
-		"postcard": "workspace:*",
+		"@tsconfig/vite-react": "^3.0.2",
 		"vite": "5.4.5"
 	}
 }

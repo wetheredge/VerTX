@@ -10,7 +10,12 @@ export default defineConfig({
 	build: {
 		target: 'esnext',
 	},
-	server: ports,
+	server: {
+		...ports,
+		proxy: {
+			'/configurator': 'http://localhost:8001',
+		},
+	},
 	preview: ports,
 	cacheDir: '.vite',
 });

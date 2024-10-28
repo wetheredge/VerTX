@@ -6,54 +6,40 @@ export const PROTOCOL: string = 'v0';
 const REQUEST_BUFFER_SIZE = 100;
 
 export const enum RequestKind {
-	ProtocolVersion,
 	BuildInfo,
 	PowerOff,
 	Reboot,
 	ExitConfigurator,
-	CheckForUpdate,
 	GetConfig,
-	ConfigUpdate,
+	UpdateConfig,
 	// StreamInputs,
 	// StreamMixer,
 }
 
 export type Request =
-	| { kind: RequestKind.ProtocolVersion }
 	| { kind: RequestKind.BuildInfo }
 	| { kind: RequestKind.PowerOff }
 	| { kind: RequestKind.Reboot }
 	| { kind: RequestKind.ExitConfigurator }
-	| { kind: RequestKind.CheckForUpdate }
 	| { kind: RequestKind.GetConfig }
 	| {
-			kind: RequestKind.ConfigUpdate;
+			kind: RequestKind.UpdateConfig;
 			payload: { id: number } & Update;
 	  };
-
-export const enum ConfigUpdateKind {
-	Boolean,
-	String,
-	Unsigned,
-	// Signed,
-	// Float,
-}
 
 export function encodeRequest(request: Request): ArrayBuffer {
 	const writer = new Writer(REQUEST_BUFFER_SIZE);
 
 	writer.varuint(request.kind);
 	switch (request.kind) {
-		case RequestKind.ProtocolVersion:
 		case RequestKind.BuildInfo:
 		case RequestKind.PowerOff:
 		case RequestKind.Reboot:
 		case RequestKind.ExitConfigurator:
-		case RequestKind.CheckForUpdate:
 		case RequestKind.GetConfig:
 			break;
 
-		case RequestKind.ConfigUpdate:
+		case RequestKind.UpdateConfig:
 			writer.varuint(request.payload.id);
 			encodeUpdate(writer, request.payload);
 			break;
@@ -66,29 +52,18 @@ export function encodeRequest(request: Request): ArrayBuffer {
 }
 
 export const enum ResponseKind {
-	ProtocolVersion,
 	BuildInfo,
-	Status,
+	Vbat,
 	Config,
 	ConfigUpdate,
 }
 
 export type Response =
 	| {
-			kind: ResponseKind.ProtocolVersion;
-			payload: {
-				major: number;
-				minor: number;
-			};
-	  }
-	| {
 			kind: ResponseKind.BuildInfo;
 			payload: {
 				target: string;
-				major: number;
-				minor: number;
-				patch: number;
-				suffix: string;
+				version: string;
 				debug: boolean;
 				git: {
 					branch: string;
@@ -102,12 +77,8 @@ export type Response =
 			payload: Config;
 	  }
 	| {
-			kind: ResponseKind.Status;
-			payload: {
-				batteryVoltage: number;
-				idleTime: number;
-				timingDrift: number;
-			};
+			kind: ResponseKind.Vbat;
+			payload: number;
 	  }
 	| {
 			kind: ResponseKind.ConfigUpdate;
@@ -149,20 +120,12 @@ export function parseResponse(buffer: DataView): Response {
 
 	const kind = reader.u8() as ResponseKind;
 	switch (kind) {
-		case ResponseKind.ProtocolVersion:
-			return {
-				kind,
-				payload: { major: reader.u8(), minor: reader.u8() },
-			};
 		case ResponseKind.BuildInfo:
 			return {
 				kind,
 				payload: {
 					target: reader.string(),
-					major: reader.u8(),
-					minor: reader.u8(),
-					patch: reader.u8(),
-					suffix: reader.string(),
+					version: reader.string(),
 					debug: reader.boolean(),
 					git: {
 						branch: reader.string(),
@@ -171,14 +134,10 @@ export function parseResponse(buffer: DataView): Response {
 					},
 				},
 			};
-		case ResponseKind.Status:
+		case ResponseKind.Vbat:
 			return {
 				kind,
-				payload: {
-					batteryVoltage: reader.varuint() / 100,
-					idleTime: reader.f32(),
-					timingDrift: reader.f32(),
-				},
+				payload: reader.varuint() / 100,
 			};
 		case ResponseKind.Config:
 			reader.varuint(); // Ignore config byte array length

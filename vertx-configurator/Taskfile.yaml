@@ -21,12 +21,29 @@ tasks:
       - tsconfig.*
 
   build:
+    - task: cache:native
+    - task: build-impl
+      vars:
+        target: native
+    - task: build:compress
+
+  run:
+    desc: Run a development server
+    env:
+      VITE_TARGET: native
+    cmd: bun run vite
+
+  preview:
+    deps: [build]
+    cmd: bun run vite preview
+
+  build-impl:
+    internal: true
     deps: [check]
     env:
       NODE_ENV: production
-    cmds:
-      - bun run vite build
-      - bun run scripts/compress.ts
+      VITE_TARGET: '{{.target}}'
+    cmd: bun run vite build
     sources:
       - package.json
       - bun.lockb
@@ -35,15 +52,29 @@ tasks:
       - '*.config.*'
       - tsconfig.*
       - scripts/compress.ts
-    generates:
-      - dist/**/*
+      - dist/.taskCacheKey
 
-  run:
-    desc: Run a development server
+  build:compress:
+    internal: true
+    cmd: bun run scripts/compress.ts
+    status:
+      - ls dist | grep -q '\.gz$'
+
+  simulator:build:
+    cmds:
+      - task: cache:simulator
+      - task: build-impl
+        vars:
+          target: simulator
+
+  simulator:run:
+    env:
+      VITE_TARGET: simulator
     cmd: bun run vite
 
-  preview:
-    deps: [build]
-    cmd: bun run vite preview
+  cache:*:
+    cmd: mkdir -p dist && echo {{.MATCH}} > dist/.taskCacheKey && echo '{{.MATCH}}'
+    internal: true
+    silent: true
 
   :*: cd .. && task {{index .MATCH 0}}

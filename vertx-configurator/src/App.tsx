@@ -3,19 +3,10 @@ import './App.css';
 import { MenuState, closeMenu, isOpen as mobileNavIsOpen } from './MenuButton';
 import { Navigation } from './Navigation';
 import { StatusBar } from './StatusBar';
-import { RequestKind, initApi, request } from './api';
-
-const DEV_API_PORT = 8080;
-const API_HOST =
-	import.meta.env.VITE_API_HOST ??
-	(import.meta.env.CODESPACE_NAME
-		? `${import.meta.env.CODESPACE_NAME}-${DEV_API_PORT}.app.github.dev`
-		: import.meta.env.MODE === 'production'
-			? location.host
-			: `localhost:${DEV_API_PORT}`);
+import { RequestKind, init as initApi, request } from './api';
 
 export function App(props: { children?: JSX.Element }) {
-	initApi(API_HOST);
+	initApi();
 	request({ kind: RequestKind.BuildInfo });
 	request({ kind: RequestKind.GetConfig });
 

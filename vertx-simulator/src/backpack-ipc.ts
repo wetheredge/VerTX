@@ -30,7 +30,7 @@ export const enum ToBackpackKind {
 }
 
 export type ToBackpack =
-	| { kind: ToBackpackKind; payload: number }
+	| { kind: ToBackpackKind.SetBootMode; payload: number }
 	| { kind: ToBackpackKind.StartNetwork; payload: AnyNetworkConfig }
 	| { kind: ToBackpackKind.ApiResponse; payload: Uint8Array }
 	| { kind: ToBackpackKind.ShutDown }

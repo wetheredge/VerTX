@@ -33,6 +33,7 @@ export type Callbacks = {
 	setStatusLed: (color: string) => void;
 	shutDown: () => void;
 	reboot: (bootMode: number) => void;
+	openConfigurator: () => void;
 };
 
 export class Simulator {
@@ -41,6 +42,7 @@ export class Simulator {
 	#callbacks: Callbacks;
 	#backpackDecode: (data: Uint8Array) => void;
 	#backpackEncode: (data: Uint8Array) => void;
+	#configurator: MessageEventSource | null = null;
 
 	constructor(module: SimulatorModule, callbacks: Callbacks, bootMode = 0) {
 		if (globalName in globalThis) {
@@ -61,6 +63,23 @@ export class Simulator {
 		});
 		this.#backpackEncode = createBlockEncoder((chunk) => {
 			backpackTx(chunk);
+		});
+
+		window.addEventListener('message', (event) => {
+			if (
+				event.origin !== location.origin ||
+				!(event.data instanceof ArrayBuffer)
+			) {
+				return;
+			}
+
+			this.#configurator = event.source;
+
+			const payload = new Uint8Array(event.data);
+			this.send({
+				kind: ToMainKind.ApiRequest,
+				payload,
+			});
 		});
 
 		// @ts-ignore
@@ -94,9 +113,18 @@ export class Simulator {
 				this.#bootMode = message.payload;
 				break;
 			case ToBackpackKind.StartNetwork:
-				throw new Error('TODO: start network');
-			case ToBackpackKind.ApiResponse:
-				throw new Error('TODO: api response');
+				this.#callbacks.openConfigurator();
+				this.send({ kind: ToMainKind.NetworkUp });
+				break;
+			case ToBackpackKind.ApiResponse: {
+				const { payload } = message;
+				const start = payload.byteOffset;
+				const end = start + payload.byteLength;
+				this.#configurator?.postMessage(
+					payload.buffer.slice(start, end),
+				);
+				break;
+			}
 			case ToBackpackKind.ShutDown:
 			case ToBackpackKind.Reboot:
 				this.send({ kind: ToMainKind.PowerAck });

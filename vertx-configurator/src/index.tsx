@@ -21,7 +21,7 @@ const NotFound = () => <Navigate href="/" />;
 
 render(
 	() => (
-		<Router root={App}>
+		<Router base={import.meta.env.BASE_URL} root={App}>
 			<Route path="/settings" component={Settings} />
 			<Route path="/updates" component={Updates} />
 			<Route path="/hardware" component={Hardware} />

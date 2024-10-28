@@ -2,6 +2,7 @@ import { makeReconnectingWS } from '@solid-primitives/websocket';
 import { onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import type { Update } from '../config';
+import { isSimulator } from '../utils';
 import {
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
@@ -14,7 +15,6 @@ import {
 } from './protocol';
 
 export {
-	ConfigUpdateKind,
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
 	type Request,
@@ -38,7 +38,11 @@ type State = { status: ApiStatus } & {
 	>]?: ResponsePayload<Kind>;
 };
 
-let socket!: WebSocket;
+type Sender = (request: ArrayBuffer) => void;
+let resolveSender!: (sender: Sender) => void;
+const sender = new Promise<Sender>((resolve) => {
+	resolveSender = resolve;
+});
 const [state, setState] = createStore<State>({
 	status: ApiStatus.Connecting,
 });
@@ -47,7 +51,8 @@ const setStatus = (status: ApiStatus) => setState('status', status);
 export { state as api };
 export const request = (request: Request) => {
 	import.meta.env.DEV && console.debug('request', request);
-	socket.send(encodeRequest(request));
+	const encoded = encodeRequest(request);
+	sender.then((send) => send(encoded));
 };
 
 const configUpdates = new Map<number, (result: ConfigUpdateResult) => void>();
@@ -59,7 +64,7 @@ export async function updateConfig(
 	updateId = (updateId + 1) >>> 0;
 
 	request({
-		kind: RequestKind.ConfigUpdate,
+		kind: RequestKind.UpdateConfig,
 		payload: { id, ...update },
 	});
 
@@ -72,8 +77,22 @@ export async function updateConfig(
 	return result;
 }
 
-export function initApi(host: string) {
-	socket = makeReconnectingWS(`ws://${host}/api`, 'v0', {
+function handleResponse(data: ArrayBuffer) {
+	const response = parseResponse(new DataView(data));
+	import.meta.env.DEV && console.debug('response', response);
+	if (response.kind === ResponseKind.Config) {
+		setState(ResponseKind.Config, response.payload);
+	} else if (response.kind === ResponseKind.ConfigUpdate) {
+		const { id, ...result } = response.payload;
+		configUpdates.get(id)?.(result);
+		configUpdates.delete(id);
+	} else {
+		setState(response.kind, response.payload);
+	}
+}
+
+function initNative() {
+	const socket = makeReconnectingWS(`ws://${location.host}/api`, 'v0', {
 		delay: 15_000,
 		retries: 5,
 	});
@@ -87,20 +106,39 @@ export function initApi(host: string) {
 		'message',
 		async ({ data }: MessageEvent<string | Blob>) => {
 			if (data instanceof Blob) {
-				const response = parseResponse(
-					new DataView(await data.arrayBuffer()),
-				);
-				import.meta.env.DEV && console.debug('response', response);
-				if (response.kind === ResponseKind.Config) {
-					setState(ResponseKind.Config, response.payload);
-				} else if (response.kind === ResponseKind.ConfigUpdate) {
-					const { id, ...result } = response.payload;
-					configUpdates.get(id)?.(result);
-					configUpdates.delete(id);
-				} else {
-					setState(response.kind, response.payload);
-				}
+				handleResponse(await data.arrayBuffer());
 			}
 		},
 	);
+
+	resolveSender((request) => socket.send(request));
 }
+
+function initSimulator() {
+	const opener = window.opener as WindowProxy | null;
+
+	if (opener?.origin !== location.origin) {
+		const message =
+			'This build of the configurator can only run from the simulator';
+		alert(message);
+		throw new Error(message);
+	}
+
+	setStatus(ApiStatus.Connected);
+	opener.addEventListener('close', () => setStatus(ApiStatus.NotConnected));
+
+	window.addEventListener('message', (event) => {
+		if (
+			event.origin !== location.origin ||
+			!(event.data instanceof ArrayBuffer)
+		) {
+			return;
+		}
+
+		handleResponse(event.data);
+	});
+
+	resolveSender((request) => opener.postMessage(request));
+}
+
+export const init = isSimulator ? initSimulator : initNative;

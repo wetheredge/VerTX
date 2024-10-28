@@ -59,7 +59,6 @@ globalStyle(`${root} > :is(:first-child, :last-child)`, {
 });
 globalStyle(`${root} > :last-child`, {
 	justifyContent: 'flex-end',
-	gap: consts.size.sm,
 	fontFeatureSettings: '"tnum"',
 });
 

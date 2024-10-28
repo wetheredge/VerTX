@@ -10,6 +10,7 @@ const ports = {
 
 // biome-ignore lint/style/noDefaultExport: Required by Vite
 export default defineConfig({
+	base: process.env.VITE_TARGET === 'simulator' ? '/configurator' : '/',
 	build: {
 		rollupOptions: {
 			output: {
@@ -30,7 +31,12 @@ export default defineConfig({
 			plugins: [autoprefixer({})],
 		},
 	},
-	server: ports,
+	server: {
+		...ports,
+		hmr: {
+			clientPort: ports.port,
+		},
+	},
 	preview: ports,
 	cacheDir: '.vite',
 });

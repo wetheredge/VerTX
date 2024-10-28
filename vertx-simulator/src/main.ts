@@ -30,6 +30,9 @@ const callbacks: Callbacks = {
 	reboot(bootMode) {
 		start(bootMode);
 	},
+	openConfigurator() {
+		window.open('/configurator/', 'vertx-configurator');
+	},
 };
 
 function start(bootMode?: number) {

@@ -1,15 +1,16 @@
-import type { ResponseKind, ResponsePayload } from './api';
+import { ResponseKind } from './api';
+import { api } from './api';
 
-export function formatVersion(
-	build?: ResponsePayload<ResponseKind.BuildInfo>,
-): string | undefined {
+export const isSimulator = import.meta.env.VITE_TARGET === 'simulator';
+
+export function version(): string | undefined {
+	const build = api[ResponseKind.BuildInfo];
 	if (!build) {
 		return;
 	}
 
 	// Unicode hyphen to avoid Inter's tnum feature making it into a minus sign
-	const suffix = build.suffix ? `\u{2011}${build.suffix}` : '';
-	return `v${build.major}.${build.minor}.${build.patch}${suffix}`;
+	return `v${build.version}`.replaceAll('-', '\u{2011}');
 }
 
 export function unreachable(value: never): never {

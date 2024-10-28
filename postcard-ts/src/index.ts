@@ -50,8 +50,8 @@ export class Reader {
 	}
 
 	byteArray(): Uint8Array {
-		const start = this.#index;
 		const length = this.varuint();
+		const start = this.#index;
 		this.#index += length;
 		return new Uint8Array(this.#view.buffer.slice(start, start + length));
 	}
