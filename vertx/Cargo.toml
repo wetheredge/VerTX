@@ -100,7 +100,6 @@ loog = { workspace = true }
 portable-atomic = { workspace = true }
 postcard = { workspace = true }
 serde = { workspace = true, features = ["derive", "alloc"] }
-serde-json-core = { workspace = true }
 smart-leds = "=0.4.0"
 static_cell = { workspace = true, features = ["nightly"] }
 vertx-network = { workspace = true }

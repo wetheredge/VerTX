@@ -9,7 +9,6 @@ license.workspace = true
 embassy-net-driver = "=0.2.0"
 heapless = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive", "alloc"] }
-serde-json-core = { workspace = true }
 
 [lints]
 workspace = true

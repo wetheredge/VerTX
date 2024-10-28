@@ -34,7 +34,6 @@ loog.git = "https://github.com/wetheredge/loog.git"
 portable-atomic = "=1.7.0"
 postcard = { version = "=1.0.10", default-features = false }
 serde = { version = "=1.0.210", default-features = false }
-serde-json-core = "=0.6.0"
 static_cell = "=2.1.0"
 tokio = "=1.40.0"
 vertx-backpack-ipc.path = "vertx-backpack-ipc"

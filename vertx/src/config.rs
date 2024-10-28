@@ -13,8 +13,8 @@ use core::{mem, task};
 use embassy_sync::blocking_mutex::Mutex;
 use serde::{Deserialize, Serialize};
 
-use self::codegen::{DeserializeError, RawConfig};
-pub(crate) use self::codegen::{Update, BYTE_LENGTH};
+use self::codegen::DeserializeError;
+pub(crate) use self::codegen::{RawConfig, Update, BYTE_LENGTH};
 use crate::hal::traits::ConfigStorage as _;
 use crate::hal::ConfigStorage;
 

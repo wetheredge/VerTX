@@ -65,18 +65,16 @@ fn build_info(out_dir: &str, target_name: &str) -> io::Result<()> {
     let git_commit = git_string(&["rev-parse", "--short", "HEAD"]);
     let git_dirty = !git(&["status", "--porcelain"]).is_empty();
 
-    let out = File::create(format!("{out_dir}/build_info.json"))?;
+    let out = File::create(format!("{out_dir}/build_info.rs"))?;
     let out = &mut BufWriter::new(out);
 
-    writeln!(out, "{{")?;
-    writeln!(out, r#""target":{target_name:?},"#)?;
-    writeln!(out, r#""version":{version:?},"#)?;
-    writeln!(out, r#""debug":{debug:?},"#)?;
-    writeln!(out, r#""git":{{"#)?;
-    writeln!(out, r#""branch":{git_branch:?},"#)?;
-    writeln!(out, r#""commit":{git_commit:?},"#)?;
-    writeln!(out, r#""dirty":{git_dirty:?},"#)?;
-    writeln!(out, "}}")?;
+    writeln!(out, "Response::BuildInfo {{")?;
+    writeln!(out, r#"target: {target_name:?},"#)?;
+    writeln!(out, r#"version: {version:?},"#)?;
+    writeln!(out, r#"debug: {debug:?},"#)?;
+    writeln!(out, r#"git_branch:{git_branch:?},"#)?;
+    writeln!(out, r#"git_commit:{git_commit:?},"#)?;
+    writeln!(out, r#"git_dirty:{git_dirty:?},"#)?;
     writeln!(out, "}}")?;
 
     Ok(())

@@ -41,9 +41,6 @@ fn main() -> io::Result<()> {
         .assets
         .sort_unstable_by(|a, b| a.route.cmp(&b.route));
 
-    let out = File::create(format!("{out_dir}/assets.rs"))?;
-    let out = &mut BufWriter::new(out);
-
     let write_asset = |out: &mut BufWriter<File>, asset: &Asset| {
         let (mime_head, mime_parameters) = asset.mime.split_once(';').unwrap_or((&asset.mime, ""));
         let (mime_type, mime_subtype) = mime_head.split_once("/").unwrap();
@@ -61,18 +58,17 @@ fn main() -> io::Result<()> {
         write!(out, " }}")
     };
 
-    write!(out, "static INDEX: File = ")?;
+    let out = File::create(format!("{out_dir}/index.rs"))?;
+    let out = &mut BufWriter::new(out);
     write_asset(out, &manifest.index)?;
-    writeln!(out, ";")?;
 
-    writeln!(
-        out,
-        "static ASSETS: &[(&::core::primitive::str, File)] = &["
-    )?;
+    let out = File::create(format!("{out_dir}/assets.rs"))?;
+    let out = &mut BufWriter::new(out);
+    writeln!(out, "&[")?;
     for asset in manifest.assets {
         write!(out, "({:?}, ", asset.route)?;
         write_asset(out, &asset)?;
         writeln!(out, "),")?;
     }
-    writeln!(out, "];")
+    writeln!(out, "]")
 }

@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use core::future::Future;
 
 use embassy_executor::task;
@@ -9,10 +10,10 @@ use esp_hal::uart::{Uart, UartRx, UartTx};
 use esp_hal::{peripherals, Async};
 use portable_atomic::{AtomicU8, Ordering};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
-use vertx_backpack_ipc::{ApiRequest, ToBackpack, ToMain, INIT};
+use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};
 
 pub(crate) struct Context {
-    messages: Channel<NoopRawMutex, ToMain<'static>, 10>,
+    messages: Channel<NoopRawMutex, ToMain, 10>,
     flushed: Signal<NoopRawMutex, ()>,
 }
 
@@ -21,8 +22,8 @@ impl Context {
         self.messages.send(ToMain::NetworkUp)
     }
 
-    pub(crate) fn send_api_request(&self, request: ApiRequest<'static>) -> impl Future + '_ {
-        self.messages.send(request.into())
+    pub(crate) fn send_api_request(&self, request: Vec<u8>) -> impl Future + '_ {
+        self.messages.send(ToMain::ApiRequest(request))
     }
 }
 
@@ -142,10 +143,7 @@ pub(crate) async fn rx(
                         }
 
                         ToBackpack::ApiResponse(response) => {
-                            api.push_api_response(response.into_owned()).await;
-                        }
-                        ToBackpack::ApiEvent { name, data } => {
-                            api.push_api_event(name.map(Into::into), data.into()).await;
+                            api.push_api_response(response).await;
                         }
 
                         ToBackpack::ShutDown => {

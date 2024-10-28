@@ -8,14 +8,13 @@ use embedded_io_async::{Read, Write};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use static_cell::make_static;
 use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};
-use vertx_network::api::Response as ApiResponse;
 use vertx_network::Api as _;
 
 use crate::api::Api;
 
-type TxChannel = channel::Channel<crate::mutex::SingleCore, ToBackpack<'static>, 10>;
-type TxSender = channel::Sender<'static, crate::mutex::SingleCore, ToBackpack<'static>, 10>;
-type TxReceiver = channel::Receiver<'static, crate::mutex::SingleCore, ToBackpack<'static>, 10>;
+type TxChannel = channel::Channel<crate::mutex::SingleCore, ToBackpack, 10>;
+type TxSender = channel::Sender<'static, crate::mutex::SingleCore, ToBackpack, 10>;
+type TxReceiver = channel::Receiver<'static, crate::mutex::SingleCore, ToBackpack, 10>;
 
 type NetworkUp = Signal<crate::mutex::SingleCore, ()>;
 type PowerAck = Signal<crate::mutex::SingleCore, ()>;
@@ -82,16 +81,10 @@ impl Backpack {
     }
 
     #[cfg(feature = "network-backpack")]
-    pub(crate) async fn start_network(
-        &self,
-        spawner: Spawner,
-        config: vertx_network::Config,
-        api: &'static Api,
-    ) {
+    pub(crate) async fn start_network(&self, config: vertx_network::Config, api: &'static Api) {
         API.init(api).map_err(|_| ()).unwrap();
         self.tx.send(ToBackpack::StartNetwork(config)).await;
         self.network_up.wait().await;
-        spawner.must_spawn(forward_api_events(api, self.tx));
     }
 }
 
@@ -178,6 +171,8 @@ async fn rx_handler(
     network_up: &'static NetworkUp,
     power_ack: &'static PowerAck,
 ) -> ! {
+    let mut api_buffer = Api::buffer();
+
     let mut ever_success = false;
     let mut buffer = [0; 32];
     let mut accumulator = CobsAccumulator::<256>::new();
@@ -211,21 +206,12 @@ async fn rx_handler(
                         }
 
                         #[cfg(feature = "network-backpack")]
-                        ToMain::ApiRequest { path, method, body } => {
+                        ToMain::ApiRequest(request) => {
                             if let Some(api) = API.try_get() {
-                                let response = api.handle(&path, method, &body).await;
-                                let response = match response {
-                                    ApiResponse::Ok(body) => ApiResponse::Ok(body),
-                                    ApiResponse::NotFound => ApiResponse::NotFound,
-                                    ApiResponse::BadRequest { reason } => {
-                                        ApiResponse::BadRequest { reason }
-                                    }
-                                    ApiResponse::MethodNotAllowed(allow) => {
-                                        ApiResponse::MethodNotAllowed(allow)
-                                    }
-                                };
-
-                                tx.send(ToBackpack::ApiResponse(response)).await;
+                                if let Some(response) = api.handle(&request, &mut api_buffer).await
+                                {
+                                    tx.send(ToBackpack::ApiResponse(response.to_vec())).await;
+                                }
                             } else {
                                 loog::error!("Got ApiRequest before network was initialized");
                             }
@@ -242,38 +228,5 @@ async fn rx_handler(
                 }
             }
         }
-    }
-}
-
-#[task]
-async fn forward_api_events(api: &'static Api, tx: TxSender) -> ! {
-    struct Handler(TxSender);
-
-    impl vertx_network::api::EventHandler for Handler {
-        type Error = ();
-
-        async fn send(&mut self, data: &[u8]) -> Result<(), Self::Error> {
-            self.0
-                .send(ToBackpack::ApiEvent {
-                    name: None,
-                    data: data.to_vec().into(),
-                })
-                .await;
-            Ok(())
-        }
-
-        async fn send_named(&mut self, name: &[u8], data: &[u8]) -> Result<(), Self::Error> {
-            self.0
-                .send(ToBackpack::ApiEvent {
-                    name: Some(name.to_vec().into()),
-                    data: data.to_vec().into(),
-                })
-                .await;
-            Ok(())
-        }
-    }
-
-    loop {
-        let _ = api.event(&mut Handler(tx)).await;
     }
 }

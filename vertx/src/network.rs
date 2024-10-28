@@ -53,7 +53,7 @@ pub async fn run(
     let _ = spawner;
 
     #[cfg(feature = "network-backpack")]
-    backpack.start_network(spawner, server_config, api).await;
+    backpack.start_network(server_config, api).await;
 
     Ok(())
 }

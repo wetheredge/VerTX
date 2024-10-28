@@ -2,52 +2,25 @@
 
 extern crate alloc;
 
-use alloc::borrow::Cow;
+use alloc::vec::Vec;
 
 use serde::{Deserialize, Serialize};
-use vertx_network::api::{Method, Response as ApiResponse};
 
 pub const BAUDRATE: u32 = 115_200;
 pub const INIT: [u8; 6] = *b"VerTX\0";
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ToBackpack<'a> {
+pub enum ToBackpack {
     SetBootMode(u8),
     StartNetwork(vertx_network::Config),
-    #[serde(borrow)]
-    ApiResponse(ApiResponse<'a>),
-    ApiEvent {
-        name: Option<Cow<'a, [u8]>>,
-        data: Cow<'a, [u8]>,
-    },
+    ApiResponse(Vec<u8>),
     ShutDown,
     Reboot,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum ToMain<'a> {
+pub enum ToMain {
     NetworkUp,
-    ApiRequest {
-        path: Cow<'a, str>,
-        method: Method,
-        body: Cow<'a, [u8]>,
-    },
+    ApiRequest(Vec<u8>),
     PowerAck,
-}
-
-#[derive(Debug)]
-pub struct ApiRequest<'a> {
-    pub path: Cow<'a, str>,
-    pub method: Method,
-    pub body: Cow<'a, [u8]>,
-}
-
-impl<'a> From<ApiRequest<'a>> for ToMain<'a> {
-    fn from(request: ApiRequest<'a>) -> Self {
-        Self::ApiRequest {
-            path: request.path,
-            method: request.method,
-            body: request.body,
-        }
-    }
 }

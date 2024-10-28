@@ -1,11 +1,11 @@
+mod api;
+mod configurator;
 mod respond;
-mod router;
 
 use core::ops;
 
 use atoi::FromRadix10;
 use embedded_io_async::{Read, Write};
-use vertx_network::api::{EventHandler, Method};
 use vertx_network::Api;
 
 pub(crate) async fn run<R, W, A>(
@@ -21,7 +21,7 @@ where
 {
     let mut buffer = Buffer::new(buffer);
     loop {
-        let (raw_headers, body) = read_headers(&mut buffer, &mut rx).await?;
+        let (raw_headers, _body) = read_headers(&mut buffer, &mut rx).await?;
 
         let mut headers = [httparse::EMPTY_HEADER; 16];
         let mut request = httparse::Request::new(&mut headers);
@@ -30,98 +30,78 @@ where
         if let Err(err) = request.parse(raw_headers) {
             log::debug!("Bad request: {err:?}");
             respond::bad_request(&mut tx, b"Bad Request").await?;
-            buffer.clear();
             return Ok(());
         }
 
-        let close = request
+        let is_get = request
+            .method
+            .is_some_and(|method| method.eq_ignore_ascii_case("get"));
+
+        let path = request.path.unwrap_or_default();
+        let path = path.strip_suffix('/').unwrap_or(path);
+
+        let connection = request
             .headers
             .iter()
-            .find(|h| h.name.eq_ignore_ascii_case("connection"))
-            .is_some_and(|h| h.value.eq_ignore_ascii_case(b"close"));
+            .find_map(|h| h.name.eq_ignore_ascii_case("connection").then_some(h.value));
+        let content_length = request
+            .headers
+            .iter()
+            .find(|h| h.name.eq_ignore_ascii_case("content-length"))
+            .map(|h| usize::from_radix_10(h.value).0)
+            .unwrap_or_default();
+        let accept = request
+            .headers
+            .iter()
+            .find_map(|h| h.name.eq_ignore_ascii_case("accept").then_some(h.value))
+            .and_then(|s| core::str::from_utf8(s).ok())
+            .unwrap_or("*/*");
 
-        let Ok(method) = request.method.unwrap_or_default().try_into() else {
-            respond::bad_request(&mut tx, b"Bad Request").await?;
-            buffer.clear();
+        if !is_get {
+            respond::method_not_allowed(&mut tx, "GET").await?;
+        } else if path == "/api" {
+            return api::run(rx, tx, api, request.headers, connection).await;
+        } else {
+            let file = if let Ok(asset) =
+                configurator::ASSETS.binary_search_by_key(&path, |(route, _)| route)
+            {
+                &configurator::ASSETS[asset].1
+            } else {
+                &configurator::INDEX
+            };
+
+            if file.mime.is_acceptable(accept) {
+                file.write_response(&mut tx).await?;
+            } else {
+                respond::not_acceptable(&mut tx, &file.mime).await?;
+            }
+        }
+
+        if connection.is_some_and(|c| c.eq_ignore_ascii_case(b"close")) {
             return Ok(());
-        };
-        let mut request = Request {
-            headers: request.headers,
-            body,
-
-            method,
-            path: request.path.unwrap_or_default(),
-            content_length: None,
-
-            reader: &mut rx,
-        };
-        match router::respond(&mut request, &mut tx, api).await? {
-            router::Outcome::Complete => {
-                if close {
-                    return Ok(());
-                }
-
-                let total_len = raw_headers.len() + request.content_length();
-                let mut total_read = buffer.len();
-                while total_read < total_len {
-                    total_read += buffer.read_from(&mut rx).await?;
-                }
-                // How much was read past the end of the request
-                let extra = total_read - total_len;
-                let next_request_offset = buffer.len() - extra;
-                buffer.discard_prefix(next_request_offset);
-            }
-            router::Outcome::EventStream => {
-                tx.write_all(
-                    b"HTTP/1.1 200 OK\r\nContent-Type:text/event-stream\r\nCache-Control:no-cache\r\n\r\n",
-                )
-                .await?;
-
-                event_stream(&mut tx, api).await?;
-            }
-        }
-    }
-}
-
-async fn event_stream<A: Api, W: Write>(tx: &mut W, api: &A) -> Result<(), W::Error> {
-    loop {
-        struct Handler<W>(W);
-
-        impl<W: Write> EventHandler for Handler<W> {
-            type Error = W::Error;
-
-            async fn send(&mut self, data: &[u8]) -> Result<(), Self::Error> {
-                for line in data.split(|&x| x == b'\n') {
-                    self.0.write_all(b"data:").await?;
-                    self.0.write_all(line).await?;
-                    self.0.write(&[b'\n']).await?;
-                }
-
-                Ok(())
-            }
-
-            async fn send_named(&mut self, name: &[u8], data: &[u8]) -> Result<(), Self::Error> {
-                self.0.write_all(b"event:").await?;
-                self.0.write_all(name).await?;
-                self.0.write(&[b'\n']).await?;
-
-                self.send(data).await
-            }
         }
 
-        api.event(&mut Handler(&mut *tx)).await?;
+        let total_len = raw_headers.len() + content_length;
+        let mut total_read = buffer.len();
+        while total_read < total_len {
+            total_read += buffer.read_from(&mut rx).await?;
+        }
+        // How much was read past the end of the request
+        let extra = total_read - total_len;
+        let next_request_offset = buffer.len() - extra;
+        buffer.discard_prefix(next_request_offset);
     }
 }
 
 #[derive(Debug)]
-struct Mime<'a> {
-    typ: &'a str,
-    subtype: &'a str,
-    parameters: &'a str,
+struct Mime {
+    typ: &'static str,
+    subtype: &'static str,
+    parameters: &'static str,
 }
 
-impl<'a> Mime<'a> {
-    const fn new(typ: &'a str, subtype: &'a str, parameters: &'a str) -> Self {
+impl Mime {
+    const fn new(typ: &'static str, subtype: &'static str, parameters: &'static str) -> Self {
         Self {
             typ,
             subtype,
@@ -130,7 +110,7 @@ impl<'a> Mime<'a> {
     }
 }
 
-impl Mime<'_> {
+impl Mime {
     fn is_acceptable(&self, accept: &str) -> bool {
         for mime in accept.split(',') {
             let mime = mime.trim();
@@ -188,10 +168,6 @@ impl<'a> Buffer<'a> {
         self.len
     }
 
-    fn clear(&mut self) {
-        self.len = 0;
-    }
-
     async fn read_from<R: Read>(&mut self, reader: &mut R) -> Result<usize, R::Error> {
         let len = reader.read(&mut self.inner[self.len..]).await?;
         self.len += len;
@@ -216,51 +192,6 @@ impl ops::Deref for Buffer<'_> {
 impl ops::DerefMut for Buffer<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner
-    }
-}
-
-struct Request<'buffer, 'headers, 'body, 'reader, R> {
-    headers: &'headers [httparse::Header<'buffer>],
-    body: Buffer<'body>,
-
-    method: Method,
-    path: &'buffer str,
-    content_length: Option<usize>,
-
-    reader: &'reader mut R,
-}
-
-impl<'buffer, 'headers, R> Request<'buffer, 'headers, '_, '_, R> {
-    const fn method(&self) -> Method {
-        self.method
-    }
-
-    const fn path(&self) -> &'buffer str {
-        self.path
-    }
-
-    const fn headers(&self) -> &'headers [httparse::Header<'buffer>] {
-        self.headers
-    }
-
-    fn content_length(&mut self) -> usize {
-        *self.content_length.get_or_insert_with(|| {
-            self.headers
-                .iter()
-                .find(|header| header.name.eq_ignore_ascii_case("content-length"))
-                .map(|header| usize::from_radix_10(header.value).0)
-                .unwrap_or_default()
-        })
-    }
-}
-
-impl<R: Read> Request<'_, '_, '_, '_, R> {
-    async fn body(&mut self) -> Result<&[u8], R::Error> {
-        let content_length = self.content_length();
-        while self.body.len() < content_length {
-            self.body.read_from(self.reader).await?;
-        }
-        Ok(&self.body)
     }
 }
 
