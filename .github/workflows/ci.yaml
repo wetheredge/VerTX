@@ -59,7 +59,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: Swatinem/rust-cache@v2.7.3
-      - run: cargo clippy --all-targets -p ${{ matrix.crate }} ${{ matrix.args }}
+      - run: cargo clippy --all-targets -p ${{ matrix.crate }}
 
   clippy-config-migrate:
     name: Clippy (config-migrate)
@@ -137,28 +137,8 @@ jobs:
           name: configurator
           path: vertx-configurator/dist
       - name: Run clippy
-        run: cargo clippy --bin simulator -F simulator
+        run: cargo clippy --target wasm32-unknown-unknown --lib -F simulator
         working-directory: vertx
-        env:
-          VERTX_TARGET: devkit
-          WIFI_SSID: CI
-          WIFI_PASSWORD: password
-
-  clippy-simulator:
-    name: Clippy (simulator)
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/gtk-rs/gtk4-rs/gtk4:latest
-    steps:
-      - uses: actions/checkout@v4.1.7
-      - name: Install rustup
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y --default-toolchain none
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - uses: Swatinem/rust-cache@v2.7.3
-      - name: Run clippy
-        run: cargo clippy
-        working-directory: vertx-simulator
 
   clippy-backpack:
     name: Clippy (backpack, ${{ matrix.chip }})
@@ -213,7 +193,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dir: [scripts, vertx-configurator]
+        dir: [scripts, vertx-configurator, vertx-simulator]
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: biomejs/setup-biome@v2.2.1
@@ -249,7 +229,6 @@ jobs:
       - clippy-config-migrate
       - clippy-vertx
       - clippy-vertx-simulator
-      - clippy-simulator
       - clippy-backpack
       - tests
       - biome
