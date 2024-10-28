@@ -88,7 +88,7 @@ tasks:
     internal: true
     dir: ../target
     cmds:
-      - wasm-bindgen --out-dir simulator --target web wasm32-unknown-unknown/{{.profile}}/vertx.wasm
+      - cargo bin wasm-bindgen --out-dir simulator --target web wasm32-unknown-unknown/{{.profile}}/vertx.wasm
       # XXX: This can be dropped when any of the following happen:
       # - esp-wifi supports deinitialization of wifi and the reboot-to-toggle-configurator thing is removed
       # - embassy-time can run in a Worker, allowing restarts to happen by creating a new Worker thread 
