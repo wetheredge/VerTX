@@ -1,0 +1,126 @@
+name: Deploy simulator
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-configurator:
+    name: Build configurator
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vertx-configurator
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - uses: oven-sh/setup-bun@v2.0.1
+        with:
+          bun-version-file: .tool-versions
+      - run: bun install --frozen-lockfile
+      - run: bun run vite build
+      - uses: actions/upload-artifact@v4.4.0
+        with:
+          name: configurator
+          path: vertx-configurator/dist/
+          compression-level: 1
+          if-no-files-found: error
+
+  build-vertx:
+    name: Build VerTX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: oven-sh/setup-bun@v2.0.1
+        with:
+          bun-version-file: .tool-versions
+      - name: Install wasm-bindgen
+        uses: taiki-e/install-action@v2.43.6
+        with:
+          tool: wasm-bindgen@0.2.95 # dep:cargo-bin:wasm-bindgen-cli
+      - name: Install wasm-opt
+        uses: taiki-e/install-action@v2.43.6
+        with:
+          tool: wasm-opt@0.116.1 # dep:cargo-bin:wasm-opt
+      - run: cargo build --release --target wasm32-unknown-unknown --lib -F simulator
+        working-directory: vertx
+      - run: wasm-bindgen --out-dir simulator --target web wasm32-unknown-unknown/release/vertx.wasm
+        working-directory: target
+      # XXX: see vertx/Taskfile.yaml
+      - run: sed -i 's/if (wasm !== undefined) return wasm;//' vertx.js
+        working-directory: target/simulator
+      - run: cat .config/env >> $GITHUB_ENV
+      - run: wasm-opt $VERTX_WASM_OPT_ARGS --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
+        working-directory: target/simulator
+      - uses: actions/upload-artifact@v4.4.0
+        with:
+          name: vertx
+          path: target/simulator
+          compression-level: 1
+          if-no-files-found: error
+
+  build-simulator:
+    name: Build simulator
+    runs-on: ubuntu-latest
+    needs: build-vertx
+    defaults:
+      run:
+        working-directory: vertx-simulator
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - uses: oven-sh/setup-bun@v2.0.1
+        with:
+          bun-version-file: .tool-versions
+      - name: Get VerTX
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: vertx
+          path: target/simulator
+      - run: bun install --frozen-lockfile
+      - run: bun run vite build
+      - uses: actions/upload-artifact@v4.4.0
+        with:
+          name: simulator
+          path: vertx-simulator/dist
+          compression-level: 1
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs:
+      - build-configurator
+      - build-simulator
+    steps:
+      - name: Get simulator
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: simulator
+          path: out
+      - name: Get configurator
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: configurator
+          path: out/configurator
+      - name: Create out.tar.zstd
+        run: tar --create --zstd --exclude='.[^/]*' --file=out.tar.zstd --directory=out .
+      - name: Join tailnet
+        uses: tailscale/github-action@16d7e0b7812f55e668628a71630a09956522baa9
+        with:
+          oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_SECRET }}
+          tags: tag:ci-vertx
+      - name: Deploy commit
+        run: |
+          curl -X POST '${{ secrets.DEPLOY_HOST }}/commit/${{ github.sha }}' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/zstd' --data-binary @out.tar.zstd
+      - name: Update branch
+        run: |
+          curl -X POST '${{ secrets.DEPLOY_HOST }}/branch' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/json' -d '{"branch":"${{ github.ref_name }}","commit":"${{ github.sha }}"}'

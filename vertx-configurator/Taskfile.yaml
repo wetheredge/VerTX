@@ -73,7 +73,7 @@ tasks:
     cmd: bun run vite
 
   cache:*:
-    cmd: mkdir -p dist && echo {{.MATCH}} > dist/.taskCacheKey && echo '{{.MATCH}}'
+    cmd: mkdir -p dist && echo {{.MATCH}} > dist/.taskCacheKey
     internal: true
     silent: true
 
