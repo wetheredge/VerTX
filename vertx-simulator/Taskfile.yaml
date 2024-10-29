@@ -11,6 +11,7 @@ tasks:
 
   check:tsc:
     internal: true
+    deps: [build:vertx]
     cmd: bun run tsc
     sources:
       - ../bun.lockb
@@ -24,11 +25,11 @@ tasks:
     cmd: bun run vite
 
   build:
-    deps: [check]
     env:
       NODE_ENV: production
     cmds:
       - task :vertx/simulator:build:release
+      - task: check
       - bun run vite build
     sources:
       - package.json
@@ -39,6 +40,12 @@ tasks:
       - tsconfig.*
     generates:
       - dist/**/*
+
+  build:vertx:
+    internal: true
+    cmd: task :vertx/simulator:build
+    status:
+      - test -f ../target/simulator/vertx.js
 
   preview:
     deps: [build]
