@@ -82,7 +82,7 @@ jobs:
         with:
           bun-version-file: .tool-versions
       - run: bun install --frozen-lockfile
-      - run: bun run -b vite build
+      - run: bun run vite build
       - run: bun run scripts/compress.ts
       - uses: actions/upload-artifact@v4.4.0
         with:
@@ -126,16 +126,9 @@ jobs:
     name: Clippy (vertx simulator)
     runs-on: ubuntu-latest
     needs: build-configurator
-    env:
-      VERTX_SERVER_SKIP_CONFIGURATOR_BUILD: true
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: Swatinem/rust-cache@v2.7.3
-      - name: Get pre-built configurator
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: configurator
-          path: vertx-configurator/dist
       - name: Run clippy
         run: cargo clippy --target wasm32-unknown-unknown --lib -F simulator
         working-directory: vertx
