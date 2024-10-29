@@ -11,6 +11,7 @@ dotenv:
   - ../.env
   - .env
   - ../.env.target
+  - ../.config/env
 
 tasks:
   default:
@@ -99,7 +100,7 @@ tasks:
   simulator:optimize:
     internal: true
     dir: ../target/simulator
-    cmd: cargo bin wasm-opt -O3 --converge --const-hoisting --dae-optimizing --optimize-added-constants-propagate --optimize-instructions --reorder-functions --reorder-locals --strip-target-features --strip-producers --minify-imports-and-exports-and-modules --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
+    cmd: cargo bin wasm-opt $VERTX_WASM_OPT_ARGS --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
 
   simulator:cargo:
     internal: true

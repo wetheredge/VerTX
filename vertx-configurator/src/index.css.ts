@@ -8,7 +8,13 @@ import {
 	layer,
 	style,
 } from '@vanilla-extract/css';
-import inter from 'inter-ui/variable/InterVariable.woff2?url';
+import rawInterUrl from 'inter-ui/variable/InterVariable.woff2?url';
+
+const baseUrl = import.meta.env.BASE_URL;
+const interUrl =
+	baseUrl !== '/' && rawInterUrl.startsWith(baseUrl)
+		? rawInterUrl.slice(baseUrl.length)
+		: rawInterUrl;
 
 export const vars = createGlobalThemeContract(
 	{
@@ -39,7 +45,7 @@ export const vars = createGlobalThemeContract(
 
 const font = fontFace(
 	{
-		src: `local('InterVariable'), url(${inter}) format("woff2")`,
+		src: `local('InterVariable'), url(${interUrl}) format("woff2")`,
 		fontStyle: 'normal',
 		fontWeight: '100 900',
 		fontDisplay: 'swap',

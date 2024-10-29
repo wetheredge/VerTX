@@ -28,9 +28,11 @@ tasks:
     env:
       NODE_ENV: production
     cmds:
+      - task :configurator/simulator:build
       - task :vertx/simulator:build:release
       - task: check
       - bun run vite build
+      - cp -r ../vertx-configurator/dist dist/configurator
     sources:
       - package.json
       - bun.lockb
