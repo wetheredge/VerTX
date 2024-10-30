@@ -1,8 +1,5 @@
 mod codegen {
-    include!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../vertx-config/out/config.rs"
-    ));
+    include!(concat!(env!("OUT_DIR"), "/config.rs"));
 }
 
 use core::cell::RefCell;

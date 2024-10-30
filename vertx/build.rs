@@ -10,6 +10,10 @@ fn main() -> io::Result<()> {
     let out_dir = &env::var("OUT_DIR").unwrap();
     let root = &env::var("CARGO_MANIFEST_DIR").unwrap();
 
+    let config = format!("{root}/../vertx-config/out/config.rs");
+    println!("cargo::rerun-if-changed={config}");
+    fs::copy(config, format!("{out_dir}/config.rs"))?;
+
     if env::var_os("CARGO_FEATURE_SIMULATOR").is_some() {
         build_info(out_dir, "simulator")
     } else {

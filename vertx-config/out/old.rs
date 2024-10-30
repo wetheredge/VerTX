@@ -1,9 +1,16 @@
-#[derive(Debug, Default, ::serde::Deserialize, ::serde::Serialize)]
+#[derive(Debug, ::serde::Deserialize, ::serde::Serialize)]
 #[allow(non_snake_case)]
 pub(crate) struct RawConfig {
     pub(super) name: ::heapless::String<20>,
 }
 
+impl Default for RawConfig {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+        }
+    }
+}
 pub(crate) const BYTE_LENGTH: usize = 4 + 25;
 
 #[derive(Debug, Clone)]

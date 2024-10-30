@@ -1,4 +1,4 @@
-#[derive(Debug, Default, ::serde::Deserialize, ::serde::Serialize)]
+#[derive(Debug, ::serde::Deserialize, ::serde::Serialize)]
 #[allow(non_snake_case)]
 pub(crate) struct RawConfig {
     pub(super) name: ::heapless::String<20>,
@@ -12,6 +12,21 @@ pub(crate) struct RawConfig {
     pub(super) expert: bool,
 }
 
+impl Default for RawConfig {
+    fn default() -> Self {
+        Self {
+            name: "VerTX".try_into().unwrap(),
+            leds_brightness: 10,
+            display_brightness: 255,
+            display_fontSize: Default::default(),
+            network_hostname: "vertx".try_into().unwrap(),
+            network_password: Default::default(),
+            network_home_ssid: Default::default(),
+            network_home_password: Default::default(),
+            expert: false,
+        }
+    }
+}
 pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 1 + 5 + 37 + 69 + 37 + 69 + 1;
 
 #[derive(Debug, Default, Clone, Copy, ::serde::Deserialize, ::serde::Serialize)]

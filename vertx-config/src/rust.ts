@@ -22,7 +22,7 @@ export async function rust(
 	const getKeyType = (path: Path) => `key::${getRawKeyType(path)}`;
 
 	// RawConfig struct
-	outln`#[derive(Debug, Default, ::serde::Deserialize, ::serde::Serialize)]`;
+	outln`#[derive(Debug, ::serde::Deserialize, ::serde::Serialize)]`;
 	outln`#[allow(non_snake_case)]`;
 	outln`pub(crate) struct RawConfig {`;
 	const rawConfigField = (path: Path, type: string) =>
@@ -34,6 +34,27 @@ export async function rust(
 		boolean: (path) => rawConfigField(path, 'bool'),
 	});
 	outln`}\n`;
+
+	outln`impl Default for RawConfig {`;
+	outln`    fn default() -> Self {`;
+	outln`        Self {`;
+	const fieldDefault = (path: Path, def: { toString(): string }) =>
+		outln`${getFieldName(path)}: ${def},`;
+	visit(config, {
+		string: (path, { def }) =>
+			fieldDefault(
+				path,
+				def == null
+					? 'Default::default()'
+					: `"${def}".try_into().unwrap()`,
+			),
+		integer: (path, { def }) => fieldDefault(path, def),
+		enumeration: (path) => fieldDefault(path, 'Default::default()'),
+		boolean: (path, { def }) => fieldDefault(path, def),
+	});
+	outln`        }`;
+	outln`    }`;
+	outln`}`;
 
 	// 4 for u32 version bytes
 	out`pub(crate) const BYTE_LENGTH: usize = 4`;
