@@ -3,6 +3,8 @@ mod backpack;
 use std::future::Future;
 use std::panic;
 
+use base64::engine::general_purpose::STANDARD_NO_PAD as base64;
+use base64::Engine as _;
 use embassy_executor::Spawner;
 use embassy_sync::pipe::Pipe;
 use embassy_sync::signal::Signal;
@@ -10,6 +12,7 @@ use smart_leds::RGB8;
 
 mod ipc {
     use std::boxed::Box;
+    use std::string::String;
 
     use wasm_bindgen::prelude::*;
 
@@ -19,9 +22,9 @@ mod ipc {
         pub fn backpack_tx(data: &[u8]);
 
         #[wasm_bindgen(js_name = "loadConfig")]
-        pub fn load_config() -> Option<Box<[u8]>>;
+        pub fn load_config() -> Option<String>;
         #[wasm_bindgen(js_name = "saveConfig")]
-        pub fn save_config(data: &[u8]);
+        pub fn save_config(data: &str);
 
         #[wasm_bindgen(js_name = "setStatusLed")]
         pub fn set_status_led(r: u8, g: u8, b: u8);
@@ -105,13 +108,17 @@ struct ConfigStorage;
 
 impl super::traits::ConfigStorage for ConfigStorage {
     fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
-        ipc::load_config().and_then(|data| parse(&data))
+        ipc::load_config().and_then(|data| {
+            let data = base64
+                .decode(data)
+                .inspect_err(|err| loog::warn!("Failed to decode base64 config: {err:?}"))
+                .ok()?;
+            parse(&data)
+        })
     }
 
-    fn save(&mut self, config: &crate::config::Manager) {
-        let mut buffer = [0; crate::config::BYTE_LENGTH];
-        let len = config.serialize(&mut buffer).unwrap();
-        ipc::save_config(&buffer[0..len]);
+    fn save(&mut self, config: &[u8]) {
+        ipc::save_config(&base64.encode(config));
     }
 }
 

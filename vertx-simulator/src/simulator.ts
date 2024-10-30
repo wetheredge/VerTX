@@ -17,6 +17,7 @@ import {
 import { unreachable } from './utils';
 
 const globalName = 'Vertx';
+const configStorageKey = 'config';
 
 declare const SimulatorModuleTag: unique symbol;
 export type SimulatorModule = {
@@ -158,11 +159,11 @@ export class Simulator {
 	}
 
 	private loadConfig() {
-		return null;
+		return localStorage.getItem(configStorageKey);
 	}
 
-	private saveConfig(config: Uint8Array) {
-		console.log('config', config);
+	private saveConfig(config: string) {
+		localStorage.setItem(configStorageKey, config);
 	}
 
 	private setStatusLed(r: number, g: number, b: number) {

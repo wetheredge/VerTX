@@ -54,7 +54,8 @@ impl vertx_network::Api for Api {
             }
         };
 
-        loog::debug!("Received api request: {request:?}");
+        // FIXME: Request needs defmt::Format impl
+        // loog::debug!("Received api request: {request:?}");
 
         let response = match request {
             Request::BuildInfo => Some(include!(concat!(env!("OUT_DIR"), "/build_info.rs"))),

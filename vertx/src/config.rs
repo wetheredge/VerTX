@@ -59,6 +59,7 @@ impl Manager {
     pub async fn update(&self, update: Update<'_>) -> Result<(), UpdateError> {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
+            state.modified = true;
             state.config.update(update).map(|key| {
                 for (sub_key, sub) in &mut state.subscriptions {
                     if *sub_key == key {
@@ -75,14 +76,14 @@ impl Manager {
     pub async fn save(&self) {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
-            let state = &mut *state;
-
             if !state.modified {
                 return;
             }
 
             loog::info!("Writing configuration");
-            state.storage.save(self);
+            let mut buffer = [0; BYTE_LENGTH];
+            let len = state.config.serialize(&mut buffer).unwrap();
+            state.storage.save(&buffer[0..len]);
         });
     }
 

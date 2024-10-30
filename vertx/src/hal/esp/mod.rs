@@ -118,17 +118,17 @@ impl super::traits::ConfigStorage for ConfigStorage {
         }
     }
 
-    fn save(&mut self, config: &crate::config::Manager) {
+    fn save(&mut self, config: &[u8]) {
         let mut buffer = [0; crate::config::BYTE_LENGTH.div_ceil(4)];
-        let bytes = bytemuck::cast_slice_mut(&mut buffer);
-        let len_bytes = config.serialize(bytes).unwrap();
+        // Ensure word alignment
+        bytemuck::cast_slice_mut(&mut buffer).copy_from_slice(config);
 
-        let sectors = (len_bytes as u32).div_ceil(flash::SECTOR_BYTES);
+        let sectors = (config.len() as u32).div_ceil(flash::SECTOR_BYTES);
         for i in 0..sectors {
             self.partition.erase_sector(i).unwrap();
         }
 
-        let len_words = len_bytes.div_ceil(4);
+        let len_words = config.len().div_ceil(4);
         self.partition.write(0, &[len_words as u32]).unwrap();
         self.partition.write(1, &buffer[0..len_words]).unwrap();
     }

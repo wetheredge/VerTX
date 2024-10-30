@@ -87,7 +87,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
         None
     }
 
-    fn save(&mut self, _config: &crate::config::Manager) {
+    fn save(&mut self, _config: &[u8]) {
         todo!()
     }
 }
