@@ -38,6 +38,10 @@ export const enum FontSize {
 }
 
 export function parseConfig(reader: Reader): Config {
+	// Ignore u32 version
+	for (let i = 0; i < 4; i++) {
+		reader.u8();
+	}
 	return [
 		reader.string(),
 		reader.u8(),

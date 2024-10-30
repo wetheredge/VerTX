@@ -11,6 +11,7 @@ import {
 	type BooleanSettings,
 	type Config,
 	type EnumSettings,
+	FontSize,
 	type IntegerSettings,
 	type StringSettings,
 	configKeys,
@@ -99,8 +100,8 @@ export default function Settings() {
 				key={configKeys.display.fontSize}
 				label="Font size"
 				options={[
-					{ value: 7, label: '7px' },
-					{ value: 9, label: '9px' },
+					{ value: FontSize.Size7px, label: '7px' },
+					{ value: FontSize.Size9px, label: '9px' },
 				]}
 				handler={handleInteger}
 			/>

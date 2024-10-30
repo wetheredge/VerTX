@@ -44,6 +44,8 @@ export async function typescript(config: types.Config, outFile: string) {
 	});
 
 	outln`export function parseConfig(reader: Reader): Config {`;
+	outln`\t// Ignore u32 version`;
+	outln`\tfor (let i = 0; i < 4; i++) { reader.u8() }`;
 	outln`\treturn [`;
 	const readType = (type: string, as?: string) => {
 		out`\t\treader.${type}()`;
