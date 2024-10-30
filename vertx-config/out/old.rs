@@ -4,6 +4,7 @@ pub(crate) struct RawConfig {
     pub(super) name: ::heapless::String<20>,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for RawConfig {
     fn default() -> Self {
         Self {

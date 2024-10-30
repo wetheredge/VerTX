@@ -35,6 +35,7 @@ export async function rust(
 	});
 	outln`}\n`;
 
+	outln`#[allow(clippy::derivable_impls)]`;
 	outln`impl Default for RawConfig {`;
 	outln`    fn default() -> Self {`;
 	outln`        Self {`;

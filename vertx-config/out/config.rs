@@ -12,6 +12,7 @@ pub(crate) struct RawConfig {
     pub(super) expert: bool,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for RawConfig {
     fn default() -> Self {
         Self {
