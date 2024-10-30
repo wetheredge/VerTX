@@ -130,8 +130,8 @@ async fn change_mode(
 
 #[cfg(all(feature = "simulator", target_arch = "wasm32"))]
 mod simulator {
-    /// SAFETY: The runtime environment must be single-threaded WASM.
     #[global_allocator]
+    /// SAFETY: The runtime environment must be single-threaded WASM.
     static ALLOCATOR: talc::TalckWasm = unsafe { talc::TalckWasm::new_global() };
 
     #[embassy_executor::main]
