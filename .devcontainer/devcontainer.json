@@ -3,7 +3,7 @@
 	"build": {
 		"dockerfile": "./Dockerfile"
 	},
-	"onCreateCommand": "bash -ic 'asdf install && task setup'",
+	"onCreateCommand": "bash -ic 'rustc --version && asdf install && task setup'",
 	"customizations": {
 		"vscode": {
 			"settings": {
