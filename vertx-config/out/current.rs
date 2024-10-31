@@ -4,7 +4,6 @@ pub(crate) struct RawConfig {
     pub(super) name: ::heapless::String<20>,
     pub(super) leds_brightness: u8,
     pub(super) display_brightness: u8,
-    pub(super) display_fontSize: FontSize,
     pub(super) network_hostname: ::heapless::String<32>,
     pub(super) network_password: ::heapless::String<64>,
     pub(super) network_home_ssid: ::heapless::String<32>,
@@ -19,7 +18,6 @@ impl Default for RawConfig {
             name: "VerTX".try_into().unwrap(),
             leds_brightness: 10,
             display_brightness: 255,
-            display_fontSize: Default::default(),
             network_hostname: "vertx".try_into().unwrap(),
             network_password: Default::default(),
             network_home_ssid: Default::default(),
@@ -28,16 +26,7 @@ impl Default for RawConfig {
         }
     }
 }
-pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 1 + 5 + 37 + 69 + 37 + 69 + 1;
-
-#[derive(Debug, Default, Clone, Copy, ::serde::Deserialize, ::serde::Serialize)]
-pub(crate) enum FontSize {
-    /// 7px
-    Size7px,
-    /// 9px
-    #[default]
-    Size9px,
-}
+pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 1 + 37 + 69 + 37 + 69 + 1;
 
 #[derive(Debug, Clone)]
 pub(super) enum DeserializeError {

@@ -4,7 +4,6 @@ pub(crate) struct RawConfig {
     pub(super) name: ::heapless::String<20>,
     pub(super) leds_brightness: u8,
     pub(super) display_brightness: u8,
-    pub(super) display_fontSize: FontSize,
     pub(super) network_hostname: ::heapless::String<32>,
     pub(super) network_password: ::heapless::String<64>,
     pub(super) network_home_ssid: ::heapless::String<32>,
@@ -19,7 +18,6 @@ impl Default for RawConfig {
             name: "VerTX".try_into().unwrap(),
             leds_brightness: 10,
             display_brightness: 255,
-            display_fontSize: Default::default(),
             network_hostname: "vertx".try_into().unwrap(),
             network_password: Default::default(),
             network_home_ssid: Default::default(),
@@ -28,16 +26,7 @@ impl Default for RawConfig {
         }
     }
 }
-pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 1 + 5 + 37 + 69 + 37 + 69 + 1;
-
-#[derive(Debug, Default, Clone, Copy, ::serde::Deserialize, ::serde::Serialize)]
-pub(crate) enum FontSize {
-    /// 7px
-    Size7px,
-    /// 9px
-    #[default]
-    Size9px,
-}
+pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 1 + 37 + 69 + 37 + 69 + 1;
 
 #[allow(non_camel_case_types, unused)]
 pub(super) mod key {
@@ -53,8 +42,6 @@ pub(super) mod key {
     pub(crate) struct Root_Display;
     #[derive(Clone, Copy)]
     pub(crate) struct Root_Display_Brightness;
-    #[derive(Clone, Copy)]
-    pub(crate) struct Root_Display_FontSize;
     #[derive(Clone, Copy)]
     pub(crate) struct Root_Network;
     #[derive(Clone, Copy)]
@@ -247,25 +234,11 @@ impl super::View<key::Root_Display> {
             _key: ::core::marker::PhantomData,
         }
     }
-
-    pub(crate) fn font_size(&self) -> super::View<key::Root_Display_FontSize> {
-        super::View {
-            manager: self.manager,
-            _key: ::core::marker::PhantomData,
-        }
-    }
 }
 
 #[allow(unused)]
 impl super::LockedView<'_, key::Root_Display> {
     pub(crate) fn brightness(&self) -> super::LockedView<'_, key::Root_Display_Brightness> {
-        super::LockedView {
-            config: self.config,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-
-    pub(crate) fn font_size(&self) -> super::LockedView<'_, key::Root_Display_FontSize> {
         super::LockedView {
             config: self.config,
             _key: ::core::marker::PhantomData,
@@ -291,27 +264,6 @@ impl ::core::ops::Deref for super::LockedView<'_, key::Root_Display_Brightness> 
 
     fn deref(&self) -> &Self::Target {
         &self.config.display_brightness
-    }
-}
-
-#[allow(unused)]
-impl super::View<key::Root_Display_FontSize> {
-    pub(crate) fn lock<T>(&self, f: impl FnOnce(&FontSize) -> T) -> T {
-        self.manager
-            .state
-            .lock(|state| f(&state.borrow().config.display_fontSize))
-    }
-
-    pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(3)
-    }
-}
-
-impl ::core::ops::Deref for super::LockedView<'_, key::Root_Display_FontSize> {
-    type Target = FontSize;
-
-    fn deref(&self) -> &Self::Target {
-        &self.config.display_fontSize
     }
 }
 
@@ -384,7 +336,7 @@ impl super::View<key::Root_Network_Hostname> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(4)
+        self.manager.subscribe(3)
     }
 }
 
@@ -405,7 +357,7 @@ impl super::View<key::Root_Network_Password> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(5)
+        self.manager.subscribe(4)
     }
 }
 
@@ -472,7 +424,7 @@ impl super::View<key::Root_Network_Home_Ssid> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(6)
+        self.manager.subscribe(5)
     }
 }
 
@@ -493,7 +445,7 @@ impl super::View<key::Root_Network_Home_Password> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(7)
+        self.manager.subscribe(6)
     }
 }
 
@@ -514,7 +466,7 @@ impl super::View<key::Root_Expert> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(8)
+        self.manager.subscribe(7)
     }
 }
 
@@ -533,7 +485,6 @@ pub(crate) enum Update<'a> {
     Root_Name(&'a str),
     Root_Leds_Brightness(u8),
     Root_Display_Brightness(u8),
-    Root_Display_FontSize(FontSize),
     #[serde(borrow)]
     Root_Network_Hostname(&'a str),
     #[serde(borrow)]
@@ -590,41 +541,37 @@ impl RawConfig {
                 self.display_brightness = update;
                 Ok(2)
             }
-            Update::Root_Display_FontSize(update) => {
-                self.display_fontSize = update;
-                Ok(3)
-            }
             Update::Root_Network_Hostname(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 32 });
                 };
                 self.network_hostname = update;
-                Ok(4)
+                Ok(3)
             }
             Update::Root_Network_Password(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 64 });
                 };
                 self.network_password = update;
-                Ok(5)
+                Ok(4)
             }
             Update::Root_Network_Home_Ssid(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 32 });
                 };
                 self.network_home_ssid = update;
-                Ok(6)
+                Ok(5)
             }
             Update::Root_Network_Home_Password(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 64 });
                 };
                 self.network_home_password = update;
-                Ok(7)
+                Ok(6)
             }
             Update::Root_Expert(update) => {
                 self.expert = update;
-                Ok(8)
+                Ok(7)
             }
         }
     }

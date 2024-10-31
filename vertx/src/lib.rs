@@ -18,8 +18,9 @@ mod mode;
 mod mutex;
 mod network;
 mod reset;
+mod ui;
 
-use embassy_executor::{task, Spawner};
+use embassy_executor::Spawner;
 use embassy_sync::watch::Watch;
 use static_cell::StaticCell;
 
@@ -56,6 +57,8 @@ pub async fn main(spawner: Spawner) {
         )
     });
 
+    spawner.must_spawn(ui::run(config, hal.ui, reset));
+
     #[cfg(not(feature = "backpack-boot-mode"))]
     let boot_mode = hal.boot_mode;
     #[cfg(feature = "backpack-boot-mode")]
@@ -65,8 +68,6 @@ pub async fn main(spawner: Spawner) {
         loog::debug!("Received boot mode");
         mode
     };
-
-    spawner.must_spawn(change_mode(boot_mode, reset, hal.mode_button));
 
     if boot_mode.configurator_enabled() {
         loog::info!("Configurator enabled");
@@ -97,33 +98,6 @@ pub async fn main(spawner: Spawner) {
         loog::info!("Configurator disabled");
         mode_sender.send(Mode::Ok);
     }
-}
-
-#[task]
-async fn change_mode(
-    boot_mode: BootMode,
-    reset: &'static reset::Manager,
-    mut button: hal::ModeButton,
-) {
-    use hal::traits::ModeButton as _;
-
-    button.wait_for_pressed().await;
-
-    let mode = if boot_mode.configurator_enabled() {
-        BootMode::Standard
-    } else {
-        #[allow(unused_variables)]
-        let try_home = true;
-        #[cfg(feature = "network-native")]
-        let try_home = <hal::NetworkHal as vertx_network::Hal>::SUPPORTS_HOME;
-        if try_home {
-            BootMode::ConfiguratorHome
-        } else {
-            BootMode::ConfiguratorField
-        }
-    };
-
-    reset.reboot_into(mode).await;
 }
 
 #[cfg(all(feature = "simulator", target_arch = "wasm32"))]

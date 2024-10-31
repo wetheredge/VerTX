@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
-import { chdir, exit, stdout } from 'node:process';
+import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
 import { $, Glob } from 'bun';
-import { getRepoRoot } from './utils';
+import { getRepoRoot, panic } from './utils';
 
 const missingTools = [
 	'asdf',
@@ -491,12 +491,4 @@ function splitComment(line: string, pattern: RegExp): [string, string] {
 	return commentStart >= 0
 		? [line.slice(0, commentStart), line.slice(commentStart)]
 		: [line, ''];
-}
-
-function panic(message: string) {
-	console.error(message);
-	if (import.meta.env.CI) {
-		stdout.write(`::error::${message}\n`);
-	}
-	exit(1);
 }

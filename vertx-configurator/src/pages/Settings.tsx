@@ -1,4 +1,4 @@
-import { For, type JSX, Show, createUniqueId, splitProps } from 'solid-js';
+import { type JSX, Show, createUniqueId, splitProps } from 'solid-js';
 import {
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
@@ -11,7 +11,6 @@ import {
 	type BooleanSettings,
 	type Config,
 	type EnumSettings,
-	FontSize,
 	type IntegerSettings,
 	type StringSettings,
 	configKeys,
@@ -96,15 +95,6 @@ export default function Settings() {
 				max={255}
 				handler={handleInteger}
 			/>
-			<SettingSelect
-				key={configKeys.display.fontSize}
-				label="Font size"
-				options={[
-					{ value: FontSize.Size7px, label: '7px' },
-					{ value: FontSize.Size9px, label: '9px' },
-				]}
-				handler={handleInteger}
-			/>
 
 			<h2>Wi-Fi</h2>
 
@@ -186,44 +176,6 @@ function SettingInput<Key extends StringSettings | IntegerSettings>(
 				value={value()}
 				ref={input}
 			/>
-		</SettingBase>
-	);
-}
-
-function SettingSelect<Key extends EnumSettings, V extends string | number>(
-	props: SettingProps<Key, HTMLSelectElement> & {
-		options: Array<{ value: V; label: string }>;
-	},
-) {
-	const id = createUniqueId();
-	const [baseProps] = splitProps(props, [
-		'advanced',
-		'key',
-		'label',
-		'description',
-	]);
-
-	let input!: HTMLSelectElement;
-	const value = () => api[ResponseKind.Config]?.[props.key]?.toString() ?? '';
-	const resetInput = () => {
-		input.value = value();
-	};
-
-	return (
-		<SettingBase id={id} {...baseProps}>
-			<select
-				id={id}
-				aria-describedby={props.description && descriptionId(id)}
-				onChange={props.handler(props.key, resetInput)}
-				value={value()}
-				ref={input}
-			>
-				<For each={props.options}>
-					{({ value, label }) => (
-						<option value={value}>{label}</option>
-					)}
-				</For>
-			</select>
 		</SettingBase>
 	);
 }

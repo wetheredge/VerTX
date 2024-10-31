@@ -12,6 +12,11 @@ fn main() -> io::Result<()> {
     println!("cargo::rerun-if-changed={config}");
     fs::copy(config, format!("{out_dir}/config.rs"))?;
 
+    fs::write(
+        format!("{out_dir}/qr_url"),
+        env!("CARGO_PKG_HOMEPAGE").to_ascii_uppercase(),
+    )?;
+
     build_info(out_dir)?;
 
     if env::var_os("CARGO_FEATURE_SIMULATOR").is_none() {

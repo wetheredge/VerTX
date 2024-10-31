@@ -6,7 +6,7 @@ macro_rules! declare_hal_types {
         pub(crate) type HalReset = impl crate::hal::traits::Reset;
         pub(crate) type HalLedDriver = impl crate::hal::traits::LedDriver;
         pub(crate) type HalConfigStorage = impl crate::hal::traits::ConfigStorage;
-        pub(crate) type HalModeButton = impl crate::hal::traits::ModeButton;
+        pub(crate) type HalUi = impl crate::hal::traits::Ui;
 
         #[cfg(feature = "network-native")]
         pub(crate) type HalNetwork = impl crate::hal::traits::Network;
@@ -34,8 +34,7 @@ pub(crate) use implementation::HalBackpackTx as BackpackTx;
 #[cfg(feature = "network-native")]
 pub(crate) use implementation::HalNetwork as Network;
 pub(crate) use implementation::{
-    HalConfigStorage as ConfigStorage, HalLedDriver as LedDriver, HalModeButton as ModeButton,
-    HalReset as Reset,
+    HalConfigStorage as ConfigStorage, HalLedDriver as LedDriver, HalReset as Reset, HalUi as Ui,
 };
 #[cfg(feature = "network-native")]
 pub type NetworkHal = <Network as traits::Network>::Hal;
@@ -63,7 +62,7 @@ pub(crate) struct Init {
     pub(crate) boot_mode: crate::BootMode,
     pub(crate) led_driver: LedDriver,
     pub(crate) config_storage: ConfigStorage,
-    pub(crate) mode_button: ModeButton,
+    pub(crate) ui: Ui,
     #[cfg(feature = "backpack")]
     pub(crate) backpack: Backpack,
     #[cfg(feature = "network-native")]
@@ -81,14 +80,15 @@ pub(crate) mod prelude {
     pub(crate) use vertx_network::Hal as _;
 
     pub(crate) use super::traits::{
-        ConfigStorage as _, LedDriver as _, ModeButton as _, Network as _, Reset as _,
+        ConfigStorage as _, LedDriver as _, Network as _, Reset as _, Ui as _,
     };
 }
 
 pub(crate) mod traits {
     use core::fmt::Debug;
-    use core::future::Future;
 
+    use embedded_graphics::draw_target::DrawTarget;
+    use embedded_graphics::pixelcolor::BinaryColor;
     use smart_leds::RGB8;
 
     pub(crate) trait ConfigStorage {
@@ -114,10 +114,6 @@ pub(crate) mod traits {
         }
     }
 
-    pub(crate) trait ModeButton {
-        fn wait_for_pressed(&mut self) -> impl Future<Output = ()>;
-    }
-
     #[cfg_attr(not(feature = "network-native"), allow(dead_code))]
     pub(crate) trait Network {
         type Hal: vertx_network::Hal;
@@ -129,5 +125,14 @@ pub(crate) mod traits {
     pub(crate) trait Reset {
         fn shut_down(&mut self) -> !;
         fn reboot(&mut self) -> !;
+    }
+
+    pub(crate) trait Ui: DrawTarget<Color = BinaryColor>
+    // TODO: where <Self as DrawTarget>::Error: loog::DebugFormat
+    {
+        type FlushError: loog::DebugFormat;
+
+        async fn get_input(&mut self) -> crate::ui::Input;
+        async fn flush(&mut self) -> Result<(), Self::FlushError>;
     }
 }

@@ -3,6 +3,7 @@ name = "vertx"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
+homepage.workspace = true
 license.workspace = true
 publish = false
 
@@ -15,6 +16,7 @@ log = [
 ]
 defmt = [
     "loog/defmt",
+    "embedded-graphics/defmt",
     "postcard/use-defmt",
 ]
 
@@ -92,14 +94,19 @@ simulator = [
 
 [dependencies]
 bytemuck = { version = "=1.20.0", features = ["extern_crate_alloc", "min_const_generics"] }
+const_format = "=0.2.33"
 embassy-executor = { workspace = true, features = ["nightly"] }
 embassy-futures = "=0.1.1"
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
+embedded-graphics = "=0.8.1"
+embedded-mogeefont = "=0.1.0"
+embedded-text = "=0.7.2"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
 portable-atomic = { workspace = true }
 postcard = { workspace = true }
+qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }
 smart-leds = "=0.4.0"
 static_cell = { workspace = true }
