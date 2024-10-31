@@ -1,0 +1,48 @@
+@import "./reset.css";
+
+:root {
+	font-family: sans-serif;
+	color-scheme: light dark;
+}
+
+#app {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5em;
+}
+
+#status-led {
+	--glow-size: 0.5em;
+	width: 1em;
+	height: 1em;
+	margin: var(--glow-size);
+	border-radius: 100%;
+	color: black;
+	background-color: currentColor;
+	box-shadow: 0 0 var(--glow-size) 0 currentColor;
+}
+
+#display {
+	width: fit-content;
+	position: relative;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border: 0.5px solid currentColor;
+}
+
+#display .alt {
+	position: absolute;
+}
+
+#display canvas {
+	width: 256px;
+	height: 128px;
+	image-rendering: pixelated;
+}
+
+#buttons {
+	display: flex;
+	gap: inherit;
+}

@@ -101,7 +101,7 @@ pub(crate) async fn rx(
     mut rx: UartRx<'static, peripherals::UART1, Async>,
     boot_mode: &'static AtomicU8,
     start_network: crate::network::Start,
-    api_responses: crate::api::ResponseSender,
+    api: &'static crate::Api,
     context: &'static Context,
 ) -> ! {
     let mut start_network = Some(start_network);
@@ -119,7 +119,7 @@ pub(crate) async fn rx(
         };
 
         while !chunk.is_empty() {
-            chunk = match accumulator.feed(chunk) {
+            chunk = match accumulator.feed_ref(chunk) {
                 FeedResult::Consumed => break,
                 FeedResult::OverFull(remaining) => remaining,
                 FeedResult::DeserError(remaining) => {
@@ -142,7 +142,9 @@ pub(crate) async fn rx(
                             }
                         }
 
-                        ToBackpack::ApiResponse(response) => api_responses.send(response).await,
+                        ToBackpack::ApiResponse(response) => {
+                            api.push_api_response(response).await;
+                        }
 
                         ToBackpack::ShutDown => {
                             context.messages.send(ToMain::PowerAck).await;

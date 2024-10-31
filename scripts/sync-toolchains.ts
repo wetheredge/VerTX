@@ -23,6 +23,12 @@ await updateFile('README.md', (line) =>
 		: line,
 );
 
+await updateFile('.devcontainer/Dockerfile', (line) =>
+	line.startsWith('FROM docker.io/espressif/idf-rust:')
+		? `${line.split(':')[0]}:esp32s3_${xtensa}`
+		: line,
+);
+
 async function updateFile(path: string, map: (line: string) => string) {
 	const file = Bun.file(path);
 	const contents = await file.text();

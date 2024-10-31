@@ -3,41 +3,14 @@
 
 extern crate alloc;
 
-mod configurator;
+mod http;
 
 use core::marker::PhantomData;
 
 use embassy_net::driver::Driver;
-use embassy_net::udp::{PacketMetadata, UdpSocket};
 use embassy_net::{Ipv4Address, Ipv4Cidr};
 use embassy_time::{Duration, Timer};
 use vertx_network::Config;
-
-pub use self::configurator::Router;
-
-#[doc(hidden)]
-pub mod private {
-    pub use picoserve;
-
-    pub use crate::configurator::api::UpgradeHandler as ApiUpgradeHandler;
-    pub use crate::configurator::AssetsRouter;
-}
-
-#[macro_export]
-macro_rules! get_router {
-    ($vis:vis $f:ident -> $t:ident<$api:ty>) => {
-        $vis type $t = $crate::private::picoserve::Router<
-            impl $crate::private::picoserve::routing::PathRouter<$api>,
-            $api,
-        >;
-
-        $vis fn $f() -> $t {
-            $crate::private::picoserve::Router::new()
-                .nest_service("", $crate::private::AssetsRouter)
-                .nest_service("/api", $crate::private::ApiUpgradeHandler)
-        }
-    };
-}
 
 /// Memory resources for a network stack
 ///
@@ -137,11 +110,40 @@ pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
 }
 
 pub mod tasks {
-    use super::*;
-    pub use crate::configurator::worker as http;
+    use embassy_net::driver::Driver;
+    use embassy_net::tcp::TcpSocket;
+    use embassy_net::udp::{PacketMetadata, UdpSocket};
+    use vertx_network::Api;
+
+    use crate::Context;
 
     pub async fn network<D: Driver>(context: &Context<D>) -> ! {
         context.0.run().await
+    }
+
+    pub async fn http<A: Api, D: Driver>(id: usize, context: &Context<D>, api: &A) -> ! {
+        const TCP_BUFFER: usize = 1024;
+        const HTTP_BUFFER: usize = 2048;
+
+        let Context(stack) = context;
+
+        let mut rx_buffer = [0; TCP_BUFFER];
+        let mut tx_buffer = [0; TCP_BUFFER];
+        let mut http_buffer = [0; HTTP_BUFFER];
+
+        loop {
+            let mut tcp = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+
+            if let Err(err) = tcp.accept(80).await {
+                log::warn!("server({id}): Accept error: {err:?}");
+                continue;
+            }
+
+            let (rx, tx) = tcp.split();
+            if let Err(err) = crate::http::run(rx, tx, &mut http_buffer, api).await {
+                log::error!("server({id}): Error: {err:?}");
+            }
+        }
     }
 
     pub struct DhcpContext(pub(crate) [u8; 4]);
@@ -196,7 +198,10 @@ pub mod tasks {
             let mut options = edge_dhcp::Options::buf();
             if let Some(reply) = server.handle_request(&mut options, &server_options, &request) {
                 let remote = if request.broadcast || remote.addr.is_unspecified() {
-                    embassy_net::IpEndpoint::new(Ipv4Address::BROADCAST.into_address(), remote.port)
+                    embassy_net::IpEndpoint::new(
+                        embassy_net::Ipv4Address::BROADCAST.into_address(),
+                        remote.port,
+                    )
                 } else {
                     remote
                 };

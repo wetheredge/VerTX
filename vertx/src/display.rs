@@ -32,15 +32,15 @@ impl From<FontSize> for u8 {
 
 impl vertx_config::Storage for FontSize {
     async fn save<S: storage::Serializer>(&self, serializer: S) {
-        serializer.unsigned(u8::from(*self).into());
+        serializer.integer(u8::from(*self).into());
     }
 
     fn load(from: storage::Stored<'_>) -> Self {
         use storage::Stored;
 
         match from {
-            Stored::Unsigned(7) => Self::Size7px,
-            Stored::Unsigned(9) => Self::Size9px,
+            Stored::Integer(7) => Self::Size7px,
+            Stored::Integer(9) => Self::Size9px,
             _ => Self::default(),
         }
     }
@@ -55,9 +55,9 @@ impl vertx_config::UpdateMut for FontSize {
         }
 
         match update {
-            Update::Unsigned(7) => *self = FontSize::Size7px,
-            Update::Unsigned(9) => *self = FontSize::Size9px,
-            Update::Unsigned(_) => return Err(Error::InvalidValue),
+            Update::Integer(7) => *self = FontSize::Size7px,
+            Update::Integer(9) => *self = FontSize::Size9px,
+            Update::Integer(_) => return Err(Error::InvalidValue),
             _ => return Err(Error::InvalidType),
         }
 

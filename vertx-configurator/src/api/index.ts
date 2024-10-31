@@ -1,9 +1,9 @@
 import { makeReconnectingWS } from '@solid-primitives/websocket';
 import { onCleanup } from 'solid-js';
 import { createStore } from 'solid-js/store';
+import type { Update } from '../config';
+import { isSimulator } from '../utils';
 import {
-	type Config,
-	type ConfigUpdate,
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
 	type Request,
@@ -15,8 +15,6 @@ import {
 } from './protocol';
 
 export {
-	type ConfigUpdate,
-	ConfigUpdateKind,
 	type ConfigUpdateResult,
 	ConfigUpdateResultKind,
 	type Request,
@@ -30,54 +28,71 @@ export {
 export const enum ApiStatus {
 	Connecting,
 	Connected,
-	LostConnection,
+	NotConnected,
 }
 
-type State = { status: ApiStatus; config: Config } & {
+type State = { status: ApiStatus } & {
 	[Kind in Exclude<
 		ResponseKind,
-		ResponseKind.Config | ResponseKind.ConfigUpdate
+		ResponseKind.ConfigUpdate
 	>]?: ResponsePayload<Kind>;
 };
 
-let socket!: WebSocket;
+type Sender = (request: ArrayBuffer) => void;
+let resolveSender!: (sender: Sender) => void;
+const sender = new Promise<Sender>((resolve) => {
+	resolveSender = resolve;
+});
 const [state, setState] = createStore<State>({
 	status: ApiStatus.Connecting,
-	config: {},
 });
 const setStatus = (status: ApiStatus) => setState('status', status);
 
 export { state as api };
 export const request = (request: Request) => {
 	import.meta.env.DEV && console.debug('request', request);
-	socket.send(encodeRequest(request));
+	const encoded = encodeRequest(request);
+	sender.then((send) => send(encoded));
 };
 
 const configUpdates = new Map<number, (result: ConfigUpdateResult) => void>();
-let updateId = Date.now() >>> 0;
+let updateId = Date.now() & 0xffff;
 export async function updateConfig(
-	key: string,
-	update: ConfigUpdate,
+	update: Update,
 ): Promise<ConfigUpdateResult> {
 	const id = updateId;
 	updateId = (updateId + 1) >>> 0;
 
 	request({
-		kind: RequestKind.ConfigUpdate,
-		payload: { ...update, id, key },
+		kind: RequestKind.UpdateConfig,
+		payload: { id, ...update },
 	});
 
-	const result = await new Promise<ConfigUpdateResult>((resolve) =>
-		configUpdates.set(id, resolve),
-	);
+	const result = await new Promise<ConfigUpdateResult>((resolve) => {
+		configUpdates.set(id, resolve);
+	});
 	if (result.result === ConfigUpdateResultKind.Ok) {
-		setState('config', key, update.update);
+		setState(ResponseKind.Config, update.key, update.value);
 	}
 	return result;
 }
 
-export function initApi(host: string) {
-	socket = makeReconnectingWS(`ws://${host}/api`, 'v0', {
+function handleResponse(data: ArrayBuffer) {
+	const response = parseResponse(new DataView(data));
+	import.meta.env.DEV && console.debug('response', response);
+	if (response.kind === ResponseKind.Config) {
+		setState(ResponseKind.Config, response.payload);
+	} else if (response.kind === ResponseKind.ConfigUpdate) {
+		const { id, ...result } = response.payload;
+		configUpdates.get(id)?.(result);
+		configUpdates.delete(id);
+	} else {
+		setState(response.kind, response.payload);
+	}
+}
+
+function initNative() {
+	const socket = makeReconnectingWS(`ws://${location.host}/api`, 'v0', {
 		delay: 15_000,
 		retries: 5,
 	});
@@ -85,24 +100,45 @@ export function initApi(host: string) {
 	onCleanup(() => socket.close());
 
 	socket.addEventListener('open', () => setStatus(ApiStatus.Connected));
-	socket.addEventListener('close', () => setStatus(ApiStatus.LostConnection));
+	socket.addEventListener('close', () => setStatus(ApiStatus.NotConnected));
 
 	socket.addEventListener(
 		'message',
 		async ({ data }: MessageEvent<string | Blob>) => {
 			if (data instanceof Blob) {
-				const response = parseResponse(await data.arrayBuffer());
-				import.meta.env.DEV && console.debug('response', response);
-				if (response.kind === ResponseKind.Config) {
-					setState('config', response.payload);
-				} else if (response.kind === ResponseKind.ConfigUpdate) {
-					const { id, ...result } = response.payload;
-					configUpdates.get(id)?.(result);
-					configUpdates.delete(id);
-				} else {
-					setState(response.kind, response.payload);
-				}
+				handleResponse(await data.arrayBuffer());
 			}
 		},
 	);
+
+	resolveSender((request) => socket.send(request));
 }
+
+function initSimulator() {
+	const opener = window.opener as WindowProxy | null;
+
+	if (opener?.origin !== location.origin) {
+		const message =
+			'This build of the configurator can only run from the simulator';
+		alert(message);
+		throw new Error(message);
+	}
+
+	setStatus(ApiStatus.Connected);
+	opener.addEventListener('close', () => setStatus(ApiStatus.NotConnected));
+
+	window.addEventListener('message', (event) => {
+		if (
+			event.origin !== location.origin ||
+			!(event.data instanceof ArrayBuffer)
+		) {
+			return;
+		}
+
+		handleResponse(event.data);
+	});
+
+	resolveSender((request) => opener.postMessage(request));
+}
+
+export const init = isSimulator ? initSimulator : initNative;

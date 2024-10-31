@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 serde = { workspace = true, features = ["alloc", "derive"] }
-vertx-network = { workspace = true, features = ["serde"] }
+vertx-network = { workspace = true }
 
 [lints]
 workspace = true

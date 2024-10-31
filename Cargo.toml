@@ -4,14 +4,11 @@ members = [
     "vertx",
     "vertx-backpack",
     "vertx-backpack-ipc",
-    "vertx-config",
-    "vertx-config-macros",
+    "vertx-config-migrate",
     "vertx-crsf",
     "vertx-network",
     "vertx-network-esp",
     "vertx-server",
-    "vertx-simulator",
-    "vertx-simulator-ipc",
 ]
 
 [workspace.package]
@@ -22,10 +19,10 @@ license = "MPL-2.0"
 
 [workspace.dependencies]
 embassy-executor = "=0.6.0"
-embassy-futures = "=0.1.1"
 embassy-net = "=0.4.0"
 embassy-sync = "=0.6.0"
 embassy-time = "=0.3.2"
+embedded-io-async = "=0.6.1"
 esp-alloc = "=0.4.0"
 esp-backtrace = "=0.14.1"
 esp-hal = "=0.20.1"
@@ -40,17 +37,17 @@ serde = { version = "=1.0.210", default-features = false }
 static_cell = "=2.1.0"
 tokio = "=1.40.0"
 vertx-backpack-ipc.path = "vertx-backpack-ipc"
-vertx-config.path = "vertx-config"
 vertx-network.path = "vertx-network"
 vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
-vertx-simulator-ipc.path = "vertx-simulator-ipc"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "=0.7.0", locked = true }
 cargo-nextest = { version = "=0.9.78", locked = true }
 dprint = { version = "=0.47.2", locked = true }
 espflash = { version = "=3.1.1", locked = true }
+wasm-bindgen-cli = { version = "=0.2.93", locked = true, bins = ["wasm-bindgen"] }
+wasm-opt = { version = "=0.116.1", locked = true }
 
 [profile.dev.package.esp-storage]
 opt-level = 3
@@ -75,7 +72,7 @@ unsafe-op-in-unsafe-fn = "forbid"
 
 [workspace.lints.clippy]
 alloc_instead_of_core = "warn"
-as_underscore = "forbid"
+as_underscore = "deny"
 cast_lossless = "warn"
 cloned_instead_of_copied = "warn"
 empty_drop = "warn"

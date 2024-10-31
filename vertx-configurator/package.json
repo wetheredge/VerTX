@@ -3,13 +3,15 @@
 	"name": "vertx-configurator",
 	"private": true,
 	"version": "0.0.0",
+	"license": "MPL-2.0",
 	"type": "module",
 	"dependencies": {
-		"@solid-primitives/websocket": "^1.2.2",
+		"@solid-primitives/websocket": "1.2.2",
 		"@solidjs/router": "0.14.7",
 		"autoprefixer": "10.4.20",
 		"inter-ui": "^4.0.2",
 		"lucide-solid": "0.446.0",
+		"postcard": "workspace:*",
 		"solid-icons": "^1.1.0",
 		"solid-js": "1.9.1"
 	},

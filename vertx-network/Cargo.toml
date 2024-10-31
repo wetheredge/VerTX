@@ -5,13 +5,10 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 
-[features]
-serde = ["dep:serde", "heapless/serde"]
-
 [dependencies]
 embassy-net-driver = "=0.2.0"
-heapless = { workspace = true }
-serde = { workspace = true, features = ["derive"], optional = true }
+heapless = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive", "alloc"] }
 
 [lints]
 workspace = true

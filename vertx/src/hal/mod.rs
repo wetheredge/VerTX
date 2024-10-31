@@ -19,13 +19,13 @@ macro_rules! cfg_feature {
 }
 
 pub(crate) type Reset = impl traits::Reset;
-pub(crate) type Rng = impl rand::Rng;
 pub(crate) type LedDriver = impl traits::LedDriver<Error = impl Debug>;
 pub(crate) type ConfigStorage = impl traits::ConfigStorage;
 pub(crate) type ModeButton = impl traits::ModeButton;
 
 cfg_feature! {
     "network-native";
+    pub(crate) type Rng = impl rand::Rng;
     pub(crate) type Network = impl vertx_network::Hal;
     pub(crate) type NetworkDriver = <Network as vertx_network::Hal>::Driver;
 }
@@ -52,7 +52,6 @@ pub(crate) struct Backpack {
 
 pub(crate) struct Init {
     pub(crate) reset: Reset,
-    pub(crate) rng: Rng,
     #[cfg(not(feature = "backpack-boot-mode"))]
     pub(crate) boot_mode: crate::BootMode,
     pub(crate) led_driver: LedDriver,
@@ -60,6 +59,8 @@ pub(crate) struct Init {
     pub(crate) mode_button: ModeButton,
     #[cfg(feature = "backpack")]
     pub(crate) backpack: Backpack,
+    #[cfg(feature = "network-native")]
+    pub(crate) rng: Rng,
     #[cfg(feature = "network-native")]
     pub(crate) network: Network,
 }
@@ -92,8 +93,8 @@ pub(crate) mod traits {
     }
 
     pub(crate) trait ConfigStorage {
-        fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T>;
-        fn save(&mut self, data: alloc::vec::Vec<u8>);
+        fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T>;
+        fn save(&mut self, config: &[u8]);
     }
 
     pub(crate) trait ModeButton {

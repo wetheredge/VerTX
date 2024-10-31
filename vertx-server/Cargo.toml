@@ -5,17 +5,19 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 
-[features]
-std = ["picoserve/std"]
-
 [dependencies]
+atoi = { version = "=2.0.0", default-features = false }
+base64 = { version = "=0.22.1", default-features = false }
 edge-dhcp = "=0.3.0"
-embassy-futures = { workspace = true }
-embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname", "udp"] }
+edge-ws = "=0.3.0"
+embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname", "tcp", "udp"] }
 embassy-time = { workspace = true }
+embedded-io-async = { workspace = true }
 heapless = { workspace = true }
+httparse = { version = "=1.9.5", default-features = false }
+itoa = "=1.0.11"
 log = { workspace = true }
-picoserve = { version = "=0.12.2", features = ["embassy"] }
+sha1 = { version = "=0.10.6", default-features = false }
 vertx-network = { workspace = true }
 
 [build-dependencies]

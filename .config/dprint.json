@@ -2,12 +2,25 @@
 	"markdown": {
 		"textWrap": "always"
 	},
+	"markup": {
+		"useTabs": true,
+		"formatComments": true,
+		"scriptIndent": true,
+		"styleIndent": true,
+		"closingTagLineBreakForEmpty": "never",
+		"preferAttrsSingleLine": true,
+		"html.normal.selfClosing": false,
+		"html.void.selfClosing": true,
+		"component.selfClosing": true,
+		"svg.selfClosing": false
+	},
 	"toml": {
 		"indentWidth": 4
 	},
 	"excludes": ["**/*~", "target"],
 	"plugins": [
 		"https://plugins.dprint.dev/dockerfile-0.3.2.wasm",
+		"https://plugins.dprint.dev/g-plane/markup_fmt-v0.13.0.wasm",
 		"https://plugins.dprint.dev/markdown-0.17.8.wasm",
 		"https://plugins.dprint.dev/toml-0.6.3.wasm"
 	]

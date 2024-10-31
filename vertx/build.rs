@@ -7,19 +7,23 @@ use std::process::Command;
 use serde::Deserialize;
 
 fn main() -> io::Result<()> {
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let root = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let out_dir = &env::var("OUT_DIR").unwrap();
+    let root = &env::var("CARGO_MANIFEST_DIR").unwrap();
+
+    let config = format!("{root}/../vertx-config/out/config.rs");
+    println!("cargo::rerun-if-changed={config}");
+    fs::copy(config, format!("{out_dir}/config.rs"))?;
 
     if env::var_os("CARGO_FEATURE_SIMULATOR").is_some() {
-        build_info(&out_dir, &root, "simulator")
+        build_info(out_dir, "simulator")
     } else {
         let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
         println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
-        memory_layout(&out_dir, &root)?;
+        memory_layout(out_dir, root)?;
         link_args();
-        build_info(&out_dir, &root, &target_name)?;
-        pins(&out_dir, &root, &target_name)
+        build_info(out_dir, &target_name)?;
+        pins(out_dir, root, &target_name)
     }
 }
 
@@ -54,37 +58,28 @@ fn link_args() {
     }
 }
 
-fn build_info(out_dir: &str, root: &str, target_name: &str) -> io::Result<()> {
+fn build_info(out_dir: &str, target_name: &str) -> io::Result<()> {
     let git = |args: &[_]| Command::new("git").args(args).output().unwrap().stdout;
     let git_string = |args| String::from_utf8(git(args)).unwrap().trim().to_owned();
 
-    let manifest = format!("{root}/Cargo.toml");
-
-    println!("cargo:rerun-if-changed={manifest}");
-
-    let manifest = cargo_toml::Manifest::from_path(manifest).unwrap();
-    let version = manifest.package.unwrap().version.unwrap();
-    let (major, version) = version.split_once('.').unwrap();
-    let (minor, version) = version.split_once('.').unwrap();
-    let (patch, suffix) = version.split_once('-').unwrap_or((version, ""));
+    let version = env::var("CARGO_PKG_VERSION").unwrap();
+    let debug = env::var("PROFILE").unwrap() != "release";
 
     let git_branch = git_string(&["branch", "--show-current"]);
     let git_commit = git_string(&["rev-parse", "--short", "HEAD"]);
     let git_dirty = !git(&["status", "--porcelain"]).is_empty();
 
     let out = File::create(format!("{out_dir}/build_info.rs"))?;
-    let mut out = BufWriter::new(out);
-    writeln!(&mut out, "response::BuildInfo {{")?;
-    writeln!(&mut out, "    target: {target_name:?},")?;
-    writeln!(&mut out, "    major: {major},")?;
-    writeln!(&mut out, "    minor: {minor},")?;
-    writeln!(&mut out, "    patch: {patch},")?;
-    writeln!(&mut out, "    suffix: {suffix:?},")?;
-    writeln!(&mut out, "    debug: cfg!(debug_assertions),")?;
-    writeln!(&mut out, "    git_branch: {git_branch:?},")?;
-    writeln!(&mut out, "    git_commit: {git_commit:?},")?;
-    writeln!(&mut out, "    git_dirty: {git_dirty:?},")?;
-    writeln!(&mut out, "}}")?;
+    let out = &mut BufWriter::new(out);
+
+    writeln!(out, "Response::BuildInfo {{")?;
+    writeln!(out, r#"target: {target_name:?},"#)?;
+    writeln!(out, r#"version: {version:?},"#)?;
+    writeln!(out, r#"debug: {debug:?},"#)?;
+    writeln!(out, r#"git_branch:{git_branch:?},"#)?;
+    writeln!(out, r#"git_commit:{git_commit:?},"#)?;
+    writeln!(out, r#"git_dirty:{git_dirty:?},"#)?;
+    writeln!(out, "}}")?;
 
     Ok(())
 }

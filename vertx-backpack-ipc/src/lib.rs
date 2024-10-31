@@ -10,9 +10,8 @@ pub const BAUDRATE: u32 = 115_200;
 pub const INIT: [u8; 6] = *b"VerTX\0";
 
 #[derive(Debug, Serialize, Deserialize)]
-#[repr(u8)]
 pub enum ToBackpack {
-    SetBootMode(u8) = 1,
+    SetBootMode(u8),
     StartNetwork(vertx_network::Config),
     ApiResponse(Vec<u8>),
     ShutDown,
@@ -20,9 +19,8 @@ pub enum ToBackpack {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[repr(u8)]
 pub enum ToMain {
-    NetworkUp = 1,
+    NetworkUp,
     ApiRequest(Vec<u8>),
     PowerAck,
 }

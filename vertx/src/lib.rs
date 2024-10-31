@@ -11,7 +11,6 @@ mod api;
 mod backpack;
 mod config;
 mod crsf;
-mod display;
 mod hal;
 mod leds;
 mod mode;
@@ -20,27 +19,17 @@ mod network;
 mod reset;
 
 use embassy_executor::{task, Spawner};
-use embassy_sync::mutex::Mutex;
 use static_cell::make_static;
 
+use crate::config::RootConfig as Config;
 pub(crate) use crate::mode::Mode;
 use crate::reset::BootMode;
-
-#[derive(Default, vertx_config::Storage, vertx_config::UpdateRef)]
-struct Config {
-    name: Mutex<mutex::SingleCore, heapless::String<20>>,
-    leds: leds::Config,
-    display: display::Config,
-    network: network::Config,
-    expert: Mutex<mutex::SingleCore, bool>,
-}
 
 pub async fn main(spawner: Spawner) {
     loog::info!("Starting VerTX");
 
     let hal::Init {
         reset,
-        mut rng,
         #[cfg(not(feature = "backpack-boot-mode"))]
         boot_mode,
         led_driver,
@@ -48,7 +37,9 @@ pub async fn main(spawner: Spawner) {
         mode_button,
         #[cfg(feature = "backpack")]
         backpack,
-        #[cfg(not(feature = "network-backpack"))]
+        #[cfg(feature = "network-native")]
+        mut rng,
+        #[cfg(feature = "network-native")]
         network,
     } = hal::init(spawner);
 
@@ -64,7 +55,7 @@ pub async fn main(spawner: Spawner) {
 
     let mode = make_static!(mode::Channel::new());
 
-    let config_manager = make_static!(config::Manager::new(config_storage));
+    let config_manager = make_static!(config::Manager::load(config_storage));
     let config = config_manager.config();
 
     let reset = make_static!(reset::Manager::new(
@@ -85,18 +76,20 @@ pub async fn main(spawner: Spawner) {
         let is_home = boot_mode == BootMode::ConfiguratorHome;
 
         let api = make_static!(api::Api::new(spawner, reset, config_manager));
-        let network = network::run(
+        let network_running = network::run(
             spawner,
             is_home,
             config,
-            &mut rng,
             api,
+            #[cfg(feature = "network-native")]
+            &mut rng,
             #[cfg(feature = "network-native")]
             network,
             #[cfg(feature = "network-backpack")]
             backpack,
         );
-        match network.await {
+
+        match network_running.await {
             Ok(()) => mode.publish(Mode::Configurator),
             Err(network::Error::InvalidHomeConfig) => {
                 reset.reboot_into(BootMode::ConfiguratorField).await;
@@ -133,4 +126,19 @@ async fn change_mode(
     };
 
     reset.reboot_into(mode).await;
+}
+
+#[cfg(all(feature = "simulator", target_arch = "wasm32"))]
+mod simulator {
+    #[global_allocator]
+    /// SAFETY: The runtime environment must be single-threaded WASM.
+    static ALLOCATOR: talc::TalckWasm = unsafe { talc::TalckWasm::new_global() };
+
+    #[embassy_executor::main]
+    async fn main(spawner: embassy_executor::Spawner) {
+        console_error_panic_hook::set_once();
+        wasm_logger::init(wasm_logger::Config::new(loog::log::Level::max()));
+
+        super::main(spawner).await;
+    }
 }

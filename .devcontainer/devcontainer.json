@@ -3,7 +3,7 @@
 	"build": {
 		"dockerfile": "./Dockerfile"
 	},
-	"onCreateCommand": "bash -ic 'asdf install && task setup'",
+	"onCreateCommand": "bash -ic 'rustc --version && asdf install && task setup'",
 	"customizations": {
 		"vscode": {
 			"settings": {
@@ -41,16 +41,13 @@
 			]
 		}
 	},
-	"forwardPorts": [5173, 4173, 8080],
+	"forwardPorts": [8000, 8001],
 	"portsAttributes": {
-		"5173": {
-			"label": "Vite dev"
+		"8000": {
+			"label": "Simulator"
 		},
-		"4173": {
-			"label": "Vite preview"
-		},
-		"8080": {
-			"label": "API dev server"
+		"8001": {
+			"label": "Configurator"
 		}
 	},
 	"workspaceMount": "source=${localWorkspaceFolder},target=/home/esp/vertx,type=bind,consistency=cached",

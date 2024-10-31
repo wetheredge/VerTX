@@ -86,17 +86,10 @@ async fn main(spawner: Spawner) {
         peripherals.RADIO_CLK,
         peripherals.WIFI,
     );
-    let api_responses = make_static!(api::ResponseChannel::new());
-    let api = make_static!(Api::new(ipc, api_responses.receiver()));
+    let api = make_static!(Api::new(ipc));
     let start_network = network::get_start(spawner, rng, network, api, ipc);
 
     let (tx, rx) = uart.split();
     spawner.must_spawn(ipc::tx(tx, ipc));
-    spawner.must_spawn(ipc::rx(
-        rx,
-        &BOOT_MODE,
-        start_network,
-        api_responses.sender(),
-        ipc,
-    ));
+    spawner.must_spawn(ipc::rx(rx, &BOOT_MODE, start_network, api, ipc));
 }

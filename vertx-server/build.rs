@@ -1,3 +1,5 @@
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::process::Command;
 use std::{env, fs, io};
 
@@ -39,34 +41,34 @@ fn main() -> io::Result<()> {
         .assets
         .sort_unstable_by(|a, b| a.route.cmp(&b.route));
 
-    let push_asset = |s: &mut String, asset: &Asset| {
-        s.push_str("::picoserve::response::File::with_content_type_and_headers(\"");
-        s.push_str(&asset.mime);
-        s.push_str("\",::core::include_bytes!(\"");
-        s.push_str(&dist.join(&asset.file).display().to_string());
-        s.push_str("\"),&[");
-        if asset.gzip {
-            s.push_str(r#"("Content-Encoding","gzip")"#);
-        }
-        s.push_str("])");
+    let write_asset = |out: &mut BufWriter<File>, asset: &Asset| {
+        let (mime_head, mime_parameters) = asset.mime.split_once(';').unwrap_or((&asset.mime, ""));
+        let (mime_type, mime_subtype) = mime_head.split_once("/").unwrap();
+
+        let gzipped = asset.gzip;
+        let path = dist.join(&asset.file).display().to_string();
+
+        write!(out, "File {{ ")?;
+        write!(
+            out,
+            "mime: Mime::new({mime_type:?}, {mime_subtype:?}, {mime_parameters:?}), "
+        )?;
+        write!(out, "gzipped: {gzipped:?}, ")?;
+        write!(out, "content: ::core::include_bytes!({path:?})")?;
+        write!(out, " }}")
     };
 
-    let mut code = String::from("static INDEX: ::picoserve::response::File=");
-    push_asset(&mut code, &manifest.index);
-    code.push(';');
+    let out = File::create(format!("{out_dir}/index.rs"))?;
+    let out = &mut BufWriter::new(out);
+    write_asset(out, &manifest.index)?;
 
-    code.push_str(
-        "#[allow(long_running_const_eval)]static \
-         ASSETS:&[(&::core::primitive::str,::picoserve::response::File)]=&[",
-    );
+    let out = File::create(format!("{out_dir}/assets.rs"))?;
+    let out = &mut BufWriter::new(out);
+    writeln!(out, "&[")?;
     for asset in manifest.assets {
-        code.push_str("(\"");
-        code.push_str(&asset.route);
-        code.push_str("\",");
-        push_asset(&mut code, &asset);
-        code.push_str("),");
+        write!(out, "({:?}, ", asset.route)?;
+        write_asset(out, &asset)?;
+        writeln!(out, "),")?;
     }
-    code.push_str("];\n");
-
-    fs::write(format!("{out_dir}/configurator.rs"), code)
+    writeln!(out, "]")
 }

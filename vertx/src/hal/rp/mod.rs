@@ -1,10 +1,8 @@
 mod leds;
 
-use alloc::vec::Vec;
 use core::future::Future;
 
 use embassy_executor::Spawner;
-use embassy_rp::clocks::RoscRng;
 use embassy_rp::peripherals::{PIO0, UART1};
 use embassy_rp::pio::{self, Pio};
 use embassy_rp::uart::{self, BufferedUart};
@@ -20,7 +18,6 @@ bind_interrupts!(struct Irqs {
 
 pub(crate) fn init(_spawner: Spawner) -> super::Init {
     let p = embassy_rp::init(Default::default());
-    let rng = RoscRng;
 
     let reset = Reset {
         watchdog: Watchdog::new(p.WATCHDOG),
@@ -59,7 +56,6 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
 
     super::Init {
         reset,
-        rng,
         led_driver,
         config_storage,
         mode_button,
@@ -86,12 +82,12 @@ impl super::traits::Reset for Reset {
 struct ConfigStorage {}
 
 impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, _parse: impl FnOnce(&[u8]) -> T) -> Option<T> {
+    fn load<T>(&self, _parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
         // TODO
         None
     }
 
-    fn save(&mut self, _data: Vec<u8>) {
+    fn save(&mut self, _config: &[u8]) {
         todo!()
     }
 }

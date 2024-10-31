@@ -10,6 +10,9 @@
 	"references": [
 		{
 			"path": "./tsconfig.bun.json"
+		},
+		{
+			"path": "../postcard-ts"
 		}
 	]
 }

@@ -3,15 +3,17 @@ mod protocol;
 use embassy_executor::{task, Spawner};
 use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Ticker};
-pub(crate) use protocol::{response, Request, Response};
 use static_cell::make_static;
 
-pub(crate) type StatusSignal = Signal<crate::mutex::SingleCore, response::Status>;
+use self::protocol::{Request, Response};
+
+pub(crate) type BatterySignal = Signal<crate::mutex::SingleCore, u16>;
 
 pub(crate) struct Api {
     reset: &'static crate::reset::Manager,
     config: &'static crate::config::Manager,
-    status: &'static StatusSignal,
+
+    battery: &'static BatterySignal,
 }
 
 impl Api {
@@ -20,13 +22,14 @@ impl Api {
         reset: &'static crate::reset::Manager,
         config: &'static crate::config::Manager,
     ) -> Self {
-        let status_signal = make_static!(StatusSignal::new());
-        spawner.must_spawn(status(status_signal));
+        let battery = make_static!(BatterySignal::new());
+        spawner.must_spawn(mock_battery(battery));
 
         Self {
             reset,
             config,
-            status: status_signal,
+
+            battery,
         }
     }
 }
@@ -34,14 +37,12 @@ impl Api {
 impl vertx_network::Api for Api {
     type Buffer = [u8; 256];
 
-    const NAME: &'static str = protocol::NAME;
-
     fn buffer() -> Self::Buffer {
         [0; 256]
     }
 
     async fn next_response<'b>(&self, buffer: &'b mut Self::Buffer) -> &'b [u8] {
-        encode(self.status.wait().await.into(), buffer)
+        encode(Response::Vbat(self.battery.wait().await), buffer)
     }
 
     async fn handle<'b>(&self, request: &[u8], buffer: &'b mut Self::Buffer) -> Option<&'b [u8]> {
@@ -53,12 +54,11 @@ impl vertx_network::Api for Api {
             }
         };
 
-        // FIXME:
+        // FIXME: Request needs defmt::Format impl
         // loog::debug!("Received api request: {request:?}");
 
         let response = match request {
-            Request::ProtocolVersion => Some(Response::PROTOCOL_VERSION),
-            Request::BuildInfo => Some(include!(concat!(env!("OUT_DIR"), "/build_info.rs")).into()),
+            Request::BuildInfo => Some(include!(concat!(env!("OUT_DIR"), "/build_info.rs"))),
             Request::PowerOff => {
                 self.reset.shut_down();
                 None
@@ -71,44 +71,36 @@ impl vertx_network::Api for Api {
                 self.reset.reboot_into(crate::BootMode::Standard).await;
                 None
             }
-            Request::CheckForUpdate => todo!(),
-            Request::GetConfig => {
-                let config = self.config.config();
-                let config = vertx_config::storage::postcard::to_vec(config).await;
-                Some(Response::Config { config })
+            Request::Config => {
+                let mut buffer = alloc::vec![0; crate::config::BYTE_LENGTH];
+                let len = self.config.serialize(&mut buffer).unwrap();
+                buffer.truncate(len);
+                Some(Response::Config(buffer.into()))
             }
-            Request::ConfigUpdate { id, key, value } => {
-                use vertx_config::update::UpdateRef;
-                let result = self.config.update_ref(key, value).await.into();
+            Request::UpdateConfig { id, update } => {
+                let result = self.config.update(update).await.into();
                 Some(Response::ConfigUpdate { id, result })
             }
         };
 
-        response.map(|r| encode(r, buffer))
+        response.map(|response| encode(response, buffer))
     }
 }
 
 fn encode(response: Response, buffer: &mut [u8]) -> &[u8] {
     match postcard::to_slice(&response, buffer) {
         Ok(data) => data,
-        Err(err) => {
-            panic!("Failed to encode api response: {err}");
-        }
+        Err(err) => panic!("Failed to encode api response: {err}"),
     }
 }
 
 #[task]
-async fn status(status: &'static StatusSignal) {
-    loog::info!("Starting status()");
+async fn mock_battery(battery: &'static BatterySignal) {
+    loog::info!("Starting mock_battery()");
 
     let mut ticker = Ticker::every(Duration::from_secs(1));
     loop {
         ticker.next().await;
-
-        status.signal(response::Status {
-            battery_voltage: 0,
-            idle_time: 0.0,
-            timing_drift: 0.0,
-        });
+        battery.signal(0);
     }
 }

@@ -100,35 +100,37 @@ impl ConfigStorage {
 }
 
 impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, parse: impl FnOnce(&[u8]) -> T) -> Option<T> {
+    fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
         let mut length = [0; 1];
         self.partition.read_into(0, &mut length).unwrap();
         let [length] = length;
         let length = if length == u32::MAX { 0 } else { length };
         let length = length as usize;
 
-        (length > 0).then(|| {
+        if length > 0 {
             let mut config = vec![0; length];
             self.partition.read_into(1, &mut config).unwrap();
 
             let bytes: &[u8] = &bytemuck::cast_slice(&config)[0..length];
             parse(bytes)
-        })
+        } else {
+            None
+        }
     }
 
-    fn save(&mut self, mut data: Vec<u8>) {
-        data.resize(data.len().next_multiple_of(4), 0);
+    fn save(&mut self, config: &[u8]) {
+        let mut buffer = [0; crate::config::BYTE_LENGTH.div_ceil(4)];
+        // Ensure word alignment
+        bytemuck::cast_slice_mut(&mut buffer).copy_from_slice(config);
 
-        let words = bytemuck::cast_slice(&data);
-
-        let words_len = words.len() as u32;
-        let sectors = words_len.div_ceil(flash::SECTOR_BYTES / 4);
+        let sectors = (config.len() as u32).div_ceil(flash::SECTOR_BYTES);
         for i in 0..sectors {
             self.partition.erase_sector(i).unwrap();
         }
 
-        self.partition.write(0, &[words_len]).unwrap();
-        self.partition.write(1, words).unwrap();
+        let len_words = config.len().div_ceil(4);
+        self.partition.write(0, &[len_words as u32]).unwrap();
+        self.partition.write(1, &buffer[0..len_words]).unwrap();
     }
 }
 

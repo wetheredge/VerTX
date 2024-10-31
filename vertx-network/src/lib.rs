@@ -1,12 +1,12 @@
 #![no_std]
 
 use heapless::String;
+use serde::{Deserialize, Serialize};
 
 pub type Ssid = String<32>;
 pub type Password = String<64>;
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Config {
     Home {
         ssid: Ssid,
@@ -23,8 +23,6 @@ pub enum Config {
 #[allow(async_fn_in_trait)]
 pub trait Api {
     type Buffer;
-
-    const NAME: &'static str;
 
     fn buffer() -> Self::Buffer;
     async fn next_response<'b>(&self, buffer: &'b mut Self::Buffer) -> &'b [u8];

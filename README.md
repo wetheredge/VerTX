@@ -39,9 +39,6 @@ Non-goals:
   (optional, for faster installs)
 - [`cargo-run-bin`](https://github.com/dustinblackman/cargo-run-bin#install)
 - [`asdf`](https://asdf-vm.com/guide/getting-started.html)
-- Native gtk4 & libadwaita are required to build the simulator
-  ([see below](#simulator)):
-  <https://gtk-rs.org/gtk4-rs/git/book/installation.html>
 
 After installing the above list:
 
@@ -77,23 +74,28 @@ requests welcome.
 ### Workflow
 
 Most development tasks are run using [`task`](https://taskfile.dev). Run `task`
-without any arguments to get a list of all the tasks available.
+without any arguments to get a list of all the tasks available in the current
+directory.
+
+`task :foo` runs a task `foo` defined in the project root from anywhere in the
+repository. When in the project root, `task vertx-foo/bar` or `task foo/bar`
+runs the task `bar` defined in the directory `vertx-foo`. This can be combined
+with `:` (ie `task :foo/bar`).
 
 ### Simulator
 
-The simulator allows VerTX to run on Linux with nearly full functionality
-available through a GTK4 GUI. After
-[setting up the network interface][smoltcp-interface], start the simulator with
-`task simulator:run`.
+The simulator runs VerTX as a web app. Most functionality works, even the
+configurator. To start it, run:
 
-> [!NOTE]
->
-> Networking does not work, yet.
+```shell
+$ task :configurator/simulator:run
+
+$ task :simulator/run
+```
 
 ## License
 
-All code outside the `vertx-crsf` subdirectory is licensed under the
-[Mozilla Public License 2.0](./LICENSE-MPL).
+The `postcard-ts` library is licensed under the [MIT license](./LICENSE-MIT).
 
 The `vertx-crsf` library is licensed under either of
 
@@ -101,6 +103,9 @@ The `vertx-crsf` library is licensed under either of
 - [MIT license](./LICENSE-MIT)
 
 at your option.
+
+All other code is licensed under the
+[Mozilla Public License 2.0](./LICENSE-MPL).
 
 [EdgeTX]: https://edgetx.org/
 [Embassy]: https://embassy.dev/

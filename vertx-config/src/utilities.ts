@@ -1,0 +1,108 @@
+import type { BunFile, FileSink } from 'bun';
+import * as types from './types';
+
+export type ConfigMeta = {
+	config: types.Config;
+	version: number;
+};
+
+type Out = (
+	s: TemplateStringsArray,
+	...args: Array<{ toString(): string }>
+) => void;
+export function getWriter(outFile: BunFile): {
+	writer: FileSink;
+	out: Out;
+	outln: Out;
+} {
+	const writer = outFile.writer();
+	const out: Out = (segments, ...args) =>
+		segments.forEach((s, i) => {
+			writer.write(s);
+			if (i < args.length) {
+				writer.write(args[i].toString());
+			}
+		});
+	const outln: Out = (segments, ...args) => {
+		out(segments, ...args);
+		out`\n`;
+	};
+	return { writer, out, outln };
+}
+
+export type Path = Array<string>;
+export type NonEmptyPath = [...Array<string>, string];
+type Visitor = {
+	[Key in keyof types.Leaf]?: (
+		path: NonEmptyPath,
+		value: types.Leaf[Key],
+		index: number,
+	) => void;
+} & {
+	leaf?: (path: NonEmptyPath, index: number) => void;
+	startNested?: (
+		path: Path,
+		keys: Array<{ key: string; isLeaf: boolean }>,
+	) => void;
+	endNested?: (path: Path) => void;
+};
+export function visit(config: types.Config, visitor: Visitor) {
+	const getKeys = (value: types.Config) =>
+		Object.entries(value).map(([key, value]) => ({
+			key,
+			isLeaf: value.type != null,
+		}));
+	const visitLeaf = (path: NonEmptyPath, _: unknown, i: number) =>
+		visitor.leaf?.(path, i);
+	const visitString = visitor.string ?? visitLeaf;
+	const visitInteger = visitor.integer ?? visitLeaf;
+	const visitEnumeration = visitor.enumeration ?? visitLeaf;
+	const visitBoolean = visitor.boolean ?? visitLeaf;
+
+	let i = 0;
+	const impl = (config: types.Config, parent: Path = []) => {
+		for (const [key, value] of Object.entries(config)) {
+			const path: NonEmptyPath = [...parent, key];
+			if (value.type == null) {
+				const keys = getKeys(value);
+				visitor.startNested?.(path, keys);
+				impl(value, path);
+				visitor.endNested?.(path);
+			} else if (types.isString(value)) {
+				visitString(path, value, i++);
+			} else if (types.isInteger(value)) {
+				visitInteger(path, value, i++);
+			} else if (types.isEnumeration(value)) {
+				visitEnumeration(path, value, i++);
+			} else if (types.isBoolean(value)) {
+				visitBoolean(path, value, i++);
+			} else {
+				unreachable(value);
+			}
+		}
+	};
+
+	visitor.startNested?.([], getKeys(config));
+	impl(config);
+	visitor.endNested?.([]);
+}
+
+function splitCamelCase(camel: string): Array<string> {
+	return camel.split(/(?=[A-Z])/);
+}
+
+export function toPascalCase(camel: string): string {
+	return splitCamelCase(camel)
+		.map((x) => x[0].toUpperCase() + x.substring(1))
+		.join('');
+}
+
+export function toSnakeCase(camel: string): string {
+	return splitCamelCase(camel)
+		.map((x) => x.toLowerCase())
+		.join('_');
+}
+
+function unreachable(x: never): never {
+	throw new Error('Reached unreachable: ', x);
+}

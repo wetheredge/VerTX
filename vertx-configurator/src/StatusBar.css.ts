@@ -59,7 +59,6 @@ globalStyle(`${root} > :is(:first-child, :last-child)`, {
 });
 globalStyle(`${root} > :last-child`, {
 	justifyContent: 'flex-end',
-	gap: consts.size.sm,
 	fontFeatureSettings: '"tnum"',
 });
 
@@ -98,7 +97,7 @@ export const apiStatus = styleVariants({
 		apiStatusBase,
 		{ vars: { [apiStatusHue]: consts.colors.hues.orange.toString() } },
 	],
-	[ApiStatus.LostConnection]: [
+	[ApiStatus.NotConnected]: [
 		apiStatusBase,
 		{ vars: { [apiStatusHue]: consts.colors.hues.red.toString() } },
 	],
