@@ -3,6 +3,7 @@
 	"name": "vertx-configurator",
 	"private": true,
 	"version": "0.0.0",
+	"license": "MPL-2.0",
 	"type": "module",
 	"dependencies": {
 		"@solid-primitives/websocket": "1.2.2",

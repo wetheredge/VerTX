@@ -92,8 +92,7 @@ available through a GTK4 GUI. After
 
 ## License
 
-All code outside the `vertx-crsf` subdirectory is licensed under the
-[Mozilla Public License 2.0](./LICENSE-MPL).
+The `postcard-ts` library is licensed under the [MIT license](./LICENSE-MIT).
 
 The `vertx-crsf` library is licensed under either of
 
@@ -101,6 +100,9 @@ The `vertx-crsf` library is licensed under either of
 - [MIT license](./LICENSE-MIT)
 
 at your option.
+
+All other code is licensed under the
+[Mozilla Public License 2.0](./LICENSE-MPL).
 
 [EdgeTX]: https://edgetx.org/
 [Embassy]: https://embassy.dev/
