@@ -9,6 +9,7 @@ extern crate std;
 mod api;
 #[cfg(feature = "backpack")]
 mod backpack;
+mod build_info;
 mod config;
 mod crsf;
 mod hal;

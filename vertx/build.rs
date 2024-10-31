@@ -1,8 +1,6 @@
 use std::collections::HashMap;
-use std::env;
-use std::fs::{self, File};
-use std::io::{self, BufWriter, Write};
 use std::process::Command;
+use std::{env, fs, io};
 
 use serde::Deserialize;
 
@@ -14,17 +12,18 @@ fn main() -> io::Result<()> {
     println!("cargo::rerun-if-changed={config}");
     fs::copy(config, format!("{out_dir}/config.rs"))?;
 
-    if env::var_os("CARGO_FEATURE_SIMULATOR").is_some() {
-        build_info(out_dir, "simulator")
-    } else {
+    build_info(out_dir)?;
+
+    if env::var_os("CARGO_FEATURE_SIMULATOR").is_none() {
         let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
         println!("cargo:rerun-if-env-changed=VERTX_TARGET");
 
         memory_layout(out_dir, root)?;
         link_args();
-        build_info(out_dir, &target_name)?;
-        pins(out_dir, root, &target_name)
+        pins(out_dir, root, &target_name)?;
     }
+
+    Ok(())
 }
 
 fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {
@@ -58,30 +57,20 @@ fn link_args() {
     }
 }
 
-fn build_info(out_dir: &str, target_name: &str) -> io::Result<()> {
+fn build_info(out_dir: &str) -> io::Result<()> {
     let git = |args: &[_]| Command::new("git").args(args).output().unwrap().stdout;
     let git_string = |args| String::from_utf8(git(args)).unwrap().trim().to_owned();
 
-    let version = env::var("CARGO_PKG_VERSION").unwrap();
-    let debug = env::var("PROFILE").unwrap() != "release";
+    let branch = git_string(&["branch", "--show-current"]);
+    fs::write(format!("{out_dir}/git_branch"), branch)?;
+    let commit = git_string(&["rev-parse", "--short", "HEAD"]);
+    fs::write(format!("{out_dir}/git_commit"), commit)?;
+    let dirty = !git(&["status", "--porcelain"]).is_empty();
+    fs::write(format!("{out_dir}/git_dirty"), dirty.to_string())?;
 
-    let git_branch = git_string(&["branch", "--show-current"]);
-    let git_commit = git_string(&["rev-parse", "--short", "HEAD"]);
-    let git_dirty = !git(&["status", "--porcelain"]).is_empty();
-
-    let out = File::create(format!("{out_dir}/build_info.rs"))?;
-    let out = &mut BufWriter::new(out);
-
-    writeln!(out, "Response::BuildInfo {{")?;
-    writeln!(out, r#"target: {target_name:?},"#)?;
-    writeln!(out, r#"version: {version:?},"#)?;
-    writeln!(out, r#"debug: {debug:?},"#)?;
-    writeln!(out, r#"git_branch:{git_branch:?},"#)?;
-    writeln!(out, r#"git_commit:{git_commit:?},"#)?;
-    writeln!(out, r#"git_dirty:{git_dirty:?},"#)?;
-    writeln!(out, "}}")?;
-
-    Ok(())
+    let profile = env::var("PROFILE").unwrap();
+    let debug = profile != "release";
+    fs::write(format!("{out_dir}/is_debug"), debug.to_string())
 }
 
 fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {

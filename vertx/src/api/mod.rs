@@ -6,6 +6,7 @@ use embassy_time::{Duration, Ticker};
 use static_cell::make_static;
 
 use self::protocol::{Request, Response};
+use crate::build_info;
 
 pub(crate) type BatterySignal = Signal<crate::mutex::SingleCore, u16>;
 
@@ -58,7 +59,14 @@ impl vertx_network::Api for Api {
         // loog::debug!("Received api request: {request:?}");
 
         let response = match request {
-            Request::BuildInfo => Some(include!(concat!(env!("OUT_DIR"), "/build_info.rs"))),
+            Request::BuildInfo => Some(Response::BuildInfo {
+                target: build_info::TARGET,
+                version: build_info::VERSION,
+                debug: build_info::DEBUG,
+                git_branch: build_info::GIT_BRANCH,
+                git_commit: build_info::GIT_COMMIT,
+                git_dirty: build_info::GIT_DIRTY,
+            }),
             Request::PowerOff => {
                 self.reset.shut_down();
                 None
