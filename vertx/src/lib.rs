@@ -46,18 +46,13 @@ pub async fn main(spawner: Spawner) {
 
     #[cfg(feature = "backpack")]
     let backpack = backpack::Backpack::new(spawner, backpack);
-    #[cfg(feature = "backpack-boot-mode")]
-    let boot_mode = {
-        loog::debug!("Waiting on boot mode from backpack…");
-        let mode = backpack.boot_mode().await;
-        loog::debug!("Received boot mode");
-        mode
-    };
 
     let mode = make_static!(mode::Channel::new());
 
     let config_manager = make_static!(config::Manager::load(config_storage));
     let config = config_manager.config();
+
+    spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
     let reset = make_static!(reset::Manager::new(
         spawner,
@@ -67,8 +62,15 @@ pub async fn main(spawner: Spawner) {
         backpack.clone(),
     ));
 
+    #[cfg(feature = "backpack-boot-mode")]
+    let boot_mode = {
+        loog::debug!("Waiting on boot mode from backpack…");
+        let mode = backpack.boot_mode().await;
+        loog::debug!("Received boot mode");
+        mode
+    };
+
     spawner.must_spawn(change_mode(boot_mode, reset, mode_button));
-    spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
     if boot_mode.configurator_enabled() {
         loog::info!("Configurator enabled");
