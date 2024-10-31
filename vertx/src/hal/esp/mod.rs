@@ -2,7 +2,7 @@ mod flash;
 
 use alloc::vec;
 use alloc::vec::Vec;
-use core::future::Future;
+use core::convert::Infallible;
 
 use embassy_executor::Spawner;
 use esp_hal::clock::CpuClock;
@@ -13,7 +13,7 @@ use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
 use esp_hal_smartled::SmartLedsAdapter;
 use portable_atomic::{AtomicU8, Ordering};
-use {esp_backtrace as _, esp_println as _};
+use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;
 use crate::BootMode;
@@ -54,8 +54,6 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         .unwrap();
     let config_storage = ConfigStorage::new(&mut partitions);
 
-    let mode_button = gpio::Input::new(pins!(io, mode), gpio::Pull::Up);
-
     let network_hal = vertx_network_esp::Hal::new(
         spawner,
         rng,
@@ -69,7 +67,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         led_driver,
         config_storage,
-        mode_button,
+        ui: Ui,
         network: Network::new(rng, network_hal),
     }
 }
@@ -139,12 +137,6 @@ impl super::traits::ConfigStorage for ConfigStorage {
     }
 }
 
-impl super::traits::ModeButton for gpio::Input<'_> {
-    fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
-        self.wait_for_falling_edge()
-    }
-}
-
 struct Network {
     rng: Rng,
     hal: vertx_network_esp::Hal,
@@ -166,5 +158,40 @@ impl super::traits::Network for Network {
 
     fn hal(self) -> Self::Hal {
         self.hal
+    }
+}
+
+struct Ui;
+
+impl eg::geometry::OriginDimensions for Ui {
+    fn size(&self) -> eg::geometry::Size {
+        eg::geometry::Size {
+            width: 128,
+            height: 64,
+        }
+    }
+}
+
+impl eg::draw_target::DrawTarget for Ui {
+    type Color = eg::pixelcolor::BinaryColor;
+    type Error = Infallible;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = eg::Pixel<Self::Color>>,
+    {
+        todo!()
+    }
+}
+
+impl super::traits::Ui for Ui {
+    type FlushError = ();
+
+    async fn get_input(&mut self) -> crate::ui::Input {
+        todo!()
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::FlushError> {
+        todo!()
     }
 }

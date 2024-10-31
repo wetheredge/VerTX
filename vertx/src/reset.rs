@@ -38,6 +38,23 @@ impl Manager {
         }
     }
 
+    pub(crate) async fn start_configurator(&self) {
+        let mode = {
+            #[allow(unused_variables)]
+            let try_home = true;
+            #[cfg(feature = "network-native")]
+            let try_home = crate::hal::NetworkHal::SUPPORTS_HOME;
+
+            if try_home {
+                BootMode::ConfiguratorHome
+            } else {
+                BootMode::ConfiguratorField
+            }
+        };
+
+        self.reboot_into(mode).await;
+    }
+
     pub(crate) async fn reboot_into(&self, mode: BootMode) {
         let mode = mode as u8;
         #[cfg(feature = "backpack-boot-mode")]

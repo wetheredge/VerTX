@@ -1,13 +1,13 @@
 mod backpack;
 
-use std::future::Future;
+use std::convert::Infallible;
 use std::panic;
 
 use base64::engine::general_purpose::STANDARD_NO_PAD as base64;
 use base64::Engine as _;
 use embassy_executor::Spawner;
 use embassy_sync::pipe::Pipe;
-use embassy_sync::signal::Signal;
+use embedded_graphics as eg;
 use smart_leds::RGB8;
 
 mod ipc {
@@ -41,11 +41,6 @@ mod ipc {
             remaining = &remaining[len..];
         }
     }
-
-    #[wasm_bindgen(js_name = "modeButtonPressed")]
-    pub fn mode_button_pressed() {
-        super::MODE_BUTTON.signal(());
-    }
 }
 
 #[global_allocator]
@@ -53,7 +48,6 @@ mod ipc {
 static ALLOCATOR: talc::TalckWasm = unsafe { talc::TalckWasm::new_global() };
 
 static BACKPACK_RX: backpack::RxPipe = Pipe::new();
-static MODE_BUTTON: Signal<crate::mutex::MultiCore, ()> = Signal::new();
 
 declare_hal_types!();
 
@@ -62,7 +56,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         reset: Reset,
         led_driver: LedDriver,
         config_storage: ConfigStorage,
-        mode_button: ModeButton(&MODE_BUTTON),
+        ui: Ui,
         backpack: super::Backpack {
             tx: backpack::Tx,
             rx: backpack::Rx(&BACKPACK_RX),
@@ -131,10 +125,37 @@ impl super::traits::ConfigStorage for ConfigStorage {
     }
 }
 
-struct ModeButton(&'static Signal<crate::mutex::MultiCore, ()>);
+struct Ui;
 
-impl super::traits::ModeButton for ModeButton {
-    fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
-        self.0.wait()
+impl eg::geometry::OriginDimensions for Ui {
+    fn size(&self) -> eg::geometry::Size {
+        eg::geometry::Size {
+            width: 128,
+            height: 64,
+        }
+    }
+}
+
+impl eg::draw_target::DrawTarget for Ui {
+    type Color = eg::pixelcolor::BinaryColor;
+    type Error = Infallible;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = eg::Pixel<Self::Color>>,
+    {
+        todo!()
+    }
+}
+
+impl super::traits::Ui for Ui {
+    type FlushError = ();
+
+    async fn get_input(&mut self) -> crate::ui::Input {
+        todo!()
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::FlushError> {
+        todo!()
     }
 }

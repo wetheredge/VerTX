@@ -9,10 +9,6 @@ export const config = {
 	},
 	display: {
 		brightness: types.integer('u8', 255, { min: 1 }),
-		fontSize: types.enumeration('FontSize', [
-			{ name: '7px', ident: 'Size7px' },
-			{ name: '9px', ident: 'Size9px', default: true },
-		]),
 	},
 	network: {
 		hostname: types.string(32, 'vertx'),
