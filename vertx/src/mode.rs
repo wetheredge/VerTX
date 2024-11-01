@@ -20,24 +20,12 @@ impl Channel {
         Self(PubSubChannel::new())
     }
 
-    pub fn publisher(&self) -> Publisher<'_> {
-        Publisher(self.0.immediate_publisher())
-    }
-
     pub fn subscriber(&self) -> Option<Subscriber<'_>> {
         self.0.subscriber().ok().map(Subscriber)
     }
 
     pub fn publish(&self, mode: Mode) {
         self.0.immediate_publisher().publish_immediate(mode);
-    }
-}
-
-pub struct Publisher<'a>(pubsub::ImmediatePublisher<'a, crate::mutex::MultiCore, Mode, 1, SUBS, 0>);
-
-impl Publisher<'_> {
-    pub fn publish(&self, mode: Mode) {
-        self.0.publish_immediate(mode);
     }
 }
 
