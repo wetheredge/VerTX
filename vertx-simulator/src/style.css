@@ -24,25 +24,9 @@
 }
 
 #display {
-	width: fit-content;
-	position: relative;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border: 0.5px solid currentColor;
-}
-
-#display .alt {
-	position: absolute;
-}
-
-#display canvas {
-	width: 256px;
-	height: 128px;
+	--scale: 2;
+	width: calc(var(--scale) * 128px);
+	height: calc(var(--scale) * 64px);
 	image-rendering: pixelated;
-}
-
-#buttons {
-	display: flex;
-	gap: inherit;
+	border: 0.5px solid currentColor;
 }

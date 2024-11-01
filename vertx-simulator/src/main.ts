@@ -9,10 +9,8 @@ const ui = new Ui({
 			start();
 		}
 	},
-	configurator() {
-		if (simulator != null) {
-			simulator.modeButtonPressed();
-		}
+	button(id) {
+		simulator?.buttonPressed?.(id);
 	},
 });
 
@@ -25,7 +23,6 @@ const callbacks: Callbacks = {
 	},
 	shutDown() {
 		simulator = null;
-		ui.stop();
 	},
 	reboot(bootMode) {
 		start(bootMode);
@@ -36,6 +33,5 @@ const callbacks: Callbacks = {
 };
 
 function start(bootMode?: number) {
-	simulator = new Simulator(module, callbacks, bootMode);
-	ui.start();
+	simulator = new Simulator(module, ui.display, callbacks, bootMode);
 }

@@ -11,10 +11,19 @@ for (const line of stdin.split('\n')) {
 
 const base = 'vertx';
 
-const dts = Bun.file(`${base}_bg.wasm.d.ts`);
+const wasmDts = Bun.file(`${base}_bg.wasm.d.ts`);
+let wasmDtsContents = await wasmDts.text();
+for (const [from, to] of renames) {
+	wasmDtsContents = wasmDtsContents.replaceAll(from, to);
+}
+await Bun.write(wasmDts, wasmDtsContents);
+
+const dts = Bun.file(`${base}.d.ts`);
 let dtsContents = await dts.text();
 for (const [from, to] of renames) {
-	dtsContents = dtsContents.replaceAll(from, to);
+	dtsContents = dtsContents.replaceAll(`readonly ${from}`, `readonly ${to}`);
+	dtsContents = dtsContents.replaceAll(`'${from}'`, `'${to}'`);
+	dtsContents = dtsContents.replaceAll(`"${from}"`, `"${to}"`);
 }
 await Bun.write(dts, dtsContents);
 
