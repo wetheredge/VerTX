@@ -58,7 +58,7 @@ jobs:
           - vertx-crsf
     steps:
       - uses: actions/checkout@v4.2.0
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2.7.5
       - run: cargo clippy --all-targets -p ${{ matrix.crate }}
 
   clippy-config-migrate:
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.1.7
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2.7.5
       - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F up
       - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F down
 
@@ -112,7 +112,7 @@ jobs:
         uses: ./.github/actions/setup-chip
         with:
           chip: ${{ matrix.chip }}
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2.7.5
       - name: Get pre-built configurator
         uses: actions/download-artifact@v4.1.8
         with:
@@ -128,7 +128,7 @@ jobs:
     needs: build-configurator
     steps:
       - uses: actions/checkout@v4.2.0
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2.7.5
       - name: Run clippy
         run: cargo clippy --target wasm32-unknown-unknown --lib -F simulator
         working-directory: vertx
@@ -152,7 +152,7 @@ jobs:
         uses: ./.github/actions/setup-chip
         with:
           chip: ${{ matrix.chip }}
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2.7.5
       - name: Get pre-built configurator
         uses: actions/download-artifact@v4.1.8
         with:
@@ -172,7 +172,7 @@ jobs:
           - vertx-crsf
     steps:
       - uses: actions/checkout@v4.2.0
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: Swatinem/rust-cache@v2.7.5
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2.44.13
         with:
