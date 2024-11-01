@@ -142,11 +142,11 @@ impl Mime {
 
     async fn write<W: Write>(&self, stream: &mut W) -> Result<(), W::Error> {
         stream.write_all(self.typ.as_bytes()).await?;
-        stream.write(&[b'/']).await?;
+        stream.write_all(b"/").await?;
         stream.write_all(self.subtype.as_bytes()).await?;
 
         if !self.parameters.is_empty() {
-            stream.write(&[b';']).await?;
+            stream.write_all(b";").await?;
             stream.write_all(self.parameters.as_bytes()).await?;
         }
 
