@@ -27,7 +27,7 @@ esp-alloc = "=0.4.0"
 esp-backtrace = "=0.14.2"
 esp-hal = "=0.20.1"
 esp-hal-embassy = { version = "=0.3.0", default-features = false }
-esp-println = { version = "=0.11.0", default-features = false }
+esp-println = { version = "=0.12.0", default-features = false }
 heapless = "=0.8.0"
 log = "=0.4.22"
 loog.git = "https://github.com/wetheredge/loog.git"
