@@ -168,6 +168,10 @@ async function npmImpl(name: string) {
 
 		const { dep } = group(groupName);
 		for (const [name, current] of Object.entries(data[kind])) {
+			if (current.startsWith('workspace:')) {
+				continue;
+			}
+
 			const rawCurrent = rawVersion(current);
 			const done = dep(name, rawCurrent);
 
