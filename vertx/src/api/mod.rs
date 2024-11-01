@@ -3,7 +3,7 @@ mod protocol;
 use embassy_executor::{task, Spawner};
 use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Ticker};
-use static_cell::make_static;
+use static_cell::ConstStaticCell;
 
 use self::protocol::{Request, Response};
 use crate::build_info;
@@ -23,7 +23,9 @@ impl Api {
         reset: &'static crate::reset::Manager,
         config: &'static crate::config::Manager,
     ) -> Self {
-        let battery = make_static!(BatterySignal::new());
+        static BATTERY: ConstStaticCell<BatterySignal> = ConstStaticCell::new(Signal::new());
+        let battery = BATTERY.take();
+
         spawner.must_spawn(mock_battery(battery));
 
         Self {

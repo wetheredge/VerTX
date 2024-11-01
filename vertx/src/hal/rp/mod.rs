@@ -8,7 +8,7 @@ use embassy_rp::pio::{self, Pio};
 use embassy_rp::uart::{self, BufferedUart};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio};
-use static_cell::make_static;
+use static_cell::ConstStaticCell;
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
@@ -36,17 +36,18 @@ pub(crate) fn init(_spawner: Spawner) -> super::Init {
     let mode_button = gpio::Input::new(pins!(p, mode), gpio::Pull::Up);
 
     let backpack = {
+        static TX_BUFFER: ConstStaticCell<[u8; 32]> = ConstStaticCell::new([0; 32]);
+        static RX_BUFFER: ConstStaticCell<[u8; 32]> = ConstStaticCell::new([0; 32]);
+
         let mut config = uart::Config::default();
         config.baudrate = vertx_backpack_ipc::BAUDRATE;
-        let tx_buffer = make_static!([0; 32]);
-        let rx_buffer = make_static!([0; 32]);
         let uart = BufferedUart::new(
             p.UART1,
             Irqs,
             pins!(p, backpack.tx),
             pins!(p, backpack.rx),
-            tx_buffer,
-            rx_buffer,
+            TX_BUFFER.take(),
+            RX_BUFFER.take(),
             config,
         );
         let (tx, rx) = uart.split();
