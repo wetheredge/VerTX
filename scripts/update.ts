@@ -218,6 +218,12 @@ async function cargo(state: CargoState) {
 			path: `${dir}/Cargo.toml`,
 			section: 'dev-dependencies',
 		});
+		await cargoImpl({
+			state,
+			group: `cargo(${dir} wasm)`,
+			path: `${dir}/Cargo.toml`,
+			section: 'target.wasm32-unknown-unknown.dependencies',
+		});
 	}
 
 	await $`cargo generate-lockfile`.quiet();
