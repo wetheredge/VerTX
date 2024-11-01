@@ -93,7 +93,7 @@ simulator = [
 ]
 
 [dependencies]
-bytemuck = { version = "=1.20.0", features = ["extern_crate_alloc", "min_const_generics"] }
+bytemuck = { version = "=1.20.0", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
 const_format = "=0.2.33"
 embassy-executor = { workspace = true, features = ["nightly"] }
 embassy-futures = "=0.1.1"

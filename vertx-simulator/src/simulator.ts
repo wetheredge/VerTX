@@ -1,8 +1,9 @@
 import { createBlockEncoder, createStreamDecoder } from 'ucobs';
 import {
 	backpackTx,
+	buttonPressed,
 	initSync,
-	modeButtonPressed,
+	memoryName,
 } from '../../target/simulator/vertx.js';
 import wasmUrl from '../../target/simulator/vertx_bg.wasm?url';
 import {
@@ -30,6 +31,13 @@ export function getModule(): Promise<SimulatorModule> {
 	) as Promise<SimulatorModule>;
 }
 
+export const enum Button {
+	Up,
+	Down,
+	Forward,
+	Back,
+}
+
 export type Callbacks = {
 	setStatusLed: (color: string) => void;
 	shutDown: () => void;
@@ -45,7 +53,15 @@ export class Simulator {
 	#backpackEncode: (data: Uint8Array) => void;
 	#configurator: MessageEventSource | null = null;
 
-	constructor(module: SimulatorModule, callbacks: Callbacks, bootMode = 0) {
+	#memory: WebAssembly.Memory;
+	#display: CanvasRenderingContext2D;
+
+	constructor(
+		module: SimulatorModule,
+		display: HTMLCanvasElement,
+		callbacks: Callbacks,
+		bootMode = 0,
+	) {
 		if (globalName in globalThis) {
 			throw new Error('Simulator is already running');
 		}
@@ -55,6 +71,7 @@ export class Simulator {
 		this.saveConfig = this.saveConfig.bind(this);
 		this.setStatusLed = this.setStatusLed.bind(this);
 		this.powerOff = this.powerOff.bind(this);
+		this.flushDisplay = this.flushDisplay.bind(this);
 
 		this.#backpackDecode = createStreamDecoder((raw) => {
 			const message = decode(
@@ -86,9 +103,17 @@ export class Simulator {
 		// @ts-ignore
 		globalThis[globalName] = this;
 
-		initSync({ module });
+		const memory = initSync({ module })[memoryName];
+		this.#memory = memory;
 		this.#bootMode = bootMode;
 		this.#callbacks = callbacks;
+
+		const displayContext = display.getContext('2d');
+		if (displayContext == null) {
+			throw new Error('Failed to get display context');
+		}
+		displayContext.imageSmoothingEnabled = false;
+		this.#display = displayContext;
 	}
 
 	send(message: ToMain) {
@@ -99,8 +124,8 @@ export class Simulator {
 		this.#backpackEncode(encode(message));
 	}
 
-	modeButtonPressed() {
-		modeButtonPressed();
+	buttonPressed(button: Button) {
+		buttonPressed(button);
 	}
 
 	stop() {
@@ -179,5 +204,23 @@ export class Simulator {
 				this.#callbacks.shutDown();
 			}
 		}, 0);
+	}
+
+	private flushDisplay(ptr: number) {
+		const width = 128;
+		const height = 64;
+
+		const sourceLength = (width / 8) * height;
+		const source = new Uint8Array(this.#memory.buffer, ptr, sourceLength);
+		const output = this.#display.createImageData(width, height);
+
+		for (let i = 0; i < width * height; i++) {
+			const isSet = source[Math.floor(i / 8)] & (1 << (i % 8));
+			const channel = isSet > 0 ? 255 : 0;
+
+			output.data.set([channel, channel, channel, 255], i * 4);
+		}
+
+		this.#display.putImageData(output, 0, 0);
 	}
 }
