@@ -23,7 +23,7 @@ use esp_hal::timer::timg;
 use esp_hal::uart::config::Config as UartConfig;
 use esp_hal::uart::Uart;
 use portable_atomic::{AtomicU8, Ordering};
-use static_cell::make_static;
+use static_cell::StaticCell;
 
 use self::api::Api;
 
@@ -76,7 +76,8 @@ async fn main(spawner: Spawner) {
     static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
 
     let ipc = ipc::init(&mut uart, BOOT_MODE.load(Ordering::Relaxed)).await;
-    let ipc = make_static!(ipc);
+    static IPC: StaticCell<ipc::Context> = StaticCell::new();
+    let ipc = IPC.init(ipc);
 
     let network = vertx_network_esp::Hal::new(
         spawner,
@@ -86,7 +87,8 @@ async fn main(spawner: Spawner) {
         peripherals.RADIO_CLK,
         peripherals.WIFI,
     );
-    let api = make_static!(Api::new(ipc));
+    static API: StaticCell<api::Api> = StaticCell::new();
+    let api = API.init_with(|| Api::new(ipc));
     let start_network = network::get_start(spawner, rng, network, api, ipc);
 
     let (tx, rx) = uart.split();

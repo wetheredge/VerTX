@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel;
-use static_cell::make_static;
+use static_cell::ConstStaticCell;
 
 type ResponseChannel = channel::Channel<NoopRawMutex, Vec<u8>, 10>;
 type ResponseSender = channel::Sender<'static, NoopRawMutex, Vec<u8>, 10>;
@@ -16,7 +16,10 @@ pub(crate) struct Api {
 
 impl Api {
     pub(crate) fn new(ipc: &'static crate::ipc::Context) -> Self {
-        let responses = make_static!(ResponseChannel::new());
+        static RESPONSES: ConstStaticCell<ResponseChannel> =
+            ConstStaticCell::new(ResponseChannel::new());
+        let responses = RESPONSES.take();
+
         Self {
             ipc,
             responses_tx: responses.sender(),

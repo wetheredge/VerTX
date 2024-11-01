@@ -101,7 +101,7 @@ portable-atomic = { workspace = true }
 postcard = { workspace = true }
 serde = { workspace = true, features = ["derive", "alloc"] }
 smart-leds = "=0.4.0"
-static_cell = { workspace = true, features = ["nightly"] }
+static_cell = { workspace = true }
 vertx-network = { workspace = true }
 
 # backpack

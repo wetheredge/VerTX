@@ -6,7 +6,7 @@ use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Ticker};
 use embedded_io_async::{Read, Write};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
-use static_cell::make_static;
+use static_cell::ConstStaticCell;
 use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};
 use vertx_network::Api as _;
 
@@ -33,9 +33,13 @@ pub(crate) struct Backpack {
 
 impl Backpack {
     pub(crate) fn new(spawner: Spawner, backpack: crate::hal::Backpack) -> Self {
-        let channel = make_static!(TxChannel::new());
-        let network_up = make_static!(Signal::new());
-        let power_ack = make_static!(Signal::new());
+        static CHANNEL: ConstStaticCell<TxChannel> = ConstStaticCell::new(TxChannel::new());
+        static NETWORK_UP: ConstStaticCell<NetworkUp> = ConstStaticCell::new(Signal::new());
+        static POWER_ACK: ConstStaticCell<PowerAck> = ConstStaticCell::new(Signal::new());
+
+        let channel = CHANNEL.take();
+        let network_up = NETWORK_UP.take();
+        let power_ack = POWER_ACK.take();
 
         spawner.must_spawn(init_and_tx(
             spawner, backpack, channel, network_up, power_ack,

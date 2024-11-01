@@ -20,7 +20,7 @@ mod network;
 mod reset;
 
 use embassy_executor::{task, Spawner};
-use static_cell::make_static;
+use static_cell::StaticCell;
 
 use crate::config::RootConfig as Config;
 pub(crate) use crate::mode::Mode;
@@ -47,20 +47,25 @@ pub async fn main(spawner: Spawner) {
     #[cfg(feature = "backpack")]
     let backpack = backpack::Backpack::new(spawner, backpack);
 
-    let mode = make_static!(mode::Channel::new());
+    static MODE: mode::Channel = mode::Channel::new();
+    let mode = &MODE;
 
-    let config_manager = make_static!(config::Manager::load(config_storage));
+    static CONFIG_MANAGER: StaticCell<config::Manager> = StaticCell::new();
+    let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(config_storage));
     let config = config_manager.config();
 
     spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
 
-    let reset = make_static!(reset::Manager::new(
-        spawner,
-        reset,
-        config_manager,
-        #[cfg(feature = "backpack")]
-        backpack.clone(),
-    ));
+    static RESET: StaticCell<reset::Manager> = StaticCell::new();
+    let reset = RESET.init_with(|| {
+        reset::Manager::new(
+            spawner,
+            reset,
+            config_manager,
+            #[cfg(feature = "backpack")]
+            backpack.clone(),
+        )
+    });
 
     #[cfg(feature = "backpack-boot-mode")]
     let boot_mode = {
@@ -78,7 +83,8 @@ pub async fn main(spawner: Spawner) {
 
         let is_home = boot_mode == BootMode::ConfiguratorHome;
 
-        let api = make_static!(api::Api::new(spawner, reset, config_manager));
+        static API: StaticCell<api::Api> = StaticCell::new();
+        let api = API.init_with(|| api::Api::new(spawner, reset, config_manager));
         let network_running = network::run(
             spawner,
             is_home,

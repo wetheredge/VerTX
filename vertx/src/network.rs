@@ -61,7 +61,7 @@ pub async fn run(
 #[cfg(feature = "network-native")]
 mod native {
     use embassy_executor::{task, Spawner};
-    use static_cell::make_static;
+    use static_cell::{ConstStaticCell, StaticCell};
     use vertx_server::tasks::DhcpContext;
 
     use crate::api::Api;
@@ -77,9 +77,11 @@ mod native {
         hal: crate::hal::Network,
         api: &'static Api,
     ) {
-        let resources = make_static!(vertx_server::Resources::<{ WORKERS + 2 }>::new());
-        let (context, dhcp_context, wait) = vertx_server::init(resources, config, seed, hal);
-        let context = make_static!(context);
+        static RESOURCES: ConstStaticCell<vertx_server::Resources<{ WORKERS + 2 }>> =
+            ConstStaticCell::new(vertx_server::Resources::new());
+        let (context, dhcp_context, wait) = vertx_server::init(RESOURCES.take(), config, seed, hal);
+        static CONTEXT: StaticCell<Context> = StaticCell::new();
+        let context = CONTEXT.init(context);
 
         spawner.must_spawn(network(context));
 

@@ -1,6 +1,6 @@
 use embassy_executor::{task, Spawner};
 use esp_hal::rng::Rng;
-use static_cell::make_static;
+use static_cell::{ConstStaticCell, StaticCell};
 use vertx_server::tasks::DhcpContext;
 
 use crate::api::Api;
@@ -33,9 +33,11 @@ async fn run(
 ) {
     let seed = get_seed(rng);
 
-    let resources = make_static!(vertx_server::Resources::<{ WORKERS + 2 }>::new());
-    let (context, dhcp_context, wait) = vertx_server::init(resources, config, seed, hal);
-    let context = make_static!(context);
+    static RESOURCES: ConstStaticCell<vertx_server::Resources<{ WORKERS + 2 }>> =
+        ConstStaticCell::new(vertx_server::Resources::new());
+    let (context, dhcp_context, wait) = vertx_server::init(RESOURCES.take(), config, seed, hal);
+    static CONTEXT: StaticCell<Context> = StaticCell::new();
+    let context = CONTEXT.init(context);
 
     spawner.must_spawn(network(context));
 
