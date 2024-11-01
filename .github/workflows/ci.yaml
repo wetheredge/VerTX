@@ -23,7 +23,7 @@ jobs:
     name: No unused dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - name: Install cargo-machete
         uses: taiki-e/install-action@v2.44.13
         with:
@@ -34,7 +34,7 @@ jobs:
     name: Toolchains are synced
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
@@ -44,7 +44,7 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - run: cargo fmt --all --check
 
   # Only run for entrypoints; dependencies will be checked where they are used
@@ -57,7 +57,7 @@ jobs:
         crate:
           - vertx-crsf
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: Swatinem/rust-cache@v2.7.5
       - run: cargo clippy --all-targets -p ${{ matrix.crate }}
 
@@ -77,7 +77,7 @@ jobs:
       run:
         working-directory: vertx-configurator
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
@@ -107,7 +107,7 @@ jobs:
       VERTX_SERVER_SKIP_CONFIGURATOR_BUILD: true
       VERTX_TARGET: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - id: chip
         uses: ./.github/actions/setup-chip
         with:
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-configurator
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: Swatinem/rust-cache@v2.7.5
       - name: Run clippy
         run: cargo clippy --target wasm32-unknown-unknown --lib -F simulator
@@ -147,7 +147,7 @@ jobs:
           - esp32c3
           - esp32s3
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - id: chip
         uses: ./.github/actions/setup-chip
         with:
@@ -171,7 +171,7 @@ jobs:
         crate:
           - vertx-crsf
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: Swatinem/rust-cache@v2.7.5
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2.44.13
@@ -188,7 +188,7 @@ jobs:
       matrix:
         dir: [scripts, vertx-configurator, vertx-simulator]
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: biomejs/setup-biome@v2.2.1
         env:
           GITHUB_TOKEN: null
@@ -199,7 +199,7 @@ jobs:
   dprint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: dprint/check@v2.2
         with:
           dprint-version: 0.47.2 # dep:cargo-bin:dprint
@@ -209,7 +209,7 @@ jobs:
     name: Typos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.2
       - uses: crate-ci/typos@v1.26.8 # dep:asdf:typos
 
   passed:
