@@ -226,9 +226,19 @@ async function cargo(state: CargoState) {
 		});
 	}
 
-	await $`cargo generate-lockfile`.quiet();
-	await commit('Recreate Cargo.lock');
-	console.info('Recreated Cargo.lock');
+	const generatedLockfile = await $`cargo generate-lockfile`
+		.quiet()
+		.nothrow()
+		.then((sh) => sh.exitCode !== 0);
+	if (generatedLockfile) {
+		await commit('Recreate Cargo.lock');
+		console.info('Recreated Cargo.lock');
+	} else {
+		await $`git restore Cargo.lock`.quiet().nothrow();
+		console.warn(
+			'Failed to regenerate lockfile! Fix the issue and recreate it manually',
+		);
+	}
 }
 
 type CargoState = {
