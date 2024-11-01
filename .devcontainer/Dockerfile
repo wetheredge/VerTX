@@ -1,4 +1,4 @@
-FROM docker.io/espressif/idf-rust:esp32s3_1.80.0.0
+FROM docker.io/espressif/idf-rust:esp32s3_1.82.0.3
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash \
     && cargo binstall -y cargo-run-bin
