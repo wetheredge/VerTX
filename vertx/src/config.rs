@@ -12,8 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use self::codegen::DeserializeError;
 pub(crate) use self::codegen::{RawConfig, Update, BYTE_LENGTH};
-use crate::hal::traits::ConfigStorage as _;
-use crate::hal::ConfigStorage;
+use crate::hal::prelude::*;
 
 pub(crate) type RootConfig = View<codegen::key::Root>;
 
@@ -22,7 +21,7 @@ const SUBSCRIPTIONS: usize = 1;
 struct ManagerState {
     modified: bool,
     config: RawConfig,
-    storage: ConfigStorage,
+    storage: crate::hal::ConfigStorage,
     subscriptions: heapless::Vec<(usize, Subscription), SUBSCRIPTIONS>,
 }
 
@@ -31,7 +30,7 @@ pub struct Manager {
 }
 
 impl Manager {
-    pub fn load(storage: ConfigStorage) -> Self {
+    pub fn load(storage: crate::hal::ConfigStorage) -> Self {
         let raw = storage
             .load(|bytes| {
                 match RawConfig::deserialize(bytes) {

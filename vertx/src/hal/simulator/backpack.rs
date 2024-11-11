@@ -2,13 +2,7 @@ use std::convert::Infallible;
 
 use embassy_sync::pipe::Pipe;
 
-use crate::hal::Backpack;
-
 pub(super) type RxPipe = Pipe<crate::mutex::MultiCore, 256>;
-
-pub(super) fn new(rx: &'static RxPipe) -> Backpack {
-    Backpack { tx: Tx, rx: Rx(rx) }
-}
 
 pub(super) struct Tx;
 
@@ -28,7 +22,7 @@ impl embedded_io_async::Write for Tx {
     }
 }
 
-pub(super) struct Rx(&'static RxPipe);
+pub(super) struct Rx(pub(super) &'static RxPipe);
 
 impl embedded_io_async::ErrorType for Rx {
     type Error = Infallible;

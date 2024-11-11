@@ -11,8 +11,7 @@ pub async fn run(
     is_home: bool,
     config: crate::Config,
     api: &'static crate::api::Api,
-    #[cfg(feature = "network-native")] rng: &mut crate::hal::Rng,
-    #[cfg(feature = "network-native")] network: crate::hal::Network,
+    #[cfg(feature = "network-native")] mut network: crate::hal::Network,
     #[cfg(feature = "network-backpack")] backpack: crate::backpack::Backpack,
 ) -> Result<(), Error> {
     let server_config = config.network().lock(|config| {
@@ -41,14 +40,10 @@ pub async fn run(
     })?;
 
     #[cfg(feature = "network-native")]
-    native::run(
-        spawner,
-        server_config,
-        rand::RngCore::next_u64(rng),
-        network,
-        api,
-    )
-    .await;
+    {
+        use crate::hal::traits::Network;
+        native::run(spawner, server_config, network.seed(), network.hal(), api).await;
+    }
     #[cfg(not(feature = "network-native"))]
     let _ = spawner;
 
@@ -68,13 +63,13 @@ mod native {
 
     const WORKERS: usize = 8;
 
-    type Context = vertx_server::Context<crate::hal::NetworkDriver>;
+    type Context = vertx_server::Context<<crate::hal::NetworkHal as vertx_network::Hal>::Driver>;
 
     pub(super) async fn run(
         spawner: Spawner,
         config: vertx_network::Config,
         seed: u64,
-        hal: crate::hal::Network,
+        hal: crate::hal::NetworkHal,
         api: &'static Api,
     ) {
         static RESOURCES: ConstStaticCell<vertx_server::Resources<{ WORKERS + 2 }>> =

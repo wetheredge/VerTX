@@ -3,7 +3,7 @@ use embassy_futures::select;
 use embassy_time::{Duration, Timer};
 use smart_leds::{colors, RGB8};
 
-use crate::hal::traits::LedDriver;
+use crate::hal::prelude::*;
 use crate::Mode;
 
 pub const MAX_LEDS: usize = 1;
