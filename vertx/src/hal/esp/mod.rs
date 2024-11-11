@@ -23,7 +23,9 @@ use crate::BootMode;
 #[ram(rtc_fast, persistent)]
 static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
 
-pub(crate) fn init(spawner: Spawner) -> super::Init {
+declare_hal_types!();
+
+pub(super) fn init(spawner: Spawner) -> super::Init {
     let peripherals = Peripherals::take();
     let system = SystemControl::new(peripherals.SYSTEM);
     let clocks = ClockControl::max(system.clock_control).freeze();
@@ -51,25 +53,26 @@ pub(crate) fn init(spawner: Spawner) -> super::Init {
 
     let mode_button = gpio::AnyInput::new(pins!(io, mode), gpio::Pull::Up);
 
+    let network_hal = vertx_network_esp::Hal::new(
+        spawner,
+        clocks,
+        rng,
+        timg1.timer0.into(),
+        peripherals.RADIO_CLK,
+        peripherals.WIFI,
+    );
+
     super::Init {
         reset: Reset,
-        rng,
         boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         led_driver,
         config_storage,
         mode_button,
-        network: vertx_network_esp::Hal::new(
-            spawner,
-            clocks,
-            rng,
-            timg1.timer0.into(),
-            peripherals.RADIO_CLK,
-            peripherals.WIFI,
-        ),
+        network: Network::new(rng, network_hal),
     }
 }
 
-pub(crate) fn set_boot_mode(mode: u8) {
+pub(super) fn set_boot_mode(mode: u8) {
     BOOT_MODE.store(mode, Ordering::Relaxed);
 }
 
@@ -137,5 +140,29 @@ impl super::traits::ConfigStorage for ConfigStorage {
 impl super::traits::ModeButton for gpio::AnyInput<'_> {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
         self.wait_for_falling_edge()
+    }
+}
+
+struct Network {
+    rng: Rng,
+    hal: vertx_network_esp::Hal,
+}
+
+impl Network {
+    fn new(rng: Rng, hal: vertx_network_esp::Hal) -> Self {
+        Self { rng, hal }
+    }
+}
+
+impl super::traits::Network for Network {
+    type Hal = vertx_network_esp::Hal;
+
+    fn seed(&mut self) -> u64 {
+        use rand::RngCore;
+        self.rng.next_u64()
+    }
+
+    fn hal(self) -> Self::Hal {
+        self.hal
     }
 }

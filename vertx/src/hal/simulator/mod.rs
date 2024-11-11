@@ -51,13 +51,18 @@ mod ipc {
 static BACKPACK_RX: backpack::RxPipe = Pipe::new();
 static MODE_BUTTON: Signal<crate::mutex::MultiCore, ()> = Signal::new();
 
-pub(crate) fn init(_spawner: Spawner) -> super::Init {
+declare_hal_types!();
+
+pub(super) fn init(_spawner: Spawner) -> super::Init {
     super::Init {
         reset: Reset,
         led_driver: LedDriver,
         config_storage: ConfigStorage,
         mode_button: ModeButton(&MODE_BUTTON),
-        backpack: backpack::new(&BACKPACK_RX),
+        backpack: super::Backpack {
+            tx: backpack::Tx,
+            rx: backpack::Rx(&BACKPACK_RX),
+        },
     }
 }
 

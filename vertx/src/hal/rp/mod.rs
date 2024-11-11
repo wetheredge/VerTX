@@ -16,7 +16,9 @@ bind_interrupts!(struct Irqs {
     UART1_IRQ => uart::BufferedInterruptHandler<UART1>;
 });
 
-pub(crate) fn init(_spawner: Spawner) -> super::Init {
+declare_hal_types!();
+
+pub(super) fn init(_spawner: Spawner) -> super::Init {
     let p = embassy_rp::init(Default::default());
 
     let reset = Reset {

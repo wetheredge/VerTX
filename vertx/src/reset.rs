@@ -3,7 +3,7 @@ use embassy_sync::signal::Signal;
 
 #[cfg(feature = "backpack")]
 use crate::backpack::Backpack;
-use crate::hal::traits::Reset as _;
+use crate::hal::prelude::*;
 
 type ResetSignal = Signal<crate::mutex::MultiCore, Kind>;
 

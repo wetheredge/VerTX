@@ -29,44 +29,37 @@ use crate::reset::BootMode;
 pub async fn main(spawner: Spawner) {
     loog::info!("Starting VerTX");
 
-    let hal::Init {
-        reset,
-        #[cfg(not(feature = "backpack-boot-mode"))]
-        boot_mode,
-        led_driver,
-        config_storage,
-        mode_button,
-        #[cfg(feature = "backpack")]
-        backpack,
-        #[cfg(feature = "network-native")]
-        mut rng,
-        #[cfg(feature = "network-native")]
-        network,
-    } = hal::init(spawner);
+    let hal = hal::init(spawner);
 
     #[cfg(feature = "backpack")]
-    let backpack = backpack::Backpack::new(spawner, backpack);
+    let backpack = backpack::Backpack::new(spawner, hal.backpack);
 
     static MODE: mode::Channel = mode::Channel::new();
     let mode = &MODE;
 
     static CONFIG_MANAGER: StaticCell<config::Manager> = StaticCell::new();
-    let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(config_storage));
+    let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(hal.config_storage));
     let config = config_manager.config();
 
-    spawner.must_spawn(leds::run(config, led_driver, mode.subscriber().unwrap()));
+    spawner.must_spawn(leds::run(
+        config,
+        hal.led_driver,
+        mode.subscriber().unwrap(),
+    ));
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
     let reset = RESET.init_with(|| {
         reset::Manager::new(
             spawner,
-            reset,
+            hal.reset,
             config_manager,
             #[cfg(feature = "backpack")]
             backpack.clone(),
         )
     });
 
+    #[cfg(not(feature = "backpack-boot-mode"))]
+    let boot_mode = hal.boot_mode;
     #[cfg(feature = "backpack-boot-mode")]
     let boot_mode = {
         loog::debug!("Waiting on boot mode from backpack…");
@@ -75,7 +68,7 @@ pub async fn main(spawner: Spawner) {
         mode
     };
 
-    spawner.must_spawn(change_mode(boot_mode, reset, mode_button));
+    spawner.must_spawn(change_mode(boot_mode, reset, hal.mode_button));
 
     if boot_mode.configurator_enabled() {
         loog::info!("Configurator enabled");
@@ -91,9 +84,7 @@ pub async fn main(spawner: Spawner) {
             config,
             api,
             #[cfg(feature = "network-native")]
-            &mut rng,
-            #[cfg(feature = "network-native")]
-            network,
+            hal.network,
             #[cfg(feature = "network-backpack")]
             backpack,
         );
@@ -126,7 +117,7 @@ async fn change_mode(
         #[allow(unused_variables)]
         let try_home = true;
         #[cfg(feature = "network-native")]
-        let try_home = <hal::Network as vertx_network::Hal>::SUPPORTS_HOME;
+        let try_home = <hal::NetworkHal as vertx_network::Hal>::SUPPORTS_HOME;
         if try_home {
             BootMode::ConfiguratorHome
         } else {
