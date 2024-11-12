@@ -18,35 +18,38 @@ edition = "2021"
 license = "MPL-2.0"
 
 [workspace.dependencies]
-embassy-executor = "=0.6.0"
+embassy-executor = "=0.6.2"
 embassy-net = "=0.4.0"
 embassy-sync = "=0.6.0"
 embassy-time = "=0.3.2"
 embedded-io-async = "=0.6.1"
 esp-alloc = "=0.4.0"
-esp-backtrace = "=0.14.1"
+esp-backtrace = "=0.14.2"
 esp-hal = "=0.20.1"
 esp-hal-embassy = { version = "=0.3.0", default-features = false }
-esp-println = { version = "=0.11.0", default-features = false }
+esp-println = { version = "=0.12.0", default-features = false }
 heapless = "=0.8.0"
 log = "=0.4.22"
 loog.git = "https://github.com/wetheredge/loog.git"
 portable-atomic = "=1.9.0"
 postcard = { version = "=1.0.10", default-features = false }
-serde = { version = "=1.0.210", default-features = false }
+serde = { version = "=1.0.214", default-features = false }
 static_cell = "=2.1.0"
-tokio = "=1.40.0"
+tokio = "=1.41.0"
 vertx-backpack-ipc.path = "vertx-backpack-ipc"
 vertx-network.path = "vertx-network"
 vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
 
+[patch.crates-io]
+embassy-executor = { git = "https://github.com/wetheredge/embassy.git", rev = "a3922cb66d5d78b1262f98a4c3bfaa9e05394588" }
+
 [workspace.metadata.bin]
 cargo-machete = { version = "=0.7.0", locked = true }
-cargo-nextest = { version = "=0.9.78", locked = true }
-dprint = { version = "=0.47.2", locked = true }
-espflash = { version = "=3.1.1", locked = true }
-wasm-bindgen-cli = { version = "=0.2.93", locked = true, bins = ["wasm-bindgen"] }
+cargo-nextest = { version = "=0.9.82", locked = true }
+dprint = { version = "=0.47.5", locked = true }
+espflash = { version = "=3.2.0", locked = true }
+wasm-bindgen-cli = { version = "=0.2.95", locked = true, bins = ["wasm-bindgen"] }
 wasm-opt = { version = "=0.116.1", locked = true }
 
 [profile.dev.package.esp-storage]

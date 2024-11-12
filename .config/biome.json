@@ -18,7 +18,8 @@
 				"useSimplifiedLogicExpression": "warn"
 			},
 			"correctness": {
-				"all": true
+				"all": true,
+				"useImportExtensions": "off"
 			},
 			"style": {
 				"noDefaultExport": "error",

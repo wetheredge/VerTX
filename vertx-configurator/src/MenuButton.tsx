@@ -13,7 +13,7 @@ export function MenuButton() {
 			for={styles.id}
 			class={styles.button}
 			tabIndex={0}
-			// biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Doing this to avoid needing JS just to open the nav
+			// biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole lint/a11y/useSemanticElements: Doing this to avoid needing JS just to open the nav
 			role="button"
 			aria-label="Toggle navigation menu"
 			onKeyPress={({ key }) => {
