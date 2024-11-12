@@ -41,6 +41,9 @@ vertx-network.path = "vertx-network"
 vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
 
+[patch.crates-io]
+embassy-executor = { git = "https://github.com/wetheredge/embassy.git", rev = "a3922cb66d5d78b1262f98a4c3bfaa9e05394588" }
+
 [workspace.metadata.bin]
 cargo-machete = { version = "=0.7.0", locked = true }
 cargo-nextest = { version = "=0.9.82", locked = true }
