@@ -123,4 +123,4 @@ jobs:
           curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/commit/${{ github.sha }}' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/zstd' --data-binary @out.tar.zstd
       - name: Update branch
         run: |
-          curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/branch' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/json' -d '{"branch":"${{ github.ref_name }}","commit":"${{ github.sha }}"}'
+          curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/branch' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/json' -d '{"branch":"${{ github.head_ref || github.ref_name }}","commit":"${{ github.sha }}"}'
