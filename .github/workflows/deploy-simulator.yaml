@@ -112,6 +112,17 @@ jobs:
           path: out/configurator
       - name: Create out.tar.zstd
         run: tar --create --zstd --exclude='.[^/]*' --file=out.tar.zstd --directory=out .
+      - name: Get commit & branch
+        id: refs
+        uses: actions/github-script@v7.0.1
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        with:
+          script: |
+            const commit = '${{ github.sha }}'.substring(0, 7);
+            const branch = process.env.BRANCH;
+            core.info(`Deploying commit ${commit} aliased to ${branch}`);
+            return { commit, branch };
       - name: Join tailnet
         uses: tailscale/github-action@16d7e0b7812f55e668628a71630a09956522baa9
         with:
@@ -120,7 +131,7 @@ jobs:
           tags: tag:ci-vertx
       - name: Deploy commit
         run: |
-          curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/commit/${{ github.sha }}' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/zstd' --data-binary @out.tar.zstd
+          curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/commit/${{ fromJSON(steps.refs.outputs.result).commit }}' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/zstd' --data-binary @out.tar.zstd
       - name: Update branch
         run: |
-          curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/branch' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/json' -d '{"branch":"${{ github.head_ref || github.ref_name }}","commit":"${{ github.sha }}"}'
+          curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/branch' --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' -H 'content-type: application/json' -d '${{ steps.refs.outputs.result }}'
