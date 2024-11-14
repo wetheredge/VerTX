@@ -42,12 +42,12 @@ jobs:
       - name: Push updates
         if: github.ref == 'refs/heads/main'
         run: |
-          mkdir -p $HOME/.ssh
-          echo '${{ vars.GH_SSH_PUB_KEYS }}' >> $HOME/.ssh/known_hosts
-          echo '${{ secrets.UPDATES_SSH_KEY }}' >> $HOME/.ssh/id_updates
-          chmod -R 600 $HOME/.ssh/id_updates
+          mkdir -p "$HOME/.ssh"
+          echo '${{ vars.GH_SSH_PUB_KEYS }}' >> "$HOME/.ssh/known_hosts"
+          echo '${{ secrets.UPDATES_SSH_KEY }}' >> "$HOME/.ssh/id_updates"
+          chmod -R 600 "$HOME/.ssh/id_updates"
           eval `ssh-agent`
-          ssh-add $HOME/.ssh/id_updates
+          ssh-add "$HOME/.ssh/id_updates"
           git remote set-url origin git@github.com:${{ github.repository }}.git
           git push --set-upstream origin updates
       - name: Open PR
