@@ -15,7 +15,7 @@ members = [
 version = "0.0.0"
 authors = ["W Etheredge <me@wetheredge.com>"]
 edition = "2021"
-homepage = "https://vertx.todo"
+homepage = "https://vertx.cc"
 license = "MPL-2.0"
 
 [workspace.dependencies]
