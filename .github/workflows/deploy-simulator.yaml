@@ -26,6 +26,8 @@ jobs:
           bun-version-file: .tool-versions
       - run: bun install --frozen-lockfile
       - run: bun run vite build
+        env:
+          VITE_TARGET: simulator
       - uses: actions/upload-artifact@v4.4.0
         with:
           name: configurator
