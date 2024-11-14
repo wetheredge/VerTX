@@ -65,7 +65,11 @@ jobs:
       - run: wasm-bindgen --out-dir simulator --target web wasm32-unknown-unknown/release/vertx.wasm
         working-directory: target
       # XXX: see vertx/Taskfile.yaml
-      - run: sed -i 's/if (wasm !== undefined) return wasm;//' vertx.js
+      - name: Patch vertx.js
+        run: |
+          echo 'export const memoryName: "memory";' >> vertx.d.ts
+          echo 'export const memoryName = "memory";' >> vertx.js
+          sed -i 's/if (wasm !== undefined) return wasm;//' vertx.js
         working-directory: target/simulator
       - run: cat .config/env >> "$GITHUB_ENV"
       - run: wasm-opt $VERTX_WASM_OPT_ARGS --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
