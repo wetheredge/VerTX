@@ -64,13 +64,18 @@ fn link_args() {
 
 fn build_info(out_dir: &str) -> io::Result<()> {
     let git = |args: &[_]| Command::new("git").args(args).output().unwrap().stdout;
-    let git_string = |args| String::from_utf8(git(args)).unwrap().trim().to_owned();
+    let git_string = |env, args| {
+        env::var(env).unwrap_or_else(|_| String::from_utf8(git(args)).unwrap().trim().to_owned())
+    };
 
-    let branch = git_string(&["branch", "--show-current"]);
+    let branch = git_string("VERTX_GIT_BRANCH", &["branch", "--show-current"]);
     fs::write(format!("{out_dir}/git_branch"), branch)?;
-    let commit = git_string(&["rev-parse", "--short", "HEAD"]);
+    let commit = git_string("VERTX_GIT_COMMIT", &["rev-parse", "--short", "HEAD"]);
     fs::write(format!("{out_dir}/git_commit"), commit)?;
-    let dirty = !git(&["status", "--porcelain"]).is_empty();
+    let dirty = env::var("VERTX_GIT_DIRTY").map_or_else(
+        |_| !git(&["status", "--porcelain"]).is_empty(),
+        |env| !env.eq_ignore_ascii_case("false"),
+    );
     fs::write(format!("{out_dir}/git_dirty"), dirty.to_string())?;
 
     let profile = env::var("PROFILE").unwrap();
