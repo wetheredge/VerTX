@@ -1,6 +1,6 @@
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import autoprefixer from 'autoprefixer';
-import { defineConfig } from 'vite';
+import type { UserConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 
 const ports = {
@@ -8,9 +8,7 @@ const ports = {
 	strictPort: true,
 };
 
-// biome-ignore lint/style/noDefaultExport: Required by Vite
-export default defineConfig({
-	base: process.env.VITE_TARGET === 'simulator' ? '/configurator' : '/',
+const config: UserConfig = {
 	build: {
 		rollupOptions: {
 			output: {
@@ -39,4 +37,15 @@ export default defineConfig({
 	},
 	preview: ports,
 	cacheDir: '.vite',
-});
+};
+
+if (process.env.VITE_TARGET === 'simulator') {
+	config.base = '/configurator';
+
+	// Use default <base>/assets/* path for assets
+	// biome-ignore lint/performance/noDelete:
+	delete config.build?.rollupOptions?.output;
+}
+
+// biome-ignore lint/style/noDefaultExport: Required by Vite
+export default config;
