@@ -47,6 +47,10 @@ tasks:
     cmd: bun run scripts/set-target.ts
     silent: true
 
+  check-targets:
+    desc: Validate all target specifications
+    cmd: bun run scripts/check-targets.ts
+
   "*/*":
     desc: Run a task from a subdirectory. The `vertx-` prefix can be dropped. (eg `task simulator:check`)
     vars:

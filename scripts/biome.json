@@ -13,11 +13,11 @@
 	},
 	"overrides": [
 		{
-			"include": ["./update.ts"],
+			"include": ["./check-targets.ts"],
 			"linter": {
 				"rules": {
-					"style": {
-						"noNonNullAssertion": "off"
+					"suspicious": {
+						"noConsoleLog": "off"
 					}
 				}
 			}
@@ -28,6 +28,16 @@
 				"rules": {
 					"style": {
 						"useNamingConvention": "off"
+					}
+				}
+			}
+		},
+		{
+			"include": ["./update.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off"
 					}
 				}
 			}

@@ -41,6 +41,17 @@ jobs:
       - run: bun run scripts/sync-toolchains.ts
       - run: git diff --exit-code
 
+  check-targets:
+    name: Check targets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: oven-sh/setup-bun@v2.0.1
+        with:
+          bun-version-file: .tool-versions
+      - run: bun install --frozen-lockfile
+      - run: bun run scripts/check-targets.ts
+
   rustfmt:
     runs-on: ubuntu-latest
     steps:
@@ -217,6 +228,7 @@ jobs:
     needs:
       - unused-dependencies
       - toolchains-synced
+      - check-targets
       - rustfmt
       - clippy
       - clippy-config-migrate
