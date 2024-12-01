@@ -28,7 +28,7 @@ jobs:
       run:
         working-directory: vertx-configurator
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4.2.2
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
@@ -47,7 +47,7 @@ jobs:
     name: Build VerTX
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4.2.2
       - uses: Swatinem/rust-cache@v2.7.5
       - uses: oven-sh/setup-bun@v2.0.1
         with:
@@ -85,7 +85,7 @@ jobs:
       run:
         working-directory: vertx-simulator
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4.2.2
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
