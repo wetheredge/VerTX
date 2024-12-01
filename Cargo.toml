@@ -46,7 +46,7 @@ cargo-machete = { version = "=0.7.0", locked = true }
 cargo-nextest = { version = "=0.9.85", locked = true }
 dprint = { version = "=0.47.5", locked = true }
 espflash = { version = "=3.2.0", locked = true }
-wasm-bindgen-cli = { version = "=0.2.95", locked = true, bins = ["wasm-bindgen"] }
+wasm-bindgen-cli = { version = "=0.2.97", locked = true, bins = ["wasm-bindgen"] }
 wasm-opt = { version = "=0.116.1", locked = true }
 
 [profile.dev.package.esp-storage]
