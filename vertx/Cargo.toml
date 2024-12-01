@@ -123,7 +123,7 @@ vertx-network-esp = { workspace = true, optional = true }
 
 # chip-rp
 # TODO: flip-link
-cortex-m-rt = { version = "=0.7.3", optional = true }
+cortex-m-rt = { version = "=0.7.5", optional = true }
 defmt-rtt = { version = "=0.4.1", optional = true }
 embassy-rp = { version = "=0.2.0", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
 fixed = { version = "=1.28.0", optional = true }
