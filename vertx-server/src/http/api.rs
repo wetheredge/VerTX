@@ -2,7 +2,7 @@ use base64::engine::general_purpose::STANDARD as Base64;
 use base64::Engine as _;
 use edge_ws::FrameType;
 use embedded_io_async::{Read, Write};
-use sha1::{Digest, Sha1};
+use sha1::{Digest as _, Sha1};
 use vertx_network::Api;
 
 #[expect(dead_code)]
@@ -110,6 +110,8 @@ where
     W: Write,
 {
     const HASH_LEN: usize = 20;
+    // TODO: use .unwrap() -- not sure why it's fine elsewhere but says it's still
+    // unstable here...
     const ENCODED_LEN: usize = if let Some(len) = base64::encoded_len(HASH_LEN, true) {
         len
     } else {

@@ -44,7 +44,7 @@ After installing the above list:
 
 ```shell
 # If using a different name, add VERTX_ESP_TOOLCHAIN=<name> to <repo root>/.env
-$ espup install --toolchain-version 1.82.0.3 --targets esp32,esp32s3 --name esp-vertx
+$ espup install --toolchain-version 1.83.0.1 --targets esp32,esp32s3 --name esp-vertx
 
 # Install asdf plugins
 $ asdf plugin add actionlint https://github.com/crazy-matt/asdf-actionlint

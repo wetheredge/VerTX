@@ -4,7 +4,7 @@ mod respond;
 
 use core::ops;
 
-use atoi::FromRadix10;
+use atoi::FromRadix10 as _;
 use embedded_io_async::{Read, Write};
 use vertx_network::Api;
 

@@ -4,12 +4,8 @@ pub(super) const SECTOR_BYTES: u32 = esp_storage::FlashStorage::SECTOR_SIZE;
 const PARTITION_TABLE_ADDRESS: u32 = 0x8000;
 const PARTITION_TABLE_SIZE: usize = 0xC00;
 
-// .unwrap() is not const
-const CUSTOM_TYPE_CONFIG: PartitionKind = if let Some(config) = PartitionKind::new_custom(0x40, 0) {
-    config
-} else {
-    panic!("Invalid config PartitionKind")
-};
+const CUSTOM_TYPE_CONFIG: PartitionKind =
+    PartitionKind::new_custom(0x40, 0).expect("valid config PartitionKind");
 
 #[derive(Debug)]
 pub(super) enum PartitionError {

@@ -1,5 +1,5 @@
 {
-	"xtensa": "1.82.0.3",
+	"xtensa": "1.83.0.1",
 	"chips": {
 		"esp32": {
 			"toolchain": "xtensa",
