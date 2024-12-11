@@ -46,6 +46,7 @@ pub(crate) async fn run(
 
     let ui = &mut ui;
 
+    ui.init().await;
     splash::run(ui).await;
 
     let below_title = {

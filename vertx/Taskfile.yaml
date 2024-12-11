@@ -6,6 +6,7 @@ includes:
     internal: true
     vars:
       chip: "{{.VERTX_CHIP}}"
+      features: "{{.VERTX_FEATURES}}"
 
 dotenv:
   - ../.env

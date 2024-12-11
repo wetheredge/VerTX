@@ -130,9 +130,32 @@ pub(crate) mod traits {
     pub(crate) trait Ui: DrawTarget<Color = BinaryColor>
     // TODO: where <Self as DrawTarget>::Error: loog::DebugFormat
     {
-        type FlushError: loog::DebugFormat;
+        async fn init(&mut self) -> Result<(), Self::Error> {
+            Ok(())
+        }
 
         async fn get_input(&mut self) -> crate::ui::Input;
-        async fn flush(&mut self) -> Result<(), Self::FlushError>;
+        async fn flush(&mut self) -> Result<(), Self::Error>;
+    }
+}
+
+#[cfg(feature = "display-ssd1306")]
+mod display {
+    use embedded_hal::i2c::I2c;
+    use ssd1306::prelude::*;
+    use ssd1306::{I2CDisplayInterface, Ssd1306Async};
+
+    type Size = DisplaySize128x64;
+    pub(super) type Driver<I> =
+        Ssd1306Async<I2CInterface<I>, Size, ssd1306::mode::BufferedGraphicsModeAsync<Size>>;
+
+    pub(super) fn new<I: I2c>(i2c: I) -> Driver<I> {
+        let interface = I2CDisplayInterface::new(i2c);
+        Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+            .into_buffered_graphics_mode()
+    }
+
+    pub(super) async fn init<D: DisplayConfigAsync>(display: &mut D) -> Result<(), D::Error> {
+        display.init().await
     }
 }
