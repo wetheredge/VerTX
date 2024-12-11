@@ -94,18 +94,40 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     }
 
     #[derive(Debug, Deserialize)]
+    struct Pins {
+        display: DisplayPins,
+
+        #[serde(flatten)]
+        rest: MiscPins,
+    }
+
+    #[derive(Debug, Deserialize)]
     #[serde(transparent)]
-    struct Pins(HashMap<String, PinSpec>);
+    struct MiscPins(HashMap<String, PinSpec>);
+
+    #[derive(Debug, Deserialize)]
+    struct DisplayPins {
+        #[serde(rename = "type")]
+        typ: DisplayType,
+        #[serde(flatten)]
+        pins: MiscPins,
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    enum DisplayType {
+        Ssd1306,
+    }
 
     #[derive(Debug, Deserialize)]
     #[serde(untagged)]
     enum PinSpec {
         Single(u8),
         Multiple(Vec<u8>),
-        Nested(Pins),
+        Nested(MiscPins),
     }
 
-    impl Pins {
+    impl MiscPins {
         fn format(self, output: &mut String, prefix: &str, path: &str) {
             for (key, value) in self.0 {
                 let key = if path.is_empty() {
@@ -155,7 +177,8 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     let target: Target = basic_toml::from_str(&target).unwrap();
 
     let mut out = String::from("macro_rules! pins {\n");
-    target.pins.format(&mut out, gpio, "");
+    target.pins.rest.format(&mut out, gpio, "");
+    target.pins.display.pins.format(&mut out, gpio, "display");
     out.push_str("}\n");
 
     fs::write(format!("{out_dir}/pins.rs"), out)

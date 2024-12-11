@@ -9,10 +9,12 @@ const targetEnvFile = '.env.target';
 
 const BACKPACK_CHIPS = ['esp32', 'esp32c3', 'esp32s3'];
 
+type Pins = Record<string, unknown>;
 type Target = {
 	chip: string;
-	server: string;
-	pins: Record<string, unknown>;
+	pins: Pins & {
+		display: { type: string } & Pins;
+	};
 };
 
 const targets = new Glob('*.toml').scanSync({ cwd: targetsDir });
@@ -29,6 +31,7 @@ const target: Target = await import(`${targetsDir}/${targetName}.toml`);
 const env: Record<string, string> = {
 	VERTX_TARGET: targetName,
 	VERTX_CHIP: target.chip,
+	VERTX_FEATURES: `display-${target.pins.display.type}`,
 };
 
 if ('backpack' in target.pins) {

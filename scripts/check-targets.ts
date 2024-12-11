@@ -17,6 +17,24 @@ const schema: SomeJTDSchemaType = {
 				leds: { ref: 'pin' },
 				analog: { elements: { ref: 'pin' } },
 				switches: { elements: { ref: 'pin' } },
+				ui: {
+					properties: Object.fromEntries(
+						['up', 'down', 'right', 'left'].map((name) => {
+							return [name, { ref: 'pin' }];
+						}),
+					),
+				},
+				display: {
+					discriminator: 'type',
+					mapping: {
+						ssd1306: {
+							properties: {
+								sda: { ref: 'pin' },
+								scl: { ref: 'pin' },
+							},
+						},
+					},
+				},
 			},
 			optionalProperties: {
 				backpack: {

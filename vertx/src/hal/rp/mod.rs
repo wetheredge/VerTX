@@ -134,13 +134,15 @@ impl eg::draw_target::DrawTarget for Ui {
 }
 
 impl super::traits::Ui for Ui {
-    type FlushError = ();
+    async fn init(&mut self) -> Result<(), Self::Error> {
+        todo!()
+    }
 
     async fn get_input(&mut self) -> crate::ui::Input {
         todo!()
     }
 
-    async fn flush(&mut self) -> Result<(), Self::FlushError> {
+    async fn flush(&mut self) -> Result<(), Self::Error> {
         todo!()
     }
 }

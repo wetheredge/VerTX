@@ -10,7 +10,7 @@ tasks:
   cargo:
     requires:
       vars: [command, chip]
-    cmd: cargo{{if eq .chip_data.toolchain "xtensa"}} +{{.xtensa_toolchain}}{{end}} {{.command}} -Zbuild-std=alloc,core --target {{.chip_data.target}} -F chip-{{.chip}} {{.args}}
+    cmd: cargo{{if eq .chip_data.toolchain "xtensa"}} +{{.xtensa_toolchain}}{{end}} {{.command}} -Zbuild-std=alloc,core --target {{.chip_data.target}} -F 'chip-{{.chip}}{{if .features}} {{.features}}{{end}}' {{.args}}
     vars:
       chip_data:
         ref: get .all_chip_data .chip

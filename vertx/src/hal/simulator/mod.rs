@@ -202,13 +202,11 @@ impl eg::draw_target::DrawTarget for Ui {
 }
 
 impl super::traits::Ui for Ui {
-    type FlushError = Infallible;
-
     async fn get_input(&mut self) -> crate::ui::Input {
         self.inputs.receive().await
     }
 
-    async fn flush(&mut self) -> Result<(), Self::FlushError> {
+    async fn flush(&mut self) -> Result<(), Self::Error> {
         let data = self.framebuffer.lock().unwrap();
         ipc::flush_display(data.as_ptr().cast());
         Ok(())

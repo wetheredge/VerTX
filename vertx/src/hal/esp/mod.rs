@@ -2,11 +2,14 @@ mod flash;
 
 use alloc::vec;
 use alloc::vec::Vec;
-use core::convert::Infallible;
 
+use display_interface::DisplayError;
 use embassy_executor::Spawner;
+use embassy_futures::select;
+use embassy_time::Timer;
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio;
+use esp_hal::i2c::I2c;
 use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
@@ -16,6 +19,7 @@ use portable_atomic::{AtomicU8, Ordering};
 use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;
+use crate::ui::Input;
 use crate::BootMode;
 
 #[ram(rtc_fast, persistent)]
@@ -54,6 +58,20 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         .unwrap();
     let config_storage = ConfigStorage::new(&mut partitions);
 
+    let ui = {
+        let sda = pins!(io, display.sda);
+        let scl = pins!(io, display.scl);
+        let display = super::display::new(I2c::new_async(peripherals.I2C0, sda, scl, 1.MHz()));
+
+        Ui {
+            display,
+            up: gpio::Input::new(pins!(io, ui.up), gpio::Pull::Up),
+            down: gpio::Input::new(pins!(io, ui.down), gpio::Pull::Up),
+            right: gpio::Input::new(pins!(io, ui.right), gpio::Pull::Up),
+            left: gpio::Input::new(pins!(io, ui.left), gpio::Pull::Up),
+        }
+    };
+
     let network_hal = vertx_network_esp::Hal::new(
         spawner,
         rng,
@@ -67,7 +85,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         led_driver,
         config_storage,
-        ui: Ui,
+        ui,
         network: Network::new(rng, network_hal),
     }
 }
@@ -161,7 +179,13 @@ impl super::traits::Network for Network {
     }
 }
 
-struct Ui;
+struct Ui {
+    display: super::display::Driver<I2c<'static, esp_hal::peripherals::I2C0, esp_hal::Async>>,
+    up: gpio::Input<'static>,
+    down: gpio::Input<'static>,
+    right: gpio::Input<'static>,
+    left: gpio::Input<'static>,
+}
 
 impl eg::geometry::OriginDimensions for Ui {
     fn size(&self) -> eg::geometry::Size {
@@ -174,24 +198,41 @@ impl eg::geometry::OriginDimensions for Ui {
 
 impl eg::draw_target::DrawTarget for Ui {
     type Color = eg::pixelcolor::BinaryColor;
-    type Error = Infallible;
+    type Error = DisplayError;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = eg::Pixel<Self::Color>>,
     {
-        todo!()
+        self.display.draw_iter(pixels)
     }
 }
 
 impl super::traits::Ui for Ui {
-    type FlushError = ();
-
-    async fn get_input(&mut self) -> crate::ui::Input {
-        todo!()
+    async fn init(&mut self) -> Result<(), Self::Error> {
+        super::display::init(&mut self.display).await
     }
 
-    async fn flush(&mut self) -> Result<(), Self::FlushError> {
-        todo!()
+    async fn get_input(&mut self) -> Input {
+        async fn debounced(pin: &mut gpio::Input<'static>, input: Input) -> Input {
+            loop {
+                pin.wait_for_falling_edge().await;
+                Timer::after_millis(20).await;
+                if pin.is_low() {
+                    return input;
+                }
+            }
+        }
+
+        let up = debounced(&mut self.up, Input::Up);
+        let down = debounced(&mut self.down, Input::Down);
+        let right = debounced(&mut self.right, Input::Forward);
+        let left = debounced(&mut self.left, Input::Back);
+
+        select::select_array([up, down, left, right]).await.0
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        self.display.flush().await
     }
 }
