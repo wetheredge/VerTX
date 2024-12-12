@@ -20,6 +20,7 @@ mod network;
 mod reset;
 
 use embassy_executor::{task, Spawner};
+use embassy_sync::watch::Watch;
 use static_cell::StaticCell;
 
 use crate::config::RootConfig as Config;
@@ -34,18 +35,15 @@ pub async fn main(spawner: Spawner) {
     #[cfg(feature = "backpack")]
     let backpack = backpack::Backpack::new(spawner, hal.backpack);
 
-    static MODE: mode::Channel = mode::Channel::new();
+    static MODE: crate::mode::Watch = Watch::new();
     let mode = &MODE;
+    let mode_sender = mode.sender();
 
     static CONFIG_MANAGER: StaticCell<config::Manager> = StaticCell::new();
     let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(hal.config_storage));
     let config = config_manager.config();
 
-    spawner.must_spawn(leds::run(
-        config,
-        hal.led_driver,
-        mode.subscriber().unwrap(),
-    ));
+    spawner.must_spawn(leds::run(config, hal.led_driver, mode.receiver().unwrap()));
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
     let reset = RESET.init_with(|| {
@@ -72,7 +70,7 @@ pub async fn main(spawner: Spawner) {
 
     if boot_mode.configurator_enabled() {
         loog::info!("Configurator enabled");
-        mode.publish(Mode::PreConfigurator);
+        mode_sender.send(Mode::PreConfigurator);
 
         let is_home = boot_mode == BootMode::ConfiguratorHome;
 
@@ -90,14 +88,14 @@ pub async fn main(spawner: Spawner) {
         );
 
         match network_running.await {
-            Ok(()) => mode.publish(Mode::Configurator),
+            Ok(()) => mode_sender.send(Mode::Configurator),
             Err(network::Error::InvalidHomeConfig) => {
                 reset.reboot_into(BootMode::ConfiguratorField).await;
             }
         }
     } else {
         loog::info!("Configurator disabled");
-        mode.publish(Mode::Ok);
+        mode_sender.send(Mode::Ok);
     }
 }
 

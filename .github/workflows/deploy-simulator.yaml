@@ -28,7 +28,7 @@ jobs:
       run:
         working-directory: vertx-configurator
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4.2.2
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
@@ -36,7 +36,7 @@ jobs:
       - run: bun run vite build
         env:
           VITE_TARGET: simulator
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@v4.4.3
         with:
           name: configurator
           path: vertx-configurator/dist/
@@ -47,17 +47,17 @@ jobs:
     name: Build VerTX
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.7
-      - uses: Swatinem/rust-cache@v2.7.3
+      - uses: actions/checkout@v4.2.2
+      - uses: Swatinem/rust-cache@v2.7.5
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
       - name: Install wasm-bindgen
-        uses: taiki-e/install-action@v2.43.6
+        uses: taiki-e/install-action@v2.46.7
         with:
-          tool: wasm-bindgen@0.2.95 # dep:cargo-bin:wasm-bindgen-cli
+          tool: wasm-bindgen@0.2.99 # dep:cargo-bin:wasm-bindgen-cli
       - name: Install wasm-opt
-        uses: taiki-e/install-action@v2.43.6
+        uses: taiki-e/install-action@v2.46.7
         with:
           tool: wasm-opt@0.116.1 # dep:cargo-bin:wasm-opt
       - run: cargo build --release --target wasm32-unknown-unknown --lib -F simulator
@@ -70,7 +70,7 @@ jobs:
       - run: cat .config/env >> "$GITHUB_ENV"
       - run: wasm-opt $VERTX_WASM_OPT_ARGS --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
         working-directory: target/simulator
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@v4.4.3
         with:
           name: vertx
           path: target/simulator
@@ -85,7 +85,7 @@ jobs:
       run:
         working-directory: vertx-simulator
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4.2.2
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
@@ -96,7 +96,7 @@ jobs:
           path: target/simulator
       - run: bun install --frozen-lockfile
       - run: bun run vite build
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@v4.4.3
         with:
           name: simulator
           path: vertx-simulator/dist

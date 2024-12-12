@@ -5,11 +5,8 @@ extern crate alloc;
 
 mod http;
 
-use core::marker::PhantomData;
-
-use embassy_net::driver::Driver;
-use embassy_net::{Ipv4Address, Ipv4Cidr};
-use embassy_time::{Duration, Timer};
+use embassy_net::Ipv4Cidr;
+pub use embassy_net::{Runner, Stack};
 use vertx_network::Config;
 
 /// Memory resources for a network stack
@@ -31,39 +28,16 @@ impl<const SOCKETS: usize> Default for Resources<SOCKETS> {
     }
 }
 
-#[repr(transparent)]
-pub struct Context<D: Driver>(embassy_net::Stack<D>);
-
-pub struct Wait<H> {
-    is_home: bool,
-    _hal: PhantomData<H>,
-}
-
-impl<H: vertx_network::Hal> Wait<H> {
-    pub async fn wait_for_network(self, context: &Context<H::Driver>) {
-        let Context(stack) = context;
-
-        if self.is_home {
-            stack.wait_config_up().await;
-        } else {
-            loop {
-                if stack.is_link_up() {
-                    break;
-                }
-                Timer::after(Duration::from_millis(500)).await;
-            }
-        }
-    }
-}
-
 pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
     resources: &'static mut Resources<SOCKETS>,
     config: Config,
     seed: u64,
     hal: H,
-) -> (Context<H::Driver>, Option<tasks::DhcpContext>, Wait<H>) {
-    let is_home = matches!(config, Config::Home { .. });
-
+) -> (
+    Stack<'static>,
+    embassy_net::Runner<'static, H::Driver>,
+    Option<tasks::DhcpContext>,
+) {
     let (driver, stack_config, dhcp_address) = match config {
         Config::Home {
             ssid,
@@ -80,11 +54,10 @@ pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
         Config::Field {
             ssid,
             password,
-            address: raw_address,
+            address,
         } => {
             let driver = hal.field(ssid, password);
 
-            let address = Ipv4Address(raw_address);
             let static_config = embassy_net::StaticConfigV4 {
                 address: Ipv4Cidr::new(address, 24),
                 gateway: Some(address),
@@ -93,39 +66,27 @@ pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
 
             let config = embassy_net::Config::ipv4_static(static_config);
 
-            (driver, config, Some(raw_address))
+            (driver, config, Some(address))
         }
     };
 
     let Resources(resources) = resources;
-    let stack = embassy_net::Stack::new(driver, stack_config, resources, seed);
+    let (stack, runner) = embassy_net::new(driver, stack_config, resources, seed);
 
-    let context = Context(stack);
-    let wait = Wait {
-        is_home,
-        _hal: PhantomData,
-    };
-
-    (context, dhcp_address.map(tasks::DhcpContext), wait)
+    (stack, runner, dhcp_address.map(tasks::DhcpContext))
 }
 
 pub mod tasks {
-    use embassy_net::driver::Driver;
+    use core::net::Ipv4Addr;
+
     use embassy_net::tcp::TcpSocket;
     use embassy_net::udp::{PacketMetadata, UdpSocket};
+    use embassy_net::Stack;
     use vertx_network::Api;
 
-    use crate::Context;
-
-    pub async fn network<D: Driver>(context: &Context<D>) -> ! {
-        context.0.run().await
-    }
-
-    pub async fn http<A: Api, D: Driver>(id: usize, context: &Context<D>, api: &A) -> ! {
+    pub async fn http<A: Api>(id: usize, stack: Stack<'_>, api: &A) -> ! {
         const TCP_BUFFER: usize = 1024;
         const HTTP_BUFFER: usize = 2048;
-
-        let Context(stack) = context;
 
         let mut rx_buffer = [0; TCP_BUFFER];
         let mut tx_buffer = [0; TCP_BUFFER];
@@ -146,17 +107,15 @@ pub mod tasks {
         }
     }
 
-    pub struct DhcpContext(pub(crate) [u8; 4]);
+    pub struct DhcpContext(pub(crate) Ipv4Addr);
 
-    pub async fn dhcp<D: Driver>(context: &Context<D>, dhcp_context: DhcpContext) -> ! {
+    pub async fn dhcp(stack: Stack<'_>, dhcp_context: DhcpContext) -> ! {
         use edge_dhcp::Ipv4Addr;
 
         const LEASES: usize = 2;
 
-        let Context(stack) = context;
         let DhcpContext(address) = dhcp_context;
 
-        let address = Ipv4Addr::new(address[0], address[1], address[2], address[3]);
         let mask = Ipv4Addr::new(255, 255, 255, 0);
 
         let mut rx_meta = [PacketMetadata::EMPTY; 4];
@@ -184,8 +143,9 @@ pub mod tasks {
 
         let mut buffer = [0; 1536];
         loop {
-            let (len, remote) = socket.recv_from(&mut buffer).await.unwrap();
+            let (len, meta) = socket.recv_from(&mut buffer).await.unwrap();
             let packet = &buffer[..len];
+            let remote = meta.endpoint;
 
             let request = match edge_dhcp::Packet::decode(packet) {
                 Ok(decoded) => decoded,
@@ -199,7 +159,7 @@ pub mod tasks {
             if let Some(reply) = server.handle_request(&mut options, &server_options, &request) {
                 let remote = if request.broadcast || remote.addr.is_unspecified() {
                     embassy_net::IpEndpoint::new(
-                        embassy_net::Ipv4Address::BROADCAST.into_address(),
+                        embassy_net::Ipv4Address::BROADCAST.into(),
                         remote.port,
                     )
                 } else {

@@ -1,4 +1,4 @@
-use embassy_sync::pubsub::{self, PubSubChannel};
+use embassy_sync::watch;
 
 const SUBS: usize = 1;
 
@@ -13,26 +13,5 @@ pub enum Mode {
     Updating,
 }
 
-pub struct Channel(PubSubChannel<crate::mutex::MultiCore, Mode, 1, SUBS, 0>);
-
-impl Channel {
-    pub const fn new() -> Self {
-        Self(PubSubChannel::new())
-    }
-
-    pub fn subscriber(&self) -> Option<Subscriber<'_>> {
-        self.0.subscriber().ok().map(Subscriber)
-    }
-
-    pub fn publish(&self, mode: Mode) {
-        self.0.immediate_publisher().publish_immediate(mode);
-    }
-}
-
-pub struct Subscriber<'a>(pubsub::Subscriber<'a, crate::mutex::MultiCore, Mode, 1, SUBS, 0>);
-
-impl Subscriber<'_> {
-    pub async fn next(&mut self) -> Mode {
-        self.0.next_message_pure().await
-    }
-}
+pub type Watch = watch::Watch<crate::mutex::MultiCore, Mode, SUBS>;
+pub type Receiver = watch::Receiver<'static, crate::mutex::MultiCore, Mode, SUBS>;

@@ -39,6 +39,8 @@ pub(crate) use implementation::{
 };
 #[cfg(feature = "network-native")]
 pub type NetworkHal = <Network as traits::Network>::Hal;
+#[cfg(feature = "network-native")]
+pub type NetworkDriver = <NetworkHal as vertx_network::Hal>::Driver;
 
 pub(crate) fn init(spawner: embassy_executor::Spawner) -> Init {
     implementation::init(spawner)

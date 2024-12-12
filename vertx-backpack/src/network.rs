@@ -1,13 +1,12 @@
 use embassy_executor::{task, Spawner};
 use esp_hal::rng::Rng;
-use static_cell::{ConstStaticCell, StaticCell};
+use static_cell::ConstStaticCell;
 use vertx_server::tasks::DhcpContext;
+use vertx_server::Stack;
 
 use crate::api::Api;
 
 const WORKERS: usize = 8;
-
-type Context = vertx_server::Context<vertx_network_esp::Driver>;
 
 pub(crate) type Start = impl FnOnce(vertx_network::Config);
 pub(crate) fn get_start(
@@ -35,37 +34,35 @@ async fn run(
 
     static RESOURCES: ConstStaticCell<vertx_server::Resources<{ WORKERS + 2 }>> =
         ConstStaticCell::new(vertx_server::Resources::new());
-    let (context, dhcp_context, wait) = vertx_server::init(RESOURCES.take(), config, seed, hal);
-    static CONTEXT: StaticCell<Context> = StaticCell::new();
-    let context = CONTEXT.init(context);
+    let (stack, runner, dhcp_context) = vertx_server::init(RESOURCES.take(), config, seed, hal);
 
-    spawner.must_spawn(network(context));
+    spawner.must_spawn(network(runner));
 
     if let Some(dhcp_context) = dhcp_context {
-        spawner.must_spawn(dhcp(context, dhcp_context));
+        spawner.must_spawn(dhcp(stack, dhcp_context));
     }
 
     for id in 0..WORKERS {
-        spawner.must_spawn(http(id, context, api));
+        spawner.must_spawn(http(id, stack, api));
     }
 
-    wait.wait_for_network(context).await;
+    stack.wait_link_up().await;
     ipc.send_network_up().await;
 }
 
 #[task]
-async fn network(context: &'static Context) -> ! {
-    vertx_server::tasks::network(context).await
+async fn network(mut runner: vertx_server::Runner<'static, vertx_network_esp::Driver>) -> ! {
+    runner.run().await
 }
 
 #[task]
-async fn dhcp(context: &'static Context, dhcp: DhcpContext) -> ! {
-    vertx_server::tasks::dhcp(context, dhcp).await
+async fn dhcp(stack: Stack<'static>, dhcp: DhcpContext) -> ! {
+    vertx_server::tasks::dhcp(stack, dhcp).await
 }
 
 #[task(pool_size = WORKERS)]
-async fn http(id: usize, context: &'static Context, api: &'static Api) -> ! {
-    vertx_server::tasks::http(id, context, api).await
+async fn http(id: usize, stack: Stack<'static>, api: &'static Api) -> ! {
+    vertx_server::tasks::http(id, stack, api).await
 }
 
 #[allow(clippy::host_endian_bytes)]
