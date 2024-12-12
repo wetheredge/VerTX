@@ -476,9 +476,10 @@ function updateFile(
 	};
 }
 
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping
+// FIXME: inline once TypeScript knows about RegExp.escape
 function escapeRegExp(s: string) {
-	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	// @ts-ignore
+	return RegExp.escape(s);
 }
 
 function rawVersion(v: string) {
