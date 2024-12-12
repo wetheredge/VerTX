@@ -34,6 +34,7 @@ network-backpack = [
 chip-esp = [
     "defmt",
     "network-native",
+    "dep:esp-alloc",
     "dep:esp-backtrace",
     "dep:esp-hal",
     "dep:esp-hal-embassy",
@@ -94,7 +95,6 @@ embassy-executor = { workspace = true, features = ["nightly"] }
 embassy-futures = "=0.1.1"
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
-esp-alloc = { workspace = true }
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
 portable-atomic = { workspace = true }
@@ -113,10 +113,11 @@ rand = { version = "=0.8.5", default-features = false, features = ["min_const_ge
 vertx-server = { workspace = true, optional = true }
 
 # chip-esp
+esp-alloc = { workspace = true, optional = true }
 esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
-esp-hal = { workspace = true, features = ["async"], optional = true }
+esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
-esp-hal-smartled = { version = "=0.13.0", optional = true }
+esp-hal-smartled = { version = "=0.14.0", optional = true }
 esp-println = { workspace = true, features = ["defmt-espflash", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.3.1", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, optional = true }
