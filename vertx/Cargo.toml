@@ -120,7 +120,7 @@ esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
 esp-hal-smartled = { version = "=0.14.0", optional = true }
 esp-println = { workspace = true, features = ["defmt-espflash", "uart", "critical-section", "colors"], optional = true }
-esp-storage = { version = "=0.3.1", features = ["low-level", "storage", "critical-section"], optional = true }
+esp-storage = { version = "=0.4.0", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, optional = true }
 
 # chip-rp
