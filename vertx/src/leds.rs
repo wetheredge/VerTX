@@ -118,7 +118,7 @@ impl Effect {
 pub async fn run(
     config: crate::Config,
     mut driver: crate::hal::LedDriver,
-    mut mode: crate::mode::Subscriber<'static>,
+    mut mode: crate::mode::Receiver,
 ) -> ! {
     loog::info!("Starting leds()");
     let config = config.leds();
@@ -141,12 +141,12 @@ pub async fn run(
         let new_mode = if let Some(timer) = timer {
             // Assume `timer` is a fraction of a second, so don't bother updating brightness
             // until the next frame
-            match select::select(timer, mode.next()).await {
+            match select::select(timer, mode.changed()).await {
                 select::Either::First(()) => continue,
                 select::Either::Second(effect) => effect,
             }
         } else {
-            match select::select(brightness_subscriber.updated(), mode.next()).await {
+            match select::select(brightness_subscriber.updated(), mode.changed()).await {
                 select::Either::First(()) => continue,
                 select::Either::Second(effect) => effect,
             }
