@@ -1,5 +1,7 @@
 #![no_std]
 
+use core::net::Ipv4Addr;
+
 use heapless::String;
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +18,7 @@ pub enum Config {
     Field {
         ssid: Ssid,
         password: Password,
-        address: [u8; 4],
+        address: Ipv4Addr,
     },
 }
 

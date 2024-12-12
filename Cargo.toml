@@ -69,7 +69,7 @@ absolute-paths-not-starting-with-crate = "warn"
 deprecated-in-future = "warn"
 missing-debug-implementations = "warn"
 single-use-lifetimes = "warn"
-static-mut-refs = "forbid"
+static-mut-refs = "deny"
 trivial-casts = "warn"
 unsafe-op-in-unsafe-fn = "forbid"
 
