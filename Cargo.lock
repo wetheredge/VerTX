@@ -2607,7 +2607,6 @@ dependencies = [
  "edge-dhcp",
  "edge-ws",
  "embassy-net",
- "embassy-time",
  "embedded-io-async",
  "heapless",
  "httparse",
