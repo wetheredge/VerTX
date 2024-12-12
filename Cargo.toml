@@ -43,7 +43,7 @@ vertx-server.path = "vertx-server"
 
 [workspace.metadata.bin]
 cargo-machete = { version = "=0.7.0", locked = true }
-cargo-nextest = { version = "=0.9.82", locked = true }
+cargo-nextest = { version = "=0.9.85", locked = true }
 dprint = { version = "=0.47.5", locked = true }
 espflash = { version = "=3.2.0", locked = true }
 wasm-bindgen-cli = { version = "=0.2.95", locked = true, bins = ["wasm-bindgen"] }
