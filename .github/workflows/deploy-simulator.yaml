@@ -55,7 +55,7 @@ jobs:
       - name: Install wasm-bindgen
         uses: taiki-e/install-action@v2.46.7
         with:
-          tool: wasm-bindgen@0.2.95 # dep:cargo-bin:wasm-bindgen-cli
+          tool: wasm-bindgen@0.2.99 # dep:cargo-bin:wasm-bindgen-cli
       - name: Install wasm-opt
         uses: taiki-e/install-action@v2.46.7
         with:
