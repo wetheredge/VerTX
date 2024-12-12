@@ -54,7 +54,7 @@ vertx-server = { workspace = true }
 # chip-esp
 esp-alloc = { workspace = true, optional = true }
 esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
-esp-hal = { workspace = true, features = ["async"], optional = true }
+esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
 esp-println = { workspace = true, features = ["log", "uart", "critical-section", "colors"], optional = true }
 vertx-network-esp = { workspace = true, optional = true }

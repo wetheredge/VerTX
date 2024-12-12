@@ -5,13 +5,11 @@ use alloc::vec::Vec;
 use core::future::Future;
 
 use embassy_executor::Spawner;
-use esp_hal::clock::ClockControl;
+use esp_hal::clock::CpuClock;
 use esp_hal::gpio;
-use esp_hal::peripherals::Peripherals;
 use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
-use esp_hal::system::SystemControl;
 use esp_hal::timer::timg;
 use esp_hal_smartled::SmartLedsAdapter;
 use portable_atomic::{AtomicU8, Ordering};
@@ -26,22 +24,27 @@ static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
 declare_hal_types!();
 
 pub(super) fn init(spawner: Spawner) -> super::Init {
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
-    let clocks = ClockControl::max(system.clock_control).freeze();
-    let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
-    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks).unwrap();
-    let rng = Rng::new(peripherals.RNG);
-    let timg0 = timg::TimerGroup::new(peripherals.TIMG0, &clocks);
-    let timg1 = timg::TimerGroup::new(peripherals.TIMG1, &clocks);
+    // TODO: increase size?
+    esp_alloc::heap_allocator!(32 * 1024);
 
-    esp_hal_embassy::init(&clocks, timg0.timer0);
+    let peripherals = esp_hal::init({
+        let mut config = esp_hal::Config::default();
+        config.cpu_clock = CpuClock::max();
+        config
+    });
+
+    let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
+    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz()).unwrap();
+    let rng = Rng::new(peripherals.RNG);
+    let timg0 = timg::TimerGroup::new(peripherals.TIMG0);
+    let timg1 = timg::TimerGroup::new(peripherals.TIMG1);
+
+    esp_hal_embassy::init(timg0.timer0);
 
     let led_driver = SmartLedsAdapter::new(
         rmt.channel0,
         pins!(io, leds),
         [0; 3 * 8 + 1], // 3 channels * 8 bits + 1 stop byte
-        &clocks,
     );
 
     flash::unlock().unwrap();
@@ -51,11 +54,10 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         .unwrap();
     let config_storage = ConfigStorage::new(&mut partitions);
 
-    let mode_button = gpio::AnyInput::new(pins!(io, mode), gpio::Pull::Up);
+    let mode_button = gpio::Input::new(pins!(io, mode), gpio::Pull::Up);
 
     let network_hal = vertx_network_esp::Hal::new(
         spawner,
-        clocks,
         rng,
         timg1.timer0.into(),
         peripherals.RADIO_CLK,
@@ -137,7 +139,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
     }
 }
 
-impl super::traits::ModeButton for gpio::AnyInput<'_> {
+impl super::traits::ModeButton for gpio::Input<'_> {
     fn wait_for_pressed(&mut self) -> impl Future<Output = ()> {
         self.wait_for_falling_edge()
     }

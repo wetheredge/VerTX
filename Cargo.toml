@@ -23,10 +23,10 @@ embassy-net = "=0.4.0"
 embassy-sync = "=0.6.0"
 embassy-time = "=0.3.2"
 embedded-io-async = "=0.6.1"
-esp-alloc = "=0.4.0"
+esp-alloc = "=0.5.0"
 esp-backtrace = "=0.14.2"
-esp-hal = "=0.20.1"
-esp-hal-embassy = { version = "=0.3.0", default-features = false }
+esp-hal = "=0.21.1"
+esp-hal-embassy = { version = "=0.4.0", default-features = false }
 esp-println = { version = "=0.12.0", default-features = false }
 heapless = "=0.8.0"
 log = "=0.4.22"
@@ -48,6 +48,9 @@ dprint = { version = "=0.47.5", locked = true }
 espflash = { version = "=3.2.0", locked = true }
 wasm-bindgen-cli = { version = "=0.2.95", locked = true, bins = ["wasm-bindgen"] }
 wasm-opt = { version = "=0.116.1", locked = true }
+
+[patch.crates-io]
+esp-hal-smartled = { git = "https://github.com/jessebraham/esp-hal-community.git", rev = "d6e49e5a15ebbbea4ae55beffa780630173dd321" }
 
 [profile.dev.package.esp-storage]
 opt-level = 3

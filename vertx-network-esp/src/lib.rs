@@ -5,19 +5,17 @@
 
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;
-use esp_hal::clock::Clocks;
 use esp_hal::peripherals;
 use esp_hal::rng::Rng;
-use esp_hal::timer::{ErasedTimer, PeriodicTimer};
+use esp_hal::timer::AnyTimer;
 use esp_wifi::wifi::{self, WifiApDevice, WifiController, WifiEvent, WifiStaDevice, WifiState};
 use esp_wifi::EspWifiInitFor;
 use vertx_network::{Password, Ssid};
 
 pub struct Hal {
     spawner: Spawner,
-    clocks: Clocks<'static>,
     rng: Rng,
-    timer: ErasedTimer,
+    timer: AnyTimer,
     radio_clocks: peripherals::RADIO_CLK,
     wifi: peripherals::WIFI,
 }
@@ -25,15 +23,13 @@ pub struct Hal {
 impl Hal {
     pub fn new(
         spawner: Spawner,
-        clocks: Clocks<'static>,
         rng: Rng,
-        timer: ErasedTimer,
+        timer: AnyTimer,
         radio_clocks: peripherals::RADIO_CLK,
         wifi: peripherals::WIFI,
     ) -> Self {
         Self {
             spawner,
-            clocks,
             rng,
             timer,
             radio_clocks,
@@ -50,12 +46,11 @@ impl vertx_network::Hal for Hal {
 
     fn home(self, ssid: Ssid, password: Password) -> Self::Driver {
         let spawner = self.spawner;
-        let init = esp_wifi::initialize(
+        let init = esp_wifi::init(
             EspWifiInitFor::Wifi,
-            PeriodicTimer::new(self.timer),
+            self.timer,
             self.rng,
             self.radio_clocks,
-            &self.clocks,
         )
         .unwrap();
 
@@ -68,12 +63,11 @@ impl vertx_network::Hal for Hal {
 
     fn field(self, ssid: Ssid, password: Password) -> Self::Driver {
         let spawner = self.spawner;
-        let init = esp_wifi::initialize(
+        let init = esp_wifi::init(
             EspWifiInitFor::Wifi,
             self.timer,
             self.rng,
             self.radio_clocks,
-            &self.clocks,
         )
         .unwrap();
 

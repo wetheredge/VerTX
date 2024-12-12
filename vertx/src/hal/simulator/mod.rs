@@ -48,6 +48,10 @@ mod ipc {
     }
 }
 
+#[global_allocator]
+/// SAFETY: The runtime environment must be single-threaded WASM.
+static ALLOCATOR: talc::TalckWasm = unsafe { talc::TalckWasm::new_global() };
+
 static BACKPACK_RX: backpack::RxPipe = Pipe::new();
 static MODE_BUTTON: Signal<crate::mutex::MultiCore, ()> = Signal::new();
 
