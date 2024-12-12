@@ -8,7 +8,8 @@ use embassy_rp::pio::{self, Pio};
 use embassy_rp::uart::{self, BufferedUart};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio};
-use static_cell::ConstStaticCell;
+use embedded_alloc::TlsfHeap;
+use static_cell::{ConstStaticCell, StaticCell};
 use {defmt_rtt as _, panic_probe as _};
 
 bind_interrupts!(struct Irqs {
@@ -18,7 +19,23 @@ bind_interrupts!(struct Irqs {
 
 declare_hal_types!();
 
+#[global_allocator]
+static ALLOCATOR: TlsfHeap = TlsfHeap::empty();
+
 pub(super) fn init(_spawner: Spawner) -> super::Init {
+    static INIT_HEAP: StaticCell<()> = StaticCell::new();
+    INIT_HEAP.init_with(|| {
+        use core::mem::MaybeUninit;
+
+        const HEAP_SIZE: usize = 32 * 1024;
+        static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
+
+        // SAFETY:
+        // - `StaticCell` guarantees this will only be called once
+        // - `HEAP_SIZE` is > 0
+        unsafe { ALLOCATOR.init(HEAP.as_mut_ptr() as usize, HEAP_SIZE) };
+    });
+
     let p = embassy_rp::init(Default::default());
 
     let reset = Reset {
