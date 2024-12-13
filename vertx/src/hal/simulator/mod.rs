@@ -1,11 +1,11 @@
 mod backpack;
 
-use std::convert::Infallible;
 use std::panic;
 use std::sync::Mutex;
 
 use base64::engine::general_purpose::STANDARD_NO_PAD as base64;
 use base64::Engine as _;
+use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_sync::channel::{self, Channel};
 use embassy_sync::pipe::Pipe;
@@ -178,7 +178,7 @@ impl eg::geometry::OriginDimensions for Ui {
 
 impl eg::draw_target::DrawTarget for Ui {
     type Color = eg::pixelcolor::BinaryColor;
-    type Error = Infallible;
+    type Error = DisplayError;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where

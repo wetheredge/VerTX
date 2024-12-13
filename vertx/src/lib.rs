@@ -19,6 +19,7 @@ mod mutex;
 mod network;
 mod reset;
 mod ui;
+mod utils;
 
 use embassy_executor::Spawner;
 use embassy_sync::watch::Watch;

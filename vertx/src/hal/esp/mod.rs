@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_futures::select;
-use embassy_time::Timer;
+use embassy_time::{Duration, Timer};
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio;
 use esp_hal::i2c::I2c;
@@ -189,10 +189,7 @@ struct Ui {
 
 impl eg::geometry::OriginDimensions for Ui {
     fn size(&self) -> eg::geometry::Size {
-        eg::geometry::Size {
-            width: 128,
-            height: 64,
-        }
+        super::display::SIZE
     }
 }
 
@@ -215,13 +212,8 @@ impl super::traits::Ui for Ui {
 
     async fn get_input(&mut self) -> Input {
         async fn debounced(pin: &mut gpio::Input<'static>, input: Input) -> Input {
-            loop {
-                pin.wait_for_falling_edge().await;
-                Timer::after_millis(20).await;
-                if pin.is_low() {
-                    return input;
-                }
-            }
+            crate::utils::debounced_falling_edge(pin, Duration::from_millis(20)).await;
+            input
         }
 
         let up = debounced(&mut self.up, Input::Up);

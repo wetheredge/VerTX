@@ -87,6 +87,7 @@ pub(crate) mod prelude {
 pub(crate) mod traits {
     use core::fmt::Debug;
 
+    use display_interface::DisplayError;
     use embedded_graphics::draw_target::DrawTarget;
     use embedded_graphics::pixelcolor::BinaryColor;
     use smart_leds::RGB8;
@@ -127,9 +128,7 @@ pub(crate) mod traits {
         fn reboot(&mut self) -> !;
     }
 
-    pub(crate) trait Ui: DrawTarget<Color = BinaryColor>
-    // TODO: where <Self as DrawTarget>::Error: loog::DebugFormat
-    {
+    pub(crate) trait Ui: DrawTarget<Color = BinaryColor, Error = DisplayError> {
         async fn init(&mut self) -> Result<(), Self::Error> {
             Ok(())
         }
@@ -141,9 +140,15 @@ pub(crate) mod traits {
 
 #[cfg(feature = "display-ssd1306")]
 mod display {
+    use embedded_graphics as eg;
     use embedded_hal::i2c::I2c;
     use ssd1306::prelude::*;
     use ssd1306::{I2CDisplayInterface, Ssd1306Async};
+
+    pub(super) const SIZE: eg::geometry::Size = eg::geometry::Size {
+        width: 128,
+        height: 64,
+    };
 
     type Size = DisplaySize128x64;
     pub(super) type Driver<I> =
