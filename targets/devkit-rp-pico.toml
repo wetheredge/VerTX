@@ -1,7 +1,6 @@
 chip = "rp2040"
 
 [pins]
-mode = 23
 leds = 3
 analog = []
 switches = []
