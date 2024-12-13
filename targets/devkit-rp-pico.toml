@@ -1,7 +1,7 @@
 chip = "rp2040"
 
 [pins]
-leds = 3
+leds = 6
 analog = []
 switches = []
 
@@ -11,11 +11,11 @@ rx = 5
 
 [pins.ui]
 up = 0
-down = 0
-right = 0
-left = 0
+down = 1
+right = 2
+left = 3
 
 [pins.display]
 type = 'ssd1306'
-sda = 0
-scl = 0
+sda = 8
+scl = 9

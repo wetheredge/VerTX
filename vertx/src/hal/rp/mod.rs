@@ -1,20 +1,25 @@
 mod leds;
 
-use core::convert::Infallible;
-
+use display_interface::DisplayError;
 use embassy_executor::Spawner;
-use embassy_rp::peripherals::{PIO0, UART1};
+use embassy_futures::select;
+use embassy_rp::i2c::{self, I2c};
+use embassy_rp::peripherals::{I2C0, PIO0, UART1};
 use embassy_rp::pio::{self, Pio};
 use embassy_rp::uart::{self, BufferedUart};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio};
+use embassy_time::Duration;
 use embedded_alloc::TlsfHeap;
 use static_cell::{ConstStaticCell, StaticCell};
 use {defmt_rtt as _, embedded_graphics as eg, panic_probe as _};
 
+use crate::ui::Input;
+
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
     UART1_IRQ => uart::BufferedInterruptHandler<UART1>;
+    I2C0_IRQ => i2c::InterruptHandler<I2C0>;
 });
 
 declare_hal_types!();
@@ -52,6 +57,22 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
 
     let config_storage = ConfigStorage {};
 
+    let ui = {
+        let scl = pins!(p, display.scl);
+        let sda = pins!(p, display.sda);
+        let mut config = i2c::Config::default();
+        config.frequency = 1_000_000;
+        let display = super::display::new(I2c::new_async(p.I2C0, scl, sda, Irqs, config));
+
+        Ui {
+            display,
+            up: gpio::Input::new(pins!(p, ui.up), gpio::Pull::Up),
+            down: gpio::Input::new(pins!(p, ui.down), gpio::Pull::Up),
+            right: gpio::Input::new(pins!(p, ui.right), gpio::Pull::Up),
+            left: gpio::Input::new(pins!(p, ui.left), gpio::Pull::Up),
+        }
+    };
+
     let backpack = {
         static TX_BUFFER: ConstStaticCell<[u8; 32]> = ConstStaticCell::new([0; 32]);
         static RX_BUFFER: ConstStaticCell<[u8; 32]> = ConstStaticCell::new([0; 32]);
@@ -76,7 +97,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         reset,
         led_driver,
         config_storage,
-        ui: Ui,
+        ui,
         backpack,
     }
 }
@@ -110,39 +131,52 @@ impl super::traits::ConfigStorage for ConfigStorage {
     }
 }
 
-struct Ui;
+struct Ui {
+    display: super::display::Driver<I2c<'static, I2C0, i2c::Async>>,
+    up: gpio::Input<'static>,
+    down: gpio::Input<'static>,
+    right: gpio::Input<'static>,
+    left: gpio::Input<'static>,
+}
 
 impl eg::geometry::OriginDimensions for Ui {
     fn size(&self) -> eg::geometry::Size {
-        eg::geometry::Size {
-            width: 128,
-            height: 64,
-        }
+        super::display::SIZE
     }
 }
 
 impl eg::draw_target::DrawTarget for Ui {
     type Color = eg::pixelcolor::BinaryColor;
-    type Error = Infallible;
+    type Error = DisplayError;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = eg::Pixel<Self::Color>>,
     {
-        todo!()
+        self.display.draw_iter(pixels)
     }
 }
 
 impl super::traits::Ui for Ui {
     async fn init(&mut self) -> Result<(), Self::Error> {
-        todo!()
+        super::display::init(&mut self.display).await
     }
 
     async fn get_input(&mut self) -> crate::ui::Input {
-        todo!()
+        async fn debounced(pin: &mut gpio::Input<'static>, input: Input) -> Input {
+            crate::utils::debounced_falling_edge(pin, Duration::from_millis(20)).await;
+            input
+        }
+
+        let up = debounced(&mut self.up, Input::Up);
+        let down = debounced(&mut self.down, Input::Down);
+        let right = debounced(&mut self.right, Input::Forward);
+        let left = debounced(&mut self.left, Input::Back);
+
+        select::select_array([up, down, left, right]).await.0
     }
 
     async fn flush(&mut self) -> Result<(), Self::Error> {
-        todo!()
+        self.display.flush().await
     }
 }
