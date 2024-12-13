@@ -13,7 +13,6 @@ const schema: SomeJTDSchemaType = {
 		chip: { type: 'string' },
 		pins: {
 			properties: {
-				mode: { ref: 'pin' },
 				leds: { ref: 'pin' },
 				analog: { elements: { ref: 'pin' } },
 				switches: { elements: { ref: 'pin' } },
