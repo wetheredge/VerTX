@@ -113,7 +113,7 @@ impl super::traits::Reset for Reset {
 
     fn reboot(&mut self) -> ! {
         self.watchdog.trigger_reset();
-        #[allow(clippy::empty_loop)]
+        #[expect(clippy::empty_loop)]
         loop {}
     }
 }

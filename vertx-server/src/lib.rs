@@ -1,5 +1,5 @@
 #![no_std]
-#![allow(private_interfaces, missing_debug_implementations)]
+#![expect(missing_debug_implementations)]
 
 extern crate alloc;
 

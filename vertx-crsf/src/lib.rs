@@ -20,7 +20,7 @@ const BASIC_CRC: Crc<u8> = Crc::<u8>::new(&crc::Algorithm {
     residue: 0x00,
 });
 
-#[allow(unused)]
+#[expect(unused)]
 const EXTENDED_CRC: Crc<u8> = Crc::<u8>::new(&crc::Algorithm {
     width: 8,
     poly: 0xD5,
@@ -215,7 +215,7 @@ pub enum Packet {
 enum_repr! {
     #[repr(u8)]
     #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    #[allow(non_camel_case_types)]
+    #[expect(non_camel_case_types)]
     pub enum TxPower {
         mW_0 = 0,
         mW_10 = 1,

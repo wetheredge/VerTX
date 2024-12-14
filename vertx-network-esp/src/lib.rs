@@ -1,7 +1,7 @@
 #![no_std]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
-#![allow(missing_debug_implementations)]
+#![expect(missing_debug_implementations)]
 
 use embassy_executor::{task, Spawner};
 use embassy_time::Timer;

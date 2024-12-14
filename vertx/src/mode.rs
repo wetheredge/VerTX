@@ -5,11 +5,11 @@ const SUBS: usize = 1;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Ok,
-    #[allow(unused)]
+    #[expect(unused)]
     Armed,
     PreConfigurator,
     Configurator,
-    #[allow(unused)]
+    #[expect(unused)]
     Updating,
 }
 

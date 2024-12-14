@@ -5,7 +5,7 @@ use embedded_io_async::{Read, Write};
 use sha1::{Digest, Sha1};
 use vertx_network::Api;
 
-#[allow(dead_code)]
+#[expect(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 enum Status {

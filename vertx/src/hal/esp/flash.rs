@@ -22,7 +22,6 @@ pub(super) fn unlock() -> Result<(), i32> {
     unsafe { esp_storage::ll::spiflash_unlock() }
 }
 
-#[allow(clippy::assertions_on_constants)]
 pub(super) fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
     let mut table = [0u32; PARTITION_TABLE_SIZE / 4];
     const _: () = assert!(PARTITION_TABLE_ADDRESS % SECTOR_BYTES == 0);
@@ -56,7 +55,7 @@ pub(super) fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub(super) struct Partition {
     pub(super) name: heapless::Vec<u8, 16>,
     pub(super) kind: PartitionKind,
@@ -121,7 +120,7 @@ impl Partition {
         matches!(self.kind, CUSTOM_TYPE_CONFIG)
     }
 
-    #[allow(unused)]
+    #[expect(unused)]
     pub(super) const fn is_ota(&self) -> bool {
         match self.kind {
             PartitionKind::App(partition) => partition.is_ota(),
@@ -157,7 +156,7 @@ impl Partition {
         unsafe { esp_storage::ll::spiflash_write(start, data.as_ptr(), data.len() as u32 * 4) }
     }
 
-    #[allow(unused)]
+    #[expect(unused)]
     pub(super) fn erase_and_write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {
         self.bounds_check(offset, data.len());
         let start = self.start + offset * 4;

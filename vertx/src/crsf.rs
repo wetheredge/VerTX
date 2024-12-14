@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 // use esp_hal::uart;
 
 // pub struct CrsfPhy<'d, T> {

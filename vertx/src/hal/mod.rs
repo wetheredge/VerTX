@@ -75,7 +75,7 @@ pub(crate) struct Backpack {
     pub(crate) rx: BackpackRx,
 }
 
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 pub(crate) mod prelude {
     pub(crate) use vertx_network::Hal as _;
 
@@ -115,7 +115,7 @@ pub(crate) mod traits {
         }
     }
 
-    #[cfg_attr(not(feature = "network-native"), allow(dead_code))]
+    #[cfg_attr(not(feature = "network-native"), expect(dead_code))]
     pub(crate) trait Network {
         type Hal: vertx_network::Hal;
 

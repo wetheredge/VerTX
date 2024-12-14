@@ -1,5 +1,3 @@
-#![allow(clippy::self_named_module_files)]
-
 #[cfg(not(feature = "simulator"))]
 pub(crate) const TARGET: &str = env!("VERTX_TARGET");
 #[cfg(feature = "simulator")]

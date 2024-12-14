@@ -22,7 +22,7 @@ pub enum Config {
     },
 }
 
-#[allow(async_fn_in_trait)]
+#[expect(async_fn_in_trait)]
 pub trait Api {
     type Buffer;
 

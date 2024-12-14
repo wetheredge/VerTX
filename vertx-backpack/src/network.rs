@@ -65,7 +65,7 @@ async fn http(id: usize, stack: Stack<'static>, api: &'static Api) -> ! {
     vertx_server::tasks::http(id, stack, api).await
 }
 
-#[allow(clippy::host_endian_bytes)]
+#[expect(clippy::host_endian_bytes)]
 fn get_seed(mut rng: Rng) -> u64 {
     let mut seed = [0; 8];
     rng.read(&mut seed);

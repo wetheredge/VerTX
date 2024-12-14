@@ -1,5 +1,5 @@
 #![no_std]
-#![allow(internal_features)]
+#![expect(internal_features)]
 #![feature(core_intrinsics)]
 
 use core::ptr;

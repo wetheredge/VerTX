@@ -1,4 +1,4 @@
-#![allow(unused_must_use)]
+#![expect(unused_must_use)]
 
 mod component;
 mod history;
