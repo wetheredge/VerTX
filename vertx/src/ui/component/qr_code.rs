@@ -94,10 +94,11 @@ impl Drawable for QrCode<'_> {
     type Color = BinaryColor;
     type Output = ();
 
-    fn draw<D>(&self, target: &mut D) -> Result<Self::Output, D::Error>
+    fn draw<D>(&self, _target: &mut D) -> Result<Self::Output, D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
     {
+        // The QR code is static and was drawn during `init()`, so no need to redraw
         Ok(())
     }
 }

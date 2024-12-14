@@ -108,7 +108,7 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
     struct DisplayPins {
         #[serde(rename = "type")]
-        typ: DisplayType,
+        _type: DisplayType,
         #[serde(flatten)]
         pins: MiscPins,
     }
