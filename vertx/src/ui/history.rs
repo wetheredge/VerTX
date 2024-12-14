@@ -9,16 +9,15 @@ pub(super) struct History<const N: usize> {
 
 impl<const N: usize> History<N> {
     pub(super) const fn new(root: State) -> Self {
-        #[allow(clippy::declare_interior_mutable_const)]
-        const INIT: MaybeUninit<State> = MaybeUninit::uninit();
-        let mut stack = [INIT; N];
+        let mut stack = [const { MaybeUninit::uninit() }; N];
         stack[0] = MaybeUninit::new(root);
         Self { stack, depth: 0 }
     }
 
     pub(super) fn current(&mut self) -> &mut State {
-        let current = &mut self.stack[self.depth];
-        unsafe { current.assume_init_mut() }
+        // SAFETY: `stack` is only accessed at `depth`, which is only incremented after
+        // initializing the next entry. `stack[0]` gets initialized in `new()`.
+        unsafe { self.stack[self.depth].assume_init_mut() }
     }
 
     pub(super) const fn is_root(&self) -> bool {
@@ -26,8 +25,8 @@ impl<const N: usize> History<N> {
     }
 
     pub(super) fn push(&mut self, next: State) {
+        self.stack[self.depth + 1] = MaybeUninit::new(next);
         self.depth += 1;
-        self.stack[self.depth] = MaybeUninit::new(next);
     }
 
     pub(super) fn pop(&mut self) {

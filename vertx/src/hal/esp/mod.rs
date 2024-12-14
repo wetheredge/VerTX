@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_futures::select;
-use embassy_time::{Duration, Timer};
+use embassy_time::Duration;
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio;
 use esp_hal::i2c::I2c;

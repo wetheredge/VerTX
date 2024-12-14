@@ -87,14 +87,7 @@ impl Scrolling {
     }
 }
 
-impl Component for Scrolling {
-    fn init<D>(&self, target: &mut D) -> Result<(), D::Error>
-    where
-        D: DrawTarget<Color = Self::Color>,
-    {
-        Ok(())
-    }
-}
+impl Component for Scrolling {}
 
 impl Drawable for Scrolling {
     type Color = BinaryColor;

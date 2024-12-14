@@ -105,16 +105,20 @@ pub(crate) async fn run(
 
 #[derive(Debug)]
 enum State {
+    #[expect(dead_code)]
     Model,
     Menu(view::Menu),
+    #[expect(dead_code)]
     Wifi {
         network: Option<WifiNetwork>,
         uri: heapless::String<32>,
     },
+    #[expect(dead_code)]
     ElrsConfig,
     About(view::About),
 }
 
+#[expect(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum NextState {
     ModelSelect,
@@ -125,6 +129,7 @@ enum NextState {
     About,
 }
 
+#[expect(dead_code)]
 #[derive(Debug, Clone)]
 struct WifiNetwork {
     show: bool,
@@ -133,6 +138,7 @@ struct WifiNetwork {
 }
 
 impl WifiNetwork {
+    #[expect(dead_code)]
     fn new(ssid: &vertx_network::Ssid, password: &vertx_network::Password) -> Option<Self> {
         if let Ok(ssid) = ssid.as_str().try_into() {
             if let Ok(password) = password.as_str().try_into() {
