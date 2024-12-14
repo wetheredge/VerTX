@@ -81,7 +81,10 @@ pub(crate) async fn run(
                             reset.start_configurator().await;
                             None
                         }
-                        NextState::ElrsConfig => todo!(),
+                        NextState::ElrsConfig => {
+                            loog::warn!("TODO: ELRS config tool");
+                            None
+                        }
                         NextState::About => Some(State::About(view::About::new(below_title))),
                     };
 
