@@ -112,8 +112,10 @@ jobs:
         include:
           - target: devkit-esp32s3
             chip: esp32s3
+            display: ssd1306
           - target: devkit-rp-pico
             chip: rp2040
+            display: ssd1306
     env:
       VERTX_SERVER_SKIP_CONFIGURATOR_BUILD: true
       VERTX_TARGET: ${{ matrix.target }}
@@ -130,7 +132,7 @@ jobs:
           name: configurator
           path: vertx-configurator/dist
       - name: Run clippy
-        run: cargo clippy -Zbuild-std=alloc,core --target "${{ steps.chip.outputs.target }}" -F "chip-${{ matrix.chip }}"
+        run: cargo clippy -Zbuild-std=alloc,core --target "${{ steps.chip.outputs.target }}" -F "chip-${{ matrix.chip }} display-${{ matrix.display }}"
         working-directory: vertx
 
   clippy-vertx-simulator:
