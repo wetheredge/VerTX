@@ -58,7 +58,7 @@ export class Reader {
 }
 
 export class Writer {
-	readonly #view: DataView;
+	readonly #view: DataView<ArrayBuffer>;
 	readonly #textEncoder = new TextEncoder();
 	#index = 0;
 
