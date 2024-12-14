@@ -30,3 +30,8 @@
 	image-rendering: pixelated;
 	border: 0.5px solid currentColor;
 }
+
+#help {
+	margin-top: 1em;
+	text-align: center;
+}
