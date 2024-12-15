@@ -37,7 +37,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         config
     });
 
-    let rmt = Rmt::new(p.RMT, 80u32.MHz()).unwrap();
+    let rmt = Rmt::new(p.RMT, 80u32.MHz()).unwrap().into_async();
     let rng = Rng::new(p.RNG);
     let timg0 = timg::TimerGroup::new(p.TIMG0);
     let timg1 = timg::TimerGroup::new(p.TIMG1);
