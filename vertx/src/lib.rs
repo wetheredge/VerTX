@@ -45,7 +45,7 @@ pub async fn main(spawner: Spawner) {
     let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(hal.config_storage));
     let config = config_manager.config();
 
-    spawner.must_spawn(leds::run(config, hal.led_driver, mode.receiver().unwrap()));
+    spawner.must_spawn(leds::run(config, hal.status_led, mode.receiver().unwrap()));
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
     let reset = RESET.init_with(|| {

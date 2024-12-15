@@ -47,12 +47,12 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         watchdog: Watchdog::new(p.WATCHDOG),
     };
 
-    let led_driver = {
+    let status_led = {
         let Pio {
             mut common, sm0, ..
         } = Pio::new(p.PIO0, Irqs);
         let pin = pins!(p, leds);
-        leds::Driver::<_, 0, 1>::new(&mut common, sm0, p.DMA_CH0, pin)
+        leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
     };
 
     let config_storage = ConfigStorage {};
@@ -95,7 +95,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
 
     super::Init {
         reset,
-        led_driver,
+        status_led,
         config_storage,
         ui,
         backpack,

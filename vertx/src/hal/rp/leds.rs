@@ -2,29 +2,22 @@
 //!
 //! Based on <https://github.com/embassy-rs/embassy/blob/ff3f354893a77f4aba0025c047568dd6855f3a4f/examples/rp/src/bin/pio_ws2812.rs>.
 
+use embassy_rp::clocks;
 use embassy_rp::pio::{Instance as PioInstance, PioPin, StateMachine};
-use embassy_rp::{clocks, dma, Peripheral, PeripheralRef};
 use embassy_time::Timer;
 use fixed::types::U24F8;
 use fixed_macro::types::U24F8;
-use smart_leds::RGB8;
 
-pub struct Driver<'d, P: PioInstance, const SM: usize, const N: usize> {
-    dma: PeripheralRef<'d, dma::AnyChannel>,
+pub struct StatusDriver<'d, P: PioInstance, const SM: usize> {
     sm: StateMachine<'d, P, SM>,
 }
 
-impl<'d, P: PioInstance, const SM: usize, const N: usize> Driver<'d, P, SM, N> {
+impl<'d, P: PioInstance, const SM: usize> StatusDriver<'d, P, SM> {
     pub fn new(
         pio: &mut embassy_rp::pio::Common<'d, P>,
         mut sm: StateMachine<'d, P, SM>,
-        dma: impl Peripheral<P = impl dma::Channel> + 'd,
         pin: impl PioPin,
     ) -> Self {
-        let dma = dma.into_ref();
-
-        // Setup sm0
-
         // prepare the PIO program
         let side_set = pio::SideSet::new(false, 1, false);
         let mut a: pio::Assembler<32> = pio::Assembler::new_with_side_set(side_set);
@@ -77,33 +70,17 @@ impl<'d, P: PioInstance, const SM: usize, const N: usize> Driver<'d, P, SM, N> {
         sm.set_config(&cfg);
         sm.set_enable(true);
 
-        Self {
-            dma: dma.map_into(),
-            sm,
-        }
+        Self { sm }
     }
 }
 
-impl<P: PioInstance, const SM: usize, const N: usize> crate::hal::traits::LedDriver
-    for Driver<'_, P, SM, N>
-{
+impl<P: PioInstance, const SM: usize> crate::hal::traits::StatusLed for StatusDriver<'_, P, SM> {
     type Error = core::convert::Infallible;
 
-    async fn write(&mut self, data: &[RGB8]) -> Result<(), Self::Error> {
-        // Precompute the word bytes from the colors
-        let mut words = [0u32; N];
-        for i in 0..N {
-            let word = (u32::from(data[i].g) << 24)
-                | (u32::from(data[i].r) << 16)
-                | (u32::from(data[i].b) << 8);
-            words[i] = word;
-        }
-
-        // DMA transfer
-        self.sm.tx().dma_push(self.dma.reborrow(), &words).await;
-
+    async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
+        let word = (u32::from(green) << 24) | (u32::from(red) << 16) | (u32::from(blue) << 8);
+        self.sm.tx().push(word);
         Timer::after_micros(55).await;
-
         Ok(())
     }
 }
