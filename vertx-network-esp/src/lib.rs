@@ -9,7 +9,8 @@ use esp_hal::peripherals;
 use esp_hal::rng::Rng;
 use esp_hal::timer::AnyTimer;
 use esp_wifi::wifi::{self, WifiApDevice, WifiController, WifiEvent, WifiStaDevice, WifiState};
-use esp_wifi::EspWifiInitFor;
+use esp_wifi::EspWifiController;
+use static_cell::StaticCell;
 use vertx_network::{Password, Ssid};
 
 pub struct Hal {
@@ -45,35 +46,29 @@ impl vertx_network::Hal for Hal {
     const SUPPORTS_HOME: bool = true;
 
     fn home(self, ssid: Ssid, password: Password) -> Self::Driver {
-        let spawner = self.spawner;
-        let init = esp_wifi::init(
-            EspWifiInitFor::Wifi,
-            self.timer,
-            self.rng,
-            self.radio_clocks,
-        )
-        .unwrap();
+        static CONTROLLER: StaticCell<EspWifiController> = StaticCell::new();
+        let controller =
+            CONTROLLER.init(esp_wifi::init(self.timer, self.rng, self.radio_clocks).unwrap());
 
-        let (device, controller) = wifi::new_with_mode(&init, self.wifi, WifiStaDevice).unwrap();
+        let (device, wifi_controller) =
+            wifi::new_with_mode(controller, self.wifi, WifiStaDevice).unwrap();
 
-        spawner.must_spawn(home_connection(controller, ssid, password));
+        self.spawner
+            .must_spawn(home_connection(wifi_controller, ssid, password));
 
         Driver::Home(device)
     }
 
     fn field(self, ssid: Ssid, password: Password) -> Self::Driver {
-        let spawner = self.spawner;
-        let init = esp_wifi::init(
-            EspWifiInitFor::Wifi,
-            self.timer,
-            self.rng,
-            self.radio_clocks,
-        )
-        .unwrap();
+        static CONTROLLER: StaticCell<EspWifiController> = StaticCell::new();
+        let controller =
+            CONTROLLER.init(esp_wifi::init(self.timer, self.rng, self.radio_clocks).unwrap());
 
-        let (device, controller) = wifi::new_with_mode(&init, self.wifi, WifiApDevice).unwrap();
+        let (device, wifi_controller) =
+            wifi::new_with_mode(controller, self.wifi, WifiApDevice).unwrap();
 
-        spawner.must_spawn(field_connection(controller, ssid, password));
+        self.spawner
+            .must_spawn(field_connection(wifi_controller, ssid, password));
 
         Driver::Field(device)
     }
@@ -182,7 +177,7 @@ async fn home_connection(
     });
 
     loop {
-        if esp_wifi::wifi::get_wifi_state() == WifiState::StaConnected {
+        if esp_wifi::wifi::wifi_state() == WifiState::StaConnected {
             controller.wait_for_event(WifiEvent::StaDisconnected).await;
             log::info!("WiFi disconnected");
             Timer::after_secs(1).await;
@@ -191,12 +186,12 @@ async fn home_connection(
         if !matches!(controller.is_started(), Ok(true)) {
             controller.set_configuration(&config).unwrap();
             log::info!("Starting WiFi");
-            controller.start().await.unwrap();
+            controller.start_async().await.unwrap();
             log::info!("WiFi started");
         }
 
         log::info!("WiFi connecting...");
-        match controller.connect().await {
+        match controller.connect_async().await {
             Ok(()) => log::info!("WiFi connected"),
             Err(err) => {
                 log::info!("WiFi connection failed: {err:?}");
@@ -226,7 +221,7 @@ async fn field_connection(
     });
 
     loop {
-        if esp_wifi::wifi::get_wifi_state() == WifiState::ApStarted {
+        if esp_wifi::wifi::wifi_state() == WifiState::ApStarted {
             controller.wait_for_event(WifiEvent::ApStop).await;
             log::info!("WiFi access point stopped");
             Timer::after_secs(1).await;
@@ -235,7 +230,7 @@ async fn field_connection(
         if !matches!(controller.is_started(), Ok(true)) {
             controller.set_configuration(&config).unwrap();
             log::info!("Starting WiFi");
-            controller.start().await.unwrap();
+            controller.start_async().await.unwrap();
             log::info!("WiFi started");
         }
     }

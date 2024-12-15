@@ -7,7 +7,6 @@ use embassy_sync::channel::Channel;
 use embassy_sync::signal::Signal;
 use embassy_time::Timer;
 use esp_hal::uart::{Uart, UartRx, UartTx};
-use esp_hal::{peripherals, Async};
 use portable_atomic::{AtomicU8, Ordering};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};
@@ -27,10 +26,7 @@ impl Context {
     }
 }
 
-pub(crate) async fn init(
-    uart: &mut Uart<'static, peripherals::UART1, Async>,
-    boot_mode: u8,
-) -> Context {
+pub(crate) async fn init(uart: &mut Uart<'static, esp_hal::Async>, boot_mode: u8) -> Context {
     loop {
         log::info!("Waiting for init");
         let mut byte = [0];
@@ -63,10 +59,7 @@ pub(crate) async fn init(
 }
 
 #[task]
-pub(crate) async fn tx(
-    mut tx: UartTx<'static, peripherals::UART1, Async>,
-    context: &'static Context,
-) -> ! {
+pub(crate) async fn tx(mut tx: UartTx<'static, esp_hal::Async>, context: &'static Context) -> ! {
     let mut buffer = [0; 256];
 
     loop {
@@ -98,7 +91,7 @@ pub(crate) async fn tx(
 
 #[task]
 pub(crate) async fn rx(
-    mut rx: UartRx<'static, peripherals::UART1, Async>,
+    mut rx: UartRx<'static, esp_hal::Async>,
     boot_mode: &'static AtomicU8,
     start_network: crate::network::Start,
     api: &'static crate::Api,
