@@ -24,8 +24,9 @@ embassy-executor = { workspace = true, features = ["nightly"] }
 embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname", "udp"] }
 embassy-time = { workspace = true }
 esp-hal = { workspace = true }
-esp-wifi = { version = "=0.10.1", features = ["wifi", "embassy-net"] }
+esp-wifi = { version = "=0.11.0", features = ["wifi"] }
 log = { workspace = true }
+static_cell = { workspace = true }
 vertx-network = { workspace = true }
 
 [lints]

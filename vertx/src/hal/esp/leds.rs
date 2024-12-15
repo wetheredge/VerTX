@@ -44,18 +44,18 @@ impl<Tx: rmt::TxChannel> StatusLed<Tx> {
         Self {
             channel: Some(channel),
             pulses: (
-                u32::from(rmt::PulseCode {
-                    level1: true,
-                    length1: ((T0H_NS * src_clock) / 1000) as u16,
-                    level2: false,
-                    length2: ((T0L_NS * src_clock) / 1000) as u16,
-                }),
-                u32::from(rmt::PulseCode {
-                    level1: true,
-                    length1: ((T1H_NS * src_clock) / 1000) as u16,
-                    level2: false,
-                    length2: ((T1L_NS * src_clock) / 1000) as u16,
-                }),
+                rmt::PulseCode::new(
+                    true,
+                    ((T0H_NS * src_clock) / 1000) as u16,
+                    false,
+                    ((T0L_NS * src_clock) / 1000) as u16,
+                ),
+                rmt::PulseCode::new(
+                    true,
+                    ((T1H_NS * src_clock) / 1000) as u16,
+                    false,
+                    ((T1L_NS * src_clock) / 1000) as u16,
+                ),
             ),
         }
     }
@@ -66,7 +66,7 @@ impl<Tx: rmt::TxChannel> crate::hal::traits::StatusLed for StatusLed<Tx> {
 
     async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
         // 3 channels * 8 bits/pulses + stop
-        let mut buffer = [0u32; 25];
+        let mut buffer = [rmt::PulseCode::empty(); 25];
 
         let buffer_iter = &mut buffer.iter_mut();
         push_pulses(green, buffer_iter, self.pulses);
@@ -75,7 +75,7 @@ impl<Tx: rmt::TxChannel> crate::hal::traits::StatusLed for StatusLed<Tx> {
 
         // Perform the actual RMT operation
         let channel = self.channel.take().unwrap();
-        let (channel, result) = match channel.transmit(&buffer).wait() {
+        let (channel, result) = match channel.transmit(&buffer)?.wait() {
             Ok(channel) => (channel, Ok(())),
             Err((err, channel)) => (channel, Err(err)),
         };

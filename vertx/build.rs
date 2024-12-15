@@ -46,7 +46,7 @@ fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {
 
 fn link_args() {
     let mut args = if feature("CHIP_ESP") {
-        vec!["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
+        vec!["-Tlinkall.x", "-nostartfiles"]
     } else if feature("CHIP_RP") {
         vec!["--nmagic", "-Tlink.x", "-Tlink-rp.x"]
     } else {
@@ -163,7 +163,7 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     }
 
     let gpio = if feature("CHIP_ESP") {
-        "pins.gpio"
+        "GPIO"
     } else if feature("CHIP_RP") {
         "PIN_"
     } else {

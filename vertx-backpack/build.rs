@@ -1,11 +1,7 @@
 use std::env;
 
 fn main() {
-    let args: &[&str] = if chip("ESP") {
-        &["-Tlinkall.x", "-Trom_functions.x", "-nostartfiles"]
-    } else {
-        &[]
-    };
+    let args: &[&str] = if chip("ESP") { &["-Tlinkall.x"] } else { &[] };
 
     for arg in args {
         println!("cargo::rustc-link-arg-bins={arg}");

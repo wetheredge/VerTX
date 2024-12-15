@@ -10,7 +10,7 @@ use embassy_futures::select;
 use embassy_time::Duration;
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio;
-use esp_hal::i2c::I2c;
+use esp_hal::i2c::master::{self as i2c, I2c};
 use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
@@ -31,21 +31,20 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     // TODO: increase size?
     esp_alloc::heap_allocator!(32 * 1024);
 
-    let peripherals = esp_hal::init({
+    let p = esp_hal::init({
         let mut config = esp_hal::Config::default();
         config.cpu_clock = CpuClock::max();
         config
     });
 
-    let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
-    let rmt = Rmt::new(peripherals.RMT, 80u32.MHz()).unwrap();
-    let rng = Rng::new(peripherals.RNG);
-    let timg0 = timg::TimerGroup::new(peripherals.TIMG0);
-    let timg1 = timg::TimerGroup::new(peripherals.TIMG1);
+    let rmt = Rmt::new(p.RMT, 80u32.MHz()).unwrap();
+    let rng = Rng::new(p.RNG);
+    let timg0 = timg::TimerGroup::new(p.TIMG0);
+    let timg1 = timg::TimerGroup::new(p.TIMG1);
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let status_led = leds::StatusLed::new(rmt.channel0, pins!(io, leds));
+    let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds));
 
     flash::unlock().unwrap();
     let mut partitions = flash::read_partition_table()
@@ -55,26 +54,29 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     let config_storage = ConfigStorage::new(&mut partitions);
 
     let ui = {
-        let sda = pins!(io, display.sda);
-        let scl = pins!(io, display.scl);
-        let display = super::display::new(I2c::new_async(peripherals.I2C0, sda, scl, 1.MHz()));
+        let config = i2c::Config {
+            frequency: 1.MHz(),
+            ..Default::default()
+        };
+
+        let i2c = I2c::new(p.I2C0, config)
+            .with_sda(pins!(p, display.sda))
+            .with_scl(pins!(p, display.scl))
+            .into_async();
+
+        let display = super::display::new(i2c);
 
         Ui {
             display,
-            up: gpio::Input::new(pins!(io, ui.up), gpio::Pull::Up),
-            down: gpio::Input::new(pins!(io, ui.down), gpio::Pull::Up),
-            right: gpio::Input::new(pins!(io, ui.right), gpio::Pull::Up),
-            left: gpio::Input::new(pins!(io, ui.left), gpio::Pull::Up),
+            up: gpio::Input::new(pins!(p, ui.up), gpio::Pull::Up),
+            down: gpio::Input::new(pins!(p, ui.down), gpio::Pull::Up),
+            right: gpio::Input::new(pins!(p, ui.right), gpio::Pull::Up),
+            left: gpio::Input::new(pins!(p, ui.left), gpio::Pull::Up),
         }
     };
 
-    let network_hal = vertx_network_esp::Hal::new(
-        spawner,
-        rng,
-        timg1.timer0.into(),
-        peripherals.RADIO_CLK,
-        peripherals.WIFI,
-    );
+    let network_hal =
+        vertx_network_esp::Hal::new(spawner, rng, timg1.timer0.into(), p.RADIO_CLK, p.WIFI);
 
     super::Init {
         reset: Reset,
@@ -176,7 +178,7 @@ impl super::traits::Network for Network {
 }
 
 struct Ui {
-    display: super::display::Driver<I2c<'static, esp_hal::peripherals::I2C0, esp_hal::Async>>,
+    display: super::display::Driver<I2c<'static, esp_hal::Async>>,
     up: gpio::Input<'static>,
     down: gpio::Input<'static>,
     right: gpio::Input<'static>,
