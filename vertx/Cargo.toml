@@ -42,10 +42,8 @@ chip-esp = [
     "dep:esp-backtrace",
     "dep:esp-hal",
     "dep:esp-hal-embassy",
-    "dep:esp-hal-smartled",
     "dep:esp-println",
     "dep:esp-storage",
-    "dep:smart-leds",
     "dep:vertx-network-esp",
 ]
 chip-esp32s3 = [
@@ -53,7 +51,6 @@ chip-esp32s3 = [
     "esp-backtrace/esp32s3",
     "esp-hal/esp32s3",
     "esp-hal-embassy/esp32s3",
-    "esp-hal-smartled/esp32s3",
     "esp-println/esp32s3",
     "esp-storage/esp32s3",
     "vertx-network-esp/chip-esp32s3",
@@ -133,10 +130,8 @@ esp-alloc = { workspace = true, optional = true }
 esp-backtrace = { workspace = true, features = ["colors", "panic-handler", "exception-handler", "println"], optional = true }
 esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
-esp-hal-smartled = { version = "=0.14.0", optional = true }
 esp-println = { workspace = true, features = ["defmt-espflash", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.4.0", features = ["low-level", "storage", "critical-section"], optional = true }
-smart-leds = { version = "=0.4.0", optional = true }
 vertx-network-esp = { workspace = true, optional = true }
 
 # chip-rp
