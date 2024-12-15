@@ -1,4 +1,5 @@
 mod flash;
+mod leds;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -14,7 +15,6 @@ use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
-use esp_hal_smartled::SmartLedsAdapter;
 use portable_atomic::{AtomicU8, Ordering};
 use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
@@ -45,11 +45,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let status_led = SmartLedsAdapter::new(
-        rmt.channel0,
-        pins!(io, leds),
-        [0; 3 * 8 + 1], // 3 channels * 8 bits + 1 stop byte
-    );
+    let status_led = leds::StatusLed::new(rmt.channel0, pins!(io, leds));
 
     flash::unlock().unwrap();
     let mut partitions = flash::read_partition_table()
@@ -104,17 +100,6 @@ impl super::traits::Reset for Reset {
     fn reboot(&mut self) -> ! {
         esp_hal::reset::software_reset();
         unreachable!()
-    }
-}
-
-impl<TX: esp_hal::rmt::TxChannel, const BUFFER: usize> super::traits::StatusLed
-    for SmartLedsAdapter<TX, BUFFER>
-{
-    type Error = esp_hal_smartled::LedAdapterError;
-
-    async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
-        use smart_leds::SmartLedsWrite;
-        self.write(core::iter::once(smart_leds::RGB8::new(red, green, blue)))
     }
 }
 
