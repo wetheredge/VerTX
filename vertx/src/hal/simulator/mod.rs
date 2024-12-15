@@ -1,5 +1,6 @@
 mod backpack;
 
+use std::convert::Infallible;
 use std::panic;
 use std::sync::Mutex;
 
@@ -10,7 +11,6 @@ use embassy_executor::Spawner;
 use embassy_sync::channel::{self, Channel};
 use embassy_sync::pipe::Pipe;
 use embedded_graphics as eg;
-use smart_leds::RGB8;
 
 use crate::ui::Input as UiInput;
 
@@ -108,30 +108,15 @@ impl super::traits::Reset for Reset {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct LedBufferOverflow;
-
 #[derive(Debug)]
 struct StatusLed;
 
-impl smart_leds::SmartLedsWrite for StatusLed {
-    type Color = RGB8;
-    type Error = LedBufferOverflow;
+impl super::traits::StatusLed for StatusLed {
+    type Error = Infallible;
 
-    fn write<T, I>(&mut self, iterator: T) -> Result<(), Self::Error>
-    where
-        T: IntoIterator<Item = I>,
-        I: Into<Self::Color>,
-    {
-        let mut iterator = iterator.into_iter();
-        let RGB8 { r, g, b } = iterator.next().unwrap().into();
-        ipc::set_status_led(r, g, b);
-
-        if iterator.next().is_some() {
-            Err(LedBufferOverflow)
-        } else {
-            Ok(())
-        }
+    async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
+        ipc::set_status_led(red, green, blue);
+        Ok(())
     }
 }
 
