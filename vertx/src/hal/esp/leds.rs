@@ -16,14 +16,14 @@ const T1H_NS: u32 = 850; // 900ns per SK6812 datasheet, 850 per WS2812. > 550ns 
 const T1L_NS: u32 = PERIOD - T1H_NS;
 
 pub struct StatusLed<Tx> {
-    channel: Option<Tx>,
+    channel: Tx,
     pulses: (u32, u32),
 }
 
-impl<Tx: rmt::TxChannel> StatusLed<Tx> {
+impl<Tx: rmt::TxChannelAsync> StatusLed<Tx> {
     pub fn new<'d, C, P>(channel: C, pin: impl Peripheral<P = P> + 'd) -> Self
     where
-        C: rmt::TxChannelCreator<'d, Tx, P>,
+        C: rmt::TxChannelCreatorAsync<'d, Tx, P>,
         P: OutputPin + 'd,
     {
         let config = rmt::TxChannelConfig {
@@ -42,7 +42,7 @@ impl<Tx: rmt::TxChannel> StatusLed<Tx> {
         let src_clock = clocks.apb_clock.to_MHz();
 
         Self {
-            channel: Some(channel),
+            channel,
             pulses: (
                 rmt::PulseCode::new(
                     true,
@@ -61,7 +61,7 @@ impl<Tx: rmt::TxChannel> StatusLed<Tx> {
     }
 }
 
-impl<Tx: rmt::TxChannel> crate::hal::traits::StatusLed for StatusLed<Tx> {
+impl<Tx: rmt::TxChannelAsync> crate::hal::traits::StatusLed for StatusLed<Tx> {
     type Error = rmt::Error;
 
     async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
@@ -73,14 +73,7 @@ impl<Tx: rmt::TxChannel> crate::hal::traits::StatusLed for StatusLed<Tx> {
         push_pulses(red, buffer_iter, self.pulses);
         push_pulses(blue, buffer_iter, self.pulses);
 
-        // Perform the actual RMT operation
-        let channel = self.channel.take().unwrap();
-        let (channel, result) = match channel.transmit(&buffer)?.wait() {
-            Ok(channel) => (channel, Ok(())),
-            Err((err, channel)) => (channel, Err(err)),
-        };
-        self.channel = Some(channel);
-        result
+        self.channel.transmit(&buffer).await
     }
 }
 
