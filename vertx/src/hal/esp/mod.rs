@@ -107,6 +107,17 @@ impl super::traits::Reset for Reset {
     }
 }
 
+impl<TX: esp_hal::rmt::TxChannel, const BUFFER: usize> super::traits::StatusLed
+    for SmartLedsAdapter<TX, BUFFER>
+{
+    type Error = esp_hal_smartled::LedAdapterError;
+
+    async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
+        use smart_leds::SmartLedsWrite;
+        self.write(core::iter::once(smart_leds::RGB8::new(red, green, blue)))
+    }
+}
+
 struct ConfigStorage {
     partition: Partition,
 }

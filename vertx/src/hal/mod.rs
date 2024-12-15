@@ -101,18 +101,6 @@ pub(crate) mod traits {
         async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error>;
     }
 
-    impl<T, E> StatusLed for T
-    where
-        T: smart_leds::SmartLedsWrite<Error = E, Color = smart_leds::RGB8>,
-        E: Debug,
-    {
-        type Error = E;
-
-        async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
-            self.write(core::iter::once(smart_leds::RGB8::new(red, green, blue)))
-        }
-    }
-
     #[cfg_attr(not(feature = "network-native"), expect(dead_code))]
     pub(crate) trait Network {
         type Hal: vertx_network::Hal;
