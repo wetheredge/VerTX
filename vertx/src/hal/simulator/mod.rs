@@ -82,7 +82,7 @@ declare_hal_types!();
 pub(super) fn init(_spawner: Spawner) -> super::Init {
     super::Init {
         reset: Reset,
-        led_driver: LedDriver,
+        status_led: StatusLed,
         config_storage: ConfigStorage,
         ui: Ui::new(&FRAMEBUFFER, UI_INPUTS.receiver()),
         backpack: super::Backpack {
@@ -112,9 +112,9 @@ impl super::traits::Reset for Reset {
 struct LedBufferOverflow;
 
 #[derive(Debug)]
-struct LedDriver;
+struct StatusLed;
 
-impl smart_leds::SmartLedsWrite for LedDriver {
+impl smart_leds::SmartLedsWrite for StatusLed {
     type Color = RGB8;
     type Error = LedBufferOverflow;
 

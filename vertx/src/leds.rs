@@ -1,16 +1,31 @@
 use embassy_executor::task;
 use embassy_futures::select;
 use embassy_time::{Duration, Timer};
-use smart_leds::{colors, RGB8};
 
 use crate::hal::prelude::*;
 use crate::Mode;
 
-pub const MAX_LEDS: usize = 1;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Color {
+    r: u8,
+    g: u8,
+    b: u8,
+}
+
+impl Color {
+    const BLACK: Self = Self::new(0, 0, 0);
+    const BLUE: Self = Self::new(0, 0, 0xFF);
+    const GREEN: Self = Self::new(0, 0x80, 0);
+    const MEDIUM_PURPLE: Self = Self::new(0x93, 0x70, 0xDB);
+
+    const fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+}
 
 macro_rules! color_array {
     (static $name:ident = [ $(($r:expr, $g:expr, $b:expr)),* $(,)? ]) => {
-        static $name: [RGB8; { $(1 + $r - $r +)* 0 }] = [$(RGB8::new($r, $g, $b)),*];
+        static $name: [Color; { $(1 + $r - $r +)* 0 }] = [$(Color { r: $r, g: $g, b: $b }),*];
     };
 }
 
@@ -36,11 +51,11 @@ color_array! {
 
 #[derive(Debug)]
 enum Effect {
-    Solid(RGB8),
+    Solid(Color),
     Blink {
-        color1: RGB8,
+        color1: Color,
         time1: Duration,
-        color2: RGB8,
+        color2: Color,
         time2: Duration,
         state: bool,
     },
@@ -51,29 +66,29 @@ enum Effect {
 
 impl Default for Effect {
     fn default() -> Self {
-        Effect::Solid(colors::BLACK)
+        Effect::Solid(Color::BLACK)
     }
 }
 
 impl From<Mode> for Effect {
     fn from(mode: Mode) -> Self {
         match mode {
-            Mode::Ok => Effect::Solid(colors::GREEN),
-            Mode::Armed => Effect::Solid(colors::BLUE),
+            Mode::Ok => Effect::Solid(Color::GREEN),
+            Mode::Armed => Effect::Solid(Color::BLUE),
             Mode::PreConfigurator => Effect::blink(
-                colors::MEDIUM_PURPLE,
+                Color::MEDIUM_PURPLE,
                 Duration::from_millis(500),
-                colors::BLACK,
+                Color::BLACK,
                 Duration::from_millis(500),
             ),
-            Mode::Configurator => Effect::Solid(colors::MEDIUM_PURPLE),
+            Mode::Configurator => Effect::Solid(Color::MEDIUM_PURPLE),
             Mode::Updating => Effect::rainbow(),
         }
     }
 }
 
 impl Effect {
-    fn blink(color1: RGB8, time1: Duration, color2: RGB8, time2: Duration) -> Self {
+    fn blink(color1: Color, time1: Duration, color2: Color, time2: Duration) -> Self {
         Self::Blink {
             color1,
             time1,
@@ -89,7 +104,7 @@ impl Effect {
         }
     }
 
-    fn next_frame(&mut self) -> (RGB8, Option<Duration>) {
+    fn next_frame(&mut self) -> (Color, Option<Duration>) {
         match self {
             Self::Solid(color) => (*color, None),
             Self::Blink {
@@ -117,7 +132,7 @@ impl Effect {
 #[task]
 pub async fn run(
     config: crate::Config,
-    mut driver: crate::hal::LedDriver,
+    mut driver: crate::hal::StatusLed,
     mut mode: crate::mode::Receiver,
 ) -> ! {
     loog::info!("Starting leds()");
@@ -126,17 +141,15 @@ pub async fn run(
     let mut effect = Effect::default();
     let brightness_subscriber = config.brightness().subscribe().unwrap();
 
-    let mut leds = [RGB8::new(0, 0, 0); MAX_LEDS];
     loop {
         let (color, duration) = effect.next_frame();
         let timer = duration.map(Timer::after);
 
-        leds.fill(color);
         // #[cfg(not(feature = "simulator"))]
         // let iter =
         //     smart_leds::brightness(smart_leds::gamma(iter),
         // **config.brightness.current().await);
-        driver.write(&leds).await.unwrap();
+        driver.set(color.r, color.g, color.b).await.unwrap();
 
         let new_mode = if let Some(timer) = timer {
             // Assume `timer` is a fraction of a second, so don't bother updating brightness

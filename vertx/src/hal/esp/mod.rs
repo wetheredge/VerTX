@@ -45,7 +45,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let led_driver = SmartLedsAdapter::new(
+    let status_led = SmartLedsAdapter::new(
         rmt.channel0,
         pins!(io, leds),
         [0; 3 * 8 + 1], // 3 channels * 8 bits + 1 stop byte
@@ -83,7 +83,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     super::Init {
         reset: Reset,
         boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
-        led_driver,
+        status_led,
         config_storage,
         ui,
         network: Network::new(rng, network_hal),
