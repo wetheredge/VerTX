@@ -70,31 +70,25 @@ pub async fn main(spawner: Spawner) {
         mode
     };
 
-    if boot_mode.configurator_enabled() {
+    if boot_mode == BootMode::Configurator {
         loog::info!("Configurator enabled");
         mode_sender.send(Mode::PreConfigurator);
 
-        let is_home = boot_mode == BootMode::ConfiguratorHome;
-
         static API: StaticCell<api::Api> = StaticCell::new();
         let api = API.init_with(|| api::Api::new(spawner, reset, config_manager));
-        let network_running = network::run(
+
+        network::run(
             spawner,
-            is_home,
             config,
             api,
             #[cfg(feature = "network-native")]
             hal.network,
             #[cfg(feature = "network-backpack")]
             backpack,
-        );
+        )
+        .await;
 
-        match network_running.await {
-            Ok(()) => mode_sender.send(Mode::Configurator),
-            Err(network::Error::InvalidHomeConfig) => {
-                reset.reboot_into(BootMode::ConfiguratorField).await;
-            }
-        }
+        mode_sender.send(Mode::Configurator);
     } else {
         loog::info!("Configurator disabled");
         mode_sender.send(Mode::Ok);

@@ -50,12 +50,6 @@ pub(crate) fn set_boot_mode(mode: u8) {
     implementation::set_boot_mode(mode);
 }
 
-#[cfg(feature = "network-native")]
-const _: () = {
-    use vertx_network::Hal as _;
-    assert!(NetworkHal::SUPPORTS_HOME || NetworkHal::SUPPORTS_FIELD);
-};
-
 pub(crate) struct Init {
     pub(crate) reset: Reset,
     #[cfg(not(feature = "backpack-boot-mode"))]
