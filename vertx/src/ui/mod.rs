@@ -33,11 +33,7 @@ pub(crate) enum Input {
 }
 
 #[task]
-pub(crate) async fn run(
-    _config: crate::Config,
-    mut ui: crate::hal::Ui,
-    reset: &'static crate::reset::Manager,
-) -> ! {
+pub(crate) async fn run(_config: crate::Config, mut ui: crate::hal::Ui) -> ! {
     loog::debug_assert_eq!(
         LINE_HEIGHT,
         MogeeTextStyle::new(BinaryColor::On).line_height(),
@@ -78,7 +74,7 @@ pub(crate) async fn run(
                         NextState::NewModel(_) => todo!(),
                         NextState::MainMenu => Some(State::Menu(view::main_menu(below_title))),
                         NextState::Configurator => {
-                            reset.start_configurator().await;
+                            crate::network::start();
                             None
                         }
                         NextState::ElrsConfig => {

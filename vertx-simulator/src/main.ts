@@ -24,14 +24,14 @@ const callbacks: Callbacks = {
 	shutDown() {
 		simulator = null;
 	},
-	reboot(bootMode) {
-		start(bootMode);
+	reboot() {
+		start();
 	},
 	openConfigurator() {
 		window.open('/configurator/', 'vertx-configurator');
 	},
 };
 
-function start(bootMode?: number) {
-	simulator = new Simulator(module, ui.display, callbacks, bootMode);
+function start() {
+	simulator = new Simulator(module, ui.display, callbacks);
 }

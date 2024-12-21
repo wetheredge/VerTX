@@ -12,7 +12,6 @@ pub const INIT: [u8; 6] = *b"VerTX\0";
 #[expect(clippy::large_enum_variant)]
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ToBackpack {
-    SetBootMode(u8),
     StartNetwork(vertx_network::Config),
     ApiResponse(Vec<u8>),
     ShutDown,

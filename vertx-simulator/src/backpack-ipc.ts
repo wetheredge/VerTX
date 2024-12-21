@@ -22,7 +22,6 @@ export type NetworkConfig<Kind extends NetworkKind> = NetworkConfigBase<Kind> &
 type AnyNetworkConfig = NetworkConfig<NetworkKind>;
 
 export const enum ToBackpackKind {
-	SetBootMode,
 	StartNetwork,
 	ApiResponse,
 	ShutDown,
@@ -30,7 +29,6 @@ export const enum ToBackpackKind {
 }
 
 export type ToBackpack =
-	| { kind: ToBackpackKind.SetBootMode; payload: number }
 	| { kind: ToBackpackKind.StartNetwork; payload: AnyNetworkConfig }
 	| { kind: ToBackpackKind.ApiResponse; payload: Uint8Array }
 	| { kind: ToBackpackKind.ShutDown }
@@ -41,9 +39,6 @@ export function decode(data: DataView): ToBackpack {
 
 	const kind = reader.u8() as ToBackpackKind;
 	switch (kind) {
-		case ToBackpackKind.SetBootMode:
-			return { kind, payload: reader.u8() };
-
 		case ToBackpackKind.StartNetwork: {
 			const network = reader.u8() as NetworkKind;
 			if ([NetworkKind.Home, NetworkKind.Field].includes(network)) {

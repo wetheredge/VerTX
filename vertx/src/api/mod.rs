@@ -73,12 +73,9 @@ impl vertx_network::Api for Api {
                 self.reset.shut_down();
                 None
             }
-            Request::Reboot => {
+            // FIXME: get rid of Reboot?
+            Request::Reboot | Request::ExitConfigurator => {
                 self.reset.reboot();
-                None
-            }
-            Request::ExitConfigurator => {
-                self.reset.reboot_into(crate::BootMode::Standard).await;
                 None
             }
             Request::Config => {

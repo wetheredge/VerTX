@@ -20,10 +20,6 @@ use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;
 use crate::ui::Input;
-use crate::BootMode;
-
-#[ram(rtc_fast, persistent)]
-static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
 
 declare_hal_types!();
 
@@ -80,16 +76,11 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
 
     super::Init {
         reset: Reset,
-        boot_mode: BootMode::from(BOOT_MODE.load(Ordering::Relaxed)),
         status_led,
         config_storage,
         ui,
         network: Network::new(rng, network_hal),
     }
-}
-
-pub(super) fn set_boot_mode(mode: u8) {
-    BOOT_MODE.store(mode, Ordering::Relaxed);
 }
 
 struct Reset;
