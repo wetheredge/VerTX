@@ -1,16 +1,26 @@
 use core::net::Ipv4Addr;
 
 use embassy_executor::Spawner;
+use embassy_sync::signal::Signal;
 
 const STATIC_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 0, 0, 1);
 
-pub async fn run(
+pub(super) static START: Signal<crate::mutex::MultiCore, ()> = Signal::new();
+
+pub(crate) fn start() {
+    START.signal(());
+}
+
+pub async fn init(
     spawner: Spawner,
     config: crate::Config,
     api: &'static crate::api::Api,
     #[cfg(feature = "network-native")] mut network: crate::hal::Network,
     #[cfg(feature = "network-backpack")] backpack: crate::backpack::Backpack,
 ) {
+    START.wait().await;
+    loog::info!("Starting network");
+
     let config = config.network().lock(|config| {
         let home = {
             let home = config.home();

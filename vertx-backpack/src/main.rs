@@ -15,7 +15,6 @@ use esp_hal::prelude::*;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
 use esp_hal::uart::{self, Uart};
-use portable_atomic::{AtomicU8, Ordering};
 use static_cell::StaticCell;
 
 use self::api::Api;
@@ -50,10 +49,7 @@ async fn main(spawner: Spawner) {
         .unwrap()
         .into_async();
 
-    #[ram(rtc_fast, persistent)]
-    static BOOT_MODE: AtomicU8 = AtomicU8::new(0);
-
-    let ipc = ipc::init(&mut uart, BOOT_MODE.load(Ordering::Relaxed)).await;
+    let ipc = ipc::init(&mut uart).await;
     static IPC: StaticCell<ipc::Context> = StaticCell::new();
     let ipc = IPC.init(ipc);
 
@@ -64,6 +60,6 @@ async fn main(spawner: Spawner) {
     let start_network = network::get_start(spawner, rng, network, api, ipc);
 
     let (rx, tx) = uart.split();
-    spawner.must_spawn(ipc::rx(rx, &BOOT_MODE, start_network, api, ipc));
+    spawner.must_spawn(ipc::rx(rx, start_network, api, ipc));
     spawner.must_spawn(ipc::tx(tx, ipc));
 }

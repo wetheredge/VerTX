@@ -21,7 +21,6 @@ defmt = [
 ]
 
 backpack = []
-backpack-boot-mode = ["backpack"]
 
 display-ssd1306 = ["dep:ssd1306"]
 
@@ -58,7 +57,6 @@ chip-esp32s3 = [
 
 chip-rp = [
     "defmt",
-    "backpack-boot-mode",
     "network-backpack",
     "dep:cortex-m-rt",
     "dep:defmt-rtt",
@@ -85,7 +83,6 @@ chip-rp2040 = [
 
 simulator = [
     "log",
-    "backpack-boot-mode",
     "network-backpack",
     "embassy-executor/arch-wasm",
     "embassy-executor/executor-thread",
@@ -107,7 +104,7 @@ embedded-mogeefont = "=0.1.0"
 embedded-text = "=0.7.2"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
-portable-atomic = { workspace = true }
+portable-atomic = "=1.10.0"
 postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }

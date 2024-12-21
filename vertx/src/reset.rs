@@ -9,8 +9,6 @@ type ResetSignal = Signal<crate::mutex::MultiCore, Kind>;
 
 pub(crate) struct Manager {
     reset: &'static ResetSignal,
-    #[cfg(feature = "backpack-boot-mode")]
-    backpack: Backpack,
 }
 
 impl Manager {
@@ -31,24 +29,7 @@ impl Manager {
             backpack.clone(),
         ));
 
-        Self {
-            reset: signal,
-            #[cfg(feature = "backpack-boot-mode")]
-            backpack,
-        }
-    }
-
-    pub(crate) async fn start_configurator(&self) {
-        self.reboot_into(BootMode::Configurator).await;
-    }
-
-    pub(crate) async fn reboot_into(&self, mode: BootMode) {
-        let mode = mode as u8;
-        #[cfg(feature = "backpack-boot-mode")]
-        self.backpack.set_boot_mode(mode).await;
-        #[cfg(not(feature = "backpack-boot-mode"))]
-        crate::hal::set_boot_mode(mode);
-        self.reboot();
+        Self { reset: signal }
     }
 
     pub(crate) fn reboot(&self) {
@@ -57,23 +38,6 @@ impl Manager {
 
     pub(crate) fn shut_down(&self) {
         self.reset.signal(Kind::ShutDown);
-    }
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(u8)]
-pub enum BootMode {
-    #[default]
-    Standard = 0,
-    Configurator = 1,
-}
-
-impl From<u8> for BootMode {
-    fn from(raw: u8) -> Self {
-        match raw {
-            1 => Self::Configurator,
-            _ => Self::Standard,
-        }
     }
 }
 

@@ -41,13 +41,12 @@ export const enum Button {
 export type Callbacks = {
 	setStatusLed: (color: string) => void;
 	shutDown: () => void;
-	reboot: (bootMode: number) => void;
+	reboot: () => void;
 	openConfigurator: () => void;
 };
 
 export class Simulator {
 	#backpackInitted = false;
-	#bootMode: number;
 	#callbacks: Callbacks;
 	#backpackDecode: (data: Uint8Array) => void;
 	#backpackEncode: (data: Uint8Array) => void;
@@ -60,7 +59,6 @@ export class Simulator {
 		module: SimulatorModule,
 		display: HTMLCanvasElement,
 		callbacks: Callbacks,
-		bootMode = 0,
 	) {
 		if (globalName in globalThis) {
 			throw new Error('Simulator is already running');
@@ -105,7 +103,6 @@ export class Simulator {
 
 		const memory = initSync({ module })[memoryName];
 		this.#memory = memory;
-		this.#bootMode = bootMode;
 		this.#callbacks = callbacks;
 
 		const displayContext = display.getContext('2d');
@@ -135,9 +132,6 @@ export class Simulator {
 
 	#backpackRxMessage(message: ToBackpack) {
 		switch (message.kind) {
-			case ToBackpackKind.SetBootMode:
-				this.#bootMode = message.payload;
-				break;
 			case ToBackpackKind.StartNetwork:
 				this.#callbacks.openConfigurator();
 				this.send({ kind: ToMainKind.NetworkUp });
@@ -174,11 +168,7 @@ export class Simulator {
 				}
 			}
 
-			const data = new Uint8Array(INIT.length + 1);
-			data.set(INIT);
-			data[INIT.length] = this.#bootMode;
-
-			backpackTx(data);
+			backpackTx(new Uint8Array(INIT));
 			this.#backpackInitted = true;
 		}
 	}
@@ -199,7 +189,7 @@ export class Simulator {
 		this.stop();
 		setTimeout(() => {
 			if (restart) {
-				this.#callbacks.reboot(this.#bootMode);
+				this.#callbacks.reboot();
 			} else {
 				this.#callbacks.shutDown();
 			}

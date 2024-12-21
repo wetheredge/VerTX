@@ -45,15 +45,8 @@ pub(crate) fn init(spawner: embassy_executor::Spawner) -> Init {
     implementation::init(spawner)
 }
 
-#[cfg(not(feature = "backpack-boot-mode"))]
-pub(crate) fn set_boot_mode(mode: u8) {
-    implementation::set_boot_mode(mode);
-}
-
 pub(crate) struct Init {
     pub(crate) reset: Reset,
-    #[cfg(not(feature = "backpack-boot-mode"))]
-    pub(crate) boot_mode: crate::BootMode,
     pub(crate) status_led: StatusLed,
     pub(crate) config_storage: ConfigStorage,
     pub(crate) ui: Ui,

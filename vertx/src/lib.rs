@@ -27,7 +27,6 @@ use static_cell::StaticCell;
 
 use crate::config::RootConfig as Config;
 pub(crate) use crate::mode::Mode;
-use crate::reset::BootMode;
 
 pub async fn main(spawner: Spawner) {
     loog::info!("Starting VerTX");
@@ -46,6 +45,7 @@ pub async fn main(spawner: Spawner) {
     let config = config_manager.config();
 
     spawner.must_spawn(leds::run(config, hal.status_led, mode.receiver().unwrap()));
+    spawner.must_spawn(ui::run(config, hal.ui));
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
     let reset = RESET.init_with(|| {
@@ -58,41 +58,28 @@ pub async fn main(spawner: Spawner) {
         )
     });
 
-    spawner.must_spawn(ui::run(config, hal.ui, reset));
+    loog::info!("Initialized");
+    mode_sender.send(Mode::Ok);
 
-    #[cfg(not(feature = "backpack-boot-mode"))]
-    let boot_mode = hal.boot_mode;
-    #[cfg(feature = "backpack-boot-mode")]
-    let boot_mode = {
-        loog::debug!("Waiting on boot mode from backpack…");
-        let mode = backpack.boot_mode().await;
-        loog::debug!("Received boot mode");
-        mode
-    };
+    network::START.wait().await;
+    loog::info!("Starting network");
+    mode_sender.send(Mode::PreConfigurator);
 
-    if boot_mode == BootMode::Configurator {
-        loog::info!("Configurator enabled");
-        mode_sender.send(Mode::PreConfigurator);
+    static API: StaticCell<api::Api> = StaticCell::new();
+    let api = API.init_with(|| api::Api::new(spawner, reset, config_manager));
 
-        static API: StaticCell<api::Api> = StaticCell::new();
-        let api = API.init_with(|| api::Api::new(spawner, reset, config_manager));
+    network::init(
+        spawner,
+        config,
+        api,
+        #[cfg(feature = "network-native")]
+        hal.network,
+        #[cfg(feature = "network-backpack")]
+        backpack,
+    )
+    .await;
 
-        network::run(
-            spawner,
-            config,
-            api,
-            #[cfg(feature = "network-native")]
-            hal.network,
-            #[cfg(feature = "network-backpack")]
-            backpack,
-        )
-        .await;
-
-        mode_sender.send(Mode::Configurator);
-    } else {
-        loog::info!("Configurator disabled");
-        mode_sender.send(Mode::Ok);
-    }
+    mode_sender.send(Mode::Configurator);
 }
 
 #[cfg(all(feature = "simulator", target_arch = "wasm32"))]

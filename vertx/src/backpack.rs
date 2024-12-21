@@ -21,8 +21,6 @@ type PowerAck = Signal<crate::mutex::SingleCore, ()>;
 
 #[cfg(feature = "network-backpack")]
 static API: OnceLock<&'static Api> = OnceLock::new();
-#[cfg(feature = "backpack-boot-mode")]
-static BOOT_MODE: OnceLock<u8> = OnceLock::new();
 
 #[derive(Clone)]
 pub(crate) struct Backpack {
@@ -50,28 +48,6 @@ impl Backpack {
             network_up,
             power_ack,
         }
-    }
-
-    #[cfg(feature = "backpack-boot-mode")]
-    pub(crate) async fn boot_mode(&self) -> crate::BootMode {
-        use embassy_time::Timer;
-
-        if cfg!(target_arch = "wasm32") {
-            loop {
-                if let Some(&mode) = BOOT_MODE.try_get() {
-                    return mode.into();
-                }
-
-                Timer::after_micros(50).await;
-            }
-        } else {
-            (*BOOT_MODE.get().await).into()
-        }
-    }
-
-    #[cfg(feature = "backpack-boot-mode")]
-    pub(crate) async fn set_boot_mode(&self, mode: u8) {
-        self.tx.send(ToBackpack::SetBootMode(mode)).await;
     }
 
     pub(crate) async fn shut_down(&self) {
@@ -136,14 +112,6 @@ async fn init(backpack: &mut crate::hal::Backpack) {
             }
         }
     }
-
-    let mut boot_mode = [0];
-    // This should always return a byte, so no need to use read_exact or manually
-    // retry
-    backpack.rx.read(&mut boot_mode).await.unwrap();
-    #[cfg(feature = "backpack-boot-mode")]
-    BOOT_MODE.init(boot_mode[0]).unwrap();
-    let _ = boot_mode;
 }
 
 async fn tx_handler(mut tx: crate::hal::BackpackTx, messages: TxReceiver) -> ! {
