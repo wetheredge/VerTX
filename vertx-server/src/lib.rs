@@ -7,7 +7,7 @@ mod http;
 
 use embassy_net::Ipv4Cidr;
 pub use embassy_net::{Runner, Stack};
-use vertx_network::Config;
+use vertx_network::{Config, NetworkKind};
 
 /// Memory resources for a network stack
 ///
@@ -28,7 +28,7 @@ impl<const SOCKETS: usize> Default for Resources<SOCKETS> {
     }
 }
 
-pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
+pub async fn init<H: vertx_network::Hal, const SOCKETS: usize>(
     resources: &'static mut Resources<SOCKETS>,
     config: Config,
     seed: u64,
@@ -38,25 +38,23 @@ pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
     embassy_net::Runner<'static, H::Driver>,
     Option<tasks::DhcpContext>,
 ) {
-    let (driver, stack_config, dhcp_address) = match config {
-        Config::Home {
-            ssid,
-            password,
-            hostname,
-        } => {
-            let driver = hal.home(ssid, password);
+    let (home, hostname) = if let Some(home) = config.home {
+        (Some(home.credentials), home.hostname)
+    } else {
+        (None, heapless::String::new())
+    };
 
+    let (network, driver) = hal.start(home, config.field.credentials).await;
+
+    let (stack_config, dhcp_address) = match network {
+        NetworkKind::Home => {
             let mut dhcp_config = embassy_net::DhcpConfig::default();
             dhcp_config.hostname = Some(hostname);
 
-            (driver, embassy_net::Config::dhcpv4(dhcp_config), None)
+            (embassy_net::Config::dhcpv4(dhcp_config), None)
         }
-        Config::Field {
-            ssid,
-            password,
-            address,
-        } => {
-            let driver = hal.field(ssid, password);
+        NetworkKind::Field => {
+            let address = config.field.address;
 
             let static_config = embassy_net::StaticConfigV4 {
                 address: Ipv4Cidr::new(address, 24),
@@ -66,7 +64,7 @@ pub fn init<H: vertx_network::Hal, const SOCKETS: usize>(
 
             let config = embassy_net::Config::ipv4_static(static_config);
 
-            (driver, config, Some(address))
+            (config, Some(address))
         }
     };
 

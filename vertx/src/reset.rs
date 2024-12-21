@@ -39,20 +39,7 @@ impl Manager {
     }
 
     pub(crate) async fn start_configurator(&self) {
-        let mode = {
-            #[allow(unused_variables)]
-            let try_home = true;
-            #[cfg(feature = "network-native")]
-            let try_home = crate::hal::NetworkHal::SUPPORTS_HOME;
-
-            if try_home {
-                BootMode::ConfiguratorHome
-            } else {
-                BootMode::ConfiguratorField
-            }
-        };
-
-        self.reboot_into(mode).await;
+        self.reboot_into(BootMode::Configurator).await;
     }
 
     pub(crate) async fn reboot_into(&self, mode: BootMode) {
@@ -78,26 +65,15 @@ impl Manager {
 pub enum BootMode {
     #[default]
     Standard = 0,
-    ConfiguratorHome = 1,
-    ConfiguratorField = 2,
+    Configurator = 1,
 }
 
 impl From<u8> for BootMode {
     fn from(raw: u8) -> Self {
         match raw {
-            1 => Self::ConfiguratorHome,
-            2 => Self::ConfiguratorField,
+            1 => Self::Configurator,
             _ => Self::Standard,
         }
-    }
-}
-
-impl BootMode {
-    pub const fn configurator_enabled(self) -> bool {
-        matches!(
-            self,
-            BootMode::ConfiguratorHome | BootMode::ConfiguratorField
-        )
     }
 }
 

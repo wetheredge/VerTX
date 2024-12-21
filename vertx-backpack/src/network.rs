@@ -34,7 +34,8 @@ async fn run(
 
     static RESOURCES: ConstStaticCell<vertx_server::Resources<{ WORKERS + 2 }>> =
         ConstStaticCell::new(vertx_server::Resources::new());
-    let (stack, runner, dhcp_context) = vertx_server::init(RESOURCES.take(), config, seed, hal);
+    let (stack, runner, dhcp_context) =
+        vertx_server::init(RESOURCES.take(), config, seed, hal).await;
 
     spawner.must_spawn(network(runner));
 

@@ -132,7 +132,7 @@ esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
 esp-println = { workspace = true, features = ["defmt-espflash", "uart", "critical-section", "colors"], optional = true }
 esp-storage = { version = "=0.4.0", features = ["low-level", "storage", "critical-section"], optional = true }
-vertx-network-esp = { workspace = true, optional = true }
+vertx-network-esp = { workspace = true, features = ["defmt"], optional = true }
 
 # chip-rp
 # TODO: flip-link

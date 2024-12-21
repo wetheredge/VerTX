@@ -2,57 +2,51 @@ use core::net::Ipv4Addr;
 
 use embassy_executor::Spawner;
 
-pub enum Error {
-    InvalidHomeConfig,
-}
-
 const STATIC_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 0, 0, 1);
 
 pub async fn run(
     spawner: Spawner,
-    is_home: bool,
     config: crate::Config,
     api: &'static crate::api::Api,
     #[cfg(feature = "network-native")] mut network: crate::hal::Network,
     #[cfg(feature = "network-backpack")] backpack: crate::backpack::Backpack,
-) -> Result<(), Error> {
-    let server_config = config.network().lock(|config| {
-        if is_home {
+) {
+    let config = config.network().lock(|config| {
+        let home = {
             let home = config.home();
             let ssid = home.ssid();
             let password = home.password();
 
-            if ssid.is_empty() || password.is_empty() {
-                loog::error!("Invalid home network config");
-                Err(Error::InvalidHomeConfig)
-            } else {
-                Ok(vertx_network::Config::Home {
+            (!ssid.is_empty() && !password.is_empty()).then(|| vertx_network::HomeConfig {
+                credentials: vertx_network::Credentials {
                     ssid: ssid.clone(),
                     password: password.clone(),
-                    hostname: "vertx".try_into().unwrap(),
-                })
-            }
-        } else {
-            Ok(vertx_network::Config::Field {
+                },
+                hostname: "vertx".try_into().unwrap(),
+            })
+        };
+
+        let field = vertx_network::FieldConfig {
+            credentials: vertx_network::Credentials {
                 ssid: "VerTX".try_into().unwrap(),
                 password: config.password().clone(),
-                address: STATIC_ADDRESS,
-            })
-        }
-    })?;
+            },
+            address: STATIC_ADDRESS,
+        };
+
+        vertx_network::Config { home, field }
+    });
 
     #[cfg(feature = "network-native")]
     {
         use crate::hal::traits::Network;
-        native::run(spawner, server_config, network.seed(), network.hal(), api).await;
+        native::run(spawner, config, network.seed(), network.hal(), api).await;
     }
     #[cfg(not(feature = "network-native"))]
     let _ = spawner;
 
     #[cfg(feature = "network-backpack")]
-    backpack.start_network(server_config, api).await;
-
-    Ok(())
+    backpack.start_network(config, api).await;
 }
 
 #[cfg(feature = "network-native")]
@@ -75,7 +69,8 @@ mod native {
     ) {
         static RESOURCES: ConstStaticCell<vertx_server::Resources<{ WORKERS + 2 }>> =
             ConstStaticCell::new(vertx_server::Resources::new());
-        let (stack, runner, dhcp_context) = vertx_server::init(RESOURCES.take(), config, seed, hal);
+        let (stack, runner, dhcp_context) =
+            vertx_server::init(RESOURCES.take(), config, seed, hal).await;
 
         spawner.must_spawn(network(runner));
 

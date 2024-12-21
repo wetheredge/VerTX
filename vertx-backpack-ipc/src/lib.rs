@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub const BAUDRATE: u32 = 115_200;
 pub const INIT: [u8; 6] = *b"VerTX\0";
 
+#[expect(clippy::large_enum_variant)]
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ToBackpack {
     SetBootMode(u8),
