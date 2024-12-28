@@ -130,6 +130,7 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     impl MiscPins {
         fn format(self, output: &mut String, prefix: &str, path: &str) {
             for (key, value) in self.0 {
+                let key = key.replace('-', "_");
                 let key = if path.is_empty() {
                     key
                 } else {
