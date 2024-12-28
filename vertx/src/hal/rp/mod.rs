@@ -4,11 +4,10 @@ use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_futures::select;
 use embassy_rp::i2c::{self, I2c};
-use embassy_rp::peripherals::{I2C0, PIO0, UART1};
 use embassy_rp::pio::{self, Pio};
 use embassy_rp::uart::{self, BufferedUart};
 use embassy_rp::watchdog::Watchdog;
-use embassy_rp::{bind_interrupts, gpio};
+use embassy_rp::{bind_interrupts, gpio, peripherals};
 use embassy_time::Duration;
 use embedded_alloc::TlsfHeap;
 use static_cell::{ConstStaticCell, StaticCell};
@@ -17,9 +16,9 @@ use {defmt_rtt as _, embedded_graphics as eg, panic_probe as _};
 use crate::ui::Input;
 
 bind_interrupts!(struct Irqs {
-    PIO0_IRQ_0 => pio::InterruptHandler<PIO0>;
-    UART1_IRQ => uart::BufferedInterruptHandler<UART1>;
-    I2C0_IRQ => i2c::InterruptHandler<I2C0>;
+    PIO0_IRQ_0 => pio::InterruptHandler<peripherals::PIO0>;
+    UART1_IRQ => uart::BufferedInterruptHandler<peripherals::UART1>;
+    I2C0_IRQ => i2c::InterruptHandler<peripherals::I2C0>;
 });
 
 declare_hal_types!();
@@ -132,7 +131,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
 }
 
 struct Ui {
-    display: super::display::Driver<I2c<'static, I2C0, i2c::Async>>,
+    display: super::display::Driver<I2c<'static, peripherals::I2C0, i2c::Async>>,
     up: gpio::Input<'static>,
     down: gpio::Input<'static>,
     right: gpio::Input<'static>,
