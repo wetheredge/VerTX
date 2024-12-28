@@ -62,7 +62,6 @@ pub async fn main(spawner: Spawner) {
     mode_sender.send(Mode::Ok);
 
     network::START.wait().await;
-    loog::info!("Starting network");
     mode_sender.send(Mode::PreConfigurator);
 
     static API: StaticCell<api::Api> = StaticCell::new();
