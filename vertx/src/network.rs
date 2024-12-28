@@ -18,7 +18,6 @@ pub async fn init(
     #[cfg(feature = "network-native")] mut network: crate::hal::Network,
     #[cfg(feature = "network-backpack")] backpack: crate::backpack::Backpack,
 ) {
-    START.wait().await;
     loog::info!("Starting network");
 
     let config = config.network().lock(|config| {
