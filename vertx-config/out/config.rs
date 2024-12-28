@@ -3,7 +3,6 @@
 pub(crate) struct RawConfig {
     pub(super) name: ::heapless::String<20>,
     pub(super) leds_brightness: u8,
-    pub(super) display_brightness: u8,
     pub(super) network_hostname: ::heapless::String<32>,
     pub(super) network_password: ::heapless::String<64>,
     pub(super) network_home_ssid: ::heapless::String<32>,
@@ -17,7 +16,6 @@ impl Default for RawConfig {
         Self {
             name: "VerTX".try_into().unwrap(),
             leds_brightness: 10,
-            display_brightness: 255,
             network_hostname: "vertx".try_into().unwrap(),
             network_password: Default::default(),
             network_home_ssid: Default::default(),
@@ -26,7 +24,7 @@ impl Default for RawConfig {
         }
     }
 }
-pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 1 + 37 + 69 + 37 + 69 + 1;
+pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 37 + 69 + 37 + 69 + 1;
 
 #[allow(non_camel_case_types, unused)]
 pub(super) mod key {
@@ -38,10 +36,6 @@ pub(super) mod key {
     pub(crate) struct Root_Leds;
     #[derive(Clone, Copy)]
     pub(crate) struct Root_Leds_Brightness;
-    #[derive(Clone, Copy)]
-    pub(crate) struct Root_Display;
-    #[derive(Clone, Copy)]
-    pub(crate) struct Root_Display_Brightness;
     #[derive(Clone, Copy)]
     pub(crate) struct Root_Network;
     #[derive(Clone, Copy)]
@@ -83,13 +77,6 @@ impl super::View<key::Root> {
         }
     }
 
-    pub(crate) fn display(&self) -> super::View<key::Root_Display> {
-        super::View {
-            manager: self.manager,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-
     pub(crate) fn network(&self) -> super::View<key::Root_Network> {
         super::View {
             manager: self.manager,
@@ -115,13 +102,6 @@ impl super::LockedView<'_, key::Root> {
     }
 
     pub(crate) fn leds(&self) -> super::LockedView<'_, key::Root_Leds> {
-        super::LockedView {
-            config: self.config,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-
-    pub(crate) fn display(&self) -> super::LockedView<'_, key::Root_Display> {
         super::LockedView {
             config: self.config,
             _key: ::core::marker::PhantomData,
@@ -215,59 +195,6 @@ impl ::core::ops::Deref for super::LockedView<'_, key::Root_Leds_Brightness> {
 }
 
 #[allow(unused)]
-impl super::View<key::Root_Display> {
-    pub(crate) fn lock<T>(
-        &self,
-        f: impl FnOnce(super::LockedView<'_, key::Root_Display>) -> T,
-    ) -> T {
-        self.manager.state.lock(|state| {
-            f(super::LockedView {
-                config: &state.borrow().config,
-                _key: ::core::marker::PhantomData,
-            })
-        })
-    }
-
-    pub(crate) fn brightness(&self) -> super::View<key::Root_Display_Brightness> {
-        super::View {
-            manager: self.manager,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-}
-
-#[allow(unused)]
-impl super::LockedView<'_, key::Root_Display> {
-    pub(crate) fn brightness(&self) -> super::LockedView<'_, key::Root_Display_Brightness> {
-        super::LockedView {
-            config: self.config,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-}
-
-#[allow(unused)]
-impl super::View<key::Root_Display_Brightness> {
-    pub(crate) fn lock<T>(&self, f: impl FnOnce(&u8) -> T) -> T {
-        self.manager
-            .state
-            .lock(|state| f(&state.borrow().config.display_brightness))
-    }
-
-    pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(2)
-    }
-}
-
-impl ::core::ops::Deref for super::LockedView<'_, key::Root_Display_Brightness> {
-    type Target = u8;
-
-    fn deref(&self) -> &Self::Target {
-        &self.config.display_brightness
-    }
-}
-
-#[allow(unused)]
 impl super::View<key::Root_Network> {
     pub(crate) fn lock<T>(
         &self,
@@ -336,7 +263,7 @@ impl super::View<key::Root_Network_Hostname> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(3)
+        self.manager.subscribe(2)
     }
 }
 
@@ -357,7 +284,7 @@ impl super::View<key::Root_Network_Password> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(4)
+        self.manager.subscribe(3)
     }
 }
 
@@ -424,7 +351,7 @@ impl super::View<key::Root_Network_Home_Ssid> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(5)
+        self.manager.subscribe(4)
     }
 }
 
@@ -445,7 +372,7 @@ impl super::View<key::Root_Network_Home_Password> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(6)
+        self.manager.subscribe(5)
     }
 }
 
@@ -466,7 +393,7 @@ impl super::View<key::Root_Expert> {
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(7)
+        self.manager.subscribe(6)
     }
 }
 
@@ -484,7 +411,6 @@ pub(crate) enum Update<'a> {
     #[serde(borrow)]
     Root_Name(&'a str),
     Root_Leds_Brightness(u8),
-    Root_Display_Brightness(u8),
     #[serde(borrow)]
     Root_Network_Hostname(&'a str),
     #[serde(borrow)]
@@ -534,44 +460,37 @@ impl RawConfig {
                 self.leds_brightness = update;
                 Ok(1)
             }
-            Update::Root_Display_Brightness(update) => {
-                if update < 1 {
-                    return Err(super::UpdateError::TooSmall { min: 1 });
-                };
-                self.display_brightness = update;
-                Ok(2)
-            }
             Update::Root_Network_Hostname(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 32 });
                 };
                 self.network_hostname = update;
-                Ok(3)
+                Ok(2)
             }
             Update::Root_Network_Password(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 64 });
                 };
                 self.network_password = update;
-                Ok(4)
+                Ok(3)
             }
             Update::Root_Network_Home_Ssid(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 32 });
                 };
                 self.network_home_ssid = update;
-                Ok(5)
+                Ok(4)
             }
             Update::Root_Network_Home_Password(update) => {
                 let Ok(update) = update.try_into() else {
                     return Err(super::UpdateError::TooLarge { max: 64 });
                 };
                 self.network_home_password = update;
-                Ok(6)
+                Ok(5)
             }
             Update::Root_Expert(update) => {
                 self.expert = update;
-                Ok(7)
+                Ok(6)
             }
         }
     }

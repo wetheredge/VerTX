@@ -1,7 +1,22 @@
 import * as types from './src/types';
 
-export const version = 0;
+export const version = 1;
 
 export const config = {
-	name: types.string(20),
+	name: types.string(20, 'VerTX'),
+	leds: {
+		brightness: types.integer('u8', 10, { min: 10 }),
+	},
+	display: {
+		brightness: types.integer('u8', 255, { min: 1 }),
+	},
+	network: {
+		hostname: types.string(32, 'vertx'),
+		password: types.string(64),
+		home: {
+			ssid: types.string(32),
+			password: types.string(64),
+		},
+	},
+	expert: types.boolean(),
 };

@@ -85,17 +85,6 @@ export default function Settings() {
 			<h2>Backup</h2>
 			<p>TODO: backup & restore buttons</p>
 
-			<h2>Display</h2>
-
-			<SettingInput
-				key={configKeys.display.brightness}
-				label="Brightness"
-				type="number"
-				min={1}
-				max={255}
-				handler={handleInteger}
-			/>
-
 			<h2>Wi-Fi</h2>
 
 			<SettingInput

@@ -51,7 +51,12 @@ extern "C" fn run() -> usize {
     let old = old::RawConfig::deserialize(data).map_err(|_| ()).unwrap();
     let current = current::RawConfig {
         name: old.name,
-        ..Default::default()
+        leds_brightness: old.leds_brightness,
+        network_hostname: old.network_hostname,
+        network_password: old.network_password,
+        network_home_ssid: old.network_home_ssid,
+        network_home_password: old.network_home_password,
+        expert: old.expert,
     };
 
     current.serialize(data).map_err(|_| ()).unwrap()
@@ -65,7 +70,16 @@ extern "C" fn run() -> usize {
     let current = current::RawConfig::deserialize(data)
         .map_err(|_| ())
         .unwrap();
-    let old = old::RawConfig { name: current.name };
+    let old = old::RawConfig {
+        name: current.name,
+        leds_brightness: current.leds_brightness,
+        network_hostname: current.network_hostname,
+        network_password: current.network_password,
+        network_home_ssid: current.network_home_ssid,
+        network_home_password: current.network_home_password,
+        expert: current.expert,
+        ..Default::default()
+    };
 
     old.serialize(data).map_err(|_| ()).unwrap()
 }

@@ -5,29 +5,25 @@ export const configKeys = {
 	leds: {
 		brightness: 1,
 	},
-	display: {
-		brightness: 2,
-	},
 	network: {
-		hostname: 3,
-		password: 4,
+		hostname: 2,
+		password: 3,
 		home: {
-			ssid: 5,
-			password: 6,
+			ssid: 4,
+			password: 5,
 		},
 	},
-	expert: 7,
+	expert: 6,
 } as const;
 
 export type Config = {
 	0: string;
 	1: number;
-	2: number;
+	2: string;
 	3: string;
 	4: string;
 	5: string;
-	6: string;
-	7: boolean;
+	6: boolean;
 };
 
 export function parseConfig(reader: Reader): Config {
@@ -38,7 +34,6 @@ export function parseConfig(reader: Reader): Config {
 	return [
 		reader.string(),
 		reader.u8(),
-		reader.u8(),
 		reader.string(),
 		reader.string(),
 		reader.string(),
@@ -47,10 +42,10 @@ export function parseConfig(reader: Reader): Config {
 	];
 }
 
-export type StringSettings = 0 | 3 | 4 | 5 | 6;
-export type IntegerSettings = 1 | 2;
+export type StringSettings = 0 | 2 | 3 | 4 | 5;
+export type IntegerSettings = 1;
 export type EnumSettings = never;
-export type BooleanSettings = 7;
+export type BooleanSettings = 6;
 
 export type Update =
 	| { key: StringSettings; value: string }
@@ -61,17 +56,16 @@ export function encodeUpdate(writer: Writer, update: Update): ArrayBuffer {
 	writer.varuint(update.key);
 	switch (update.key) {
 		case 0:
+		case 2:
 		case 3:
 		case 4:
 		case 5:
-		case 6:
 			writer.string(update.value);
 			break;
 		case 1:
-		case 2:
 			writer.u8(update.value);
 			break;
-		case 7:
+		case 6:
 			writer.boolean(update.value);
 			break;
 	}
