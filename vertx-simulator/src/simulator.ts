@@ -125,11 +125,6 @@ export class Simulator {
 		buttonPressed(button);
 	}
 
-	stop() {
-		// @ts-ignore
-		delete globalThis[globalName];
-	}
-
 	#backpackRxMessage(message: ToBackpack) {
 		switch (message.kind) {
 			case ToBackpackKind.StartNetwork:
@@ -186,14 +181,11 @@ export class Simulator {
 	}
 
 	private powerOff(restart: boolean) {
-		this.stop();
-		setTimeout(() => {
-			if (restart) {
-				this.#callbacks.reboot();
-			} else {
-				this.#callbacks.shutDown();
-			}
-		}, 0);
+		if (restart) {
+			this.#callbacks.reboot();
+		} else {
+			this.#callbacks.shutDown();
+		}
 	}
 
 	private flushDisplay(ptr: number) {
