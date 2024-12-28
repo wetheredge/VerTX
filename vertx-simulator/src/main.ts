@@ -2,7 +2,11 @@ import './style.css';
 import { type Callbacks, Simulator, getModule } from './simulator';
 import { Ui } from './ui';
 
+const rebootStorageKey = 'VerTX reboot';
+
 let simulator: Simulator | null;
+let configurator: WindowProxy | null;
+
 const ui = new Ui({
 	power() {
 		if (simulator == null) {
@@ -22,16 +26,24 @@ const callbacks: Callbacks = {
 		ui.setStatusColor(color);
 	},
 	shutDown() {
-		simulator = null;
+		configurator?.close?.();
+		location.reload();
 	},
 	reboot() {
-		start();
+		sessionStorage.setItem(rebootStorageKey, '');
+		configurator?.close?.();
+		location.reload();
 	},
 	openConfigurator() {
-		window.open('/configurator/', 'vertx-configurator');
+		configurator = window.open('/configurator/', 'vertx-configurator');
 	},
 };
 
 function start() {
 	simulator = new Simulator(module, ui.display, callbacks);
+}
+
+if (sessionStorage.getItem(rebootStorageKey) != null) {
+	sessionStorage.removeItem(rebootStorageKey);
+	start();
 }
