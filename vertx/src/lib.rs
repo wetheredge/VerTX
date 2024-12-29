@@ -79,6 +79,7 @@ pub async fn main(spawner: Spawner) {
     .await;
 
     mode_sender.send(Mode::Configurator);
+    loog::info!("Network running");
 }
 
 #[cfg(all(feature = "simulator", target_arch = "wasm32"))]

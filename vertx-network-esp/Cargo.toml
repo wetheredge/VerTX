@@ -23,8 +23,7 @@ chip-esp32s3 = [
 
 [dependencies]
 embassy-executor = { workspace = true, features = ["nightly"] }
-embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname", "udp"] }
-embassy-sync = { workspace = true }
+embassy-net = { workspace = true, features = ["dhcpv4", "dhcpv4-hostname", "udp"] }
 embassy-time = { workspace = true }
 esp-hal = { workspace = true }
 esp-wifi = { version = "=0.11.0", features = ["wifi"] }
