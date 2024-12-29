@@ -130,7 +130,7 @@ impl super::traits::ConfigStorage for ConfigStorage {
             let mut config = vec![0; length];
             self.partition.read_into(1, &mut config).unwrap();
 
-            let bytes: &[u8] = &bytemuck::cast_slice(&config)[0..length];
+            let bytes: &[u8] = bytemuck::cast_slice(&config);
             parse(bytes)
         } else {
             None
@@ -138,17 +138,16 @@ impl super::traits::ConfigStorage for ConfigStorage {
     }
 
     fn save(&mut self, config: &[u8]) {
-        let mut buffer = [0; crate::config::BYTE_LENGTH.div_ceil(4)];
-        // Ensure word alignment
-        bytemuck::cast_slice_mut(&mut buffer).copy_from_slice(config);
-
-        let sectors = (config.len() as u32).div_ceil(flash::SECTOR_BYTES);
-        for i in 0..sectors {
-            self.partition.erase_sector(i).unwrap();
-        }
+        // u32 length prefix
+        let sectors = (4 + config.len() as u32).div_ceil(flash::SECTOR_BYTES);
+        self.partition.erase(sectors).unwrap();
 
         let len_words = config.len().div_ceil(4);
         self.partition.write(0, &[len_words as u32]).unwrap();
+
+        // Use u32 array to ensure word alignment
+        let mut buffer = [0u32; crate::config::BYTE_LENGTH.div_ceil(4)];
+        bytemuck::cast_slice_mut(&mut buffer)[0..config.len()].copy_from_slice(config);
         self.partition.write(1, &buffer[0..len_words]).unwrap();
     }
 }

@@ -140,10 +140,17 @@ impl Partition {
         }
     }
 
-    pub(super) fn erase_sector(&mut self, sector: u32) -> Result<(), i32> {
-        assert!(sector < self.sectors());
-        // SAFETY: `assert!` prevents overflowing flash
-        unsafe { esp_storage::ll::spiflash_erase_sector(sector) }
+    /// Erase the first `count` sectors of this partition
+    pub(super) fn erase(&mut self, count: u32) -> Result<(), i32> {
+        assert!(count < self.sectors());
+
+        let first = self.start / SECTOR_BYTES;
+        for sector in first..(first + count) {
+            // SAFETY: assert prevents overflowing flash
+            unsafe { esp_storage::ll::spiflash_erase_sector(sector)? }
+        }
+
+        Ok(())
     }
 
     pub(super) fn write(&mut self, offset: u32, data: &[u32]) -> Result<(), i32> {

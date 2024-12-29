@@ -1,6 +1,5 @@
 # Name,  Type, SubType, Address,     Size, Flags
-nvs,     data, nvs,      0x9000,   0x5000,
-otadata, data, ota,            ,   0x2000,
-ota0,    app,  ota_0,          , 0x7F0000,
-ota1,    app,  ota_1,          , 0x7F0000,
+otadata, data, ota,      0x9000,   0x2000,
+ota0,    app,  ota_0,   0x10000, 0x3F0000,
+ota1,    app,  ota_1,          , 0x3F0000,
 config,  0x40, 0,              ,  0x10000,
