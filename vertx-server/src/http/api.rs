@@ -34,7 +34,10 @@ where
     W: Write<Error = R::Error>,
     A: Api,
 {
-    let connection = connection.is_some_and(|c| c.eq_ignore_ascii_case(b"upgrade"));
+    let connection = connection.is_some_and(|c| {
+        c.split(|b| *b == b',')
+            .any(|c| c.trim_ascii().eq_ignore_ascii_case(b"upgrade"))
+    });
     let upgrade = headers
         .iter()
         .find(|h| h.name.eq_ignore_ascii_case("upgrade"))

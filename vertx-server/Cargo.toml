@@ -5,17 +5,21 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+log = ["embassy-net/log"]
+defmt = ["embassy-net/defmt"]
+
 [dependencies]
 atoi = { version = "=2.0.0", default-features = false }
 base64 = { version = "=0.22.1", default-features = false }
 edge-dhcp = "=0.3.0"
 edge-ws = "=0.3.0"
-embassy-net = { workspace = true, features = ["log", "dhcpv4", "dhcpv4-hostname", "tcp", "udp"] }
+embassy-net = { workspace = true, features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"] }
 embedded-io-async = { workspace = true }
 heapless = { workspace = true }
 httparse = { version = "=1.9.5", default-features = false }
 itoa = "=1.0.14"
-log = { workspace = true }
+loog = { workspace = true }
 sha1 = { version = "=0.10.6", default-features = false }
 vertx-network = { workspace = true }
 

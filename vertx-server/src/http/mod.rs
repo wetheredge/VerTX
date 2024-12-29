@@ -22,13 +22,16 @@ where
     let mut buffer = Buffer::new(buffer);
     loop {
         let (raw_headers, _body) = read_headers(&mut buffer, &mut rx).await?;
+        if raw_headers.is_empty() {
+            return Ok(());
+        }
 
         let mut headers = [httparse::EMPTY_HEADER; 16];
         let mut request = httparse::Request::new(&mut headers);
         // Should always return `Ok(Status::Complete)` or an error, since we're reading
         // until the \r\n\r\n that marks the start of the body
         if let Err(err) = request.parse(raw_headers) {
-            log::debug!("Bad request: {err:?}");
+            loog::debug!("Bad request: {:?}", loog::Debug2Format(&err));
             respond::bad_request(&mut tx, b"Bad Request").await?;
             return Ok(());
         }
@@ -202,7 +205,9 @@ async fn read_headers<'a, R: Read>(
 ) -> Result<(&'a [u8], Buffer<'a>), R::Error> {
     loop {
         let old_len = buffer.len();
-        buffer.read_from(reader).await?;
+        if buffer.read_from(reader).await? == 0 {
+            return Ok((&[], Buffer::new(buffer)));
+        }
 
         if let Some(body_offset) = find_body(buffer, old_len) {
             let (head, tail) = buffer.split_at_mut(body_offset);
@@ -225,8 +230,8 @@ fn find_body(buffer: &[u8], old_len: usize) -> Option<usize> {
     let mut i = start;
     while i < end {
         if buffer[i..i + 2] == *b"\r\n" {
-            if buffer[i + 3] == b'\r' {
-                if buffer[i + 4] == b'\n' {
+            if buffer[i + 2] == b'\r' {
+                if buffer[i + 3] == b'\n' {
                     return Some(i + 4);
                 }
             } else {

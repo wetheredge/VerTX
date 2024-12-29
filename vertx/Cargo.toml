@@ -13,11 +13,13 @@ crate-type = ["cdylib", "rlib"]
 [features]
 log = [
     "loog/log",
+    "vertx-server?/log",
 ]
 defmt = [
     "loog/defmt",
     "embedded-graphics/defmt",
     "postcard/use-defmt",
+    "vertx-server?/defmt",
 ]
 
 backpack = []
@@ -68,7 +70,6 @@ chip-rp = [
     "dep:pio",
     "embassy-executor/arch-cortex-m",
     "embassy-executor/executor-thread",
-    "portable-atomic/critical-section",
 ]
 chip-rp2040 = [
     "chip-rp",
@@ -104,7 +105,6 @@ embedded-mogeefont = "=0.1.0"
 embedded-text = "=0.7.2"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
-portable-atomic = "=1.10.0"
 postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }

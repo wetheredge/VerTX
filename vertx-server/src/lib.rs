@@ -56,13 +56,11 @@ pub async fn init<H: vertx_network::Hal, const SOCKETS: usize>(
         NetworkKind::Field => {
             let address = config.field.address;
 
-            let static_config = embassy_net::StaticConfigV4 {
+            let config = embassy_net::Config::ipv4_static(embassy_net::StaticConfigV4 {
                 address: Ipv4Cidr::new(address, 24),
                 gateway: Some(address),
                 dns_servers: heapless::Vec::new(),
-            };
-
-            let config = embassy_net::Config::ipv4_static(static_config);
+            });
 
             (config, Some(address))
         }
@@ -94,13 +92,13 @@ pub mod tasks {
             let mut tcp = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
 
             if let Err(err) = tcp.accept(80).await {
-                log::warn!("server({id}): Accept error: {err:?}");
+                loog::warn!("server({id}): Accept error: {err:?}");
                 continue;
             }
 
             let (rx, tx) = tcp.split();
             if let Err(err) = crate::http::run(rx, tx, &mut http_buffer, api).await {
-                log::error!("server({id}): Error: {err:?}");
+                loog::error!("server({id}): Error: {err:?}");
             }
         }
     }
@@ -148,7 +146,10 @@ pub mod tasks {
             let request = match edge_dhcp::Packet::decode(packet) {
                 Ok(decoded) => decoded,
                 Err(err) => {
-                    log::warn!("Failed to decode DHCP packet: {err:?}");
+                    loog::warn!(
+                        "Failed to decode DHCP packet: {:?}",
+                        loog::Debug2Format(&err)
+                    );
                     continue;
                 }
             };

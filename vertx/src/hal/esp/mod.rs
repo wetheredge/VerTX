@@ -15,7 +15,6 @@ use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
-use portable_atomic::{AtomicU8, Ordering};
 use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;
@@ -24,8 +23,7 @@ use crate::ui::Input;
 declare_hal_types!();
 
 pub(super) fn init(spawner: Spawner) -> super::Init {
-    // TODO: increase size?
-    esp_alloc::heap_allocator!(32 * 1024);
+    esp_alloc::heap_allocator!(72 * 1024);
 
     let p = esp_hal::init({
         let mut config = esp_hal::Config::default();

@@ -105,8 +105,7 @@ impl vertx_network::Hal for Hal {
             (NetworkKind::Field, Driver::Field(ap))
         };
 
-        self.spawner
-            .must_spawn(connection(controller, NetworkKind::Home));
+        self.spawner.must_spawn(connection(controller, network));
         (network, driver)
     }
 }
