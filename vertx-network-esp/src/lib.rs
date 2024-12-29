@@ -6,7 +6,7 @@
 mod driver;
 
 use embassy_executor::{task, Spawner};
-use embassy_time::Timer;
+use embassy_time::{Duration, Timer};
 use esp_hal::peripherals;
 use esp_hal::rng::Rng;
 use esp_hal::timer::AnyTimer;
@@ -57,11 +57,14 @@ impl vertx_network::Hal for Hal {
 
         let (ap, sta, mut controller) = wifi::new_ap_sta(initted, self.wifi).unwrap();
 
-        let home_connected = if let Some(home) = home {
+        let mut home_connected = false;
+        if let Some(home) = home {
+            loog::info!("Trying to connect to home wifi: {=str:?}", &home.ssid);
+
             let sta_config = wifi::ClientConfiguration {
                 ssid: home.ssid,
                 bssid: None,
-                auth_method: wifi::AuthMethod::WPA2Personal,
+                auth_method: wifi::AuthMethod::WPA2WPA3Personal,
                 password: home.password,
                 channel: None,
             };
@@ -69,17 +72,17 @@ impl vertx_network::Hal for Hal {
                 .set_configuration(&wifi::Configuration::Client(sta_config))
                 .unwrap();
 
-            match controller.connect_async().await {
-                Ok(()) => true,
-                Err(WifiError::Disconnected) => false,
-                Err(err) => {
-                    loog::error!("Error to joining wifi: {err:?}");
-                    false
+            let connected =
+                embassy_time::with_timeout(Duration::from_secs(5), controller.connect_async());
+            match connected.await {
+                Ok(Ok(())) => home_connected = true,
+                Err(embassy_time::TimeoutError) => {
+                    loog::warn!("Failed to connect to home wifi in time");
                 }
+                Ok(Err(WifiError::Disconnected)) => {}
+                Ok(Err(err)) => loog::error!("Error to joining wifi: {err:?}"),
             }
-        } else {
-            false
-        };
+        }
 
         let (network, driver) = if home_connected {
             (NetworkKind::Home, Driver::Home(sta))
