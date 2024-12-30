@@ -2796,7 +2796,7 @@ dependencies = [
  "esp-hal",
  "esp-hal-embassy",
  "esp-println",
- "log",
+ "loog",
  "postcard",
  "static_cell",
  "vertx-backpack-ipc",
