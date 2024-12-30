@@ -6,7 +6,7 @@
 mod driver;
 
 use embassy_executor::{task, Spawner};
-use embassy_time::{Duration, Timer};
+use embassy_time::{with_timeout, Duration, Timer};
 use esp_hal::peripherals;
 use esp_hal::rng::Rng;
 use esp_hal::timer::AnyTimer;
@@ -59,28 +59,9 @@ impl vertx_network::Hal for Hal {
 
         let mut home_connected = false;
         if let Some(home) = home {
-            loog::info!("Trying to connect to home wifi: {=str:?}", &home.ssid);
-
-            let sta_config = wifi::ClientConfiguration {
-                ssid: home.ssid,
-                bssid: None,
-                auth_method: wifi::AuthMethod::WPA2WPA3Personal,
-                password: home.password,
-                channel: None,
-            };
-            controller
-                .set_configuration(&wifi::Configuration::Client(sta_config))
-                .unwrap();
-
-            let connected =
-                embassy_time::with_timeout(Duration::from_secs(5), controller.connect_async());
-            match connected.await {
-                Ok(Ok(())) => home_connected = true,
-                Err(embassy_time::TimeoutError) => {
-                    loog::warn!("Failed to connect to home wifi in time");
-                }
-                Ok(Err(WifiError::Disconnected)) => {}
-                Ok(Err(err)) => loog::error!("Error to joining wifi: {err:?}"),
+            match connect_to_home(&mut controller, home).await {
+                Ok(connected) => home_connected = connected,
+                Err(err) => loog::error!("Failed to join home wifi: {err:?}"),
             }
         }
 
@@ -111,6 +92,40 @@ impl vertx_network::Hal for Hal {
         self.spawner.must_spawn(connection(controller, network));
         (network, driver)
     }
+}
+
+async fn connect_to_home(
+    controller: &mut WifiController<'_>,
+    credentials: Credentials,
+) -> Result<bool, WifiError> {
+    loog::info!(
+        "Trying to connect to home wifi: {=str:?}",
+        &credentials.ssid
+    );
+
+    let config = wifi::ClientConfiguration {
+        ssid: credentials.ssid,
+        bssid: None,
+        auth_method: wifi::AuthMethod::WPA2Personal,
+        password: credentials.password,
+        channel: None,
+    };
+
+    controller.set_configuration(&wifi::Configuration::Client(config))?;
+    controller.start_async().await?;
+
+    let connecting = with_timeout(Duration::from_secs(30), controller.connect_async());
+    let outcome = match connecting.await {
+        // Early return to skip controller.stop()
+        Ok(Ok(())) => return Ok(true),
+        Err(embassy_time::TimeoutError) => {
+            loog::warn!("Failed to connect to home wifi in time");
+            Ok(false)
+        }
+        Ok(Err(err)) => Err(err),
+    };
+    controller.stop_async().await?;
+    outcome
 }
 
 #[task]
