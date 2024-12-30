@@ -27,7 +27,7 @@ impl Context {
 
 pub(crate) async fn init(uart: &mut Uart<'static, esp_hal::Async>) -> Context {
     loop {
-        log::info!("Waiting for init");
+        loog::info!("Waiting for init");
         let mut byte = [0];
         if uart.read_async(&mut byte).await.is_err() {
             continue;
@@ -48,7 +48,7 @@ pub(crate) async fn init(uart: &mut Uart<'static, esp_hal::Async>) -> Context {
     // Assume all bytes were written, since the message is quite short
     let _ = uart.write_async(&INIT).await.unwrap();
 
-    log::info!("Init finished");
+    loog::info!("Init finished");
 
     Context {
         messages: Channel::new(),
@@ -62,13 +62,13 @@ pub(crate) async fn tx(mut tx: UartTx<'static, esp_hal::Async>, context: &'stati
 
     loop {
         let message = context.messages.receive().await;
-        log::debug!("Backpack tx: {message:?}");
+        loog::debug!("Backpack tx: {message:?}");
         let flush = matches!(message, ToMain::PowerAck);
 
         let bytes = match postcard::to_slice_cobs(&message, &mut buffer) {
             Ok(bytes) => bytes,
             Err(err) => {
-                log::error!("Failed to serialize message: {err:?}");
+                loog::error!("Failed to serialize message: {err:?}");
                 continue;
             }
         };
@@ -76,7 +76,7 @@ pub(crate) async fn tx(mut tx: UartTx<'static, esp_hal::Async>, context: &'stati
         match tx.write_async(bytes).await {
             Ok(_) => {}
             Err(err) => {
-                log::error!("Failed to send message: {err:?}");
+                loog::error!("Failed to send message: {err:?}");
             }
         }
 
@@ -103,7 +103,7 @@ pub(crate) async fn rx(
         let mut chunk = match rx.read_async(&mut buffer).await {
             Ok(len) => &buffer[0..len],
             Err(err) => {
-                log::error!("Backpack rx failed: {err:?}");
+                loog::error!("Backpack rx failed: {err:?}");
                 continue;
             }
         };
@@ -114,19 +114,19 @@ pub(crate) async fn rx(
                 FeedResult::OverFull(remaining) => remaining,
                 FeedResult::DeserError(remaining) => {
                     if ever_success {
-                        log::error!("Backpack rx decode failed");
+                        loog::error!("Backpack rx decode failed");
                     }
                     remaining
                 }
                 FeedResult::Success { data, remaining } => {
                     ever_success = true;
-                    log::debug!("Backpack rx: {data:?}");
+                    loog::debug!("Backpack rx: {data:?}");
                     match data {
                         ToBackpack::StartNetwork(config) => {
                             if let Some(start) = start_network.take() {
                                 start(config);
                             } else {
-                                log::warn!("Network already started");
+                                loog::warn!("Network already started");
                             }
                         }
 

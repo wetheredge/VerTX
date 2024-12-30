@@ -43,7 +43,7 @@ chip-esp32s3 = [
 embassy-executor = { workspace = true }
 embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["generic-queue-8"] }
-log = { workspace = true }
+loog = { workspace = true, features = ["log"] }
 postcard = { workspace = true }
 static_cell = { workspace = true }
 vertx-backpack-ipc = { workspace = true }

@@ -23,8 +23,8 @@ use self::api::Api;
 async fn main(spawner: Spawner) {
     esp_alloc::heap_allocator!(32 * 1024);
 
-    esp_println::logger::init_logger(log::LevelFilter::Info);
-    log::info!("Logger initialized");
+    esp_println::logger::init_logger(loog::log::LevelFilter::Info);
+    loog::info!("Logger initialized");
 
     let p = esp_hal::init({
         let mut config = esp_hal::Config::default();
