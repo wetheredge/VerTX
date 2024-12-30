@@ -105,6 +105,7 @@ embedded-mogeefont = "=0.1.0"
 embedded-text = "=0.7.2"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
+portable-atomic = { version = "=1.10.0", features = ["critical-section"] }
 postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }
@@ -164,8 +165,5 @@ workspace = true
 [package.metadata.cargo-machete]
 ignored = [
     "cortex-m-rt", # used by #[embassy-rp::main]
-    "defmt-rtt",
-    "esp-println",
-    "esp-backtrace",
-    "panic-probe",
+    "portable-atomic", # needed to enable `critical-section` feature
 ]
