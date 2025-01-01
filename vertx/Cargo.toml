@@ -13,13 +13,19 @@ crate-type = ["cdylib", "rlib"]
 [features]
 log = [
     "loog/log",
+    "block-device-adapters/log",
     "embassy-net?/log",
+    "embedded-fatfs/log",
+    "sdspi/log",
 ]
 defmt = [
     "loog/defmt",
+    "block-device-adapters/defmt",
     "embassy-net?/defmt",
+    "embedded-fatfs/defmt",
     "embedded-graphics/defmt",
     "postcard/use-defmt",
+    "sdspi/defmt",
 ]
 
 display-ssd1306 = ["dep:ssd1306"]
@@ -91,17 +97,22 @@ simulator = [
 ]
 
 [dependencies]
+aligned = "=0.4.2"
+block-device-adapters = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c" }
 bytemuck = { version = "=1.21.0", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
 const_format = "=0.2.34"
 defmt-rtt = "=0.4.1"
-display-interface = "0.5.0"
+display-interface = "=0.5.0"
+embassy-embedded-hal = "=0.3.0"
 embassy-executor = { version = "=0.7.0", features = ["nightly"] }
 embassy-futures = "=0.1.1"
 embassy-sync = "=0.6.2"
 embassy-time = { version = "=0.4.0", features = ["generic-queue-8"] }
+embedded-fatfs = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", default-features = false }
 embedded-graphics = "=0.8.1"
 embedded-hal = "=1.0.0"
 embedded-hal-async = "=1.0.0"
+embedded-hal-bus = { version = "=0.2.0", features = ["async"] }
 embedded-mogeefont = "=0.1.0"
 embedded-text = "=0.7.2"
 fugit = "=0.3.7"
@@ -110,6 +121,7 @@ loog = { workspace = true }
 portable-atomic = { version = "=1.11.0", features = ["critical-section"] }
 postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
+sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c" }
 serde = { workspace = true, features = ["derive", "alloc"] }
 static_cell = "=2.1.0"
 

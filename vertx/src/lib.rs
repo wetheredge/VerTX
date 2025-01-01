@@ -19,6 +19,7 @@ mod mutex;
 #[cfg(feature = "network")]
 mod network;
 mod reset;
+mod storage;
 mod ui;
 mod utils;
 
@@ -55,6 +56,7 @@ pub async fn main(spawner: Spawner) {
         hal.status_led,
         mode.receiver().unwrap(),
     ));
+    spawner.must_spawn(storage::run(inits, hal.spi, hal.sd_cs));
     spawner.must_spawn(ui::run(
         inits,
         config,
