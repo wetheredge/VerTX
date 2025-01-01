@@ -11,10 +11,12 @@ use embassy_executor::Spawner;
 use embassy_futures::select;
 use embassy_time::Duration;
 use esp_hal::clock::CpuClock;
+use esp_hal::dma::{DmaRxBuf, DmaTxBuf};
 use esp_hal::gpio;
 use esp_hal::i2c::master::{self as i2c, I2c};
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
+use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::timer::timg;
 use fugit::RateExtU32 as _;
 use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
@@ -41,6 +43,21 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     esp_hal_embassy::init(timg0.timer0);
 
     let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds));
+
+    let spi = {
+        let (rx_buffer, rx_descriptors, tx_buffer, tx_descriptors) = esp_hal::dma_buffers!(32000);
+        let dma_rx = DmaRxBuf::new(rx_descriptors, rx_buffer).unwrap();
+        let dma_tx = DmaTxBuf::new(tx_descriptors, tx_buffer).unwrap();
+
+        Spi::new(p.SPI2, spi::Config::default())
+            .unwrap()
+            .with_sck(pins!(p, spi.sclk))
+            .with_mosi(pins!(p, spi.mosi))
+            .with_miso(pins!(p, spi.miso))
+            .with_dma(p.DMA_CH0)
+            .with_buffers(dma_rx, dma_tx)
+            .into_async()
+    };
 
     flash::unlock().unwrap();
     let mut partitions = flash::read_partition_table()
@@ -73,6 +90,8 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         reset: Reset,
         status_led,
         config_storage,
+        spi,
+        sd_cs: gpio::Output::new(pins!(p, sd), gpio::Level::High),
         ui,
         network: network::Network {
             spawner,
@@ -141,6 +160,12 @@ impl super::traits::ConfigStorage for ConfigStorage {
         let mut buffer = [0u32; crate::config::BYTE_LENGTH.div_ceil(4)];
         bytemuck::cast_slice_mut(&mut buffer)[0..config.len()].copy_from_slice(config);
         self.partition.write(1, &buffer[0..len_words]).unwrap();
+    }
+}
+
+impl super::traits::SpiConfig for spi::Config {
+    fn new(frequency: fugit::HertzU32) -> Self {
+        Self::default().with_frequency(frequency)
     }
 }
 

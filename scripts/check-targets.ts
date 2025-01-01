@@ -11,8 +11,14 @@ const schema = z
 		chip: z.string(),
 		pins: z.strictObject({
 			leds: pin,
+			sd: pin,
 			analog: z.array(pin),
 			switches: z.array(pin),
+			spi: z.strictObject({
+				sclk: pin,
+				miso: pin,
+				mosi: pin,
+			}),
 			ui: z.strictObject({
 				up: pin,
 				down: pin,
