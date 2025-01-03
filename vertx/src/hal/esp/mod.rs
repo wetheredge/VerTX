@@ -1,3 +1,4 @@
+#[expect(unused, reason = "preserve for future OTA updates")]
 mod flash;
 mod leds;
 mod network;
@@ -59,13 +60,6 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
             .into_async()
     };
 
-    flash::unlock().unwrap();
-    let mut partitions = flash::read_partition_table()
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
-    let config_storage = ConfigStorage::new(&mut partitions);
-
     let ui = {
         let config = i2c::Config::default().with_frequency(1.MHz());
 
@@ -89,7 +83,6 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     super::Init {
         reset: Reset,
         status_led,
-        config_storage,
         spi,
         sd_cs: gpio::Output::new(pins!(p, sd), gpio::Level::High),
         ui,
@@ -116,10 +109,12 @@ impl super::traits::Reset for Reset {
     }
 }
 
+#[expect(unused)]
 struct ConfigStorage {
     partition: Partition,
 }
 
+#[expect(unused)]
 impl ConfigStorage {
     fn new(partitions: &mut Vec<Partition>) -> Self {
         let partition = partitions.iter().position(Partition::is_config).unwrap();

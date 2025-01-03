@@ -60,8 +60,6 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
     };
 
-    let config_storage = ConfigStorage {};
-
     let ui = {
         let scl = pins!(p, display.scl);
         let sda = pins!(p, display.sda);
@@ -81,7 +79,6 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
     super::Init {
         reset,
         status_led,
-        config_storage,
         ui,
     }
 }
@@ -102,6 +99,7 @@ impl super::traits::Reset for Reset {
     }
 }
 
+#[expect(unused)]
 struct ConfigStorage {}
 
 impl super::traits::ConfigStorage for ConfigStorage {
