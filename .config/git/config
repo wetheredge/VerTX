@@ -1,3 +1,0 @@
-[diff "bun_lockb"]
-	binary = true
-	textconv = bun

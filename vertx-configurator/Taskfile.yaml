@@ -13,7 +13,7 @@ tasks:
     internal: true
     cmd: bun run tsc
     sources:
-      - ../bun.lockb
+      - ../bun.lock
       - ../.config/tsconfig.*
       - scripts/**/*
       - src/**/*
@@ -46,7 +46,7 @@ tasks:
     cmd: bun run vite build
     sources:
       - package.json
-      - bun.lockb
+      - bun.lock
       - index.html
       - src/**/*
       - '*.config.*'

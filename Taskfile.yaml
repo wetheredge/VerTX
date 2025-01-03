@@ -16,7 +16,6 @@ tasks:
   setup:
     desc: Setup needed after first clone and dependency updates
     cmds:
-      - git config --local include.path ../.config/git/config
       - cargo bin --install
       - cargo bin --sync-aliases
       - bun install

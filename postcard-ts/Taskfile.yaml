@@ -13,7 +13,7 @@ tasks:
     internal: true
     cmd: bun run tsc
     sources:
-      - ../bun.lockb
+      - ../bun.lock
       - ../.config/tsconfig.*
       - src/**/*
       - tsconfig.*
