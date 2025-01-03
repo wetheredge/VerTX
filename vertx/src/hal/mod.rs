@@ -12,7 +12,6 @@ macro_rules! declare_hal_types {
         pub(crate) type HalSpiConfig = impl crate::hal::traits::SpiConfig;
         pub(crate) type HalSpiChipSelect = impl embedded_hal::digital::OutputPin;
         pub(crate) type HalStatusLed = impl crate::hal::traits::StatusLed;
-        pub(crate) type HalConfigStorage = impl crate::hal::traits::ConfigStorage;
         pub(crate) type HalUi = impl crate::hal::traits::Ui;
 
         #[cfg(all(feature = "configurator", not(feature = "network")))]
@@ -33,9 +32,8 @@ pub(crate) use implementation::HalConfigurator as Configurator;
 #[cfg(feature = "network")]
 pub(crate) use implementation::HalNetwork as Network;
 pub(crate) use implementation::{
-    HalConfigStorage as ConfigStorage, HalReset as Reset, HalSpiBus as SpiBus,
-    HalSpiChipSelect as SpiChipSelect, HalSpiConfig as SpiConfig, HalStatusLed as StatusLed,
-    HalUi as Ui,
+    HalReset as Reset, HalSpiBus as SpiBus, HalSpiChipSelect as SpiChipSelect,
+    HalSpiConfig as SpiConfig, HalStatusLed as StatusLed, HalUi as Ui,
 };
 #[cfg(feature = "network")]
 pub type NetworkDriver = <Network as traits::Network>::Driver;
@@ -47,7 +45,6 @@ pub(crate) fn init(spawner: embassy_executor::Spawner) -> Init {
 pub(crate) struct Init {
     pub(crate) reset: Reset,
     pub(crate) status_led: StatusLed,
-    pub(crate) config_storage: ConfigStorage,
     pub(crate) spi: SpiBus,
     /// Chip select pin for the SD card
     pub(crate) sd_cs: SpiChipSelect,
@@ -66,9 +63,7 @@ pub(crate) mod prelude {
     pub(crate) use super::traits::Configurator as _;
     #[cfg(feature = "network")]
     pub(crate) use super::traits::Network as _;
-    pub(crate) use super::traits::{
-        ConfigStorage as _, Reset as _, SpiConfig as _, StatusLed as _, Ui as _,
-    };
+    pub(crate) use super::traits::{Reset as _, SpiConfig as _, StatusLed as _, Ui as _};
 }
 
 pub(crate) mod traits {
@@ -78,6 +73,7 @@ pub(crate) mod traits {
     use embedded_graphics::draw_target::DrawTarget;
     use embedded_graphics::pixelcolor::BinaryColor;
 
+    #[expect(unused)]
     pub(crate) trait ConfigStorage {
         fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T>;
         fn save(&mut self, config: &[u8]);

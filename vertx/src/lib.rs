@@ -44,7 +44,7 @@ pub async fn main(spawner: Spawner) {
     let mode_sender = mode.sender();
 
     static CONFIG_MANAGER: StaticCell<config::Manager> = StaticCell::new();
-    let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(hal.config_storage));
+    let config_manager = CONFIG_MANAGER.init_with(config::Manager::new);
     let config = config_manager.config();
 
     #[cfg(feature = "configurator")]
@@ -56,7 +56,7 @@ pub async fn main(spawner: Spawner) {
         hal.status_led,
         mode.receiver().unwrap(),
     ));
-    spawner.must_spawn(storage::run(inits, hal.spi, hal.sd_cs));
+    spawner.must_spawn(storage::run(inits, hal.spi, hal.sd_cs, config_manager));
     spawner.must_spawn(ui::run(
         inits,
         config,

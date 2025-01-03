@@ -1,18 +1,32 @@
 use block_device_adapters::BufStream;
 use embassy_executor::task;
 use embassy_time::{Delay, Timer};
-use embedded_fatfs::{FileSystem, FormatVolumeOptions, FsOptions};
+use embedded_fatfs::{DefaultTimeProvider, FileSystem, FsOptions, LossyOemCpConverter};
 use embedded_hal_bus::spi::ExclusiveDevice;
 use fugit::RateExtU32 as _;
 use sdspi::SdSpi;
+use static_cell::StaticCell;
 
 use crate::hal::prelude::*;
+
+type Io = BufStream<
+    SdSpi<
+        ExclusiveDevice<crate::hal::SpiBus, crate::hal::SpiChipSelect, Delay>,
+        Delay,
+        aligned::A1,
+    >,
+    512,
+>;
+type Fs = FileSystem<&'static mut Io, DefaultTimeProvider, LossyOemCpConverter>;
+pub(crate) type File =
+    embedded_fatfs::File<'static, &'static mut Io, DefaultTimeProvider, LossyOemCpConverter>;
 
 #[task]
 pub(crate) async fn run(
     init: &'static crate::InitCounter,
     mut spi: crate::hal::SpiBus,
     mut cs: crate::hal::SpiChipSelect,
+    config_manager: &'static crate::config::Manager,
 ) -> ! {
     let init = init.start(loog::intern!("storage"));
 
@@ -39,30 +53,25 @@ pub(crate) async fn run(
             .set_config(&crate::hal::SpiConfig::new(25u32.MHz()))
     );
 
-    let mut raw = BufStream::<_, 512>::new(sd);
-    let fs_options = FsOptions::new();
-    let first_try = FileSystem::new(&mut raw, fs_options).await;
-    let fs = match first_try {
-        Ok(fs) => fs,
-        Err(embedded_fatfs::Error::CorruptedFileSystem) => {
-            // Fixes error about mutable aliasing when retrying `FileSystem::new`
-            drop(first_try);
+    static BUF_STREAM: StaticCell<Io> = StaticCell::new();
+    let raw = BUF_STREAM.init_with(|| BufStream::<_, 512>::new(sd));
 
-            loog::warn!("Formatting SD card");
+    static FS: StaticCell<Fs> = StaticCell::new();
+    let fs = FileSystem::new(raw, FsOptions::new()).await.unwrap();
+    let fs = FS.init(fs);
 
-            let options = FormatVolumeOptions::new().volume_label(*b"VerTX cfg\0\0");
-            embedded_fatfs::format_volume(&mut raw, options)
-                .await
-                .unwrap();
+    let root = fs.root_dir();
 
-            FileSystem::new(&mut raw, fs_options).await.unwrap()
+    let config_path = "config.bin";
+    let config = match root.open_file(config_path).await {
+        Ok(file) => file,
+        Err(embedded_fatfs::Error::NotFound) => {
+            loog::warn!("Creating missing config file");
+            root.create_file(config_path).await.unwrap()
         }
-        Err(err) => {
-            loog::panic!("SD card error: {err:?}");
-        }
+        Err(err) => loog::panic!("Failed to open config file: {err:?}"),
     };
-
-    loog::debug!("FS stats: {:?}", fs.stats().await.unwrap());
+    config_manager.load(config).await;
 
     init.finish();
     core::future::pending().await
