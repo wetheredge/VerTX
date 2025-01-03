@@ -52,6 +52,24 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run scripts/check-targets.ts
 
+  config-codegen:
+    name: Check config codegen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: oven-sh/setup-bun@v2.0.1
+        with:
+          bun-version-file: .tool-versions
+      - run: bun install --frozen-lockfile
+      - name: Run config codegen
+        working-directory: vertx-config
+        run: |
+          rm -rf out && mkdir out
+          bun run src/generate.ts
+          rustfmt --edition 2021 out/*.rs
+          bun run biome format --config-path=../.config/biome.json --write out/*.ts
+      - run: git diff --exit-code
+
   rustfmt:
     runs-on: ubuntu-latest
     steps:
@@ -231,6 +249,7 @@ jobs:
       - unused-dependencies
       - toolchains-synced
       - check-targets
+      - config-codegen
       - rustfmt
       - clippy
       - clippy-config-migrate
