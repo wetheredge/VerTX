@@ -144,9 +144,9 @@ async function npm() {
 	}
 
 	chdir(repoRoot);
-	await $`rm bun.lockb && bun install`.quiet();
-	await commit('Recreate bun.lockb');
-	console.info('Recreated bun.lockb');
+	await $`rm bun.lock && bun install`.quiet();
+	await commit('Recreate bun.lock');
+	console.info('Recreated bun.lock');
 }
 
 async function npmImpl(name: string) {
@@ -175,7 +175,7 @@ async function npmImpl(name: string) {
 			const rawCurrent = rawVersion(current);
 			const done = dep(name, rawCurrent);
 
-			await $`bun add --exact ${kindFlag} ${name} && bun run biome format --write package.json && git restore ${repoRoot}/bun.lockb`.quiet();
+			await $`bun add --exact ${kindFlag} ${name} && bun run biome format --write package.json && git restore ${repoRoot}/bun.lock`.quiet();
 
 			const newData = await packageJson();
 			const latest = newData[kind][name] as string;

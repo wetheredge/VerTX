@@ -14,7 +14,7 @@ tasks:
     deps: [build:vertx]
     cmd: bun run tsc
     sources:
-      - ../bun.lockb
+      - ../bun.lock
       - ../.config/tsconfig.*
       - src/**/*
       - '*.config.*'
@@ -35,7 +35,7 @@ tasks:
       - cp -r ../vertx-configurator/dist dist/configurator
     sources:
       - package.json
-      - bun.lockb
+      - bun.lock
       - index.html
       - src/**/*
       - '*.config.*'

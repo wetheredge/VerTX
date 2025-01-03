@@ -15,7 +15,7 @@ tasks:
     cmds:
       - bun run tsc
     sources:
-      - ../bun.lockb
+      - ../bun.lock
       - ../.config/tsconfig.*
       - tsconfig.*
       - '**.ts'

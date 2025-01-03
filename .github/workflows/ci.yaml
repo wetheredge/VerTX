@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Install cargo-machete
-        uses: taiki-e/install-action@v2.46.7
+        uses: taiki-e/install-action@v2.47.2
         with:
           tool: cargo-machete@0.7.0 # dep:cargo-bin:cargo-machete
       - run: cargo machete
@@ -87,7 +87,7 @@ jobs:
           - vertx-crsf
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.5
+      - uses: Swatinem/rust-cache@v2.7.7
       - run: cargo clippy --all-targets -p ${{ matrix.crate }}
 
   clippy-config-migrate:
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.5
+      - uses: Swatinem/rust-cache@v2.7.7
       - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F up
       - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F down
 
@@ -113,7 +113,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run vite build
       - run: bun run scripts/compress.ts
-      - uses: actions/upload-artifact@v4.4.3
+      - uses: actions/upload-artifact@v4.5.0
         with:
           name: configurator
           path: vertx-configurator/dist/
@@ -143,7 +143,7 @@ jobs:
         uses: ./.github/actions/setup-chip
         with:
           chip: ${{ matrix.chip }}
-      - uses: Swatinem/rust-cache@v2.7.5
+      - uses: Swatinem/rust-cache@v2.7.7
       - name: Get pre-built configurator
         uses: actions/download-artifact@v4.1.8
         with:
@@ -159,7 +159,7 @@ jobs:
     needs: build-configurator
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.5
+      - uses: Swatinem/rust-cache@v2.7.7
       - name: Run clippy
         run: cargo clippy --target wasm32-unknown-unknown --lib -F simulator
         working-directory: vertx
@@ -183,7 +183,7 @@ jobs:
         uses: ./.github/actions/setup-chip
         with:
           chip: ${{ matrix.chip }}
-      - uses: Swatinem/rust-cache@v2.7.5
+      - uses: Swatinem/rust-cache@v2.7.7
       - name: Get pre-built configurator
         uses: actions/download-artifact@v4.1.8
         with:
@@ -203,9 +203,9 @@ jobs:
           - vertx-crsf
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.5
+      - uses: Swatinem/rust-cache@v2.7.7
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2.46.7
+        uses: taiki-e/install-action@v2.47.2
         with:
           tool: nextest@0.9.85 # dep:cargo-bin:cargo-nextest
       - run: cargo nextest run
@@ -241,7 +241,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: crate-ci/typos@v1.28.2 # dep:asdf:typos
+      - uses: crate-ci/typos@v1.29.0 # dep:asdf:typos
 
   passed:
     runs-on: ubuntu-latest
