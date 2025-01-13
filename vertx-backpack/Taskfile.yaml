@@ -6,6 +6,7 @@ includes:
     internal: true
     vars:
       chip: "{{.VERTX_BACKPACK_CHIP}}"
+      rustcTarget: "{{.VERTX_BACKPACK_RUSTC_TARGET}}"
 
 dotenv:
   - ../.env

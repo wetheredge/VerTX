@@ -1,25 +1,15 @@
 version: 3
 
-vars:
-  xtensa_toolchain: '{{default "esp-vertx" .VERTX_ESP_TOOLCHAIN}}'
-  raw_chip_data: '{"esp32":{"toolchain":"xtensa","target":"xtensa-esp32-none-elf"},"esp32c3":{"target":"riscv32imc-unknown-none-elf"},"esp32s3":{"toolchain":"xtensa","target":"xtensa-esp32s3-none-elf"},"rp2040":{"target":"thumbv6m-none-eabi"},"stm32f407":{"target":"thumbv7em-none-eabihf"}}'
-  all_chip_data:
-    ref: fromJson .raw_chip_data
-
 tasks:
   cargo:
     requires:
-      vars: [command, chip]
-    cmd: cargo{{if eq .chip_data.toolchain "xtensa"}} +{{.xtensa_toolchain}}{{end}} {{.command}} -Zbuild-std=alloc,core --target {{.chip_data.target}} -F 'chip-{{.chip}}{{if .features}} {{.features}}{{end}}' {{.args}}
-    vars:
-      chip_data:
-        ref: get .all_chip_data .chip
+      vars: [command, chip, rustcTarget]
+    cmd: cargo {{.command}} -Zbuild-std=alloc,core --target {{.rustcTarget}} -F 'chip-{{.chip}}{{if .features}} {{.features}}{{end}}' {{.args}}
 
   flash:
     - task: flash:{{if hasPrefix "esp" .chip}}esp{{else}}probe-rs{{end}}
       vars:
         flash: { ref: .flash }
         bin: { ref: .bin }
-  flash:esp: cargo bin espflash flash --baud 460800 --flash-size {{.flash}} --monitor {{.bin}}
-  # TODO: cargo bin
-  flash:probe-rs: probe-rs run --chip {{.chip}} {{.bin}}
+  flash:esp: ../.tools/bin/espflash flash --baud 460800 --flash-size {{.flash}} --monitor {{.bin}}
+  flash:probe-rs: ../.tools/bin/probe-rs run --chip {{.chip}} {{.bin}}

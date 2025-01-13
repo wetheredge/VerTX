@@ -23,6 +23,16 @@
 			}
 		},
 		{
+			"include": ["./fetch-tools/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					}
+				}
+			}
+		},
+		{
 			"include": ["./set-target.ts"],
 			"linter": {
 				"rules": {
@@ -33,7 +43,7 @@
 			}
 		},
 		{
-			"include": ["./update.ts"],
+			"include": ["./fetch-tools/*.ts", "./update.ts"],
 			"linter": {
 				"rules": {
 					"style": {

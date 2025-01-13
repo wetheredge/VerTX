@@ -1,3 +1,5 @@
+/.cache/
+/.tools/
 /target/
 dist/
 /node_modules/
