@@ -6,6 +6,7 @@ includes:
     internal: true
     vars:
       chip: "{{.VERTX_CHIP}}"
+      rustcTarget: "{{.VERTX_RUSTC_TARGET}}"
       features: "{{.VERTX_FEATURES}}"
 
 dotenv:
@@ -56,7 +57,7 @@ tasks:
 
   post-build:
     internal: true
-    cmd: cp ../target/{{get (get .all_chip_data .VERTX_CHIP) "target"}}/{{.profile}}/vertx ../target/vertx
+    cmd: cp ../target/{{get .cargoTargets .VERTX_CHIP}}/{{.profile}}/vertx ../target/vertx
     silent: true
 
   flash:
@@ -88,19 +89,19 @@ tasks:
 
   simulator:bindgen:
     internal: true
-    dir: ../target
+    dir: ..
     cmds:
-      - cargo bin wasm-bindgen --out-dir simulator --target web wasm32-unknown-unknown/{{.profile}}/vertx.wasm
-      - 'echo "export const memoryName: \"memory\";" >> simulator/vertx.d.ts'
-      - echo 'export const memoryName = "memory";' >> simulator/vertx.js
+      - .tools/bin/wasm-bindgen --out-dir target/simulator --target web target/wasm32-unknown-unknown/{{.profile}}/vertx.wasm
+      - 'echo "export const memoryName: \"memory\";" >> target/simulator/vertx.d.ts'
+      - echo 'export const memoryName = "memory";' >> target/simulator/vertx.js
 
   simulator:optimize:
     internal: true
-    dir: ../target/simulator
-    cmd: cargo bin wasm-opt $VERTX_WASM_OPT_ARGS --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
+    dir: ..
+    cmd: .tools/bin/wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts
 
   simulator:cargo:
     internal: true
-    cmd: cargo {{.command}} --target wasm32-unknown-unknown --lib -F simulator {{.CLI_ARGS}}
+    cmd: cargo {{.command}} -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown --lib -F simulator {{.CLI_ARGS}}
 
   :*: cd .. && task {{index .MATCH 0}}

@@ -16,21 +16,18 @@ tasks:
   setup:
     desc: Setup needed after first clone and dependency updates
     cmds:
-      - cargo bin --install
-      - cargo bin --sync-aliases
       - bun install
+      - bun run scripts/fetch-tools/main.ts
       - cd vertx-configurator && bun install
+      - rustup toolchain link vertx .tools/rust
       - silent: true
-        cmd: |
-          echo
-          echo 'Run `task target:set` to choose your hardware target'
-          echo 'A complete list of targets can be printed by running `task set-target`'
+        cmd: echo && echo 'Run `task set-target` to choose your hardware target'
 
   fmt:
     desc: Format everything
     cmds:
       - cargo fmt --all
-      - cargo bin dprint --config .config/dprint.json fmt
+      - .tools/bin/dprint --config .config/dprint.json fmt
       - bun run biome format --config-path=.config/biome.json --write .
 
   clean:

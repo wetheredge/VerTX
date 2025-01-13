@@ -14,16 +14,19 @@ tasks:
     - task: check-impl
       vars:
         chip: esp32
+        rustcTarget: xtensa-esp32-none-elf
 
   check:esp32c3:
     - task: check-impl
       vars:
         chip: esp32c3
+        rustcTarget: riscv32imc-unknown-none-elf
 
   check:esp32s3:
     - task: check-impl
       vars:
         chip: esp32s3
+        rustcTarget: xtensa-esp32s3-none-elf
 
   check-impl:
     internal: true
@@ -32,6 +35,7 @@ tasks:
         vars:
           command: clippy
           chip: "{{.chip}}"
+          rustcTarget: "{{.rustcTarget}}"
           args: "{{.CLI_ARGS}}"
 
   :*: cd .. && task {{index .MATCH 0}}

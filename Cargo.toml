@@ -40,13 +40,14 @@ vertx-network.path = "vertx-network"
 vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
 
-[workspace.metadata.bin]
-cargo-machete = { version = "=0.7.0", locked = true }
-cargo-nextest = { version = "=0.9.87", locked = true }
-dprint = { version = "=0.48.0", locked = true }
-espflash = { version = "=3.2.0", locked = true }
-wasm-bindgen-cli = { version = "=0.2.99", locked = true, bins = ["wasm-bindgen"] }
-wasm-opt = { version = "=0.116.1", locked = true }
+[workspace.metadata.bin-dependencies]
+cargo-machete = "0.7.0"
+cargo-nextest = "0.9.87"
+dprint = "0.48.0"
+espflash = "3.2.0"
+probe-rs-tools = "0.24.0"
+wasm-bindgen-cli = "0.2.99"
+wasm-opt = "0.116.1"
 
 [patch.crates-io]
 ssd1306 = { git = "https://github.com/rust-embedded-community/ssd1306.git", rev = "f3a2f7aca421fbf3ddda45ecef0dfd1f0f12330e" }

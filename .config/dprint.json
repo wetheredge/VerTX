@@ -17,7 +17,7 @@
 	"toml": {
 		"indentWidth": 4
 	},
-	"excludes": ["**/*~", "target"],
+	"excludes": ["**/*~", "target", ".tools", ".cache"],
 	"plugins": [
 		"https://plugins.dprint.dev/dockerfile-0.3.2.wasm",
 		"https://plugins.dprint.dev/g-plane/markup_fmt-v0.13.0.wasm",

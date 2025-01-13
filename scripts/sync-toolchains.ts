@@ -1,31 +1,16 @@
 #!/usr/bin/env bun
 
 import { chdir } from 'node:process';
-import { chips, xtensa } from '../.config/toolchains.json';
-import { getRepoRoot } from './utils';
+import { getRepoRoot, getXtensaToolchainVersion } from './utils';
 
 // Consistent paths
 chdir(await getRepoRoot());
 
-const chipDataPrefix = '  raw_chip_data:';
-await updateFile('.config/tasks/Taskfile.embedded.yaml', (line) =>
-	line.startsWith(chipDataPrefix)
-		? `${chipDataPrefix} '${JSON.stringify(chips)}'`
-		: line,
-);
-
-await updateFile('README.md', (line) =>
-	line.includes('espup install')
-		? line.replace(
-				/--toolchain-version\s+[^\s]+/,
-				`--toolchain-version ${xtensa}`,
-			)
-		: line,
-);
+const version = await getXtensaToolchainVersion();
 
 await updateFile('.devcontainer/Dockerfile', (line) =>
 	line.startsWith('FROM docker.io/espressif/idf-rust:')
-		? `${line.split(':')[0]}:esp32s3_${xtensa}`
+		? `${line.split(':')[0]}:esp32s3_${version}`
 		: line,
 );
 

@@ -33,19 +33,14 @@ Non-goals:
 ### Pre-requisites
 
 - [`rustup`](https://rustup.rs/)
-- [`espup`](https://github.com/esp-rs/espup#installation) with the latest Rust
-  esp toolchain and the esp32s3 target
-- [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall#installation)
-  (optional, for faster installs)
-- [`cargo-run-bin`](https://github.com/dustinblackman/cargo-run-bin#install)
+- Optionally
+  [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall#installation)
+  for faster installs
 - [`asdf`](https://asdf-vm.com/guide/getting-started.html)
 
 After installing the above list:
 
 ```shell
-# If using a different name, add VERTX_ESP_TOOLCHAIN=<name> to <repo root>/.env
-$ espup install --toolchain-version 1.82.0.3 --targets esp32,esp32s3 --name esp-vertx
-
 # Install asdf plugins
 $ asdf plugin add actionlint https://github.com/crazy-matt/asdf-actionlint
 $ asdf plugin add bun https://github.com/cometkim/asdf-bun
@@ -54,11 +49,6 @@ $ asdf plugin add typos https://github.com/aschiavon91/asdf-typos
 
 $ asdf install
 $ task setup
-
-# On Linux, remember to load the esp toolchain environment before building vertx
-$ . ~/export-esp.sh
-# Or, add it to .env
-$ sed -E 's/^export |"//g' ~/export-esp.sh >> .env
 ```
 
 #### Or, use the devcontainer
