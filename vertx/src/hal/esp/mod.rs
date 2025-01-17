@@ -11,9 +11,9 @@ use embassy_time::Duration;
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio;
 use esp_hal::i2c::master::{self as i2c, I2c};
-use esp_hal::prelude::*;
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
+use esp_hal::time::RateExtU32 as _;
 use esp_hal::timer::timg;
 use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
@@ -48,12 +48,10 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     let config_storage = ConfigStorage::new(&mut partitions);
 
     let ui = {
-        let config = i2c::Config {
-            frequency: 1.MHz(),
-            ..Default::default()
-        };
+        let config = i2c::Config::default().with_frequency(1.MHz());
 
         let i2c = I2c::new(p.I2C0, config)
+            .unwrap()
             .with_sda(pins!(p, display.sda))
             .with_scl(pins!(p, display.scl))
             .into_async();
@@ -156,7 +154,7 @@ impl super::traits::Network for Network {
     type Hal = vertx_network_esp::Hal;
 
     fn seed(&mut self) -> u64 {
-        use rand::RngCore;
+        use rand::RngCore as _;
         self.rng.next_u64()
     }
 

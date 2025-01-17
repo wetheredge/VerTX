@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Write as _};
 use std::process::Command;
 use std::{env, fs, io};
 

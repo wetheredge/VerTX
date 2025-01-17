@@ -11,7 +11,6 @@ mod network;
 
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_hal::prelude::*;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
 use esp_hal::uart::{self, Uart};
@@ -19,7 +18,7 @@ use static_cell::StaticCell;
 
 use self::api::Api;
 
-#[main]
+#[esp_hal_embassy::main]
 async fn main(spawner: Spawner) {
     esp_alloc::heap_allocator!(32 * 1024);
 
@@ -28,7 +27,7 @@ async fn main(spawner: Spawner) {
 
     let p = esp_hal::init({
         let mut config = esp_hal::Config::default();
-        config.cpu_clock = CpuClock::max();
+        config.cpu_clock = esp_hal::clock::CpuClock::max();
         config
     });
 
@@ -44,9 +43,11 @@ async fn main(spawner: Spawner) {
     let (rx, tx) = (p.GPIO20, p.GPIO21);
     #[cfg(feature = "chip-esp32s3")]
     let (rx, tx) = (p.GPIO5, p.GPIO4);
-    let config = uart::Config::default().baudrate(vertx_backpack_ipc::BAUDRATE);
-    let mut uart = Uart::new_with_config(p.UART1, config, rx, tx)
+    let config = uart::Config::default().with_baudrate(vertx_backpack_ipc::BAUDRATE);
+    let mut uart = Uart::new(p.UART1, config)
         .unwrap()
+        .with_rx(rx)
+        .with_tx(tx)
         .into_async();
 
     let ipc = ipc::init(&mut uart).await;

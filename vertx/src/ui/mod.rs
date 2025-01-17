@@ -8,7 +8,7 @@ mod view;
 use embassy_executor::task;
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::{PrimitiveStyle, Rectangle, StyledDrawable, Triangle};
+use embedded_graphics::primitives::{PrimitiveStyle, Rectangle, StyledDrawable as _, Triangle};
 use embedded_graphics::text::renderer::TextRenderer as _;
 use embedded_graphics::text::{Baseline, Text};
 use embedded_mogeefont::MogeeTextStyle;
@@ -16,7 +16,7 @@ use heapless::String;
 
 use self::component::Component;
 use self::history::History;
-use self::view::View;
+use self::view::View as _;
 use crate::hal::traits::Ui as _;
 
 type DrawResult<T = ()> = Result<T, <crate::hal::Ui as DrawTarget>::Error>;

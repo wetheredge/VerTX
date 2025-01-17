@@ -29,7 +29,7 @@ impl embedded_io_async::ErrorType for Rx {
 }
 
 impl embedded_io_async::Read for Rx {
-    async fn read(&mut self, output: &mut [u8]) -> Result<usize, Self::Error> {
-        Ok(self.0.read(output).await)
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
+        Ok(self.0.read(buf).await)
     }
 }

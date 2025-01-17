@@ -1,0 +1,2 @@
+[env]
+ESP_HAL_EMBASSY_CONFIG_TIMER_QUEUE = "multiple-integrated"
