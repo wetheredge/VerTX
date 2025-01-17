@@ -58,7 +58,7 @@ export const request = (request: Request) => {
 const configUpdates = new Map<number, (result: ConfigUpdateResult) => void>();
 let updateId = Date.now() & 0xffff;
 export async function updateConfig(
-	update: Update,
+	update: Exclude<Update, { key: never }>,
 ): Promise<ConfigUpdateResult> {
 	const id = updateId;
 	updateId = (updateId + 1) >>> 0;

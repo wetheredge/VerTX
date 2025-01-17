@@ -1,14 +1,11 @@
 import * as types from './src/types';
 
-export const version = 1;
+export const version = 2;
 
 export const config = {
 	name: types.string(20, 'VerTX'),
 	leds: {
 		brightness: types.integer('u8', 10, { min: 10 }),
-	},
-	display: {
-		brightness: types.integer('u8', 255, { min: 1 }),
 	},
 	network: {
 		hostname: types.string(32, 'vertx'),

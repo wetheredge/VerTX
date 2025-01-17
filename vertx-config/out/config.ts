@@ -13,7 +13,6 @@ export const configKeys = {
 			password: 5,
 		},
 	},
-	expert: 6,
 } as const;
 
 export type Config = {
@@ -23,7 +22,6 @@ export type Config = {
 	3: string;
 	4: string;
 	5: string;
-	6: boolean;
 };
 
 export function parseConfig(reader: Reader): Config {
@@ -38,14 +36,13 @@ export function parseConfig(reader: Reader): Config {
 		reader.string(),
 		reader.string(),
 		reader.string(),
-		reader.boolean(),
 	];
 }
 
 export type StringSettings = 0 | 2 | 3 | 4 | 5;
 export type IntegerSettings = 1;
 export type EnumSettings = never;
-export type BooleanSettings = 6;
+export type BooleanSettings = never;
 
 export type Update =
 	| { key: StringSettings; value: string }
@@ -64,9 +61,6 @@ export function encodeUpdate(writer: Writer, update: Update): ArrayBuffer {
 			break;
 		case 1:
 			writer.u8(update.value);
-			break;
-		case 6:
-			writer.boolean(update.value);
 			break;
 	}
 	return writer.done();

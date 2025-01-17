@@ -56,7 +56,6 @@ extern "C" fn run() -> usize {
         network_password: old.network_password,
         network_home_ssid: old.network_home_ssid,
         network_home_password: old.network_home_password,
-        expert: old.expert,
     };
 
     current.serialize(data).map_err(|_| ()).unwrap()
@@ -77,7 +76,6 @@ extern "C" fn run() -> usize {
         network_password: current.network_password,
         network_home_ssid: current.network_home_ssid,
         network_home_password: current.network_home_password,
-        expert: current.expert,
         ..Default::default()
     };
 
