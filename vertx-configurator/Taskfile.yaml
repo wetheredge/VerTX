@@ -7,56 +7,62 @@ tasks:
 
   check:
     - bun run biome ci .
-    - task: check:tsc
+    - task: check:astro
 
-  check:tsc:
+  check:astro:
     internal: true
-    cmd: bun run tsc
+    cmd: bun run astro check
+    sources:
+      - ../bun.lock
+      - ../.config/tsconfig.*
+      - src/**/*
+      - '*.config.*'
+      - tsconfig.*
+
+  check:tsc-scripts:
+    internal: true
+    cmd: bun run tsc scripts
     sources:
       - ../bun.lock
       - ../.config/tsconfig.*
       - scripts/**/*
-      - src/**/*
-      - '*.config.*'
       - tsconfig.*
+
+  run:
+    desc: Run a development server
+    env:
+      VERTX_TARGET: '{{.target}}'
+    cmd: bun run astro dev
 
   build:
     - task: cache:native
     - task: build-impl
       vars:
         target: native
-    - task: build:compress
-
-  run:
-    desc: Run a development server
-    env:
-      VITE_TARGET: native
-    cmd: bun run vite
+    - task: build:post
 
   preview:
     deps: [build]
-    cmd: bun run vite preview
+    cmd: bun run astro preview
 
   build-impl:
     internal: true
     deps: [check]
     env:
       NODE_ENV: production
-      VITE_TARGET: '{{.target}}'
-    cmd: bun run vite build
+      VERTX_TARGET: '{{.target}}'
+    cmd: bun run astro build
     sources:
-      - package.json
-      - bun.lock
-      - index.html
+      - ../bun.lock
       - src/**/*
       - '*.config.*'
       - tsconfig.*
-      - scripts/compress.ts
+      - scripts/post-build.ts
       - dist/.taskCacheKey
 
-  build:compress:
+  build:post:
     internal: true
-    cmd: bun run scripts/compress.ts
+    cmd: bun run scripts/post-build.ts
     status:
       - ls dist | grep -q '\.gz$'
 
@@ -69,8 +75,8 @@ tasks:
 
   simulator:run:
     env:
-      VITE_TARGET: simulator
-    cmd: bun run vite
+      VERTX_TARGET: simulator
+    cmd: bun run astro dev
 
   cache:*:
     cmd: mkdir -p dist && echo {{.MATCH}} > dist/.taskCacheKey

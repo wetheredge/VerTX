@@ -1,0 +1,14 @@
+---
+import * as styles from './AppBar.css';
+import MenuButton from './MenuButton.astro';
+
+export type Props = {
+	showSave?: boolean;
+};
+---
+
+<div class={styles.root}>
+	<MenuButton />
+	<span>VerTX</span>
+	{Astro.props.showSave && <button class={`${styles.save} primary`}>Save</button>}
+</div>

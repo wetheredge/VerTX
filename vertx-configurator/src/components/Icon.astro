@@ -1,0 +1,16 @@
+---
+export type Props = {
+	size?: string;
+	svg: string;
+};
+
+const { size = '1em', svg: rawSvg } = Astro.props;
+
+const svg = rawSvg
+	.replace('<svg', '<svg aria-hidden=true')
+	.replace(/(width)="[^"]*"/, `$1="${size}"`)
+	.replace(/(height)="[^"]*"/, `$1="${size}"`)
+	.replace(/(stroke-width)="[^"]*"/, '$1="2"');
+---
+
+<Fragment set:html={svg} />

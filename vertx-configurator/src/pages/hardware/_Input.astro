@@ -1,0 +1,41 @@
+---
+import iconFlipHorizontal from 'lucide-static/icons/flip-horizontal-2.svg?raw';
+import { customAlphabet } from 'nanoid';
+import Icon from '../../components/Icon.astro';
+import { size } from '../../styles/constants';
+import * as styles from './_Input.css';
+
+export type Props = {
+	name: string;
+	label: string;
+	center?: boolean;
+};
+
+const { name, label, center } = Astro.props;
+
+const id = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)();
+
+// TODO: runtime --value via element.style.setProperty('--value', `${(value * 100).toFixed(2)}%`)
+---
+
+<span aria-hidden=true>{name}</span>
+<span
+  id={id}
+  class:list={[
+    styles.channel,
+    { center },
+  ]}
+  role="meter"
+  aria-label={label}
+  aria-valuenow={0}
+  aria-valuemin={center ? -100 : 0}
+  aria-valuemax={100}
+/>
+<button
+  class={styles.iconButton}
+  type="button"
+  title="Reverse"
+  aria-controls={id}
+>
+  <Icon size={size.buttonIcon} svg={iconFlipHorizontal} />
+</button>

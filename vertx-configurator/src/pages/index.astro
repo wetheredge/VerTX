@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+import * as styles from './_index.css';
+
+const buildTable = ['Target', 'Version', 'Profile', 'Branch', 'Commit'];
+---
+
+<Layout>
+	<h1>About</h1>
+
+	<table class={styles.buildInfoTable}>
+		<tbody>
+			{buildTable.map((label) => (
+				<tr>
+					<th>{label}</th>
+					<td>$build.{label.toLowerCase()}$</td>
+				</tr>
+			))}
+		</tbody>
+	</table>
+</Layout>

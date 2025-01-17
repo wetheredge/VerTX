@@ -1,0 +1,32 @@
+---
+import AppBar from '../components/AppBar.astro';
+import MenuState from '../components/MenuState.astro';
+import Navigation from '../components/Navigation.astro';
+import '../styles/reset.css';
+import '../styles/theme.css.ts';
+import './Layout.css.ts';
+
+export type Props = {
+	showSave?: boolean;
+	children: unknown;
+};
+---
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<title>VerTX Configurator</title>
+	</head>
+	<body>
+		<div id="root">
+			<MenuState />
+			<AppBar showSave={Astro.props.showSave} />
+			<Navigation />
+			<main>
+				<slot></slot>
+			</main>
+		</div>
+	</body>
+</html>

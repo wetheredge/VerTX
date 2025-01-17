@@ -1,0 +1,36 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Input from './_Input.astro';
+import * as styles from './_index.css';
+
+const analogInputs = [
+	['Yaw', true],
+	['Throttle'],
+	['Roll', true],
+	['Pitch', true],
+	['A0'],
+	['A1'],
+] as const;
+
+const switchInputs = ['S0', 'S1', 'S2', 'S3', 'S4'];
+---
+
+<Layout>
+	<h1>Hardware</h1>
+
+	<h2>Analog</h2>
+
+	<div class={styles.inputs}>
+		{analogInputs.map(([name, center]) => <Input name={name} label={`Analog input ${name}`} center={center} />)}
+	</div>
+
+	<button class={styles.calibrate} type=button>
+		Start calibration
+	</button>
+
+	<h2>Switches</h2>
+
+	<div class={styles.inputs}>
+		{switchInputs.map((name) => <Input center name={name} label={`Switch ${name}`} />)}
+	</div>
+</Layout>

@@ -1,0 +1,18 @@
+---
+import Icon from './Icon.astro';
+
+const stripEndSlash = (s: string) => s.replace(/\/$/, '');
+
+const { href: rawHref, label, icon } = Astro.props;
+// Leave the trailing slash on the root route when there is a BASE_URL to
+// reinforce the separation from the simulator.
+const href = stripEndSlash(import.meta.env.BASE_URL) + rawHref;
+
+const currentPath = Astro.url.pathname.replace(/\.html$/, '');
+const active = stripEndSlash(currentPath) === stripEndSlash(href);
+---
+
+<a href={href} class:list={{ active }}>
+	<Icon svg={icon} />
+	<span>{label}</span>
+</a>
