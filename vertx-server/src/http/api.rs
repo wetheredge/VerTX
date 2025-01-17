@@ -2,7 +2,7 @@ use base64::engine::general_purpose::STANDARD as Base64;
 use base64::Engine as _;
 use edge_ws::FrameType;
 use embedded_io_async::{Read, Write};
-use sha1::{Digest, Sha1};
+use sha1::{Digest as _, Sha1};
 use vertx_network::Api;
 
 #[expect(dead_code)]

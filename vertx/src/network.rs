@@ -48,7 +48,7 @@ pub async fn init(
 
     #[cfg(feature = "network-native")]
     {
-        use crate::hal::traits::Network;
+        use crate::hal::traits::Network as _;
         native::run(spawner, config, network.seed(), network.hal(), api).await;
     }
     #[cfg(not(feature = "network-native"))]

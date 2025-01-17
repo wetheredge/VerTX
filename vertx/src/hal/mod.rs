@@ -13,12 +13,11 @@ macro_rules! declare_hal_types {
 
         #[cfg(feature = "backpack")]
         pub(crate) type HalBackpackTx = impl embedded_io_async::Write<
-                Error = impl loog::DebugFormat + embedded_io_async::Error,
-            >;
+            Error = impl loog::DebugFormat + embedded_io_async::Error,
+        >;
         #[cfg(feature = "backpack")]
-        pub(crate) type HalBackpackRx = impl embedded_io_async::Read<
-                Error = impl loog::DebugFormat + embedded_io_async::Error,
-            >;
+        pub(crate) type HalBackpackRx =
+            impl embedded_io_async::Read<Error = impl loog::DebugFormat + embedded_io_async::Error>;
     };
 }
 

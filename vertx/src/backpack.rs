@@ -4,7 +4,7 @@ use embassy_sync::channel;
 use embassy_sync::once_lock::OnceLock;
 use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Ticker};
-use embedded_io_async::{Read, Write};
+use embedded_io_async::{Read as _, Write as _};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use static_cell::ConstStaticCell;
 use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};

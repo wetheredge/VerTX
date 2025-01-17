@@ -32,12 +32,20 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         use core::mem::MaybeUninit;
 
         const HEAP_SIZE: usize = 32 * 1024;
-        static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
+
+        // SAFETY: this pointer is guaranteed to be unique:
+        // - `StaticCell::init_with` guarantees this can only run once and
+        // - No other code can access `HEAP`
+        #[allow(static_mut_refs)]
+        let start = unsafe {
+            static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
+            HEAP.as_mut_ptr()
+        };
 
         // SAFETY:
         // - `StaticCell` guarantees this will only be called once
         // - `HEAP_SIZE` is > 0
-        unsafe { ALLOCATOR.init(HEAP.as_mut_ptr() as usize, HEAP_SIZE) };
+        unsafe { ALLOCATOR.init(start as usize, HEAP_SIZE) };
     });
 
     let p = embassy_rp::init(Default::default());

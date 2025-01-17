@@ -4,13 +4,8 @@
 #![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
 
-#[cfg(feature = "chip-rp")]
-use embassy_executor::main;
-use embassy_executor::Spawner;
-#[cfg(feature = "chip-esp")]
-use esp_hal::prelude::main;
-
-#[main]
-async fn main(spawner: Spawner) {
+#[cfg_attr(feature = "chip-esp", esp_hal_embassy::main)]
+#[cfg_attr(feature = "chip-rp", embassy_executor::main)]
+async fn main(spawner: embassy_executor::Spawner) {
     vertx::main(spawner).await;
 }

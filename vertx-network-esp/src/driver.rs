@@ -8,8 +8,14 @@ pub enum Driver {
 }
 
 impl embassy_net::driver::Driver for Driver {
-    type RxToken<'a> = RxToken where Self: 'a;
-    type TxToken<'a> = TxToken where Self: 'a;
+    type RxToken<'a>
+        = RxToken
+    where
+        Self: 'a;
+    type TxToken<'a>
+        = TxToken
+    where
+        Self: 'a;
 
     fn receive(&mut self, cx: &mut Context) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
         use embassy_net::driver::Driver;

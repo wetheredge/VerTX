@@ -1,2 +1,8 @@
+disallowed-methods = [
+    # TODO: remove when embassy-futures gets updated
+    { path = "embassy_futures::select::select_slice", reason = "v0.1.1 is unsound" },
+]
+
+avoid-breaking-exported-api = false
 semicolon-inside-block-ignore-singleline = true
 semicolon-outside-block-ignore-multiline = true

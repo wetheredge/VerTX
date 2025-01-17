@@ -87,7 +87,7 @@ impl Component for About {
 }
 
 impl View for About {
-    fn title(&self) -> &str {
+    fn title(&self) -> &'static str {
         "About VerTX"
     }
 

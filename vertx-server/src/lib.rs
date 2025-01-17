@@ -106,13 +106,9 @@ pub mod tasks {
     pub struct DhcpContext(pub(crate) Ipv4Addr);
 
     pub async fn dhcp(stack: Stack<'_>, dhcp_context: DhcpContext) -> ! {
-        use edge_dhcp::Ipv4Addr;
-
         const LEASES: usize = 2;
 
         let DhcpContext(address) = dhcp_context;
-
-        let mask = Ipv4Addr::new(255, 255, 255, 0);
 
         let mut rx_meta = [PacketMetadata::EMPTY; 4];
         let mut rx_buffer = [0; 1536];
@@ -128,13 +124,13 @@ pub mod tasks {
         );
         socket.bind(67).unwrap();
 
-        let mut server = edge_dhcp::server::Server::<{ LEASES }>::new(address);
-        let server_options = edge_dhcp::server::ServerOptions {
-            ip: address,
-            gateways: &[address],
-            subnet: Some(mask),
-            dns: &[],
-            lease_duration_secs: 60 * 5,
+        let mut server = edge_dhcp::server::Server::<_, { LEASES }>::new_with_et(address);
+        let gateways = &[address];
+        let server_options = {
+            let mut options = edge_dhcp::server::ServerOptions::new(address, None);
+            options.gateways = gateways;
+            // TODO: set captive_url?
+            options
         };
 
         let mut buffer = [0; 1536];
