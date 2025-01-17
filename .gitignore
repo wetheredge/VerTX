@@ -3,6 +3,7 @@
 /target/
 dist/
 /node_modules/
+.astro/
 .vite/
 .env
 .env.*

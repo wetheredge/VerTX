@@ -119,8 +119,8 @@ jobs:
         with:
           bun-version-file: .tool-versions
       - run: bun install --frozen-lockfile
-      - run: bun run vite build
-      - run: bun run scripts/compress.ts
+      - run: bun run astro build
+      - run: bun run scripts/post-build.ts
       - uses: actions/upload-artifact@v4.6.1
         with:
           name: configurator

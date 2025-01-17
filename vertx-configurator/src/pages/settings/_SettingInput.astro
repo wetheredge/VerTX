@@ -1,0 +1,41 @@
+---
+import type { IntegerSettings, StringSettings } from '../../config';
+import SettingBase from './_SettingBase.astro';
+import * as styles from './_index.css';
+import { getDescriptionId, getId, split } from './_utils';
+import type { SettingProps } from './_utils';
+
+type TypeSpecificProps =
+	| {
+			key: StringSettings;
+			type: 'text' | 'password';
+			minlength?: number;
+			maxlength?: number;
+	  }
+	| {
+			key: IntegerSettings;
+			type: 'number';
+			min?: number;
+			max?: number;
+			step?: number;
+	  };
+
+export type Props = SettingProps<StringSettings | IntegerSettings> &
+	TypeSpecificProps;
+
+const { key, ...props } = Astro.props;
+const [baseProps, inputProps] = split(props, [
+	'containerId',
+	'label',
+	'description',
+]);
+---
+
+<SettingBase key={key} {...baseProps}>
+	<input
+		{...inputProps}
+		id={getId(key)}
+		class={styles.input}
+		aria-describedby={baseProps.description && getDescriptionId(key)}
+	/>
+</SettingBase>

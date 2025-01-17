@@ -1,0 +1,31 @@
+---
+import { stateId } from './menu-selectors';
+---
+
+<input id={stateId} type="checkbox" />
+
+<script>
+	import { mediaIsMobile } from '../styles/constants'
+	import { stateId } from "./menu-selectors";
+
+	const state: HTMLInputElement = document.querySelector(`#${stateId}`)!;
+
+	// Close menu when leaving mobile design
+	window.matchMedia(mediaIsMobile).addEventListener('change', ({ matches: isMobile }) => {
+	  if (!isMobile) {
+	    state.checked = false;
+	  }
+	});
+
+	// Disable interactions with the main page content when the mobile menu is open
+	const main = document.querySelector('main')!;
+	state.addEventListener('change', ({ target }) => {
+	  main.inert = (target as typeof state).checked;
+	});
+</script>
+
+<style>
+	input {
+		display: none;
+	}
+</style>

@@ -16,11 +16,22 @@
 			}
 		},
 		{
-			"include": ["./src/pages/*.tsx"],
+			"include": ["*.astro"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUnusedImports": "off",
+						"noUnusedVariables": "off"
+					}
+				}
+			}
+		},
+		{
+			"include": ["*$*$*"],
 			"linter": {
 				"rules": {
 					"style": {
-						"noDefaultExport": "off"
+						"useFilenamingConvention": "off"
 					}
 				}
 			}
