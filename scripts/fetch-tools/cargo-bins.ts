@@ -16,18 +16,21 @@ export default (context: Context): ListrTask => ({
 		const tryBinstall = await $`cargo binstall -V`.quiet().nothrow();
 
 		const subtasks: Array<ListrTask> = dependencies.map(
-			([name, version]) => ({
-				title: `${name} v${version.replace(/^=/, '')}`,
-				async task() {
-					const spec = `${name}@${version}`;
-					const root = `--root=${context.outDir}`;
-					if (tryBinstall.exitCode === 0) {
-						await $`cargo binstall ${spec} --locked ${root} --no-confirm`.quiet();
-					} else {
-						await $`cargo install ${spec} --locked ${root}`.quiet();
-					}
-				},
-			}),
+			([name, rawVersion]) => {
+				const version = rawVersion.replace(/^=/, '');
+				return {
+					title: `${name} v${version.replace(/^=/, '')}`,
+					async task() {
+						const spec = `${name}@${version}`;
+						const root = `--root=${context.outDir}`;
+						if (tryBinstall.exitCode === 0) {
+							await $`cargo binstall ${spec} --locked ${root} --no-confirm`.quiet();
+						} else {
+							await $`cargo install ${spec} --locked ${root}`.quiet();
+						}
+					},
+				};
+			},
 		);
 
 		return task.newListr(subtasks);

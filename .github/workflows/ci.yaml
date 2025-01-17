@@ -24,22 +24,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
+      - run: rm rust-toolchain.toml
       - name: Install cargo-machete
         uses: taiki-e/install-action@v2.47.2
         with:
           tool: cargo-machete@0.7.0 # dep:cargo-bin:cargo-machete
       - run: cargo machete
 
-  toolchains-synced:
-    name: Toolchains are synced
+  cache-rust-toolchain:
+    name: Cache Rust toolchain
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: oven-sh/setup-bun@v2.0.1
+      - uses: ./.github/actions/setup-rust
         with:
-          bun-version-file: .tool-versions
-      - run: bun run scripts/sync-toolchains.ts
-      - run: git diff --exit-code
+          lookup-only: 'true'
 
   check-targets:
     name: Check targets
@@ -57,29 +56,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: oven-sh/setup-bun@v2.0.1
-        with:
-          bun-version-file: .tool-versions
-      - run: bun install --frozen-lockfile
-      - name: Run config codegen
-        working-directory: vertx-config
-        run: |
-          rm -rf out && mkdir out
-          bun run src/generate.ts
-          rustfmt --edition 2021 out/*.rs
-          bun run biome format --config-path=../.config/biome.json --write out/*.ts
-      - run: git diff --exit-code
+      - run: cd vertx-config && sha512sum --status --check out/.hashes
 
   rustfmt:
     runs-on: ubuntu-latest
+    needs: cache-rust-toolchain
     steps:
       - uses: actions/checkout@v4.2.2
+      - uses: ./.github/actions/setup-rust
       - run: cargo fmt --all --check
 
   # Only run for entrypoints; dependencies will be checked where they are used
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
+    needs: cache-rust-toolchain
     strategy:
       fail-fast: false
       matrix:
@@ -87,17 +78,18 @@ jobs:
           - vertx-crsf
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.7
+      - uses: ./.github/actions/setup-rust
       - run: cargo clippy --all-targets -p ${{ matrix.crate }}
 
   clippy-config-migrate:
     name: Clippy (config-migrate)
     runs-on: ubuntu-latest
+    needs: cache-rust-toolchain
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.7
-      - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F up
-      - run: cargo clippy --target wasm32-unknown-unknown -p vertx-config-migrate -F down
+      - uses: ./.github/actions/setup-rust
+      - run: cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -p vertx-config-migrate -F up
+      - run: cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -p vertx-config-migrate -F down
 
   build-configurator:
     name: Build configurator
@@ -123,7 +115,7 @@ jobs:
   clippy-vertx:
     name: Clippy (vertx, ${{ matrix.target }})
     runs-on: ubuntu-latest
-    needs: build-configurator
+    needs: [cache-rust-toolchain, build-configurator]
     strategy:
       fail-fast: false
       matrix:
@@ -139,35 +131,33 @@ jobs:
       VERTX_TARGET: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4.2.2
-      - id: chip
-        uses: ./.github/actions/setup-chip
-        with:
-          chip: ${{ matrix.chip }}
-      - uses: Swatinem/rust-cache@v2.7.7
+      - uses: ./.github/actions/setup-rust
       - name: Get pre-built configurator
         uses: actions/download-artifact@v4.1.8
         with:
           name: configurator
           path: vertx-configurator/dist
+      - id: chip
+        run: jq -r '"target=\(.${{ matrix.chip }})"' .config/chip2target.json >> "$GITHUB_OUTPUT"
       - name: Run clippy
-        run: cargo clippy -Zbuild-std=alloc,core --target "${{ steps.chip.outputs.target }}" -F "chip-${{ matrix.chip }} display-${{ matrix.display }}"
+        run: cargo clippy -Zbuild-std=alloc,core --target '${{ steps.chip.outputs.target }}' -F 'chip-${{ matrix.chip }} display-${{ matrix.display }}'
         working-directory: vertx
 
   clippy-vertx-simulator:
     name: Clippy (vertx simulator)
     runs-on: ubuntu-latest
-    needs: build-configurator
+    needs: [cache-rust-toolchain, build-configurator]
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.7
+      - uses: ./.github/actions/setup-rust
       - name: Run clippy
-        run: cargo clippy --target wasm32-unknown-unknown --lib -F simulator
+        run: cargo clippy -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown --lib -F simulator
         working-directory: vertx
 
   clippy-backpack:
     name: Clippy (backpack, ${{ matrix.chip }})
     runs-on: ubuntu-latest
-    needs: build-configurator
+    needs: [cache-rust-toolchain, build-configurator]
     env:
       VERTX_SERVER_SKIP_CONFIGURATOR_BUILD: true
     strategy:
@@ -179,23 +169,22 @@ jobs:
           - esp32s3
     steps:
       - uses: actions/checkout@v4.2.2
-      - id: chip
-        uses: ./.github/actions/setup-chip
-        with:
-          chip: ${{ matrix.chip }}
-      - uses: Swatinem/rust-cache@v2.7.7
+      - uses: ./.github/actions/setup-rust
       - name: Get pre-built configurator
         uses: actions/download-artifact@v4.1.8
         with:
           name: configurator
           path: vertx-configurator/dist
+      - id: chip
+        run: jq -r '"target=\(.${{ matrix.chip }})"' .config/chip2target.json >> "$GITHUB_OUTPUT"
       - name: Run clippy
-        run: cargo clippy -Zbuild-std=alloc,core --target "${{ steps.chip.outputs.target }}" -F "chip-${{ matrix.chip }}"
+        run: cargo clippy -Zbuild-std=alloc,core --target '${{ steps.chip.outputs.target }}' -F 'chip-${{ matrix.chip }}'
         working-directory: vertx-backpack
 
   tests:
     name: Tests
     runs-on: ubuntu-latest
+    needs: cache-rust-toolchain
     strategy:
       fail-fast: false
       matrix:
@@ -203,11 +192,11 @@ jobs:
           - vertx-crsf
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.7
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2.47.2
         with:
           tool: nextest@0.9.85 # dep:cargo-bin:cargo-nextest
+      - uses: ./.github/actions/setup-rust
       - run: cargo nextest run
         working-directory: ${{ matrix.crate }}
 
@@ -247,7 +236,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - unused-dependencies
-      - toolchains-synced
       - check-targets
       - config-codegen
       - rustfmt

@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Swatinem/rust-cache@v2.7.7
+      - uses: ./.github/actions/setup-rust
       - uses: oven-sh/setup-bun@v2.0.1
         with:
           bun-version-file: .tool-versions
@@ -60,7 +60,7 @@ jobs:
         uses: taiki-e/install-action@v2.47.2
         with:
           tool: wasm-opt@0.116.1 # dep:cargo-bin:wasm-opt
-      - run: cargo build --release --target wasm32-unknown-unknown --lib -F simulator
+      - run: cargo build -Zbuild-std=std,panic_abort --release --target wasm32-unknown-unknown --lib -F simulator
         working-directory: vertx
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}

@@ -26,10 +26,8 @@ tasks:
       - bun run src/generate.ts
       - rustfmt --edition 2021 out/config.rs out/current.rs out/old.rs
       - bun run biome format --config-path=../.config/biome.json --write out/config.ts
-    sources:
-      - '*.ts'
-      - 'src/**.ts'
-    generates:
-      - 'out/*'
+      - sha512sum config.ts config.old.ts > out/.hashes
+    status:
+      - sha512sum --status --check out/.hashes
 
   :*: cd .. && task {{index .MATCH 0}}
