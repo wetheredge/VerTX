@@ -5,16 +5,6 @@ export const dangerId = generateIdentifier('danger-zone');
 const dangerSelector = `#${dangerId} ~`;
 const gap = consts.size.sm;
 
-export const advancedState = generateIdentifier('advanced-state');
-
-export const advancedSetting = style({
-	selectors: {
-		[`#${advancedState}:not(:checked) ~ &`]: {
-			display: 'none',
-		},
-	},
-});
-
 export const setting = style({
 	display: 'flex',
 	flexDirection: 'column',

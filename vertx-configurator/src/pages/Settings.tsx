@@ -8,7 +8,6 @@ import {
 	updateConfig,
 } from '../api';
 import {
-	type BooleanSettings,
 	type Config,
 	type EnumSettings,
 	type IntegerSettings,
@@ -55,13 +54,6 @@ const handleInteger: Handler<
 export default function Settings() {
 	return (
 		<>
-			<input
-				id={styles.advancedState}
-				type="checkbox"
-				hidden
-				checked={api[ResponseKind.Config]?.[configKeys.expert]}
-			/>
-
 			<h1>Settings</h1>
 
 			<SettingInput
@@ -88,7 +80,6 @@ export default function Settings() {
 			<h2>Wi-Fi</h2>
 
 			<SettingInput
-				advanced
 				key={configKeys.network.password}
 				label="Password"
 				type="password"
@@ -112,20 +103,11 @@ export default function Settings() {
 				maxlength={64}
 				handler={handleString}
 			/>
-
-			<h2 id={styles.dangerId}>Danger zone</h2>
-
-			<SettingCheckbox
-				key={configKeys.expert}
-				label="Enable advanced settings"
-				description="These settings are unnecessary for most users and can easily cause problems if configured incorrectly."
-			/>
 		</>
 	);
 }
 
 type SettingProps<Key extends keyof Config, E> = {
-	advanced?: boolean;
 	key: Key;
 	label: string;
 	description?: string;
@@ -145,7 +127,7 @@ function SettingInput<Key extends StringSettings | IntegerSettings>(
 	const id = createUniqueId();
 	const [baseProps, , inputProps] = splitProps(
 		props,
-		['advanced', 'key', 'label', 'description'],
+		['key', 'label', 'description'],
 		['handler'],
 	);
 
@@ -170,58 +152,18 @@ function SettingInput<Key extends StringSettings | IntegerSettings>(
 }
 
 function SettingBase(props: {
-	advanced?: boolean;
 	id: string;
 	label: string;
 	description?: string;
 	children: JSX.Element;
 }) {
 	return (
-		<div
-			class={styles.setting}
-			classList={{ [styles.advancedSetting]: props.advanced }}
-		>
+		<div class={styles.setting}>
 			<label for={props.id}>{props.label}</label>
 			<Show when={props.description}>
 				<span id={descriptionId(props.id)}>{props.description}</span>
 			</Show>
 			{props.children}
-		</div>
-	);
-}
-
-function SettingCheckbox<Key extends BooleanSettings>(
-	props: Omit<SettingProps<Key, never>, 'handler'>,
-) {
-	const id = createUniqueId();
-
-	let input!: HTMLInputElement;
-	const checked = () => api[ResponseKind.Config]?.[props.key] ?? false;
-
-	return (
-		<div
-			class={styles.settingCheckbox}
-			classList={{ [styles.advancedSetting]: props.advanced }}
-		>
-			<input
-				id={id}
-				type="checkbox"
-				aria-describedby={props.description && descriptionId(id)}
-				checked={checked()}
-				onChange={async ({ target }) => {
-					const result = await updateConfig({
-						key: props.key,
-						value: target.checked,
-					});
-					input.checked = checked();
-					handleUpdateResult(props.key, result);
-				}}
-				ref={input}
-			/>
-			<label for={id}>{props.label}</label>
-			<Show when={props.description}>
-				<span id={descriptionId(id)}>{props.description}</span>
-			</Show>
 		</div>
 	);
 }

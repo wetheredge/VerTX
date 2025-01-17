@@ -1,6 +1,6 @@
 import * as types from './src/types';
 
-export const version = 2;
+export const version = 3;
 
 export const config = {
 	name: types.string(20, 'VerTX'),
@@ -15,5 +15,4 @@ export const config = {
 			password: types.string(64),
 		},
 	},
-	expert: types.boolean(),
 };

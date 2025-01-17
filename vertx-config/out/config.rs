@@ -7,7 +7,6 @@ pub(crate) struct RawConfig {
     pub(super) network_password: ::heapless::String<64>,
     pub(super) network_home_ssid: ::heapless::String<32>,
     pub(super) network_home_password: ::heapless::String<64>,
-    pub(super) expert: bool,
 }
 
 #[allow(clippy::derivable_impls)]
@@ -20,11 +19,10 @@ impl Default for RawConfig {
             network_password: Default::default(),
             network_home_ssid: Default::default(),
             network_home_password: Default::default(),
-            expert: false,
         }
     }
 }
-pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 37 + 69 + 37 + 69 + 1;
+pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 37 + 69 + 37 + 69;
 
 #[allow(non_camel_case_types, unused)]
 pub(super) mod key {
@@ -48,8 +46,6 @@ pub(super) mod key {
     pub(crate) struct Root_Network_Home_Ssid;
     #[derive(Clone, Copy)]
     pub(crate) struct Root_Network_Home_Password;
-    #[derive(Clone, Copy)]
-    pub(crate) struct Root_Expert;
 }
 
 #[allow(unused)]
@@ -83,13 +79,6 @@ impl super::View<key::Root> {
             _key: ::core::marker::PhantomData,
         }
     }
-
-    pub(crate) fn expert(&self) -> super::View<key::Root_Expert> {
-        super::View {
-            manager: self.manager,
-            _key: ::core::marker::PhantomData,
-        }
-    }
 }
 
 #[allow(unused)]
@@ -109,13 +98,6 @@ impl super::LockedView<'_, key::Root> {
     }
 
     pub(crate) fn network(&self) -> super::LockedView<'_, key::Root_Network> {
-        super::LockedView {
-            config: self.config,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-
-    pub(crate) fn expert(&self) -> super::LockedView<'_, key::Root_Expert> {
         super::LockedView {
             config: self.config,
             _key: ::core::marker::PhantomData,
@@ -384,27 +366,6 @@ impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Home_Passwor
     }
 }
 
-#[allow(unused)]
-impl super::View<key::Root_Expert> {
-    pub(crate) fn lock<T>(&self, f: impl FnOnce(&bool) -> T) -> T {
-        self.manager
-            .state
-            .lock(|state| f(&state.borrow().config.expert))
-    }
-
-    pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(6)
-    }
-}
-
-impl ::core::ops::Deref for super::LockedView<'_, key::Root_Expert> {
-    type Target = bool;
-
-    fn deref(&self) -> &Self::Target {
-        &self.config.expert
-    }
-}
-
 #[derive(Debug, Clone, ::serde::Deserialize)]
 #[allow(non_camel_case_types)]
 pub(crate) enum Update<'a> {
@@ -419,7 +380,6 @@ pub(crate) enum Update<'a> {
     Root_Network_Home_Ssid(&'a str),
     #[serde(borrow)]
     Root_Network_Home_Password(&'a str),
-    Root_Expert(bool),
 }
 
 #[derive(Debug, Clone)]
@@ -431,7 +391,7 @@ pub(super) enum DeserializeError {
 impl RawConfig {
     pub(super) fn deserialize(from: &[u8]) -> Result<Self, DeserializeError> {
         let (version, from) = from.split_at(4);
-        if version == u32::to_le_bytes(2) {
+        if version == u32::to_le_bytes(3) {
             postcard::from_bytes(from).map_err(DeserializeError::Postcard)
         } else {
             Err(DeserializeError::WrongVersion)
@@ -440,7 +400,7 @@ impl RawConfig {
 
     pub(super) fn serialize(&self, buffer: &mut [u8]) -> postcard::Result<usize> {
         let (version, buffer) = buffer.split_at_mut(4);
-        version.copy_from_slice(&u32::to_le_bytes(2));
+        version.copy_from_slice(&u32::to_le_bytes(3));
         postcard::to_slice(self, buffer).map(|out| out.len() + 4)
     }
 
@@ -487,10 +447,6 @@ impl RawConfig {
                 };
                 self.network_home_password = update;
                 Ok(5)
-            }
-            Update::Root_Expert(update) => {
-                self.expert = update;
-                Ok(6)
             }
         }
     }
