@@ -1,19 +1,14 @@
 #!/usr/bin/env bun
 
+import { mkdtemp, rm } from 'node:fs/promises';
 import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
 import { $, Glob } from 'bun';
 import { getRepoRoot, panic } from './utils';
 
-const missingTools = [
-	'asdf',
-	'bun',
-	'cargo',
-	'echo',
-	'git',
-	'mktemp',
-	'rm',
-].filter((tool) => Bun.which(tool) == null);
+const missingTools = ['asdf', 'bun', 'cargo', 'git'].filter(
+	(tool) => Bun.which(tool) == null,
+);
 if (missingTools.length > 0) {
 	panic(`Missing required tools: ${missingTools.join(', ')}`);
 }
@@ -144,7 +139,8 @@ async function npm() {
 	}
 
 	chdir(repoRoot);
-	await $`rm bun.lock && bun install`.quiet();
+	await rm('bun.lock');
+	await $`bun install`.quiet();
 	await commit('Recreate bun.lock');
 	console.info('Recreated bun.lock');
 }
@@ -251,7 +247,7 @@ type CargoState = {
 };
 
 async function getCargoState(): Promise<CargoState> {
-	const dir = (await $`mktemp --directory`.text()).trim();
+	const dir = await mkdtemp('rust-updates-');
 	await $`cargo init --vcs none --name updates ${dir}`.quiet();
 	const cargoTomlLastLine = () =>
 		Bun.file(`${dir}/Cargo.toml`)
@@ -270,7 +266,7 @@ async function getCargoState(): Promise<CargoState> {
 			return latest;
 		},
 		async finish() {
-			await $`rm -r ${dir}`.quiet();
+			await rm(dir, { recursive: true });
 		},
 	};
 }
@@ -417,13 +413,18 @@ function group(group: string) {
 					console.info(` -> ${latest}`);
 
 					if (import.meta.env.CI) {
+						const file = Bun.file(
+							`${repoRoot}/.updates.md`,
+						).writer();
 						if (!updatedAny) {
-							const md = `### \`${group}\`\ndependency|from|to\n-|-|-`;
-							await $`echo ${md} >> ${repoRoot}/.updates.md`.quiet();
+							file.write(
+								`### \`${group}\`\ndependency|from|to\n-|-|-\n`,
+							);
 							updatedAny = true;
 						}
 						const md = `\`${dep}\`|${current}|${latest}`;
-						await $`echo ${md} >> ${repoRoot}/.updates.md`.quiet();
+						file.write(md);
+						await file.end();
 					}
 				}
 
