@@ -51,16 +51,6 @@ $ asdf install
 $ task setup
 ```
 
-#### Or, use the devcontainer
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/wetheredge/vertx)
-
-This repo also comes with a devcontainer set up for GitHub Codespaces, VSCode,
-[DevPod](https://devpod.sh), etc. Using a 4+ core machine may provide a better
-experience. It _should_ be fully set up with all global tools installed and
-VSCode configured, but I don't use VSCode so I may have missed something. Pull
-requests welcome.
-
 ### Workflow
 
 Most development tasks are run using [`task`](https://taskfile.dev). Run `task`
