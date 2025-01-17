@@ -1,0 +1,7 @@
+{
+	"esp32": "xtensa-esp32-none-elf",
+	"esp32c3": "riscv32imc-unknown-none-elf",
+	"esp32s3": "xtensa-esp32s3-none-elf",
+	"rp2040": "thumbv6m-none-eabi",
+	"stm32f407": "thumbv7em-none-eabihf"
+}

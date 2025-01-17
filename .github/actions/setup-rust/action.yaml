@@ -1,0 +1,43 @@
+name: Setup Rust
+description: Fetch and install the correct build of the Rust Xtensa toolchain
+
+inputs:
+  lookup-only:
+    description: Skip downloading cache
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      run: |
+        echo -n 'version=' >> "$GITHUB_OUTPUT"
+        cat .config/xtensa-toolchain >> "$GITHUB_OUTPUT"
+    - id: restore
+      uses: actions/cache@v4.2.0
+      with:
+        key: rust-xtensa-${{ runner.os}}-v${{ steps.version.outputs.version }}
+        path: .tools/rust
+        lookup-only: ${{ inputs.lookup-only }}
+    - if: steps.restore.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        llvmTarget="$(rustc +stable -vV | sed -n 's/host: //p')"
+        version='${{ steps.version.outputs.version }}'
+
+        fetchAndInstall() {
+          tempDir="$(mktemp -d)"
+          curl --proto '=https' --tlsv1.2 --fail --location "$1" | tar -xJC "$tempDir" --strip-components 1
+          "$tempDir/install.sh" --prefix="$(pwd)/.tools/rust"
+          rm -rf "$tempDir"
+        }
+
+        fetchAndInstall "https://github.com/esp-rs/rust-build/releases/download/v$version/rust-$version-$llvmTarget.tar.xz"
+        fetchAndInstall "https://github.com/esp-rs/rust-build/releases/download/v$version/rust-src-$version.tar.xz"
+    - if: inputs.lookup-only != 'true'
+      run: rustup toolchain link vertx .tools/rust
+      shell: bash
+    - if: inputs.lookup-only != 'true'
+      uses: Swatinem/rust-cache@v2.7.7

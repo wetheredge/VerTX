@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 
 import { mkdtemp, rm } from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
 import { $, Glob } from 'bun';
@@ -88,7 +90,8 @@ async function cargoBin(state: CargoState) {
 		state,
 		group: 'cargo-bin',
 		path: 'Cargo.toml',
-		section: 'workspace.metadata.bin',
+		section: 'workspace.metadata.bin-dependencies',
+		updateWorkflows: true,
 	});
 }
 
@@ -140,7 +143,7 @@ async function npm() {
 
 	chdir(repoRoot);
 	await rm('bun.lock');
-	await $`bun install`.quiet();
+	await $`bun install --save-text-lockfile`.quiet();
 	await commit('Recreate bun.lock');
 	console.info('Recreated bun.lock');
 }
@@ -247,7 +250,7 @@ type CargoState = {
 };
 
 async function getCargoState(): Promise<CargoState> {
-	const dir = await mkdtemp('rust-updates-');
+	const dir = await mkdtemp(path.join(os.tmpdir(), 'rust-updates-'));
 	await $`cargo init --vcs none --name updates ${dir}`.quiet();
 	const cargoTomlLastLine = () =>
 		Bun.file(`${dir}/Cargo.toml`)
@@ -422,8 +425,7 @@ function group(group: string) {
 							);
 							updatedAny = true;
 						}
-						const md = `\`${dep}\`|${current}|${latest}`;
-						file.write(md);
+						file.write(`\`${dep}\`|${current}|${latest}\n`);
 						await file.end();
 					}
 				}
