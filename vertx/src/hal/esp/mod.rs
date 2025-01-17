@@ -13,8 +13,8 @@ use esp_hal::gpio;
 use esp_hal::i2c::master::{self as i2c, I2c};
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
-use esp_hal::time::RateExtU32 as _;
 use esp_hal::timer::timg;
+use fugit::RateExtU32 as _;
 use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;

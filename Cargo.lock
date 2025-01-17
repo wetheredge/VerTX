@@ -2791,6 +2791,7 @@ dependencies = [
  "esp-storage",
  "fixed",
  "fixed-macro",
+ "fugit",
  "heapless",
  "loog",
  "panic-probe",
