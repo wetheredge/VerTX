@@ -14,7 +14,7 @@ tasks:
     - bun run biome ci .
     - task: check:tsc
 
-  check:*: cargo clippy {{.target}} -F {{index .MATCH 0}}
+  check:*: cargo clippy -Zbuild-std=core {{.target}} -F {{index .MATCH 0}}
 
   check:tsc:
     internal: true
