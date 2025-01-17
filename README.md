@@ -85,7 +85,7 @@ with `:` (ie `task :foo/bar`).
 ### Simulator
 
 The simulator runs VerTX as a web app. Most functionality works, even the
-configurator. To start it, run:
+configurator, although you will need to allow popups. To start it, run:
 
 ```shell
 $ task :configurator/simulator:run
