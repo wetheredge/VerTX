@@ -98,7 +98,7 @@ tasks:
   simulator:optimize:
     internal: true
     dir: ..
-    cmd: .tools/bin/wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts
+    cmd: .tools/bin/wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts target/simulator
 
   simulator:cargo:
     internal: true

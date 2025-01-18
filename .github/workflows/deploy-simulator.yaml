@@ -72,8 +72,7 @@ jobs:
           echo 'export const memoryName = "memory";' >> vertx.js
         working-directory: target/simulator
       - run: cat .config/env >> "$GITHUB_ENV"
-      - run: wasm-opt $VERTX_WASM_OPT_ARGS --output vertx_bg.wasm vertx_bg.wasm | bun run ../../scripts/wasm-rename.ts
-        working-directory: target/simulator
+      - run: wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts target/simulator
       - uses: actions/upload-artifact@v4.5.0
         with:
           name: vertx

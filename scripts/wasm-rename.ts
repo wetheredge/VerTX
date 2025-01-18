@@ -1,5 +1,10 @@
 #!/usr/bin/env bun
 
+const baseDir = process.argv[2];
+if (baseDir == null || baseDir === '') {
+	throw new Error('must be called with base directory');
+}
+
 const stdin = await Bun.stdin.text();
 const renames = new Map();
 for (const line of stdin.split('\n')) {
@@ -9,7 +14,7 @@ for (const line of stdin.split('\n')) {
 	}
 }
 
-const base = 'vertx';
+const base = `${baseDir}/vertx`;
 
 const wasmDts = Bun.file(`${base}_bg.wasm.d.ts`);
 let wasmDtsContents = await wasmDts.text();
