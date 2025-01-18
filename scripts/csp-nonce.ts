@@ -1,0 +1,28 @@
+#!/usr/bin/env bun
+
+import { Glob } from 'bun';
+
+const outDir = 'dist';
+
+// Caddy needs double quotes in the template, but HTMLRewriter helpfully escapes them, so give
+// HTMLRewriter a safe string, then replace it again with the proper template.
+const marker = '$$NONCE$$';
+
+const rewriter = new HTMLRewriter().on('script, style', {
+	element(element) {
+		element.setAttribute('nonce', marker);
+	},
+});
+
+const promises = new Array<Promise<unknown>>();
+for await (const path of new Glob('**.html').scan(outDir)) {
+	const file = Bun.file(`${outDir}/${path}`);
+	const withMarker = await rewriter.transform(new Response(file)).text();
+	const final = withMarker.replaceAll(
+		marker,
+		'{{placeholder "http.request.uuid"}}',
+	);
+	promises.push(Bun.write(file, final));
+}
+
+await Promise.all(promises);

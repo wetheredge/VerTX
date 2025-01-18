@@ -2,7 +2,7 @@
 	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
 	"extends": ["../.config/biome.json"],
 	"javascript": {
-		"globals": ["Bun"]
+		"globals": ["Bun", "HTMLRewriter"]
 	},
 	"linter": {
 		"rules": {

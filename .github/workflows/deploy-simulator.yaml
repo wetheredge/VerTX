@@ -36,6 +36,7 @@ jobs:
       - run: bun run vite build
         env:
           VITE_TARGET: simulator
+      - run: bun run ../scripts/csp-nonce.ts
       - uses: actions/upload-artifact@v4.6.0
         with:
           name: configurator
@@ -99,6 +100,7 @@ jobs:
           path: target/simulator
       - run: bun install --frozen-lockfile
       - run: bun run vite build
+      - run: bun run ../scripts/csp-nonce.ts
       - uses: actions/upload-artifact@v4.6.0
         with:
           name: simulator
