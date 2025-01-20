@@ -57,7 +57,7 @@ tasks:
 
   post-build:
     internal: true
-    cmd: cp ../target/{{get .cargoTargets .VERTX_CHIP}}/{{.profile}}/vertx ../target/vertx
+    cmd: cp ../target/{{.VERTX_RUSTC_TARGET}}/{{.profile}}/vertx ../target/vertx
     silent: true
 
   flash:

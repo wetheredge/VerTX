@@ -1,8 +1,9 @@
+import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Listr } from 'listr2';
 import { getRepoRoot } from '../utils.ts';
 import cargoBins from './cargo-bins.ts';
-import rust from './rust.ts';
+import { gcc, rust } from './rust.ts';
 
 const repoRoot = await getRepoRoot();
 const context = {
@@ -12,4 +13,5 @@ const context = {
 
 export type Context = typeof context;
 
-await new Listr([rust(context), cargoBins(context)]).run();
+await mkdir(context.outDir, { recursive: true });
+await new Listr([rust(context), gcc(context), cargoBins(context)]).run();

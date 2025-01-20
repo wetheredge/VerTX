@@ -29,10 +29,3 @@ export function panic(message: string) {
 	}
 	exit(1);
 }
-
-export async function getXtensaToolchainVersion(): Promise<string> {
-	const version = await Bun.file(
-		new URL('../.config/xtensa-toolchain', import.meta.url),
-	).text();
-	return version.trim();
-}

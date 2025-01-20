@@ -18,8 +18,7 @@ tasks:
     cmds:
       - task --list-all --sort none
       - echo
-      - echo 'Except for `check:*`, all tasks require a target with a backpack to be set using'
-      - echo '`task set-target` in the repo root.'
+      - echo 'All tasks require a target with a backpack to be set using `task set-target` in the repo root.'
     silent: true
 
   dbg:
@@ -32,15 +31,6 @@ tasks:
       - task: embedded:cargo
         vars:
           command: clippy
-          args: "{{.CLI_ARGS}}"
-
-  check:*:
-    desc: "Check a specific chip (e.g.: check:esp32)"
-    cmds:
-      - task: embedded:cargo
-        vars:
-          command: clippy
-          chip: "{{index .MATCH 0}}"
           args: "{{.CLI_ARGS}}"
 
   build:
