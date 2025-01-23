@@ -6,6 +6,6 @@ tasks:
     silent: true
 
   check: cargo clippy {{.CLI_ARGS}}
-  test: cargo bin cargo-nextest run {{.CLI_ARGS}}
+  test: ../.tools/bin/cargo-nextest nextest run {{.CLI_ARGS}}
 
   :*: cd .. && task {{index .MATCH 0}}
