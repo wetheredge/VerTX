@@ -9,6 +9,7 @@ members = [
     "vertx-network",
     "vertx-network-esp",
     "vertx-server",
+    "vertx-target",
 ]
 
 [workspace.package]

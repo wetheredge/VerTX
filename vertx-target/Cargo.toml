@@ -1,0 +1,15 @@
+[package]
+name = "vertx-target"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+
+[dependencies]
+atoi = { version = "2.0.0", default-features = false }
+heapless = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+
+[lints]
+workspace = true

@@ -2903,6 +2903,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "vertx-target"
+version = "0.0.0"
+dependencies = [
+ "atoi",
+ "heapless",
+ "serde",
+]
+
+[[package]]
 name = "void"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
