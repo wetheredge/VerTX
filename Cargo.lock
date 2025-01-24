@@ -2808,6 +2808,7 @@ dependencies = [
  "vertx-network",
  "vertx-network-esp",
  "vertx-server",
+ "vertx-target",
  "wasm-bindgen",
  "wasm-logger",
 ]

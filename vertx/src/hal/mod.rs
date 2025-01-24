@@ -1,4 +1,4 @@
-#[cfg(not(feature = "simulator"))]
+#[cfg(feature = "chip-rp")]
 include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 
 macro_rules! declare_hal_types {

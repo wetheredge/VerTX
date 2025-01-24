@@ -40,6 +40,7 @@ vertx-backpack-ipc.path = "vertx-backpack-ipc"
 vertx-network.path = "vertx-network"
 vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
+vertx-target.path = "vertx-target"
 
 [workspace.metadata.bin-dependencies]
 cargo-machete = "=0.7.0"

@@ -1,5 +1,6 @@
 # Name,  Type, SubType, Address,     Size, Flags
-otadata, data, ota,      0x9000,   0x2000,
+target,  0x41, 0,        0x9000,   0x1000,
+otadata, data, ota,            ,   0x2000,
 ota0,    app,  ota_0,   0x10000, 0x3F0000,
 ota1,    app,  ota_1,          , 0x3F0000,
 config,  0x40, 0,              ,  0x10000,

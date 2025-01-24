@@ -84,12 +84,12 @@ macro_rules! impl_nanojson {
     (
         $(#[$attr:meta])*
         $vis:vis struct $name:ident {
-            $($f:ident : $t:ty),+ $(,)?
+            $($fvis:vis $f:ident : $t:ty),+ $(,)?
         }
     ) => {
         $(#[$attr])*
         $vis struct $name {
-            $($f: $t),+
+            $($fvis $f: $t),+
         }
 
         impl crate::nanojson::Nanojson<'_> for $name {

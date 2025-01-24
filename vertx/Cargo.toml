@@ -113,6 +113,7 @@ qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }
 static_cell = { workspace = true }
 vertx-network = { workspace = true }
+vertx-target = { workspace = true }
 
 # backpack
 embedded-io-async = { workspace = true, optional = true }

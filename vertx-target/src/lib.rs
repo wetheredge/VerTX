@@ -13,10 +13,10 @@ pub type Pin = u8;
 impl_nanojson! {
     #[derive(Debug, Serialize)]
     pub struct Target {
-        status_led: Pin,
-        display: Display,
-        ui: Ui,
-        inputs: Inputs,
+        pub status_led: Pin,
+        pub display: Display,
+        pub ui: Ui,
+        pub inputs: Inputs,
     }
 }
 
@@ -30,18 +30,18 @@ pub enum Display {
 impl_nanojson! {
     #[derive(Debug, Serialize)]
     pub struct Ui {
-        up: Pin,
-        down: Pin,
-        left: Pin,
-        right: Pin,
+        pub up: Pin,
+        pub down: Pin,
+        pub left: Pin,
+        pub right: Pin,
     }
 }
 
 impl_nanojson! {
     #[derive(Debug, Serialize)]
     pub struct Inputs {
-        analog: Vec<Pin, 16>,
-        digital: Vec<Pin, 16>,
+        pub analog: Vec<Pin, 16>,
+        pub digital: Vec<Pin, 16>,
     }
 }
 

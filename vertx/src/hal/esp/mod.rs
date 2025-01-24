@@ -1,5 +1,6 @@
 mod flash;
 mod leds;
+mod peripherals;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -15,6 +16,7 @@ use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
 use fugit::RateExtU32 as _;
+use vertx_target::Target;
 use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
 
 use self::flash::Partition;
@@ -30,6 +32,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         config.cpu_clock = CpuClock::max();
         config
     });
+    let mut p = peripherals::Peripherals::new(p);
 
     let rmt = Rmt::new(p.RMT, 80u32.MHz()).unwrap().into_async();
     let rng = Rng::new(p.RNG);
@@ -38,32 +41,38 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds));
-
     flash::unlock().unwrap();
     let mut partitions = flash::read_partition_table()
         .into_iter()
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
+
+    let Some(target) = read_target(&mut partitions) else {
+        loog::panic!("Missing target");
+    };
+
+    let status_led = leds::StatusLed::new(rmt.channel0, p.gpio.take(target.status_led));
     let config_storage = ConfigStorage::new(&mut partitions);
 
     let ui = {
         let config = i2c::Config::default().with_frequency(1.MHz());
 
+        let vertx_target::Display::Ssd1306 { sda, scl } = target.display;
+
         let i2c = I2c::new(p.I2C0, config)
             .unwrap()
-            .with_sda(pins!(p, display.sda))
-            .with_scl(pins!(p, display.scl))
+            .with_sda(p.gpio.take(sda))
+            .with_scl(p.gpio.take(scl))
             .into_async();
 
         let display = super::display::new(i2c);
 
         Ui {
             display,
-            up: gpio::Input::new(pins!(p, ui.up), gpio::Pull::Up),
-            down: gpio::Input::new(pins!(p, ui.down), gpio::Pull::Up),
-            right: gpio::Input::new(pins!(p, ui.right), gpio::Pull::Up),
-            left: gpio::Input::new(pins!(p, ui.left), gpio::Pull::Up),
+            up: gpio::Input::new(p.gpio.take(target.ui.up), gpio::Pull::Up),
+            down: gpio::Input::new(p.gpio.take(target.ui.down), gpio::Pull::Up),
+            right: gpio::Input::new(p.gpio.take(target.ui.right), gpio::Pull::Up),
+            left: gpio::Input::new(p.gpio.take(target.ui.left), gpio::Pull::Up),
         }
     };
 
@@ -77,6 +86,16 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         ui,
         network: Network::new(rng, network_hal),
     }
+}
+
+fn read_target(partitions: &mut Vec<Partition>) -> Option<Target> {
+    let partition = partitions.iter().position(Partition::is_target)?;
+    let partition = partitions.swap_remove(partition);
+
+    let mut buffer = [0; flash::SECTOR_BYTES as usize / 4];
+    partition.read_into(0, &mut buffer).unwrap();
+    let buffer: &[u8] = bytemuck::cast_slice(&buffer);
+    Target::deserialize(buffer)
 }
 
 struct Reset;

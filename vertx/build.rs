@@ -163,9 +163,7 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         }
     }
 
-    let gpio = if feature("CHIP_ESP") {
-        "GPIO"
-    } else if feature("CHIP_RP") {
+    let gpio = if feature("CHIP_RP") {
         "PIN_"
     } else {
         return Ok(());
