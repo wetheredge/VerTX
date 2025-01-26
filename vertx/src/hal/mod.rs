@@ -4,13 +4,8 @@ include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 macro_rules! declare_hal_types {
     () => {
         pub(crate) type HalReset = impl crate::hal::traits::Reset;
-        pub(crate) type HalSpiBus = impl embedded_hal_async::spi::SpiBus
-            + embassy_embedded_hal::SetConfig<
-                Config = HalSpiConfig,
-                ConfigError = impl loog::DebugFormat,
-            >;
-        pub(crate) type HalSpiConfig = impl crate::hal::traits::SpiConfig;
-        pub(crate) type HalSpiChipSelect = impl embedded_hal::digital::OutputPin;
+        pub(crate) type HalStorageFuture = impl core::future::Future<Output = HalStorage>;
+        pub(crate) type HalStorage = impl crate::storage::pal::Storage;
         pub(crate) type HalStatusLed = impl crate::hal::traits::StatusLed;
         pub(crate) type HalUi = impl crate::hal::traits::Ui;
 
@@ -32,8 +27,8 @@ pub(crate) use implementation::HalConfigurator as Configurator;
 #[cfg(feature = "network")]
 pub(crate) use implementation::HalNetwork as Network;
 pub(crate) use implementation::{
-    HalReset as Reset, HalSpiBus as SpiBus, HalSpiChipSelect as SpiChipSelect,
-    HalSpiConfig as SpiConfig, HalStatusLed as StatusLed, HalUi as Ui,
+    HalReset as Reset, HalStatusLed as StatusLed, HalStorage as Storage,
+    HalStorageFuture as StorageFuture, HalUi as Ui,
 };
 #[cfg(feature = "network")]
 pub type NetworkDriver = <Network as traits::Network>::Driver;
@@ -45,9 +40,7 @@ pub(crate) fn init(spawner: embassy_executor::Spawner) -> Init {
 pub(crate) struct Init {
     pub(crate) reset: Reset,
     pub(crate) status_led: StatusLed,
-    pub(crate) spi: SpiBus,
-    /// Chip select pin for the SD card
-    pub(crate) sd_cs: SpiChipSelect,
+    pub(crate) storage: StorageFuture,
     pub(crate) ui: Ui,
     #[cfg(all(feature = "configurator", not(feature = "network")))]
     pub(crate) configurator: Configurator,
@@ -63,7 +56,8 @@ pub(crate) mod prelude {
     pub(crate) use super::traits::Configurator as _;
     #[cfg(feature = "network")]
     pub(crate) use super::traits::Network as _;
-    pub(crate) use super::traits::{Reset as _, SpiConfig as _, StatusLed as _, Ui as _};
+    pub(crate) use super::traits::{Reset as _, StatusLed as _, Ui as _};
+    pub(crate) use crate::storage::pal::{Directory as _, File as _, Storage as _};
 }
 
 pub(crate) mod traits {
@@ -82,10 +76,6 @@ pub(crate) mod traits {
     pub(crate) trait StatusLed {
         type Error: Debug;
         async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error>;
-    }
-
-    pub(crate) trait SpiConfig: loog::DebugFormat {
-        fn new(frequency: fugit::HertzU32) -> Self;
     }
 
     #[cfg(all(feature = "configurator", not(feature = "network")))]
