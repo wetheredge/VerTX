@@ -67,12 +67,6 @@ pub(crate) mod traits {
     use embedded_graphics::draw_target::DrawTarget;
     use embedded_graphics::pixelcolor::BinaryColor;
 
-    #[expect(unused)]
-    pub(crate) trait ConfigStorage {
-        fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T>;
-        fn save(&mut self, config: &[u8]);
-    }
-
     pub(crate) trait StatusLed {
         type Error: Debug;
         async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error>;
