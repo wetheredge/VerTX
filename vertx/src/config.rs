@@ -9,12 +9,12 @@ use core::marker::PhantomData;
 use core::{future, mem, task};
 
 use embassy_sync::blocking_mutex::Mutex;
-use embedded_io_async::{Read as _, Seek as _, SeekFrom, Write as _};
 use portable_atomic::AtomicBool;
 use serde::{Deserialize, Serialize};
 
 use self::codegen::DeserializeError;
 pub(crate) use self::codegen::{BYTE_LENGTH, RawConfig};
+use crate::hal::prelude::*;
 use crate::storage::File;
 
 pub(crate) type RootConfig = View<codegen::key::Root>;
@@ -50,7 +50,7 @@ impl Manager {
         let mut buffer = [0; BYTE_LENGTH];
         let mut len = 0;
         loop {
-            let chunk = file.read(&mut buffer[len..]).await.unwrap();
+            let chunk = loog::unwrap!(file.read_all(&mut buffer[len..]).await);
             if chunk == 0 {
                 break;
             }
@@ -144,10 +144,7 @@ impl Manager {
         });
 
         if let Some((mut file, data)) = to_write {
-            file.seek(SeekFrom::Start(0)).await.unwrap();
-            file.truncate().await.unwrap();
-            file.write_all(data).await.unwrap();
-            file.flush().await.unwrap();
+            loog::unwrap!(file.write_all(data).await);
         }
     }
 

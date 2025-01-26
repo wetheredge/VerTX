@@ -20,9 +20,11 @@ use esp_hal::rng::Rng;
 use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::timer::timg;
 use fugit::RateExtU32 as _;
+use static_cell::StaticCell;
 use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
 
 use self::flash::Partition;
+use crate::storage::sd;
 use crate::ui::Input;
 
 declare_hal_types!();
@@ -60,6 +62,27 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
             .into_async()
     };
 
+    let storage = async {
+        // Using impl Trait hits the `item does not constrain but has it in its
+        // signature` error with the static below. Something neater would be nice, but
+        // this works :/
+        type Spi = embedded_hal_bus::spi::ExclusiveDevice<
+            spi::SpiDmaBus<'static, esp_hal::Async>,
+            gpio::Output<'static>,
+            embassy_time::Delay,
+        >;
+
+        static STORAGE: StaticCell<sd::Storage<Spi>> = StaticCell::new();
+        let sd_cs = gpio::Output::new(pins!(p, sd), gpio::Level::High);
+        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
+            let config = spi::Config::default().with_frequency(speed);
+            spi.apply_config(&config).unwrap();
+        })
+        .await;
+        let storage: &'static _ = STORAGE.init(storage);
+        storage
+    };
+
     let ui = {
         let config = i2c::Config::default().with_frequency(1.MHz());
 
@@ -83,8 +106,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     super::Init {
         reset: Reset,
         status_led,
-        spi,
-        sd_cs: gpio::Output::new(pins!(p, sd), gpio::Level::High),
+        storage,
         ui,
         network: network::Network {
             spawner,
@@ -155,12 +177,6 @@ impl super::traits::ConfigStorage for ConfigStorage {
         let mut buffer = [0u32; crate::config::BYTE_LENGTH.div_ceil(4)];
         bytemuck::cast_slice_mut(&mut buffer)[0..config.len()].copy_from_slice(config);
         self.partition.write(1, &buffer[0..len_words]).unwrap();
-    }
-}
-
-impl super::traits::SpiConfig for spi::Config {
-    fn new(frequency: fugit::HertzU32) -> Self {
-        Self::default().with_frequency(frequency)
     }
 }
 
