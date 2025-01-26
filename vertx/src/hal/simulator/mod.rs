@@ -1,11 +1,10 @@
 mod configurator;
+mod storage;
 
 use std::convert::Infallible;
 use std::panic;
 use std::sync::Mutex;
 
-use base64::Engine as _;
-use base64::engine::general_purpose::STANDARD_NO_PAD as base64;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_sync::channel::{self, Channel};
@@ -30,10 +29,11 @@ mod ipc {
         #[wasm_bindgen(js_name = "apiRx")]
         pub fn api_tx(id: u32, status: u16, json: bool, body: &[u8]);
 
-        #[wasm_bindgen(js_name = "loadConfig")]
-        pub fn load_config() -> Option<String>;
-        #[wasm_bindgen(js_name = "saveConfig")]
-        pub fn save_config(data: &str);
+        #[wasm_bindgen(js_name = "storageRead")]
+        pub fn storage_read(path: &str) -> Option<String>;
+
+        #[wasm_bindgen(js_name = "storageWrite")]
+        pub fn storage_write(path: &str, data: &str);
 
         #[wasm_bindgen(js_name = "setStatusLed")]
         pub fn set_status_led(r: u8, g: u8, b: u8);
@@ -87,7 +87,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
     super::Init {
         reset: Reset,
         status_led: StatusLed,
-        config_storage: ConfigStorage,
+        storage: async { storage::Storage },
         ui: Ui::new(&FRAMEBUFFER, UI_INPUTS.receiver()),
         configurator: configurator::Configurator,
     }
@@ -118,24 +118,6 @@ impl super::traits::StatusLed for StatusLed {
     async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
         ipc::set_status_led(red, green, blue);
         Ok(())
-    }
-}
-
-struct ConfigStorage;
-
-impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
-        ipc::load_config().and_then(|data| {
-            let data = base64
-                .decode(data)
-                .inspect_err(|err| loog::warn!("Failed to decode base64 config: {err:?}"))
-                .ok()?;
-            parse(&data)
-        })
-    }
-
-    fn save(&mut self, config: &[u8]) {
-        ipc::save_config(&base64.encode(config));
     }
 }
 

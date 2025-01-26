@@ -8,7 +8,7 @@ import wasmUrl from '../../target/simulator/vertx_bg.wasm?url';
 import type { ConfiguratorRequest, ConfiguratorResponse } from './common.js';
 
 const globalName = 'Vertx';
-const configStorageKey = 'config';
+const getFileKey = (path: string) => `file:${path}`;
 
 declare const SimulatorModuleTag: unique symbol;
 export type SimulatorModule = {
@@ -53,8 +53,8 @@ export class Simulator {
 
 		this.openConfigurator = this.openConfigurator.bind(this);
 		this.apiRx = this.apiRx.bind(this);
-		this.loadConfig = this.loadConfig.bind(this);
-		this.saveConfig = this.saveConfig.bind(this);
+		this.storageRead = this.storageRead.bind(this);
+		this.storageWrite = this.storageWrite.bind(this);
 		this.setStatusLed = this.setStatusLed.bind(this);
 		this.powerOff = this.powerOff.bind(this);
 		this.flushDisplay = this.flushDisplay.bind(this);
@@ -138,12 +138,12 @@ export class Simulator {
 		this.#configurator?.postMessage(response, options);
 	}
 
-	private loadConfig() {
-		return localStorage.getItem(configStorageKey);
+	private storageRead(path: string): string | null {
+		return localStorage.getItem(getFileKey(path));
 	}
 
-	private saveConfig(config: string) {
-		localStorage.setItem(configStorageKey, config);
+	private storageWrite(path: string, data: string) {
+		localStorage.setItem(getFileKey(path), data);
 	}
 
 	private setStatusLed(r: number, g: number, b: number) {
