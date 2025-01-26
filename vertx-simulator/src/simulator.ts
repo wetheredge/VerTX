@@ -138,12 +138,16 @@ export class Simulator {
 		this.#configurator?.postMessage(response, options);
 	}
 
-	private storageRead(path: string): string | null {
-		return localStorage.getItem(getFileKey(path));
+	private storageRead(path: string): Uint8Array | null {
+		const base64 = localStorage.getItem(getFileKey(path));
+		// @ts-expect-error: https://github.com/microsoft/TypeScript/issues/60612
+		return Uint8Array.fromBase64(base64);
 	}
 
-	private storageWrite(path: string, data: string) {
-		localStorage.setItem(getFileKey(path), data);
+	private storageWrite(path: string, data: Uint8Array) {
+		// @ts-expect-error: https://github.com/microsoft/TypeScript/issues/60612
+		const base64 = data.toBase64();
+		localStorage.setItem(getFileKey(path), base64);
 	}
 
 	private setStatusLed(r: number, g: number, b: number) {

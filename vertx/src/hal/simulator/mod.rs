@@ -15,6 +15,7 @@ use crate::ui::Input as UiInput;
 mod ipc {
     use std::boxed::Box;
     use std::string::String;
+    use std::vec::Vec;
 
     use wasm_bindgen::prelude::*;
 
@@ -30,10 +31,10 @@ mod ipc {
         pub fn api_tx(id: u32, status: u16, json: bool, body: &[u8]);
 
         #[wasm_bindgen(js_name = "storageRead")]
-        pub fn storage_read(path: &str) -> Option<String>;
+        pub fn storage_read(path: &str) -> Option<Vec<u8>>;
 
         #[wasm_bindgen(js_name = "storageWrite")]
-        pub fn storage_write(path: &str, data: &str);
+        pub fn storage_write(path: &str, data: &[u8]);
 
         #[wasm_bindgen(js_name = "setStatusLed")]
         pub fn set_status_led(r: u8, g: u8, b: u8);
