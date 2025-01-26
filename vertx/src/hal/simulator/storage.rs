@@ -1,9 +1,6 @@
 use std::string::String;
 use std::vec::Vec;
 
-use base64::engine::general_purpose::STANDARD_NO_PAD as BASE64;
-use base64::Engine as _;
-
 use super::ipc;
 use crate::storage::pal;
 
@@ -63,22 +60,14 @@ impl pal::StorageError for File {
 
 impl pal::File for File {
     async fn read_all(&mut self, buffer: &mut [u8]) -> Result<usize, Self::Error> {
-        let data = ipc::storage_read(&self.0).map_or_else(
-            || Vec::with_capacity(0),
-            |encoded| {
-                BASE64
-                    .decode(encoded)
-                    .expect("valid base64 encoded file data")
-            },
-        );
+        let data = ipc::storage_read(&self.0).unwrap_or_else(|| Vec::with_capacity(0));
         let len = buffer.len().min(data.len());
         buffer[..len].copy_from_slice(&data[..len]);
         Ok(len)
     }
 
     async fn write_all(&mut self, buffer: &[u8]) -> Result<(), Self::Error> {
-        let encoded = BASE64.encode(buffer);
-        ipc::storage_write(&self.0, &encoded);
+        ipc::storage_write(&self.0, buffer);
         Ok(())
     }
 }
