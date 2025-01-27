@@ -115,20 +115,22 @@ impl Manager {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
             let sub = state.subscriptions.get_mut(id).unwrap();
-            let key = sub.0;
             match sub.1.clone() {
                 Subscription::None => {
-                    *sub = (key, Subscription::Waiting(ctx.waker().clone()));
+                    sub.1 = Subscription::Waiting(ctx.waker().clone());
                     task::Poll::Pending
                 }
                 Subscription::Waiting(w) => {
                     if !w.will_wake(ctx.waker()) {
-                        *sub = (key, Subscription::Waiting(ctx.waker().clone()));
+                        sub.1 = Subscription::Waiting(ctx.waker().clone());
                         w.wake();
                     }
                     task::Poll::Pending
                 }
-                Subscription::Updated => task::Poll::Ready(()),
+                Subscription::Updated => {
+                    sub.1 = Subscription::None;
+                    task::Poll::Ready(())
+                }
             }
         })
     }
