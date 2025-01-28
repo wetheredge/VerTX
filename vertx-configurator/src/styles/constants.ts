@@ -26,6 +26,7 @@ export const fontSize = {
 	small: '0.875rem',
 	normal: '1rem',
 	heading: ['1.75rem', '1.5rem', '1.25rem'],
+	title: '1.25rem',
 } as const;
 
 const transitionShort = '300ms';

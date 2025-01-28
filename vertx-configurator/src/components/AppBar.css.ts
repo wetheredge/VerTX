@@ -2,6 +2,7 @@ import { createVar, globalStyle, style } from '@vanilla-extract/css';
 import { button } from '../styles/components.css';
 import {
 	borderWidth,
+	fontSize,
 	mediaIsMobile,
 	pagePadding,
 	size,
@@ -49,6 +50,10 @@ export const root = style({
 			paddingLeft: `calc(${size.md} + ${pagePadding.left} - ((${size.touchTarget} - ${size.buttonIcon}) / 2))`,
 		},
 	},
+});
+
+export const title = style({
+	fontSize: fontSize.title,
 });
 
 export const save = style([
