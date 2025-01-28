@@ -1,0 +1,109 @@
+---
+import iconMenu from 'lucide-static/icons/ellipsis-vertical.svg?raw';
+import Icon from '../../components/Icon.astro';
+import Layout from '../../layouts/Layout.astro';
+import { iconButton } from '../../styles/components.css';
+import { size } from '../../styles/constants';
+import * as styles from './_index.css';
+---
+
+<Layout>
+  <h1>Models</h1>
+
+  <div id="models">
+    <div id="template" class={styles.model}>
+      <span class="name" />
+      <button class={`menu ${iconButton}`} type="button" title="Menu">
+        <Icon size={size.buttonIcon} svg={iconMenu} />
+      </button>
+    </div>
+  </div>
+
+  <menu id="model-menu" class={styles.menu} popover>
+    <ul><button class="rename">Rename</button></ul>
+    <ul><button class="copy">Duplicate</button></ul>
+    <ul><button class="mixer">Edit mixer</button></ul>
+  </menu>
+</Layout>
+
+<script>
+  type Model = {
+    id: string;
+    name: string;
+  };
+
+  const devModels: Array<Model> = [
+    { id: '0', name: 'Test 0' },
+    { id: '1', name: 'Test 1' },
+  ];
+
+  // @ts-expect-error
+  const models: Array<Model> = import.meta.env.PROD ? $models$ : devModels;
+
+  const container: HTMLDivElement = document.querySelector('#models')!;
+  const template: HTMLDivElement = document.querySelector('#template')!;
+
+  template.childNodes.forEach(child => {
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      template.removeChild(child);
+    }
+  });
+
+  for (const { id, name } of models) {
+    const node = template.cloneNode(true) as typeof template;
+    node.id = '';
+    node.dataset.id = id;
+
+    node.childNodes.forEach(rawNode => {
+      const child = rawNode as HTMLElement;
+      if (child.classList.contains('name')) {
+        child.innerText = name;
+      } else if (child.classList.contains('menu')) {
+        (child as HTMLButtonElement).addEventListener('click', (event) => showMenu(event.currentTarget as HTMLButtonElement, id));
+      }
+    });
+
+    container.appendChild(node);
+  }
+
+  let targetModel: string | null;
+  let menuOpener: HTMLButtonElement | null;
+  const menu: HTMLMenuElement = document.querySelector('#model-menu')!;
+  menu.addEventListener('toggle', (event) => {
+    // @ts-expect-error: Missing types for ToggleEvent
+    if (event.newState === 'closed' && menuOpener != null) {
+      menuOpener.disabled = false;
+      menuOpener = null;
+    }
+  });
+  function showMenu(button: HTMLButtonElement, modelId: string) {
+    targetModel = modelId;
+    menuOpener = button;
+    menuOpener.disabled = true;
+
+    menu.style.visibility = 'hidden';
+    menu.togglePopover();
+
+    const rect = button.getBoundingClientRect();
+    menu.style.top = `${rect.bottom + window.scrollY}px`;
+    menu.style.left = `${rect.right - menu.offsetWidth + window.scrollX}px`;
+    menu.style.visibility = '';
+  }
+
+  function menuItem(selector: string, handler: () => void) {
+    (document.querySelector(`#model-menu .${selector}`) as HTMLButtonElement).addEventListener('click', () => {
+      menu.hidePopover();
+      handler();
+    });
+  }
+
+  menuItem('rename', () => {
+    console.log(`TODO: rename model ${targetModel}`);
+  });
+  menuItem('copy', () => {
+    console.log(`TODO: duplicate model ${targetModel}`);
+  });
+  menuItem('mixer', () => {
+    console.log(`TODO: edit mixer ${targetModel}`);
+  });
+</script>
