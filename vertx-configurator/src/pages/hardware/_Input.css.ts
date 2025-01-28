@@ -10,8 +10,6 @@ import {
 } from '../../styles/constants.ts';
 import { theme } from '../../styles/theme.css.ts';
 
-export { iconButton } from '../../styles/components.css.ts';
-
 const channelHeight = size.md;
 const centerTick = size.xs;
 const labelWidth = `calc(7ch + ${size.sm})`;
