@@ -1,0 +1,19 @@
+version: 3
+
+tasks:
+  default:
+    cmd: task --list-all --sort none
+    silent: true
+
+  check: todo
+  test: gleam test
+
+  build:erl: gleam build --target erlang
+  run:erl: gleam run {{.CLI_ARGS}}
+
+  build:js: gleam build --target javascript
+  run:js:
+    deps: [build:js]
+    cmd: bun run src/main.js {{.CLI_ARGS}}
+
+  :*: cd .. && task {{index .MATCH 0}}
