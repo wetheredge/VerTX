@@ -17,7 +17,7 @@ edge-ws = "=0.4.0"
 embassy-net = { workspace = true, features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"] }
 embedded-io-async = { workspace = true }
 heapless = { workspace = true }
-httparse = { version = "=1.9.5", default-features = false }
+httparse = { version = "=1.10.0", default-features = false }
 itoa = "=1.0.14"
 loog = { workspace = true }
 sha1 = { version = "=0.10.6", default-features = false }
