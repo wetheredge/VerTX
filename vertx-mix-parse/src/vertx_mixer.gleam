@@ -4,7 +4,6 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/set
-import gleave
 import graph
 import simplifile
 import syntax
@@ -15,10 +14,7 @@ type Mixer =
 pub fn main() {
   case run() {
     Ok(_) -> Nil
-    Error(err) -> {
-      io.println_error(err)
-      gleave.exit(1)
-    }
+    Error(err) -> panic as err
   }
 }
 

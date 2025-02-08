@@ -1,5 +1,4 @@
 import gleam/dict.{type Dict}
-import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
@@ -44,9 +43,12 @@ fn add_node(s: State, node: Node(LazyLink)) -> State {
   )
 }
 
-fn last_id(s: State) -> LazyLink {
-  let assert Some(last_id) = s.last_id
-  last_id
+fn take_last_id(s: State) -> #(State, LazyLink) {
+  let last_id = case s.last_id {
+    Some(id) -> id
+    None -> panic as "node expected input"
+  }
+  #(State(..s, last_id: None), last_id)
 }
 
 pub fn flatten(mixer: List(syntax.Expr)) -> Graph {
@@ -80,26 +82,25 @@ pub fn flatten(mixer: List(syntax.Expr)) -> Graph {
 }
 
 fn process_expr(s: State, expr: syntax.Expr) -> State {
-  let s = State(..s, last_id: None)
   use s, node <- list.fold(expr, s)
   case node {
     syntax.Const(value) -> add_node(s, Const(value))
     syntax.Get(var) -> State(..s, last_id: Some(LazyLink(var)))
     syntax.Input(name) -> add_node(s, Input(name))
-    syntax.Output(channel) ->
-      State(
-        ..s,
-        outputs: dict.insert(s.outputs, channel, last_id(s)),
-        last_id: None,
-      )
-    syntax.Set(var) ->
-      State(..s, vars: dict.insert(s.vars, var, last_id(s)), last_id: None)
+    syntax.Output(channel) -> {
+      let #(s, last_id) = take_last_id(s)
+      State(..s, outputs: dict.insert(s.outputs, channel, last_id))
+    }
+    syntax.Set(var) -> {
+      let #(s, last_id) = take_last_id(s)
+      State(..s, vars: dict.insert(s.vars, var, last_id))
+    }
     syntax.Switch(high, low) -> {
-      let condition = last_id(s)
+      let #(s, condition) = take_last_id(s)
       let s = process_expr(s, high)
-      let high = last_id(s)
+      let #(s, high) = take_last_id(s)
       let s = process_expr(s, low)
-      let low = last_id(s)
+      let #(s, low) = take_last_id(s)
       add_node(s, Switch(condition, high, low))
     }
   }
@@ -114,19 +115,13 @@ fn resolve_link(vars: Vars, link: LazyLink) -> NodeId {
 
 fn resolve_var(vars: Vars, var: String, seen: Set(String)) -> NodeId {
   let seen = case set.contains(seen, var) {
-    True -> {
-      io.println_error("`" <> var <> "` is defined recursively")
-      panic
-    }
+    True -> panic as { "`" <> var <> "` is defined recursively" }
     False -> set.insert(seen, var)
   }
 
   case dict.get(vars, var) {
     Ok(KnownLink(id)) -> id
     Ok(LazyLink(var)) -> resolve_var(vars, var, seen)
-    Error(_) -> {
-      io.println_error("`" <> var <> "` is not defined")
-      panic
-    }
+    Error(_) -> panic as { "`" <> var <> "` is not defined" }
   }
 }
