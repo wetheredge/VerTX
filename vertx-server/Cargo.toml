@@ -13,7 +13,7 @@ defmt = ["embassy-net/defmt"]
 atoi = { version = "=2.0.0", default-features = false }
 base64 = { version = "=0.22.1", default-features = false }
 edge-dhcp = "=0.5.0"
-edge-ws = "=0.3.0"
+edge-ws = "=0.4.0"
 embassy-net = { workspace = true, features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"] }
 embedded-io-async = { workspace = true }
 heapless = { workspace = true }
