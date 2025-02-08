@@ -7,7 +7,7 @@
 	"type": "module",
 	"dependencies": {
 		"@solid-primitives/websocket": "1.3.0",
-		"@solidjs/router": "0.15.2",
+		"@solidjs/router": "0.15.3",
 		"autoprefixer": "10.4.20",
 		"inter-ui": "4.1.0",
 		"lucide-solid": "0.469.0",
