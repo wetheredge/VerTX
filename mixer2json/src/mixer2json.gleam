@@ -22,7 +22,7 @@ pub fn main() {
 fn run() -> Result(Nil, String) {
   use path <- result.try(case argv.load().arguments {
     [path] -> Ok(path)
-    _ -> Error("usage: ./vertx_mixer <file.mix>")
+    _ -> Error("usage: ./mixer2json <input.mixer>")
   })
 
   let assert Ok(raw) = simplifile.read(path)

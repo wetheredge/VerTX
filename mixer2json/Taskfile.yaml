@@ -5,7 +5,7 @@ tasks:
     cmd: task --list-all --sort none
     silent: true
 
-  check: todo
+  check: gleam check
   test: gleam test
 
   build:erl: gleam build --target erlang
