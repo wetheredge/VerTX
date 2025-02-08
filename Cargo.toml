@@ -42,7 +42,7 @@ vertx-server.path = "vertx-server"
 
 [workspace.metadata.bin-dependencies]
 cargo-machete = "=0.7.0"
-cargo-nextest = "=0.9.87"
+cargo-nextest = "=0.9.88"
 dprint = "=0.48.0"
 espflash = "=3.2.0"
 probe-rs-tools = "=0.24.0"
