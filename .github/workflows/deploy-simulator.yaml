@@ -36,7 +36,7 @@ jobs:
       - run: bun run vite build
         env:
           VITE_TARGET: simulator
-      - uses: actions/upload-artifact@v4.5.0
+      - uses: actions/upload-artifact@v4.6.0
         with:
           name: configurator
           path: vertx-configurator/dist/
@@ -73,7 +73,7 @@ jobs:
         working-directory: target/simulator
       - run: cat .config/env >> "$GITHUB_ENV"
       - run: wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts target/simulator
-      - uses: actions/upload-artifact@v4.5.0
+      - uses: actions/upload-artifact@v4.6.0
         with:
           name: vertx
           path: target/simulator
@@ -99,7 +99,7 @@ jobs:
           path: target/simulator
       - run: bun install --frozen-lockfile
       - run: bun run vite build
-      - uses: actions/upload-artifact@v4.5.0
+      - uses: actions/upload-artifact@v4.6.0
         with:
           name: simulator
           path: vertx-simulator/dist
