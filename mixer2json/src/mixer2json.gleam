@@ -13,29 +13,30 @@ type Mixer =
   List(List(syntax.Node))
 
 pub fn main() {
-  case run() {
-    Ok(_) -> Nil
+  let path = case argv.load().arguments {
+    [path] -> path
+    _ -> panic as "usage: mixer2json <input.mixer>"
+  }
+
+  let mixer = case simplifile.read(path) {
+    Ok(s) -> s
+    Error(err) -> panic as simplifile.describe_error(err)
+  }
+
+  case convert(mixer) {
+    Ok(json) -> io.println(json)
     Error(err) -> panic as err
   }
 }
 
-fn run() -> Result(Nil, String) {
-  use path <- result.try(case argv.load().arguments {
-    [path] -> Ok(path)
-    _ -> Error("usage: ./mixer2json <input.mixer>")
-  })
-
-  let assert Ok(raw) = simplifile.read(path)
+pub fn convert(raw: String) -> Result(String, String) {
   let assert Ok(tokens) = syntax.lex(raw)
   let assert Ok(mixer) = syntax.parse(tokens)
 
   use _ <- result.try(validate(mixer))
 
   let graph = graph.flatten(mixer)
-  let json = output.to_json(graph)
-  io.println(json)
-
-  Ok(Nil)
+  Ok(output.to_json(graph))
 }
 
 fn validate(mixer: Mixer) -> Result(Nil, String) {
