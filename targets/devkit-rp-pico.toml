@@ -2,8 +2,14 @@ chip = "rp2040"
 
 [pins]
 leds = 6
+sd = 7
 analog = []
 switches = []
+
+[pins.spi]
+sclk = 10
+mosi = 11
+miso = 12
 
 [pins.ui]
 up = 0

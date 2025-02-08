@@ -5,6 +5,7 @@ use embassy_executor::Spawner;
 use embassy_futures::select;
 use embassy_rp::i2c::{self, I2c};
 use embassy_rp::pio::{self, Pio};
+use embassy_rp::spi::{self, Spi};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio, peripherals};
 use embassy_time::Duration;
@@ -12,6 +13,7 @@ use embedded_alloc::TlsfHeap;
 use static_cell::StaticCell;
 use {defmt_rtt as _, embedded_graphics as eg, panic_probe as _};
 
+use crate::storage::sd;
 use crate::ui::Input;
 
 bind_interrupts!(struct Irqs {
@@ -60,6 +62,36 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
     };
 
+    let spi = Spi::new(
+        p.SPI1,
+        pins!(p, spi.sclk),
+        pins!(p, spi.mosi),
+        pins!(p, spi.miso),
+        p.DMA_CH0,
+        p.DMA_CH1,
+        spi::Config::default(),
+    );
+
+    let storage = async {
+        // Using impl Trait hits the `item does not constrain but has it in its
+        // signature` error with the static below. Something neater would be nice, but
+        // this works :/
+        type SpiDevice = embedded_hal_bus::spi::ExclusiveDevice<
+            Spi<'static, peripherals::SPI1, spi::Async>,
+            gpio::Output<'static>,
+            embassy_time::Delay,
+        >;
+
+        static STORAGE: StaticCell<sd::Storage<SpiDevice>> = StaticCell::new();
+        let sd_cs = gpio::Output::new(pins!(p, sd), gpio::Level::High);
+        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
+            spi.set_frequency(speed.to_Hz());
+        })
+        .await;
+        let storage: &'static _ = STORAGE.init(storage);
+        storage
+    };
+
     let ui = {
         let scl = pins!(p, display.scl);
         let sda = pins!(p, display.sda);
@@ -79,6 +111,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
     super::Init {
         reset,
         status_led,
+        storage,
         ui,
     }
 }
@@ -96,20 +129,6 @@ impl super::traits::Reset for Reset {
         self.watchdog.trigger_reset();
         #[expect(clippy::empty_loop)]
         loop {}
-    }
-}
-
-#[expect(unused)]
-struct ConfigStorage {}
-
-impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, _parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
-        // TODO
-        None
-    }
-
-    fn save(&mut self, _config: &[u8]) {
-        todo!()
     }
 }
 

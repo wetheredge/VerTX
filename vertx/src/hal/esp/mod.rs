@@ -4,9 +4,6 @@ mod leds;
 mod network;
 mod network_driver;
 
-use alloc::vec;
-use alloc::vec::Vec;
-
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_futures::select;
@@ -23,7 +20,6 @@ use fugit::RateExtU32 as _;
 use static_cell::StaticCell;
 use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
 
-use self::flash::Partition;
 use crate::storage::sd;
 use crate::ui::Input;
 
@@ -128,55 +124,6 @@ impl super::traits::Reset for Reset {
     fn reboot(&mut self) -> ! {
         esp_hal::reset::software_reset();
         unreachable!()
-    }
-}
-
-#[expect(unused)]
-struct ConfigStorage {
-    partition: Partition,
-}
-
-#[expect(unused)]
-impl ConfigStorage {
-    fn new(partitions: &mut Vec<Partition>) -> Self {
-        let partition = partitions.iter().position(Partition::is_config).unwrap();
-        Self {
-            partition: partitions.swap_remove(partition),
-        }
-    }
-}
-
-impl super::traits::ConfigStorage for ConfigStorage {
-    fn load<T>(&self, parse: impl FnOnce(&[u8]) -> Option<T>) -> Option<T> {
-        let mut length = [0; 1];
-        self.partition.read_into(0, &mut length).unwrap();
-        let [length] = length;
-        let length = if length == u32::MAX { 0 } else { length };
-        let length = length as usize;
-
-        if length > 0 {
-            let mut config = vec![0; length];
-            self.partition.read_into(1, &mut config).unwrap();
-
-            let bytes: &[u8] = bytemuck::cast_slice(&config);
-            parse(bytes)
-        } else {
-            None
-        }
-    }
-
-    fn save(&mut self, config: &[u8]) {
-        // u32 length prefix
-        let sectors = (4 + config.len() as u32).div_ceil(flash::SECTOR_BYTES);
-        self.partition.erase(sectors).unwrap();
-
-        let len_words = config.len().div_ceil(4);
-        self.partition.write(0, &[len_words as u32]).unwrap();
-
-        // Use u32 array to ensure word alignment
-        let mut buffer = [0u32; crate::config::BYTE_LENGTH.div_ceil(4)];
-        bytemuck::cast_slice_mut(&mut buffer)[0..config.len()].copy_from_slice(config);
-        self.partition.write(1, &buffer[0..len_words]).unwrap();
     }
 }
 
