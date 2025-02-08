@@ -5,7 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
-import { $, Glob, type FileSink } from 'bun';
+import { $, type FileSink, Glob } from 'bun';
 import { getRepoRoot, panic } from './utils';
 
 const missingTools = ['asdf', 'bun', 'cargo', 'git'].filter(
