@@ -5,6 +5,7 @@ import gleam/list
 import gleam/result
 import gleam/set
 import graph
+import output
 import simplifile
 import syntax
 
@@ -31,7 +32,8 @@ fn run() -> Result(Nil, String) {
   use _ <- result.try(validate(mixer))
 
   let graph = graph.flatten(mixer)
-  io.debug(graph)
+  let json = output.to_json(graph)
+  io.println(json)
 
   Ok(Nil)
 }

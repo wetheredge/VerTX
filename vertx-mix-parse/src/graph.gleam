@@ -5,18 +5,23 @@ import gleam/set.{type Set}
 import syntax
 
 pub type Graph {
-  Graph(nodes: List(Node(NodeId)), outputs: Dict(Int, NodeId))
+  Graph(nodes: List(Node), outputs: Dict(Int, NodeId))
 }
 
 pub type NodeId =
   Int
 
-pub type Node(link) {
+pub type GenericNode(link) {
   Input(name: String)
   Const(value: Int)
-  Output(channel: Int, input: link)
   Switch(condition: link, high: link, low: link)
 }
+
+pub type Node =
+  GenericNode(NodeId)
+
+type LazyNode =
+  GenericNode(LazyLink)
 
 type LazyLink {
   KnownLink(NodeId)
@@ -25,7 +30,7 @@ type LazyLink {
 
 type State {
   State(
-    nodes: List(Node(LazyLink)),
+    nodes: List(LazyNode),
     outputs: Dict(Int, LazyLink),
     vars: Vars,
     last_id: Option(LazyLink),
@@ -35,7 +40,7 @@ type State {
 type Vars =
   Dict(String, LazyLink)
 
-fn add_node(s: State, node: Node(LazyLink)) -> State {
+fn add_node(s: State, node: LazyNode) -> State {
   State(
     ..s,
     nodes: [node, ..s.nodes],
@@ -65,7 +70,6 @@ pub fn flatten(mixer: List(syntax.Expr)) -> Graph {
       case node {
         Const(value) -> Const(value)
         Input(name) -> Input(name)
-        Output(channel, input) -> Output(channel, resolve_link(vars, input))
         Switch(condition, high, low) ->
           Switch(
             resolve_link(vars, condition),
