@@ -1,5 +1,5 @@
 {
-  "lockfileVersion": 0,
+  "lockfileVersion": 1,
   "workspaces": {
     "": {
       "devDependencies": {
@@ -30,7 +30,7 @@
         "autoprefixer": "10.4.20",
         "inter-ui": "4.1.0",
         "lucide-solid": "0.475.0",
-        "postcard": "postcard-ts",
+        "postcard": "workspace:*",
         "solid-icons": "^1.1.0",
         "solid-js": "1.9.4",
       },
@@ -46,7 +46,7 @@
       "name": "vertx-simulator",
       "version": "0.0.0",
       "dependencies": {
-        "postcard": "postcard-ts",
+        "postcard": "workspace:*",
         "ucobs": "1.0.0",
       },
       "devDependencies": {
@@ -502,7 +502,7 @@
 
     "pkg-types": ["pkg-types@1.3.1", "", { "dependencies": { "confbox": "^0.1.8", "mlly": "^1.7.4", "pathe": "^2.0.1" } }, "sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ=="],
 
-    "postcard": ["postcard@workspace:postcard-ts", { "devDependencies": { "@tsconfig/strictest": "2.0.5" } }],
+    "postcard": ["postcard@workspace:postcard-ts"],
 
     "postcss": ["postcss@8.5.1", "", { "dependencies": { "nanoid": "^3.3.8", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-6oz2beyjc5VMn/KV1pPw8fliQkhBXrVn1Z3TVyqZxU8kZpzEKhBdmCFqI6ZbmGtamQvQGuU1sgPTk8ZrXDD7jQ=="],
 
@@ -568,9 +568,9 @@
 
     "validate-html-nesting": ["validate-html-nesting@1.2.2", "", {}, "sha512-hGdgQozCsQJMyfK5urgFcWEqsSSrK63Awe0t/IMR0bZ0QMtnuaiHzThW81guu3qx9abLi99NEuiaN6P9gVYsNg=="],
 
-    "vertx-configurator": ["vertx-configurator@workspace:vertx-configurator", { "dependencies": { "@solid-primitives/websocket": "1.3.0", "@solidjs/router": "0.15.3", "autoprefixer": "10.4.20", "inter-ui": "4.1.0", "lucide-solid": "0.475.0", "postcard": "postcard-ts", "solid-icons": "^1.1.0", "solid-js": "1.9.4" }, "devDependencies": { "@tsconfig/vite-react": "3.4.0", "@vanilla-extract/css": "1.17.1", "@vanilla-extract/vite-plugin": "5.0.0", "vite": "6.1.0", "vite-plugin-solid": "2.11.1" } }],
+    "vertx-configurator": ["vertx-configurator@workspace:vertx-configurator"],
 
-    "vertx-simulator": ["vertx-simulator@workspace:vertx-simulator", { "dependencies": { "postcard": "postcard-ts", "ucobs": "1.0.0" }, "devDependencies": { "@tsconfig/vite-react": "3.4.0", "vite": "6.1.0" } }],
+    "vertx-simulator": ["vertx-simulator@workspace:vertx-simulator"],
 
     "vite": ["vite@6.1.0", "", { "dependencies": { "esbuild": "^0.24.2", "postcss": "^8.5.1", "rollup": "^4.30.1" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0", "jiti": ">=1.21.0", "less": "*", "lightningcss": "^1.21.0", "sass": "*", "sass-embedded": "*", "stylus": "*", "sugarss": "*", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "jiti", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-RjjMipCKVoR4hVfPY6GQTgveinjNuyLw+qruksLDvA5ktI1150VmcMBKmQaEWJhg/j6Uaf6dNCNA0AfdzUb/hQ=="],
 
