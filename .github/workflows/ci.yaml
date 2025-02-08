@@ -209,7 +209,7 @@ jobs:
         dir: [scripts, vertx-configurator, vertx-simulator]
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: biomejs/setup-biome@v2.2.1
+      - uses: biomejs/setup-biome@v2.3.0
         env:
           GITHUB_TOKEN: null
       - run: biome version
