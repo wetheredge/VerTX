@@ -138,7 +138,7 @@ vertx-network-esp = { workspace = true, features = ["defmt"], optional = true }
 # TODO: flip-link
 cortex-m-rt = { version = "=0.7.5", optional = true }
 defmt-rtt = { version = "=0.4.1", optional = true }
-embassy-rp = { version = "=0.3.0", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
+embassy-rp = { version = "=0.3.1", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
 embedded-alloc = { version = "=0.6.0", optional = true }
 fixed = { version = "=1.28.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
@@ -150,7 +150,7 @@ base64 = "=0.22.1"
 console_error_panic_hook = "0.1.7"
 critical-section = { version = "=1.2.0", features = ["std"] }
 talc = "=4.4.2"
-wasm-bindgen = "=0.2.99"
+wasm-bindgen = "=0.2.100"
 wasm-logger = "=0.2.0"
 
 [build-dependencies]

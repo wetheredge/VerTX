@@ -5,7 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
-import { $, Glob } from 'bun';
+import { $, type FileSink, Glob } from 'bun';
 import { getRepoRoot, panic } from './utils';
 
 const missingTools = ['asdf', 'bun', 'cargo', 'git'].filter(
@@ -38,6 +38,11 @@ if (branchExists.exitCode === 0) {
 }
 
 const repoRoot = await getRepoRoot();
+let prBody: FileSink | null = null;
+if (import.meta.env.CI) {
+	prBody = Bun.file(`${repoRoot}/.updates.md`).writer();
+}
+
 chdir(repoRoot);
 await $`git switch -c updates`.quiet();
 const cargoState = await getCargoState();
@@ -48,6 +53,8 @@ await npm();
 await cargo(cargoState);
 await githubActions();
 await cargoState.finish();
+
+await prBody?.end?.();
 
 async function asdf() {
 	const { dep, updateWorkflows } = group('asdf');
@@ -415,18 +422,14 @@ function group(group: string) {
 				} else {
 					console.info(` -> ${latest}`);
 
-					if (import.meta.env.CI) {
-						const file = Bun.file(
-							`${repoRoot}/.updates.md`,
-						).writer();
+					if (prBody) {
 						if (!updatedAny) {
-							file.write(
+							prBody.write(
 								`### \`${group}\`\ndependency|from|to\n-|-|-\n`,
 							);
 							updatedAny = true;
 						}
-						file.write(`\`${dep}\`|${current}|${latest}\n`);
-						await file.end();
+						prBody.write(`\`${dep}\`|${current}|${latest}\n`);
 					}
 				}
 
