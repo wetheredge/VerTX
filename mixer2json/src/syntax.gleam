@@ -13,12 +13,22 @@ pub type Node {
   Set(String)
   Const(Int)
   Math(operator: MathOperator, rhs: Expr)
+  Compare(operator: Comparison, rhs: Expr)
   Switch(high: Expr, low: Expr)
 }
 
 pub type MathOperator {
   Add
   Subtract
+}
+
+pub type Comparison {
+  LessThan
+  LessThanOrEqual
+  GreaterThan
+  GreaterThanOrEqual
+  EqualTo
+  NotEqualTo
 }
 
 pub type Token {
@@ -40,6 +50,7 @@ pub fn node_name(node: Node) -> String {
     Output(..) -> "output"
     Set(..) -> "set"
     Math(..) -> "math"
+    Compare(..) -> "compare"
     Switch(..) -> "switch"
   }
 }
@@ -112,6 +123,25 @@ pub fn node_parser() -> nibble.Parser(Node, Token, Nil) {
       use rhs <- nibble.do(expression_parser())
 
       nibble.succeed(Math(op, rhs))
+    }
+    "compare" -> {
+      use op <- nibble.do({
+        use token <- nibble.take_map("comparison operator")
+        case token {
+          Ident("lt") -> Some(LessThan)
+          Ident("lte") -> Some(LessThanOrEqual)
+          Ident("gt") -> Some(GreaterThan)
+          Ident("gte") -> Some(GreaterThanOrEqual)
+          Ident("eq") -> Some(EqualTo)
+          Ident("neq") -> Some(NotEqualTo)
+          _ -> None
+        }
+      })
+
+      use _ <- nibble.do(comma_parser)
+      use rhs <- nibble.do(expression_parser())
+
+      nibble.succeed(Compare(op, rhs))
     }
     "switch" -> {
       use high <- nibble.do(expression_parser())

@@ -15,6 +15,7 @@ pub type GenericNode(link) {
   Input(name: String)
   Const(value: Int)
   Math(left: link, op: syntax.MathOperator, right: link)
+  Compare(left: link, op: syntax.Comparison, right: link)
   Switch(condition: link, high: link, low: link)
 }
 
@@ -74,6 +75,8 @@ pub fn flatten(mixer: List(syntax.Expr)) -> Graph {
         Input(name) -> Input(name)
         Math(left, op, right) ->
           Math(resolve_link(left), op, resolve_link(right))
+        Compare(left, op, right) ->
+          Compare(resolve_link(left), op, resolve_link(right))
         Switch(condition, high, low) ->
           Switch(resolve_link(condition), resolve_link(high), resolve_link(low))
       }
@@ -104,6 +107,12 @@ fn process_expr(s: State, expr: syntax.Expr) -> State {
       let s = process_expr(s, rhs)
       let #(s, right) = take_last_id(s)
       add_node(s, Math(left, op, right))
+    }
+    syntax.Compare(op, rhs) -> {
+      let #(s, left) = take_last_id(s)
+      let s = process_expr(s, rhs)
+      let #(s, right) = take_last_id(s)
+      add_node(s, Compare(left, op, right))
     }
     syntax.Switch(high, low) -> {
       let #(s, condition) = take_last_id(s)

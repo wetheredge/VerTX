@@ -53,6 +53,11 @@ pub fn math_test() {
   |> should.equal(Ok(syntax.Math(syntax.Subtract, [syntax.Const(1)])))
 }
 
+pub fn compare_test() {
+  lex_and_parse_node("compare(lt, const(1))")
+  |> should.equal(Ok(syntax.Compare(syntax.LessThan, [syntax.Const(1)])))
+}
+
 pub fn switch_test() {
   let expected = syntax.Switch([syntax.Const(10)], [syntax.Const(20)])
 

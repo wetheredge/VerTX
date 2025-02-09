@@ -31,6 +31,11 @@ fn node_to_json(node: Node) -> StringTree {
       #("operator", json_string(math_operator_name(op))),
       #("right", json_int(right)),
     ])
+    graph.Compare(left, op, right) -> #("compare", [
+      #("left", json_int(left)),
+      #("operator", json_string(comparison_name(op))),
+      #("right", json_int(right)),
+    ])
     graph.Switch(condition, high, low) -> #("switch", [
       #("condition", json_int(condition)),
       #("high", json_int(high)),
@@ -47,6 +52,17 @@ fn math_operator_name(op: syntax.MathOperator) -> String {
   case op {
     syntax.Add -> "add"
     syntax.Subtract -> "sub"
+  }
+}
+
+fn comparison_name(op: syntax.Comparison) -> String {
+  case op {
+    syntax.LessThan -> "<"
+    syntax.LessThanOrEqual -> "<="
+    syntax.GreaterThan -> ">"
+    syntax.GreaterThanOrEqual -> ">="
+    syntax.EqualTo -> "=="
+    syntax.NotEqualTo -> "!="
   }
 }
 
