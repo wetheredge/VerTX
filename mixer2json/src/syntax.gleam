@@ -12,7 +12,13 @@ pub type Node {
   Get(String)
   Set(String)
   Const(Int)
+  Math(operator: MathOperator, rhs: Expr)
   Switch(high: Expr, low: Expr)
+}
+
+pub type MathOperator {
+  Add
+  Subtract
 }
 
 pub type Token {
@@ -33,6 +39,7 @@ pub fn node_name(node: Node) -> String {
     Input(..) -> "input"
     Output(..) -> "output"
     Set(..) -> "set"
+    Math(..) -> "math"
     Switch(..) -> "switch"
   }
 }
@@ -91,6 +98,20 @@ pub fn node_parser() -> nibble.Parser(Node, Token, Nil) {
         TNum(n) -> Some(Const(n))
         _ -> None
       }
+    }
+    "math" -> {
+      use op <- nibble.do({
+        use token <- nibble.take_map("operator")
+        case token {
+          Ident("add") -> Some(Add)
+          Ident("subtract") | Ident("sub") -> Some(Subtract)
+          _ -> None
+        }
+      })
+      use _ <- nibble.do(comma_parser)
+      use rhs <- nibble.do(expression_parser())
+
+      nibble.succeed(Math(op, rhs))
     }
     "switch" -> {
       use high <- nibble.do(expression_parser())

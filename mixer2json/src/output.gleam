@@ -5,6 +5,7 @@ import gleam/string_tree.{
   type StringTree, append, append_tree, from_string, from_strings,
 }
 import graph.{type Graph, type Node}
+import syntax
 
 pub fn to_json(graph: Graph) -> String {
   let nodes =
@@ -25,6 +26,11 @@ fn node_to_json(node: Node) -> StringTree {
   let #(typ, fields) = case node {
     graph.Const(value) -> #("const", [#("value", json_int(value))])
     graph.Input(name) -> #("input", [#("name", json_string(name))])
+    graph.Math(left, op, right) -> #("math", [
+      #("left", json_int(left)),
+      #("operator", json_string(math_operator_name(op))),
+      #("right", json_int(right)),
+    ])
     graph.Switch(condition, high, low) -> #("switch", [
       #("condition", json_int(condition)),
       #("high", json_int(high)),
@@ -35,6 +41,13 @@ fn node_to_json(node: Node) -> StringTree {
   let fields = [#("type", json_string(typ)), ..fields]
 
   json_object(fields)
+}
+
+fn math_operator_name(op: syntax.MathOperator) -> String {
+  case op {
+    syntax.Add -> "add"
+    syntax.Subtract -> "sub"
+  }
 }
 
 fn json_string(s: String) -> StringTree {

@@ -42,6 +42,17 @@ pub fn const_test() {
   |> should.equal(Ok(syntax.Const(42)))
 }
 
+pub fn math_test() {
+  lex_and_parse_node("math(add, const(1))")
+  |> should.equal(Ok(syntax.Math(syntax.Add, [syntax.Const(1)])))
+
+  lex_and_parse_node("math(sub, const(1))")
+  |> should.equal(Ok(syntax.Math(syntax.Subtract, [syntax.Const(1)])))
+
+  lex_and_parse_node("math(subtract, const(1))")
+  |> should.equal(Ok(syntax.Math(syntax.Subtract, [syntax.Const(1)])))
+}
+
 pub fn switch_test() {
   let expected = syntax.Switch([syntax.Const(10)], [syntax.Const(20)])
 

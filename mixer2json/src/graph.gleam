@@ -14,6 +14,7 @@ pub type NodeId =
 pub type GenericNode(link) {
   Input(name: String)
   Const(value: Int)
+  Math(left: link, op: syntax.MathOperator, right: link)
   Switch(condition: link, high: link, low: link)
 }
 
@@ -63,6 +64,7 @@ pub fn flatten(mixer: List(syntax.Expr)) -> Graph {
   }
 
   let vars = result.vars
+  let resolve_link = resolve_link(vars, _)
 
   let nodes =
     list.reverse(result.nodes)
@@ -70,17 +72,15 @@ pub fn flatten(mixer: List(syntax.Expr)) -> Graph {
       case node {
         Const(value) -> Const(value)
         Input(name) -> Input(name)
+        Math(left, op, right) ->
+          Math(resolve_link(left), op, resolve_link(right))
         Switch(condition, high, low) ->
-          Switch(
-            resolve_link(vars, condition),
-            resolve_link(vars, high),
-            resolve_link(vars, low),
-          )
+          Switch(resolve_link(condition), resolve_link(high), resolve_link(low))
       }
     })
 
   let outputs =
-    dict.map_values(result.outputs, fn(_, link) { resolve_link(vars, link) })
+    dict.map_values(result.outputs, fn(_, link) { resolve_link(link) })
 
   Graph(nodes, outputs)
 }
@@ -98,6 +98,12 @@ fn process_expr(s: State, expr: syntax.Expr) -> State {
     syntax.Set(var) -> {
       let #(s, last_id) = take_last_id(s)
       State(..s, vars: dict.insert(s.vars, var, last_id))
+    }
+    syntax.Math(op, rhs) -> {
+      let #(s, left) = take_last_id(s)
+      let s = process_expr(s, rhs)
+      let #(s, right) = take_last_id(s)
+      add_node(s, Math(left, op, right))
     }
     syntax.Switch(high, low) -> {
       let #(s, condition) = take_last_id(s)
