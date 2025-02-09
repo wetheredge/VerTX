@@ -58,6 +58,17 @@ pub fn compare_test() {
   |> should.equal(Ok(syntax.Compare(syntax.LessThan, [syntax.Const(1)])))
 }
 
+pub fn boolean_test() {
+  lex_and_parse_node("boolean(and, const(1))")
+  |> should.equal(Ok(syntax.Boolean(syntax.And, [syntax.Const(1)])))
+
+  lex_and_parse_node("boolean(or, const(1))")
+  |> should.equal(Ok(syntax.Boolean(syntax.Or, [syntax.Const(1)])))
+
+  lex_and_parse_node("boolean(not)")
+  |> should.equal(Ok(syntax.BooleanNot))
+}
+
 pub fn switch_test() {
   let expected = syntax.Switch([syntax.Const(10)], [syntax.Const(20)])
 

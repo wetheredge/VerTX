@@ -36,6 +36,15 @@ fn node_to_json(node: Node) -> StringTree {
       #("operator", json_string(comparison_name(op))),
       #("right", json_int(right)),
     ])
+    graph.Boolean(left, op, right) -> #("boolean", [
+      #("left", json_int(left)),
+      #("operator", json_string(boolean_operator_name(op))),
+      #("right", json_int(right)),
+    ])
+    graph.BooleanNot(of) -> #("boolean", [
+      #("operator", json_string("not")),
+      #("of", json_int(of)),
+    ])
     graph.Switch(condition, high, low) -> #("switch", [
       #("condition", json_int(condition)),
       #("high", json_int(high)),
@@ -63,6 +72,13 @@ fn comparison_name(op: syntax.Comparison) -> String {
     syntax.GreaterThanOrEqual -> ">="
     syntax.EqualTo -> "=="
     syntax.NotEqualTo -> "!="
+  }
+}
+
+fn boolean_operator_name(op: syntax.BooleanOperator) -> String {
+  case op {
+    syntax.And -> "and"
+    syntax.Or -> "or"
   }
 }
 

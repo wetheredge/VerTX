@@ -16,6 +16,8 @@ pub type GenericNode(link) {
   Const(value: Int)
   Math(left: link, op: syntax.MathOperator, right: link)
   Compare(left: link, op: syntax.Comparison, right: link)
+  Boolean(left: link, op: syntax.BooleanOperator, right: link)
+  BooleanNot(link)
   Switch(condition: link, high: link, low: link)
 }
 
@@ -77,6 +79,9 @@ pub fn flatten(mixer: List(syntax.Expr)) -> Graph {
           Math(resolve_link(left), op, resolve_link(right))
         Compare(left, op, right) ->
           Compare(resolve_link(left), op, resolve_link(right))
+        Boolean(left, op, right) ->
+          Boolean(resolve_link(left), op, resolve_link(right))
+        BooleanNot(of) -> BooleanNot(resolve_link(of))
         Switch(condition, high, low) ->
           Switch(resolve_link(condition), resolve_link(high), resolve_link(low))
       }
@@ -113,6 +118,16 @@ fn process_expr(s: State, expr: syntax.Expr) -> State {
       let s = process_expr(s, rhs)
       let #(s, right) = take_last_id(s)
       add_node(s, Compare(left, op, right))
+    }
+    syntax.Boolean(op, rhs) -> {
+      let #(s, left) = take_last_id(s)
+      let s = process_expr(s, rhs)
+      let #(s, right) = take_last_id(s)
+      add_node(s, Boolean(left, op, right))
+    }
+    syntax.BooleanNot -> {
+      let #(s, of) = take_last_id(s)
+      add_node(s, BooleanNot(of))
     }
     syntax.Switch(high, low) -> {
       let #(s, condition) = take_last_id(s)

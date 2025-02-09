@@ -14,6 +14,8 @@ pub type Node {
   Const(Int)
   Math(operator: MathOperator, rhs: Expr)
   Compare(operator: Comparison, rhs: Expr)
+  Boolean(operator: BooleanOperator, rhs: Expr)
+  BooleanNot
   Switch(high: Expr, low: Expr)
 }
 
@@ -29,6 +31,11 @@ pub type Comparison {
   GreaterThanOrEqual
   EqualTo
   NotEqualTo
+}
+
+pub type BooleanOperator {
+  And
+  Or
 }
 
 pub type Token {
@@ -51,6 +58,8 @@ pub fn node_name(node: Node) -> String {
     Set(..) -> "set"
     Math(..) -> "math"
     Compare(..) -> "compare"
+    Boolean(..) -> "boolean"
+    BooleanNot(..) -> "boolean"
     Switch(..) -> "switch"
   }
 }
@@ -89,6 +98,10 @@ pub fn node_parser() -> nibble.Parser(Node, Token, Nil) {
     }
   }
 
+  let comma_rhs =
+    comma_parser
+    |> nibble.then(fn(_) { expression_parser() })
+
   use node <- nibble.do(node_name_parser)
   use _ <- nibble.do(nibble.token(LParen))
 
@@ -119,8 +132,7 @@ pub fn node_parser() -> nibble.Parser(Node, Token, Nil) {
           _ -> None
         }
       })
-      use _ <- nibble.do(comma_parser)
-      use rhs <- nibble.do(expression_parser())
+      use rhs <- nibble.do(comma_rhs)
 
       nibble.succeed(Math(op, rhs))
     }
@@ -137,11 +149,33 @@ pub fn node_parser() -> nibble.Parser(Node, Token, Nil) {
           _ -> None
         }
       })
-
-      use _ <- nibble.do(comma_parser)
-      use rhs <- nibble.do(expression_parser())
+      use rhs <- nibble.do(comma_rhs)
 
       nibble.succeed(Compare(op, rhs))
+    }
+    "boolean" -> {
+      let unary = {
+        use token <- nibble.take_map("unary boolean operator")
+        case token {
+          Ident("not") -> Some(BooleanNot)
+          _ -> None
+        }
+      }
+
+      let binary = {
+        use op <- nibble.do({
+          use token <- nibble.take_map("binary boolean operator")
+          case token {
+            Ident("and") -> Some(And)
+            Ident("or") -> Some(Or)
+            _ -> None
+          }
+        })
+        use rhs <- nibble.do(comma_rhs)
+        nibble.succeed(Boolean(op, rhs))
+      }
+
+      nibble.one_of([unary, binary])
     }
     "switch" -> {
       use high <- nibble.do(expression_parser())
