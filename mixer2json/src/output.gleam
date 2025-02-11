@@ -1,6 +1,7 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/string_tree.{
   type StringTree, append, append_tree, from_string, from_strings,
 }
@@ -14,9 +15,9 @@ pub fn to_json(graph: Graph) -> String {
 
   let outputs =
     dict.to_list(graph.outputs)
-    |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
-    |> list.map(fn(pair) { #(int.to_string(pair.0), json_int(pair.1)) })
-    |> json_object
+    |> pairs_to_sparse_list
+    |> list.map(json_map_option(_, json_int))
+    |> json_array
 
   json_object([#("nodes", nodes), #("outputs", outputs)])
   |> string_tree.to_string
@@ -57,6 +58,22 @@ fn node_to_json(node: Node) -> StringTree {
   json_object(fields)
 }
 
+fn pairs_to_sparse_list(pairs: List(#(Int, a))) -> List(Option(a)) {
+  pairs
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> list.fold([], fn(acc, pair) {
+    [Some(pair.1), ..extend(acc, None, pair.0 - 1 - list.length(acc))]
+  })
+  |> list.reverse
+}
+
+fn extend(list: List(a), with: a, count: Int) -> List(a) {
+  case count {
+    x if x <= 0 -> list
+    _ -> [with, ..list] |> extend(with, count - 1)
+  }
+}
+
 fn math_operator_name(op: syntax.MathOperator) -> String {
   case op {
     syntax.Add -> "add"
@@ -88,6 +105,11 @@ fn json_string(s: String) -> StringTree {
 
 fn json_int(i: Int) -> StringTree {
   from_string(int.to_string(i))
+}
+
+fn json_map_option(x: Option(a), map: fn(a) -> StringTree) -> StringTree {
+  option.map(x, map)
+  |> option.lazy_unwrap(fn() { string_tree.from_string("null") })
 }
 
 fn json_object(fields: List(#(String, StringTree))) -> StringTree {
