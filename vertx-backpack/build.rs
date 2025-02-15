@@ -1,7 +1,10 @@
 use std::env;
 
 fn main() {
-    let args: &[&str] = if chip("ESP") { &["-Tlinkall.x"] } else { &[] };
+    let mut args = vec!["-Tdefmt.x"];
+    if chip("ESP") {
+        args.push("-Tlinkall.x");
+    }
 
     for arg in args {
         println!("cargo::rustc-link-arg-bins={arg}");

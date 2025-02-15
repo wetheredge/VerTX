@@ -57,13 +57,12 @@ tasks:
 
   post-build:
     internal: true
-    cmd: cp ../target/{{get (get .all_chip_data .VERTX_BACKPACK_CHIP) "target"}}/{{.profile}}/vertx-backpack ../target/vertx-backpack
+    cmd: cp ../target/{{.VERTX_BACKPACK_RUSTC_TARGET}}/{{.profile}}/vertx-backpack ../target/vertx-backpack
     silent: true
 
   flash:
     - task: embedded:flash
       vars:
-        flash: 2mb
         bin: ../target/vertx-backpack
 
   :*: cd .. && task {{index .MATCH 0}}

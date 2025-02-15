@@ -19,6 +19,7 @@ homepage = "https://vertx.cc"
 license = "MPL-2.0"
 
 [workspace.dependencies]
+defmt-rtt = "=0.4.1"
 embassy-executor = "=0.7.0"
 embassy-net = "=0.6.0"
 embassy-sync = "=0.6.2"
@@ -44,7 +45,6 @@ vertx-server.path = "vertx-server"
 cargo-machete = "=0.7.0"
 cargo-nextest = "=0.9.88"
 dprint = "=0.49.0"
-espflash = "=3.3.0"
 probe-rs-tools = "=0.26.0"
 wasm-bindgen-cli = "=0.2.100"
 wasm-opt = "=0.116.1"
@@ -63,6 +63,7 @@ opt-level = 1
 
 [profile.release]
 lto = true
+debug = 2
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"

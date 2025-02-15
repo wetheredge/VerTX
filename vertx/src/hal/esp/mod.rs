@@ -15,7 +15,7 @@ use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
 use fugit::RateExtU32 as _;
-use {embedded_graphics as eg, esp_backtrace as _, esp_println as _};
+use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
 
 use self::flash::Partition;
 use crate::ui::Input;

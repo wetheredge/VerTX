@@ -63,8 +63,8 @@ tasks:
   flash:
     - task: embedded:flash
       vars:
-        flash: 2mb
         bin: ../target/vertx
+        partitions: partitions.csv
 
   simulator:check:
     cmds:

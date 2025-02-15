@@ -6,7 +6,10 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-defmt = ["esp-wifi/defmt"]
+defmt = [
+    "embassy-net/defmt",
+    "esp-wifi/defmt",
+]
 
 chip-esp32 = [
     "esp-hal/esp32",

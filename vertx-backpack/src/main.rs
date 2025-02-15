@@ -10,11 +10,11 @@ mod ipc;
 mod network;
 
 use embassy_executor::Spawner;
-use esp_backtrace as _;
 use esp_hal::rng::Rng;
 use esp_hal::timer::timg;
 use esp_hal::uart::{self, Uart};
 use static_cell::StaticCell;
+use {defmt_rtt as _, esp_backtrace as _};
 
 use self::api::Api;
 
@@ -22,7 +22,6 @@ use self::api::Api;
 async fn main(spawner: Spawner) {
     esp_alloc::heap_allocator!(32 * 1024);
 
-    esp_println::logger::init_logger(loog::log::LevelFilter::Info);
     loog::info!("Logger initialized");
 
     let p = esp_hal::init({

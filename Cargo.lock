@@ -1001,6 +1001,7 @@ version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c83ca63fd02ca40644ae91ae63362e3a6e7f53458f6c1356decf892343d2418"
 dependencies = [
+ "defmt",
  "esp-build 0.2.0",
  "esp-println",
  "semihosting",
@@ -1151,8 +1152,6 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "645e54eb592ca0a3d60213b1695e2a5fc0b51ca6d693c08d6983857224a629ed"
 dependencies = [
- "critical-section",
- "defmt",
  "esp-build 0.2.0",
  "log",
 ]
@@ -2807,7 +2806,6 @@ dependencies = [
  "esp-backtrace",
  "esp-hal",
  "esp-hal-embassy",
- "esp-println",
  "esp-storage",
  "fixed",
  "fixed-macro",
@@ -2836,6 +2834,7 @@ dependencies = [
 name = "vertx-backpack"
 version = "0.0.0"
 dependencies = [
+ "defmt-rtt",
  "embassy-executor",
  "embassy-sync",
  "embassy-time",
@@ -2843,7 +2842,6 @@ dependencies = [
  "esp-backtrace",
  "esp-hal",
  "esp-hal-embassy",
- "esp-println",
  "loog",
  "postcard",
  "static_cell",
