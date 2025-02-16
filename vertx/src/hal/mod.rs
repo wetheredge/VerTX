@@ -57,7 +57,9 @@ pub(crate) mod prelude {
     #[cfg(feature = "network")]
     pub(crate) use super::traits::Network as _;
     pub(crate) use super::traits::{Reset as _, StatusLed as _, Ui as _};
-    pub(crate) use crate::storage::pal::{Directory as _, File as _, Storage as _};
+    pub(crate) use crate::storage::pal::{
+        Directory as _, DirectoryIter as _, Entry as _, File as _, Storage as _,
+    };
 }
 
 pub(crate) mod traits {

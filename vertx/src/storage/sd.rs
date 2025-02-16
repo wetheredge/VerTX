@@ -16,20 +16,63 @@ type PathConverter = embedded_fatfs::LossyOemCpConverter;
 
 type FsError<S> = embedded_fatfs::Error<<Io<S> as embedded_io_async::ErrorType>::Error>;
 
-pub(crate) struct Storage<S: SpiDevice>(FileSystem<Io<S>, TimeProvider, PathConverter>);
+type StorageInner<S> = FileSystem<Io<S>, TimeProvider, PathConverter>;
+pub(crate) struct Storage<S: SpiDevice>(StorageInner<S>);
 
-pub(crate) struct Directory<'a, S: SpiDevice>(
-    embedded_fatfs::Dir<'a, Io<S>, TimeProvider, PathConverter>,
-);
+pub(crate) struct Directory<'a, S: SpiDevice> {
+    storage: &'a StorageInner<S>,
+    inner: embedded_fatfs::Dir<'a, Io<S>, TimeProvider, PathConverter>,
+}
 
-pub(crate) struct File<'a, S: SpiDevice>(
-    embedded_fatfs::File<'a, Io<S>, TimeProvider, PathConverter>,
-);
+impl<S: SpiDevice> Clone for Directory<'_, S> {
+    fn clone(&self) -> Self {
+        Self {
+            storage: self.storage,
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+pub(crate) struct File<'a, S: SpiDevice> {
+    storage: &'a StorageInner<S>,
+    inner: embedded_fatfs::File<'a, Io<S>, TimeProvider, PathConverter>,
+}
 
 impl<S: SpiDevice> Clone for File<'_, S> {
     fn clone(&self) -> Self {
-        Self(self.0.clone())
+        Self {
+            storage: self.storage,
+            inner: self.inner.clone(),
+        }
     }
+}
+
+pub(crate) struct DirectoryIter<'a, S: SpiDevice> {
+    storage: &'a StorageInner<S>,
+    inner: embedded_fatfs::DirIter<'a, Io<S>, TimeProvider, PathConverter>,
+}
+
+impl<'a, S: SpiDevice> DirectoryIter<'a, S> {
+    pub(crate) fn new(
+        storage: &'a StorageInner<S>,
+        inner: embedded_fatfs::DirIter<'a, Io<S>, TimeProvider, PathConverter>,
+    ) -> Self {
+        Self { storage, inner }
+    }
+}
+
+impl<S: SpiDevice> Clone for DirectoryIter<'_, S> {
+    fn clone(&self) -> Self {
+        Self {
+            storage: self.storage,
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+pub(crate) struct Entry<'a, S: SpiDevice> {
+    storage: &'a StorageInner<S>,
+    inner: embedded_fatfs::DirEntry<'a, Io<S>, TimeProvider, PathConverter>,
 }
 
 impl<B, CS, E> Storage<ExclusiveDevice<B, CS, embassy_time::Delay>>
@@ -69,65 +112,131 @@ where
     }
 }
 
-impl<S: SpiDevice> pal::StorageError for &'_ Storage<S> {
-    type Error = FsError<S>;
-}
-
 impl<'a, S: SpiDevice> pal::Storage for &'a Storage<S> {
     type Directory = Directory<'a, S>;
+    type Error = FsError<S>;
+
+    const FILENAME_BYTES: usize = 12;
 
     fn root(&self) -> Self::Directory {
-        Directory(self.0.root_dir())
+        Directory {
+            storage: &self.0,
+            inner: self.0.root_dir(),
+        }
     }
 
     async fn flush(&self) -> Result<(), Self::Error> {
-        todo!()
+        self.0.flush().await
     }
 }
 
-impl<S: SpiDevice> pal::StorageError for Directory<'_, S> {
-    type Error = FsError<S>;
-}
-
 impl<'a, S: SpiDevice> pal::Directory for Directory<'a, S> {
+    type Error = FsError<S>;
     type File = File<'a, S>;
+    type Iter = DirectoryIter<'a, S>;
 
     async fn dir(&self, path: &str) -> Result<Self, Self::Error> {
-        match self.0.open_dir(path).await {
-            Ok(dir) => Ok(Self(dir)),
-            Err(Self::Error::NotFound) => Ok(Self(self.0.create_dir(path).await?)),
+        match self.inner.open_dir(path).await {
+            Ok(dir) => Ok(Self {
+                storage: self.storage,
+                inner: dir,
+            }),
+            Err(Self::Error::NotFound) => Ok(Self {
+                storage: self.storage,
+                inner: self.inner.create_dir(path).await?,
+            }),
             Err(err) => Err(err),
         }
     }
 
     async fn file(&self, path: &str) -> Result<Self::File, Self::Error> {
-        match self.0.open_file(path).await {
-            Ok(file) => Ok(File(file)),
-            Err(Self::Error::NotFound) => Ok(File(self.0.create_file(path).await?)),
+        match self.inner.open_file(path).await {
+            Ok(file) => Ok(File {
+                storage: self.storage,
+                inner: file,
+            }),
+            Err(Self::Error::NotFound) => Ok(File {
+                storage: self.storage,
+                inner: self.inner.create_file(path).await?,
+            }),
             Err(err) => Err(err),
         }
     }
-}
 
-impl<S: SpiDevice> pal::StorageError for File<'_, S> {
-    type Error = FsError<S>;
+    fn iter(&self) -> Self::Iter {
+        DirectoryIter {
+            storage: self.storage,
+            inner: self.inner.iter(),
+        }
+    }
 }
 
 impl<S: SpiDevice> pal::File for File<'_, S> {
-    async fn read_all(&mut self, buffer: &mut [u8]) -> Result<usize, Self::Error> {
-        self.0.seek(SeekFrom::Start(0)).await?;
+    type Error = FsError<S>;
 
-        let mut len = 0;
-        while len < buffer.len() {
-            len += self.0.read(buffer).await?;
-        }
+    async fn seek_to_start(&mut self) -> Result<(), Self::Error> {
+        self.inner.seek(SeekFrom::Start(0)).await?;
+        Ok(())
+    }
 
-        Ok(len)
+    async fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Self::Error> {
+        self.inner.read(buffer).await
+    }
+
+    async fn read_exact(
+        &mut self,
+        buffer: &mut [u8],
+    ) -> Result<(), embedded_io_async::ReadExactError<Self::Error>> {
+        self.inner.read_exact(buffer).await
     }
 
     async fn write_all(&mut self, buffer: &[u8]) -> Result<(), Self::Error> {
-        self.0.seek(SeekFrom::Start(0)).await?;
-        self.0.truncate().await?;
-        self.0.write_all(buffer).await
+        self.inner.seek(SeekFrom::Start(0)).await?;
+        self.inner.truncate().await?;
+        self.inner.write_all(buffer).await
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        self.inner.flush().await
+    }
+}
+
+impl<'a, S: SpiDevice> pal::DirectoryIter for DirectoryIter<'a, S> {
+    type Directory = Directory<'a, S>;
+    type Entry = Entry<'a, S>;
+    type Error = FsError<S>;
+    type File = File<'a, S>;
+
+    async fn next(&mut self) -> Option<Result<Self::Entry, Self::Error>> {
+        self.inner.next().await.map(|res| {
+            res.map(|inner| Entry {
+                storage: self.storage,
+                inner,
+            })
+        })
+    }
+}
+
+impl<'a, S: SpiDevice> pal::Entry for Entry<'a, S> {
+    type Directory = Directory<'a, S>;
+    type Error = FsError<S>;
+    type File = File<'a, S>;
+
+    fn name(&self) -> &[u8] {
+        self.inner.short_file_name_as_bytes()
+    }
+
+    fn to_file(self) -> Option<Self::File> {
+        self.inner.is_file().then(|| File {
+            storage: self.storage,
+            inner: self.inner.to_file(),
+        })
+    }
+
+    fn to_dir(self) -> Option<Self::Directory> {
+        self.inner.is_dir().then(|| Directory {
+            storage: self.storage,
+            inner: self.inner.to_dir(),
+        })
     }
 }

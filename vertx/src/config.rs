@@ -145,6 +145,7 @@ impl Manager {
 
         if let Some((mut file, data)) = to_write {
             loog::unwrap!(file.write_all(data).await);
+            loog::unwrap!(file.flush().await);
         }
     }
 
