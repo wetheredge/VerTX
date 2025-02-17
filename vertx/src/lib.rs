@@ -15,6 +15,7 @@ mod hal;
 mod init_counter;
 mod leds;
 mod mode;
+mod models;
 mod mutex;
 #[cfg(feature = "network")]
 mod network;
@@ -25,7 +26,7 @@ mod utils;
 
 use embassy_executor::Spawner;
 use embassy_sync::watch::Watch;
-use static_cell::StaticCell;
+use static_cell::{ConstStaticCell, StaticCell};
 
 use crate::config::RootConfig as Config;
 pub(crate) use crate::init_counter::InitCounter;
@@ -47,6 +48,9 @@ pub async fn main(spawner: Spawner) {
     let config_manager = CONFIG_MANAGER.init_with(config::Manager::new);
     let config = config_manager.config();
 
+    static MODELS: ConstStaticCell<models::Manager> = ConstStaticCell::new(models::Manager::new());
+    let models = &*MODELS.take();
+
     #[cfg(feature = "configurator")]
     let configurator = configurator::Manager::new();
 
@@ -56,11 +60,12 @@ pub async fn main(spawner: Spawner) {
         hal.status_led,
         mode.receiver().unwrap(),
     ));
-    spawner.must_spawn(storage::run(inits, hal.storage, config_manager));
+    spawner.must_spawn(storage::run(inits, hal.storage, config_manager, models));
     spawner.must_spawn(ui::run(
         inits,
         config,
         hal.ui,
+        models,
         #[cfg(feature = "configurator")]
         configurator,
     ));

@@ -36,6 +36,7 @@ pub(crate) async fn run(
     init: &'static crate::InitCounter,
     _config: crate::Config,
     mut ui: crate::hal::Ui,
+    models: &'static crate::models::Manager,
     #[cfg(feature = "configurator")] configurator: crate::configurator::Manager,
 ) -> ! {
     let init = init.start(loog::intern!("ui"));
@@ -58,7 +59,7 @@ pub(crate) async fn run(
         bounds
     };
 
-    let mut menu = State::Menu(view::Menu::new(below_title));
+    let mut menu = State::Menu(view::Menu::new(below_title, models));
     menu.init(true, ui);
     ui.flush().await;
 
@@ -69,7 +70,7 @@ pub(crate) async fn run(
         let current = stack.current();
 
         let input = ui.get_input().await;
-        match current.input(input) {
+        match current.input(input).await {
             StateChange::None => {}
             StateChange::Update => {
                 current.draw(ui);
@@ -77,7 +78,13 @@ pub(crate) async fn run(
             }
             StateChange::Push(next) => {
                 let next = match next {
-                    NextState::Model(_) => Some(State::Model(view::Model)),
+                    NextState::Model(raw_name) => match models.open(raw_name).await {
+                        Ok(model) => Some(State::Model(view::Model::new(model))),
+                        Err(err) => {
+                            loog::error!("Failed to open model: {err:?}");
+                            None
+                        }
+                    },
                     #[cfg(feature = "configurator")]
                     NextState::Configurator => {
                         configurator.start();
@@ -122,9 +129,9 @@ enum State {
     About(view::About),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum NextState {
-    Model(usize),
+    Model(crate::models::RawName),
     #[cfg(feature = "configurator")]
     Configurator,
     ElrsConfig,
@@ -191,14 +198,14 @@ impl State {
         self.draw(display)
     }
 
-    fn input(&mut self, input: Input) -> StateChange {
+    async fn input(&mut self, input: Input) -> StateChange {
         match self {
-            State::Model(model) => model.input(input),
-            State::Menu(menu) => menu.input(input),
+            State::Model(model) => model.input(input).await,
+            State::Menu(menu) => menu.input(input).await,
             #[cfg(feature = "network")]
             State::Wifi { .. } => todo!(),
             State::ElrsConfig => todo!(),
-            State::About(about) => about.input(input),
+            State::About(about) => about.input(input).await,
         }
     }
 }

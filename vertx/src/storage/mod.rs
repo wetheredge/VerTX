@@ -45,12 +45,16 @@ pub(crate) mod pal {
         type Directory: Directory<Error = Self::Error>;
 
         fn name(&self) -> &[u8];
+        fn is_file(&self) -> bool;
         fn to_file(self) -> Option<Self::File>;
+        #[expect(unused)]
+        fn is_dir(&self) -> bool;
         #[expect(unused)]
         fn to_dir(self) -> Option<Self::Directory>;
     }
 }
 
+pub(crate) type Error = <crate::hal::Storage as embedded_io_async::ErrorType>::Error;
 pub(crate) type Directory = <crate::hal::Storage as pal::Storage>::Directory;
 pub(crate) type File = <Directory as pal::Directory>::File;
 
@@ -59,6 +63,7 @@ pub(crate) async fn run(
     init: &'static crate::InitCounter,
     storage: crate::hal::StorageFuture,
     config_manager: &'static crate::config::Manager,
+    models: &'static crate::models::Manager,
 ) -> ! {
     let init = init.start(loog::intern!("storage"));
 
@@ -71,41 +76,10 @@ pub(crate) async fn run(
     };
     config_manager.load(config).await;
 
-    let mut models = match root.dir("models").await {
-        Ok(models) => models.iter(),
+    match root.dir("models").await {
+        Ok(dir) => models.init(dir),
         Err(err) => loog::panic!("Failed to open models dir: {err:?}"),
-    };
-    while let Some(entry) = models.next().await {
-        let entry = loog::unwrap!(entry);
-        let mut filename = [0; crate::hal::Storage::FILENAME_BYTES];
-        let filename = {
-            let bytes = entry.name();
-            let filename = &mut filename[0..bytes.len()];
-            filename.copy_from_slice(bytes);
-            &*filename
-        };
-
-        let Some(mut file) = entry.to_file() else {
-            continue;
-        };
-        let mut name = [0; 16];
-        let name = {
-            let mut len = [0; 1];
-            loog::unwrap!(file.read(&mut len).await);
-            let [len] = len;
-            let len = len as usize;
-
-            if len > name.len() {
-                loog::panic!("Invalid name length: {len} > {}", (name.len()));
-            }
-
-            let name = &mut name[0..len];
-            loog::unwrap!(file.read_exact(name).await);
-            &*name
-        };
-        loog::debug!("{filename}: {:?}", core::str::from_utf8(name).unwrap(),);
     }
-    loog::debug!("Listed all models");
 
     init.finish();
     core::future::pending().await
