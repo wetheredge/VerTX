@@ -240,8 +240,14 @@ impl<'a, S: SpiDevice> pal::Entry for Entry<'a, S> {
     type Directory = Directory<'a, S>;
     type File = File<'a, S>;
 
-    fn name(&self) -> &[u8] {
-        self.inner.short_file_name_as_bytes()
+    delegate! {
+        to self.inner {
+            #[call(short_file_name_as_bytes)]
+            fn name(&self) -> &[u8];
+
+            fn is_file(&self) -> bool;
+            fn is_dir(&self) -> bool;
+        }
     }
 
     fn to_file(self) -> Option<Self::File> {

@@ -90,7 +90,7 @@ impl View for About {
         "About VerTX"
     }
 
-    fn input(&mut self, input: Input) -> StateChange {
+    async fn input(&mut self, input: Input) -> StateChange {
         let scroll_step = LINE_HEIGHT as i32;
         match input {
             Input::Up => {

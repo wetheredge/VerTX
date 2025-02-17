@@ -101,6 +101,13 @@ impl<A: Clone + 'static> Item<A> {
             action,
         }
     }
+
+    pub(in crate::ui) fn new(label: impl Into<Cow<'static, str>>, action: A) -> Self {
+        Self {
+            label: label.into(),
+            action,
+        }
+    }
 }
 
 impl<A: Clone + 'static> Component for List<A> {

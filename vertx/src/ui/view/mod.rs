@@ -10,5 +10,5 @@ pub(super) use self::model::Model;
 
 pub(super) trait View: super::Component + Drawable<Output = ()> {
     fn title(&self) -> &str;
-    fn input(&mut self, input: super::Input) -> super::StateChange;
+    async fn input(&mut self, input: super::Input) -> super::StateChange;
 }

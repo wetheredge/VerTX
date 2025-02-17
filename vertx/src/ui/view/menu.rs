@@ -1,4 +1,5 @@
-use alloc::borrow::Cow;
+use alloc::borrow::{Cow, ToOwned as _};
+use alloc::vec::Vec;
 
 use embedded_graphics::geometry::AnchorX;
 use embedded_graphics::pixelcolor::BinaryColor;
@@ -11,6 +12,8 @@ use crate::ui::{Input, NextState, StateChange};
 
 #[derive(Debug)]
 pub(in crate::ui) struct Menu {
+    models: &'static crate::models::Manager,
+
     current: Category,
     categories: List<Category>,
     submenu: List<NextState>,
@@ -40,20 +43,8 @@ static TOOLS: &[ListItem<NextState>] = &[
     ListItem::new_const("About", NextState::About),
 ];
 
-static MODELS: &[ListItem<NextState>] = &[
-    ListItem::new_const("Model No1", NextState::Model(0)),
-    ListItem::new_const("Model No2", NextState::Model(1)),
-    ListItem::new_const("Model No3", NextState::Model(2)),
-    ListItem::new_const("Model No4", NextState::Model(3)),
-    ListItem::new_const("Model No5", NextState::Model(4)),
-    ListItem::new_const("Model No6", NextState::Model(5)),
-    ListItem::new_const("Model No7", NextState::Model(6)),
-    ListItem::new_const("Model No8", NextState::Model(7)),
-    ListItem::new_const("Model No9", NextState::Model(8)),
-];
-
 impl Menu {
-    pub(in crate::ui) fn new(bounds: Rectangle) -> Self {
+    pub(in crate::ui) fn new(bounds: Rectangle, models: &'static crate::models::Manager) -> Self {
         let center = bounds.resized_width(1, AnchorX::Center).top_left.x;
 
         let total_width = bounds.size.width;
@@ -70,6 +61,8 @@ impl Menu {
         submenu.set_selection_visible(false);
 
         Self {
+            models,
+
             current: Category::Tools,
             categories: List::new(Cow::Borrowed(CATEGORIES), category_bounds),
             submenu,
@@ -104,7 +97,7 @@ impl View for Menu {
         "Menu"
     }
 
-    fn input(&mut self, input: Input) -> StateChange {
+    async fn input(&mut self, input: Input) -> StateChange {
         if self.submenu_focused {
             match input {
                 Input::Up => {
@@ -144,7 +137,18 @@ impl View for Menu {
                     if submenu != self.current {
                         let items = match submenu {
                             Category::Tools => Cow::Borrowed(TOOLS),
-                            Category::Models => Cow::Borrowed(MODELS),
+                            Category::Models => {
+                                let mut items = Vec::new();
+                                self.models
+                                    .for_each(|raw_name, name| {
+                                        items.push(ListItem::new(
+                                            name.as_str().to_owned(),
+                                            NextState::Model(raw_name),
+                                        ));
+                                    })
+                                    .await;
+                                Cow::Owned(items)
+                            }
                         };
                         self.submenu.set_items(items);
                         self.current = submenu;
