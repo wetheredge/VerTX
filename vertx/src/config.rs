@@ -50,7 +50,7 @@ impl Manager {
         let mut buffer = [0; BYTE_LENGTH];
         let mut len = 0;
         loop {
-            let chunk = loog::unwrap!(file.read_all(&mut buffer[len..]).await);
+            let chunk = loog::unwrap!(file.read(&mut buffer[len..]).await);
             if chunk == 0 {
                 break;
             }
@@ -144,6 +144,7 @@ impl Manager {
         });
 
         if let Some((mut file, data)) = to_write {
+            loog::unwrap!(file.truncate().await);
             loog::unwrap!(file.write_all(data).await);
             loog::unwrap!(file.flush().await);
         }

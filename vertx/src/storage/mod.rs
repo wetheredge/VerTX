@@ -6,10 +6,10 @@ use embassy_executor::task;
 use crate::hal::prelude::*;
 
 pub(crate) mod pal {
-    use embedded_io_async::ReadExactError;
+    pub(super) use embedded_io_async::ErrorType;
+    use embedded_io_async::{Read, Seek, Write};
 
-    pub(crate) trait Storage {
-        type Error: loog::DebugFormat;
+    pub(crate) trait Storage: ErrorType {
         type Directory: Directory<Error = Self::Error>;
 
         const FILENAME_BYTES: usize;
@@ -18,8 +18,7 @@ pub(crate) mod pal {
         async fn flush(&self) -> Result<(), Self::Error>;
     }
 
-    pub(crate) trait Directory: Clone {
-        type Error: loog::DebugFormat;
+    pub(crate) trait Directory: Clone + ErrorType {
         type File: File<Error = Self::Error>;
         type Iter: DirectoryIter<Error = Self::Error, File = Self::File>;
 
@@ -28,49 +27,12 @@ pub(crate) mod pal {
         fn iter(&self) -> Self::Iter;
     }
 
-    pub(crate) trait File: Clone {
-        type Error: loog::DebugFormat;
-
-        async fn seek_to_start(&mut self) -> Result<(), Self::Error>;
-        async fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Self::Error>;
-        async fn flush(&mut self) -> Result<(), Self::Error>;
-
-        async fn write_all(&mut self, buffer: &[u8]) -> Result<(), Self::Error>;
-
-        async fn read_exact(
-            &mut self,
-            buffer: &mut [u8],
-        ) -> Result<(), ReadExactError<Self::Error>> {
-            let mut len = 0;
-            while len < buffer.len() {
-                let chunk = self.read(&mut buffer[len..]).await?;
-                len += chunk;
-                if chunk == 0 {
-                    return Err(ReadExactError::UnexpectedEof);
-                }
-            }
-
-            Ok(())
-        }
-
-        async fn read_all(&mut self, buffer: &mut [u8]) -> Result<usize, Self::Error> {
-            self.seek_to_start().await?;
-
-            let mut len = 0;
-            while len < buffer.len() {
-                let chunk = self.read(&mut buffer[len..]).await?;
-                len += chunk;
-                if chunk == 0 {
-                    break;
-                }
-            }
-
-            Ok(len)
-        }
+    pub(crate) trait File: Clone + ErrorType + Read + Write + Seek {
+        async fn truncate(&mut self) -> Result<(), Self::Error>;
+        async fn close(self) -> Result<(), Self::Error>;
     }
 
-    pub(crate) trait DirectoryIter: Clone {
-        type Error: loog::DebugFormat;
+    pub(crate) trait DirectoryIter: Clone + ErrorType {
         type File: File<Error = Self::Error>;
         type Directory: Directory<Error = Self::Error>;
         type Entry: Entry<Error = Self::Error, File = Self::File>;
@@ -78,8 +40,7 @@ pub(crate) mod pal {
         async fn next(&mut self) -> Option<Result<Self::Entry, Self::Error>>;
     }
 
-    pub(crate) trait Entry {
-        type Error: loog::DebugFormat;
+    pub(crate) trait Entry: ErrorType {
         type File: File<Error = Self::Error>;
         type Directory: Directory<Error = Self::Error>;
 
