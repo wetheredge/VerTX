@@ -5,7 +5,9 @@ macro_rules! declare_hal_types {
     () => {
         pub(crate) type HalReset = impl crate::hal::traits::Reset;
         pub(crate) type HalStorageFuture = impl core::future::Future<Output = HalStorage>;
-        pub(crate) type HalStorage = impl crate::storage::pal::Storage;
+        pub(crate) type HalStorage = impl crate::storage::pal::Storage<
+            Error = impl loog::DebugFormat + embedded_io_async::Error,
+        >;
         pub(crate) type HalStatusLed = impl crate::hal::traits::StatusLed;
         pub(crate) type HalUi = impl crate::hal::traits::Ui;
 
@@ -50,7 +52,7 @@ pub(crate) struct Init {
 
 #[expect(unused_imports)]
 pub(crate) mod prelude {
-    pub(crate) use embassy_embedded_hal::SetConfig as _;
+    pub(crate) use embedded_io_async::{Read as _, Seek as _, Write as _};
 
     #[cfg(all(feature = "configurator", not(feature = "network")))]
     pub(crate) use super::traits::Configurator as _;

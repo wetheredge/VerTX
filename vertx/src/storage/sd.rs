@@ -1,10 +1,11 @@
 use block_device_adapters::BufStream;
+use delegate::delegate;
 use embassy_time::{Delay, Timer};
 use embedded_fatfs::FileSystem;
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::spi::{SpiBus, SpiDevice};
 use embedded_hal_bus::spi::ExclusiveDevice;
-use embedded_io_async::{Read as _, Seek as _, SeekFrom, Write as _};
+use embedded_io_async::{Read, ReadExactError, Seek, SeekFrom, Write};
 use fugit::RateExtU32 as _;
 use sdspi::SdSpi;
 
@@ -112,9 +113,12 @@ where
     }
 }
 
+impl<S: SpiDevice> embedded_io_async::ErrorType for &Storage<S> {
+    type Error = FsError<S>;
+}
+
 impl<'a, S: SpiDevice> pal::Storage for &'a Storage<S> {
     type Directory = Directory<'a, S>;
-    type Error = FsError<S>;
 
     const FILENAME_BYTES: usize = 12;
 
@@ -130,8 +134,11 @@ impl<'a, S: SpiDevice> pal::Storage for &'a Storage<S> {
     }
 }
 
-impl<'a, S: SpiDevice> pal::Directory for Directory<'a, S> {
+impl<S: SpiDevice> embedded_io_async::ErrorType for Directory<'_, S> {
     type Error = FsError<S>;
+}
+
+impl<'a, S: SpiDevice> pal::Directory for Directory<'a, S> {
     type File = File<'a, S>;
     type Iter = DirectoryIter<'a, S>;
 
@@ -171,40 +178,57 @@ impl<'a, S: SpiDevice> pal::Directory for Directory<'a, S> {
     }
 }
 
-impl<S: SpiDevice> pal::File for File<'_, S> {
+impl<S: SpiDevice> embedded_io_async::ErrorType for File<'_, S> {
     type Error = FsError<S>;
+}
 
-    async fn seek_to_start(&mut self) -> Result<(), Self::Error> {
-        self.inner.seek(SeekFrom::Start(0)).await?;
+impl<S: SpiDevice> Seek for File<'_, S> {
+    delegate! {
+        to self.inner {
+            async fn seek(&mut self, pos: SeekFrom) -> Result<u64, Self::Error>;
+            async fn rewind(&mut self) -> Result<(), Self::Error>;
+            async fn stream_position(&mut self) -> Result<u64, Self::Error>;
+        }
+    }
+}
+
+impl<S: SpiDevice> Read for File<'_, S> {
+    delegate! {
+        to self.inner {
+            async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error>;
+            async fn read_exact(&mut self, mut buf: &mut [u8]) -> Result<(), ReadExactError<Self::Error>>;
+        }
+    }
+}
+
+impl<S: SpiDevice> Write for File<'_, S> {
+    delegate! {
+        to self.inner {
+            async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error>;
+            async fn flush(&mut self) -> Result<(), Self::Error>;
+            async fn write_all(&mut self, buf: &[u8]) -> Result<(), Self::Error>;
+        }
+    }
+}
+
+impl<S: SpiDevice> pal::File for File<'_, S> {
+    async fn truncate(&mut self) -> Result<(), Self::Error> {
+        self.inner.truncate().await
+    }
+
+    async fn close(self) -> Result<(), Self::Error> {
+        self.inner.close().await?;
         Ok(())
     }
+}
 
-    async fn read(&mut self, buffer: &mut [u8]) -> Result<usize, Self::Error> {
-        self.inner.read(buffer).await
-    }
-
-    async fn read_exact(
-        &mut self,
-        buffer: &mut [u8],
-    ) -> Result<(), embedded_io_async::ReadExactError<Self::Error>> {
-        self.inner.read_exact(buffer).await
-    }
-
-    async fn write_all(&mut self, buffer: &[u8]) -> Result<(), Self::Error> {
-        self.inner.seek(SeekFrom::Start(0)).await?;
-        self.inner.truncate().await?;
-        self.inner.write_all(buffer).await
-    }
-
-    async fn flush(&mut self) -> Result<(), Self::Error> {
-        self.inner.flush().await
-    }
+impl<S: SpiDevice> embedded_io_async::ErrorType for DirectoryIter<'_, S> {
+    type Error = FsError<S>;
 }
 
 impl<'a, S: SpiDevice> pal::DirectoryIter for DirectoryIter<'a, S> {
     type Directory = Directory<'a, S>;
     type Entry = Entry<'a, S>;
-    type Error = FsError<S>;
     type File = File<'a, S>;
 
     async fn next(&mut self) -> Option<Result<Self::Entry, Self::Error>> {
@@ -217,9 +241,12 @@ impl<'a, S: SpiDevice> pal::DirectoryIter for DirectoryIter<'a, S> {
     }
 }
 
+impl<S: SpiDevice> embedded_io_async::ErrorType for Entry<'_, S> {
+    type Error = FsError<S>;
+}
+
 impl<'a, S: SpiDevice> pal::Entry for Entry<'a, S> {
     type Directory = Directory<'a, S>;
-    type Error = FsError<S>;
     type File = File<'a, S>;
 
     fn name(&self) -> &[u8] {
