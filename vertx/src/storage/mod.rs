@@ -1,4 +1,4 @@
-#[allow(unused)]
+#[cfg(feature = "storage-sd")]
 pub(crate) mod sd;
 
 use embassy_executor::task;
