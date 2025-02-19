@@ -30,11 +30,20 @@ mod ipc {
         #[wasm_bindgen(js_name = "apiRx")]
         pub fn api_tx(id: u32, status: u16, json: bool, body: &[u8]);
 
+        #[wasm_bindgen(js_name = "storageFileLength")]
+        pub fn storage_file_len(path: &str) -> usize;
+
         #[wasm_bindgen(js_name = "storageRead")]
-        pub fn storage_read(path: &str) -> Option<Vec<u8>>;
+        pub fn storage_read(path: &str, cursor: usize, buffer: &mut [u8]) -> usize;
 
         #[wasm_bindgen(js_name = "storageWrite")]
-        pub fn storage_write(path: &str, data: &[u8]);
+        pub fn storage_write(path: &str, cursor: usize, data: &[u8]);
+
+        #[wasm_bindgen(js_name = "storageTruncate")]
+        pub fn storage_truncate(path: &str, cursor: usize);
+
+        #[wasm_bindgen(js_name = "storageDirEntries")]
+        pub fn storage_dir_entries(path: &str) -> Vec<String>;
 
         #[wasm_bindgen(js_name = "setStatusLed")]
         pub fn set_status_led(r: u8, g: u8, b: u8);
