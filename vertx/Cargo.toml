@@ -35,7 +35,6 @@ configurator = []
 network = [
     "configurator",
     "dep:atoi",
-    "dep:base64",
     "dep:edge-dhcp",
     "dep:embassy-net",
     "dep:faster-hex",
@@ -134,7 +133,6 @@ ssd1306 = { version = "0.9.0", features = ["async"], optional = true }
 
 # network
 atoi = { version = "=2.0.0", default-features = false, optional = true }
-base64 = { version = "=0.22.1", default-features = false, optional = true }
 edge-dhcp = { version = "=0.5.0", optional = true }
 embassy-net = { version = "=0.6.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
 faster-hex = { version = "=0.10.0", default-features = false, optional = true }
