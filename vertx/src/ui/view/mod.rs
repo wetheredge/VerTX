@@ -8,6 +8,8 @@ use embedded_graphics::primitives::Rectangle;
 
 pub(super) use self::about::About;
 pub(super) use self::menu::Menu;
+use super::NextState;
+use crate::ui::component::ListItem;
 
 pub(super) trait View: super::Component + Drawable<Output = ()> {
     fn title(&self) -> &str;
@@ -15,16 +17,16 @@ pub(super) trait View: super::Component + Drawable<Output = ()> {
 }
 
 pub(super) fn main_menu(bounds: Rectangle) -> Menu {
-    static ITEMS: &[menu::Item] = &[
-        menu::Item::button("Models", super::NextState::ModelSelect),
-        menu::Item::button("Configure", super::NextState::Configurator),
-        menu::Item::button("ELRS", super::NextState::ElrsConfig),
-        menu::Item::button("About", super::NextState::About),
+    let items = vec![
+        ListItem::text("Models", NextState::ModelSelect),
+        ListItem::text("Configure", NextState::Configurator),
+        ListItem::text("ELRS", NextState::ElrsConfig),
+        ListItem::text("About", NextState::About),
     ];
-    Menu::new("Menu", ITEMS, bounds)
+    Menu::new("Menu", items, bounds)
 }
 
 pub(super) fn model_menu(bounds: Rectangle) -> Menu {
-    let items = vec![menu::Item::button("Main menu", super::NextState::MainMenu)];
+    let items = vec![ListItem::text("Main menu", NextState::MainMenu)];
     Menu::new("Models", items, bounds)
 }
