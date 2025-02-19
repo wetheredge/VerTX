@@ -5,7 +5,7 @@ use embedded_fatfs::FileSystem;
 use embedded_hal::digital::OutputPin;
 use embedded_hal_async::spi::{SpiBus, SpiDevice};
 use embedded_hal_bus::spi::ExclusiveDevice;
-use embedded_io_async::{Read, ReadExactError, Seek, SeekFrom, Write};
+use embedded_io_async::{ErrorType, Read, ReadExactError, Seek, SeekFrom, Write};
 use fugit::RateExtU32 as _;
 use sdspi::SdSpi;
 
@@ -15,7 +15,7 @@ type Io<S> = BufStream<SdSpi<S, Delay, aligned::A1>, 512>;
 type TimeProvider = embedded_fatfs::NullTimeProvider;
 type PathConverter = embedded_fatfs::LossyOemCpConverter;
 
-type FsError<S> = embedded_fatfs::Error<<Io<S> as embedded_io_async::ErrorType>::Error>;
+type FsError<S> = embedded_fatfs::Error<<Io<S> as ErrorType>::Error>;
 
 type StorageInner<S> = FileSystem<Io<S>, TimeProvider, PathConverter>;
 pub(crate) struct Storage<S: SpiDevice>(StorageInner<S>);
@@ -51,15 +51,6 @@ impl<S: SpiDevice> Clone for File<'_, S> {
 pub(crate) struct DirectoryIter<'a, S: SpiDevice> {
     storage: &'a StorageInner<S>,
     inner: embedded_fatfs::DirIter<'a, Io<S>, TimeProvider, PathConverter>,
-}
-
-impl<'a, S: SpiDevice> DirectoryIter<'a, S> {
-    pub(crate) fn new(
-        storage: &'a StorageInner<S>,
-        inner: embedded_fatfs::DirIter<'a, Io<S>, TimeProvider, PathConverter>,
-    ) -> Self {
-        Self { storage, inner }
-    }
 }
 
 impl<S: SpiDevice> Clone for DirectoryIter<'_, S> {
@@ -113,7 +104,7 @@ where
     }
 }
 
-impl<S: SpiDevice> embedded_io_async::ErrorType for &Storage<S> {
+impl<S: SpiDevice> ErrorType for &Storage<S> {
     type Error = FsError<S>;
 }
 
@@ -134,7 +125,7 @@ impl<'a, S: SpiDevice> pal::Storage for &'a Storage<S> {
     }
 }
 
-impl<S: SpiDevice> embedded_io_async::ErrorType for Directory<'_, S> {
+impl<S: SpiDevice> ErrorType for Directory<'_, S> {
     type Error = FsError<S>;
 }
 
@@ -178,7 +169,7 @@ impl<'a, S: SpiDevice> pal::Directory for Directory<'a, S> {
     }
 }
 
-impl<S: SpiDevice> embedded_io_async::ErrorType for File<'_, S> {
+impl<S: SpiDevice> ErrorType for File<'_, S> {
     type Error = FsError<S>;
 }
 
@@ -196,7 +187,7 @@ impl<S: SpiDevice> Read for File<'_, S> {
     delegate! {
         to self.inner {
             async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error>;
-            async fn read_exact(&mut self, mut buf: &mut [u8]) -> Result<(), ReadExactError<Self::Error>>;
+            async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), ReadExactError<Self::Error>>;
         }
     }
 }
@@ -222,7 +213,7 @@ impl<S: SpiDevice> pal::File for File<'_, S> {
     }
 }
 
-impl<S: SpiDevice> embedded_io_async::ErrorType for DirectoryIter<'_, S> {
+impl<S: SpiDevice> ErrorType for DirectoryIter<'_, S> {
     type Error = FsError<S>;
 }
 
@@ -241,7 +232,7 @@ impl<'a, S: SpiDevice> pal::DirectoryIter for DirectoryIter<'a, S> {
     }
 }
 
-impl<S: SpiDevice> embedded_io_async::ErrorType for Entry<'_, S> {
+impl<S: SpiDevice> ErrorType for Entry<'_, S> {
     type Error = FsError<S>;
 }
 
