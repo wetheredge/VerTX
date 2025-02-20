@@ -1,5 +1,4 @@
 use alloc::borrow::Cow;
-use alloc::vec::Vec;
 use core::cmp::Ordering;
 
 use embedded_graphics::geometry::Point;
@@ -13,10 +12,10 @@ use super::{Component, Scrolling};
 use crate::ui::LINE_HEIGHT;
 
 #[derive(Debug)]
-pub(in crate::ui) struct List<A> {
-    items: Vec<Item<A>>,
+pub(in crate::ui) struct List<A: Clone + 'static> {
+    items: Cow<'static, [Item<A>]>,
     selected: usize,
-    bounds: Rectangle,
+    selection_visible: bool,
     scrolling: Scrolling,
 }
 
@@ -26,22 +25,32 @@ pub(in crate::ui) enum Item<A> {
     Divider,
 }
 
-impl<A> List<A> {
-    pub(in crate::ui) fn new(items: Vec<Item<A>>, bounds: Rectangle) -> Self {
-        let selected = items
+impl<A: Clone + 'static> List<A> {
+    pub(in crate::ui) fn new(items: Cow<'static, [Item<A>]>, bounds: Rectangle) -> Self {
+        let scrolling = Scrolling::new(0, bounds);
+
+        let mut list = Self {
+            items: Cow::Borrowed(&[]),
+            selected: 0,
+            selection_visible: true,
+            scrolling,
+        };
+
+        list.set_items(items);
+        list
+    }
+
+    pub(in crate::ui) fn set_items(&mut self, items: Cow<'static, [Item<A>]>) {
+        self.selected = items
             .iter()
             .position(Item::is_selectable)
             .unwrap_or_default();
+        self.scrolling.set_height(items.len() as u32 * LINE_HEIGHT);
+        self.items = items;
+    }
 
-        let scrolling = Scrolling::new(items.len() as u32 * LINE_HEIGHT, bounds);
-        let bounds = scrolling.inner_bounds();
-
-        Self {
-            items,
-            selected,
-            bounds,
-            scrolling,
-        }
+    pub(in crate::ui) fn set_selection_visible(&mut self, visible: bool) {
+        self.selection_visible = visible;
     }
 
     /// Get the action associated with the currently selected item. Returns
@@ -119,10 +128,10 @@ impl<A> List<A> {
     }
 }
 
-impl<A> Item<A> {
-    pub(in crate::ui) fn text(label: impl Into<Cow<'static, str>>, action: A) -> Self {
+impl<A: Clone + 'static> Item<A> {
+    pub(in crate::ui) const fn const_text(label: &'static str, action: A) -> Self {
         Self::Text {
-            label: label.into(),
+            label: Cow::Borrowed(label),
             action,
         }
     }
@@ -135,7 +144,7 @@ impl<A> Item<A> {
     }
 }
 
-impl<A> Component for List<A> {
+impl<A: Clone + 'static> Component for List<A> {
     fn init<D>(&self, target: &mut D) -> Result<(), D::Error>
     where
         D: DrawTarget<Color = Self::Color>,
@@ -144,7 +153,7 @@ impl<A> Component for List<A> {
     }
 }
 
-impl<A> Drawable for List<A> {
+impl<A: Clone + 'static> Drawable for List<A> {
     type Color = BinaryColor;
     type Output = ();
 
@@ -153,9 +162,10 @@ impl<A> Drawable for List<A> {
         D: DrawTarget<Color = Self::Color>,
     {
         let scroll_offset = self.scrolling.draw(target)?;
+        let bounds = self.scrolling.inner_bounds();
 
-        // Crop to move origin point, then clip to ignore draws outside `self.bounds`
-        let mut target = target.cropped(&self.bounds);
+        // Crop to move origin point, then clip to ignore out-of-bounds draws
+        let mut target = target.cropped(&bounds);
         let mut target = target.clipped(&target.bounding_box());
         target.clear(BinaryColor::Off)?;
 
@@ -164,13 +174,13 @@ impl<A> Drawable for List<A> {
 
         // TODO: use div_floor
         let skip = (scroll_offset / LINE_HEIGHT) as usize;
-        let count = self.bounds.size.height.div_ceil(LINE_HEIGHT) as usize;
+        let count = bounds.size.height.div_ceil(LINE_HEIGHT) as usize;
         for (i, item) in self.items.iter().enumerate().skip(skip).take(count) {
             let y = i as i32 * LINE_HEIGHT as i32 - scroll_offset as i32;
 
             match item {
                 Item::Text { label, .. } => {
-                    let style = if i == self.selected {
+                    let style = if i == self.selected && self.selection_visible {
                         let width = target.bounding_box().size.width;
                         target.fill_solid(
                             &Rectangle::new(Point::new(0, y), Size::new(width, LINE_HEIGHT)),
