@@ -37,6 +37,10 @@ impl Scrolling {
         }
     }
 
+    pub(in crate::ui) fn set_height(&mut self, height: u32) {
+        *self = Self::new(height, self.bounds);
+    }
+
     pub(in crate::ui) const fn bar_allowance() -> u32 {
         BAR_WIDTH + BAR_MARGIN
     }

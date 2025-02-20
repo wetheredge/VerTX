@@ -1,9 +1,9 @@
 use alloc::borrow::Cow;
-use alloc::vec::Vec;
 
+use embedded_graphics::geometry::AnchorX;
 use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::Rectangle;
+use embedded_graphics::primitives::{Line, PrimitiveStyle, Rectangle};
 
 use super::View;
 use crate::ui::component::{Component, List, ListItem};
@@ -11,19 +11,72 @@ use crate::ui::{Input, NextState, StateChange};
 
 #[derive(Debug)]
 pub(in crate::ui) struct Menu {
-    name: Cow<'static, str>,
-    list: List<NextState>,
+    current: Category,
+    categories: List<Category>,
+    submenu: List<NextState>,
+    submenu_focused: bool,
+
+    center: i32,
+    height: i32,
+    y_offset: i32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+enum Category {
+    #[default]
+    Tools,
+    Models,
+}
+
+static CATEGORIES: &[ListItem<Category>] = &[
+    ListItem::const_text("Tools", Category::Tools),
+    ListItem::const_text("Models", Category::Models),
+];
+
+static TOOLS: &[ListItem<NextState>] = &[
+    ListItem::const_text("Configure", NextState::Configurator),
+    ListItem::const_text("ELRS", NextState::ElrsConfig),
+    ListItem::const_text("About", NextState::About),
+];
+
+static MODELS: &[ListItem<NextState>] = &[
+    ListItem::const_text("Model No1", NextState::About),
+    ListItem::const_text("Model No2", NextState::About),
+    ListItem::const_text("Model No3", NextState::About),
+    ListItem::const_text("Model No4", NextState::About),
+    ListItem::const_text("Model No5", NextState::About),
+    ListItem::const_text("Model No6", NextState::About),
+    ListItem::const_text("Model No7", NextState::About),
+    ListItem::const_text("Model No8", NextState::About),
+    ListItem::const_text("Model No9", NextState::About),
+];
+
 impl Menu {
-    pub(super) fn new(
-        name: impl Into<Cow<'static, str>>,
-        items: Vec<ListItem<NextState>>,
-        bounds: Rectangle,
-    ) -> Self {
+    pub(in crate::ui) fn new(bounds: Rectangle) -> Self {
+        let center = bounds.resized_width(1, AnchorX::Center).top_left.x;
+
+        let total_width = bounds.size.width;
+        let height = bounds.size.height;
+        let y_offset = bounds.top_left.y;
+
+        let category_bounds = Rectangle::new(bounds.top_left, Size::new(center as u32 - 1, height));
+        let submenu_bounds = Rectangle::new(
+            Point::new(center + 2, y_offset),
+            Size::new(total_width - center as u32 - 2, height),
+        );
+
+        let mut submenu = List::new(Cow::Borrowed(TOOLS), submenu_bounds);
+        submenu.set_selection_visible(false);
+
         Self {
-            name: name.into(),
-            list: List::new(items, bounds),
+            current: Category::Tools,
+            categories: List::new(Cow::Borrowed(CATEGORIES), category_bounds),
+            submenu,
+            submenu_focused: false,
+
+            center,
+            height: height as i32,
+            y_offset,
         }
     }
 }
@@ -33,30 +86,75 @@ impl Component for Menu {
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        self.list.init(target)
+        let divider = Line::with_delta(
+            Point::new(self.center, self.y_offset),
+            Point::new(0, self.height),
+        )
+        .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1));
+        divider.draw(target)?;
+
+        self.categories.init(target)?;
+        self.submenu.init(target)
     }
 }
 
 impl View for Menu {
-    fn title(&self) -> &str {
-        &self.name
+    fn title(&self) -> &'static str {
+        "Menu"
     }
 
     fn input(&mut self, input: Input) -> StateChange {
-        match input {
-            Input::Up => {
-                self.list.select_up();
-                StateChange::Update
+        if self.submenu_focused {
+            match input {
+                Input::Up => {
+                    self.submenu.select_up();
+                    StateChange::Update
+                }
+                Input::Down => {
+                    self.submenu.select_down();
+                    StateChange::Update
+                }
+                Input::Forward => match self.submenu.selected() {
+                    Some(next) => StateChange::Push(*next),
+                    None => StateChange::None,
+                },
+                Input::Back => {
+                    self.submenu_focused = false;
+                    self.submenu.set_selection_visible(false);
+                    StateChange::Update
+                }
             }
-            Input::Down => {
-                self.list.select_down();
-                StateChange::Update
+        } else {
+            match input {
+                Input::Up => {
+                    self.categories.select_up();
+                    StateChange::Update
+                }
+                Input::Down => {
+                    self.categories.select_down();
+                    StateChange::Update
+                }
+                Input::Forward => {
+                    let Some(&submenu) = self.categories.selected() else {
+                        // Should be unreachable
+                        return StateChange::None;
+                    };
+
+                    if submenu != self.current {
+                        let items = match submenu {
+                            Category::Tools => Cow::Borrowed(TOOLS),
+                            Category::Models => Cow::Borrowed(MODELS),
+                        };
+                        self.submenu.set_items(items);
+                        self.current = submenu;
+                    }
+
+                    self.submenu_focused = true;
+                    self.submenu.set_selection_visible(true);
+                    StateChange::Update
+                }
+                Input::Back => StateChange::None,
             }
-            Input::Forward => match self.list.selected() {
-                Some(next) => StateChange::Push(*next),
-                None => StateChange::None,
-            },
-            Input::Back => StateChange::Pop,
         }
     }
 }
@@ -69,6 +167,7 @@ impl Drawable for Menu {
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        self.list.draw(target)
+        self.categories.draw(target)?;
+        self.submenu.draw(target)
     }
 }

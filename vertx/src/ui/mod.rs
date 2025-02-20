@@ -52,51 +52,47 @@ pub(crate) async fn run(_config: crate::Config, mut ui: crate::hal::Ui) -> ! {
         bounds
     };
 
+    let mut menu = State::Menu(view::Menu::new(below_title));
+    menu.init(true, ui);
+    ui.flush().await;
+
+    let mut stack = History::<3>::new(menu);
     loop {
-        let mut models = State::Menu(view::model_menu(below_title));
-        models.init(true, ui);
-        ui.flush().await;
+        let current = stack.current();
 
-        let mut stack = History::<3>::new(models);
-        loop {
-            let current = stack.current();
-
-            let input = ui.get_input().await;
-            match current.input(input) {
-                StateChange::None => {}
-                StateChange::Update => {
-                    current.draw(ui);
-                    ui.flush().await;
-                }
-                StateChange::Push(next) => {
-                    let next = match next {
-                        NextState::ModelSelect => break,
-                        NextState::NewModel(_) => todo!(),
-                        NextState::MainMenu => Some(State::Menu(view::main_menu(below_title))),
-                        NextState::Configurator => {
-                            crate::network::start();
-                            None
-                        }
-                        NextState::ElrsConfig => {
-                            loog::warn!("TODO: ELRS config tool");
-                            None
-                        }
-                        NextState::About => Some(State::About(view::About::new(below_title))),
-                    };
-
-                    if let Some(mut next) = next {
-                        // Can't be root bc this will be pushed onto the top of the stack
-                        next.init(false, ui);
-                        ui.flush().await;
-                        stack.push(next);
+        let input = ui.get_input().await;
+        match current.input(input) {
+            StateChange::None => {}
+            StateChange::Update => {
+                current.draw(ui);
+                ui.flush().await;
+            }
+            StateChange::Push(next) => {
+                let next = match next {
+                    NextState::Model(_) => todo!(),
+                    NextState::Configurator => {
+                        crate::network::start();
+                        None
                     }
-                }
-                StateChange::Pop => {
-                    stack.pop();
-                    let is_root = stack.is_root();
-                    stack.current().init(is_root, ui);
+                    NextState::ElrsConfig => {
+                        loog::warn!("TODO: ELRS config tool");
+                        None
+                    }
+                    NextState::About => Some(State::About(view::About::new(below_title))),
+                };
+
+                if let Some(mut next) = next {
+                    // Can't be root bc this will be pushed onto the top of the stack
+                    next.init(false, ui);
                     ui.flush().await;
+                    stack.push(next);
                 }
+            }
+            StateChange::Pop => {
+                stack.pop();
+                let is_root = stack.is_root();
+                stack.current().init(is_root, ui);
+                ui.flush().await;
             }
         }
     }
@@ -120,9 +116,7 @@ enum State {
 #[expect(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum NextState {
-    ModelSelect,
-    NewModel(usize),
-    MainMenu,
+    Model(usize),
     Configurator,
     ElrsConfig,
     About,
