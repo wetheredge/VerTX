@@ -29,26 +29,26 @@ enum Category {
 }
 
 static CATEGORIES: &[ListItem<Category>] = &[
-    ListItem::const_text("Tools", Category::Tools),
-    ListItem::const_text("Models", Category::Models),
+    ListItem::new_const("Tools", Category::Tools),
+    ListItem::new_const("Models", Category::Models),
 ];
 
 static TOOLS: &[ListItem<NextState>] = &[
-    ListItem::const_text("Configure", NextState::Configurator),
-    ListItem::const_text("ELRS", NextState::ElrsConfig),
-    ListItem::const_text("About", NextState::About),
+    ListItem::new_const("Configure", NextState::Configurator),
+    ListItem::new_const("ELRS", NextState::ElrsConfig),
+    ListItem::new_const("About", NextState::About),
 ];
 
 static MODELS: &[ListItem<NextState>] = &[
-    ListItem::const_text("Model No1", NextState::Model(0)),
-    ListItem::const_text("Model No2", NextState::Model(1)),
-    ListItem::const_text("Model No3", NextState::Model(2)),
-    ListItem::const_text("Model No4", NextState::Model(3)),
-    ListItem::const_text("Model No5", NextState::Model(4)),
-    ListItem::const_text("Model No6", NextState::Model(5)),
-    ListItem::const_text("Model No7", NextState::Model(6)),
-    ListItem::const_text("Model No8", NextState::Model(7)),
-    ListItem::const_text("Model No9", NextState::Model(8)),
+    ListItem::new_const("Model No1", NextState::Model(0)),
+    ListItem::new_const("Model No2", NextState::Model(1)),
+    ListItem::new_const("Model No3", NextState::Model(2)),
+    ListItem::new_const("Model No4", NextState::Model(3)),
+    ListItem::new_const("Model No5", NextState::Model(4)),
+    ListItem::new_const("Model No6", NextState::Model(5)),
+    ListItem::new_const("Model No7", NextState::Model(6)),
+    ListItem::new_const("Model No8", NextState::Model(7)),
+    ListItem::new_const("Model No9", NextState::Model(8)),
 ];
 
 impl Menu {
