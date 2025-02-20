@@ -40,15 +40,15 @@ static TOOLS: &[ListItem<NextState>] = &[
 ];
 
 static MODELS: &[ListItem<NextState>] = &[
-    ListItem::const_text("Model No1", NextState::About),
-    ListItem::const_text("Model No2", NextState::About),
-    ListItem::const_text("Model No3", NextState::About),
-    ListItem::const_text("Model No4", NextState::About),
-    ListItem::const_text("Model No5", NextState::About),
-    ListItem::const_text("Model No6", NextState::About),
-    ListItem::const_text("Model No7", NextState::About),
-    ListItem::const_text("Model No8", NextState::About),
-    ListItem::const_text("Model No9", NextState::About),
+    ListItem::const_text("Model No1", NextState::Model(0)),
+    ListItem::const_text("Model No2", NextState::Model(1)),
+    ListItem::const_text("Model No3", NextState::Model(2)),
+    ListItem::const_text("Model No4", NextState::Model(3)),
+    ListItem::const_text("Model No5", NextState::Model(4)),
+    ListItem::const_text("Model No6", NextState::Model(5)),
+    ListItem::const_text("Model No7", NextState::Model(6)),
+    ListItem::const_text("Model No8", NextState::Model(7)),
+    ListItem::const_text("Model No9", NextState::Model(8)),
 ];
 
 impl Menu {

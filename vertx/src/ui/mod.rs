@@ -69,7 +69,7 @@ pub(crate) async fn run(_config: crate::Config, mut ui: crate::hal::Ui) -> ! {
             }
             StateChange::Push(next) => {
                 let next = match next {
-                    NextState::Model(_) => todo!(),
+                    NextState::Model(_) => Some(State::Model(view::Model)),
                     NextState::Configurator => {
                         crate::network::start();
                         None
@@ -100,8 +100,7 @@ pub(crate) async fn run(_config: crate::Config, mut ui: crate::hal::Ui) -> ! {
 
 #[derive(Debug)]
 enum State {
-    #[expect(dead_code)]
-    Model,
+    Model(view::Model),
     Menu(view::Menu),
     #[expect(dead_code)]
     Wifi {
@@ -113,7 +112,6 @@ enum State {
     About(view::About),
 }
 
-#[expect(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum NextState {
     Model(usize),
@@ -159,7 +157,10 @@ impl State {
         display.clear(BinaryColor::Off)?;
 
         let title = match self {
-            Self::Model => todo!(),
+            Self::Model(model) => {
+                model.init(display)?;
+                model.title()
+            }
             Self::Menu(menu) => {
                 menu.init(display)?;
                 menu.title()
@@ -178,7 +179,7 @@ impl State {
 
     fn input(&mut self, input: Input) -> StateChange {
         match self {
-            State::Model => todo!(),
+            State::Model(model) => model.input(input),
             State::Menu(menu) => menu.input(input),
             State::Wifi { .. } => todo!(),
             State::ElrsConfig => todo!(),
@@ -196,7 +197,7 @@ impl Drawable for State {
         D: DrawTarget<Color = Self::Color>,
     {
         match self {
-            Self::Model => todo!(),
+            Self::Model(model) => model.draw(target),
             Self::Menu(menu) => menu.draw(target),
             Self::Wifi { .. } => todo!(),
             Self::ElrsConfig => todo!(),
