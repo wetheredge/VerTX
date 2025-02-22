@@ -13,6 +13,7 @@ mod build_info;
 mod config;
 mod crsf;
 mod hal;
+mod init_counter;
 mod leds;
 mod mode;
 mod mutex;
@@ -26,6 +27,7 @@ use embassy_sync::watch::Watch;
 use static_cell::StaticCell;
 
 use crate::config::RootConfig as Config;
+pub(crate) use crate::init_counter::InitCounter;
 pub(crate) use crate::mode::Mode;
 
 pub async fn main(spawner: Spawner) {
@@ -33,8 +35,11 @@ pub async fn main(spawner: Spawner) {
 
     let hal = hal::init(spawner);
 
+    static INITS: InitCounter = InitCounter::new();
+    let inits = &INITS;
+
     #[cfg(feature = "backpack")]
-    let backpack = backpack::Backpack::new(spawner, hal.backpack);
+    let backpack = backpack::Backpack::new(inits, spawner, hal.backpack);
 
     static MODE: crate::mode::Watch = Watch::new();
     let mode = &MODE;
@@ -44,8 +49,13 @@ pub async fn main(spawner: Spawner) {
     let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(hal.config_storage));
     let config = config_manager.config();
 
-    spawner.must_spawn(leds::run(config, hal.status_led, mode.receiver().unwrap()));
-    spawner.must_spawn(ui::run(config, hal.ui));
+    spawner.must_spawn(leds::run(
+        inits,
+        config,
+        hal.status_led,
+        mode.receiver().unwrap(),
+    ));
+    spawner.must_spawn(ui::run(inits, config, hal.ui));
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
     let reset = RESET.init_with(|| {
@@ -58,6 +68,7 @@ pub async fn main(spawner: Spawner) {
         )
     });
 
+    INITS.wait().await;
     loog::info!("Initialized");
     mode_sender.send(Mode::Ok);
 

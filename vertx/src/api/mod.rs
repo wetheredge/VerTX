@@ -103,8 +103,6 @@ fn encode(response: Response, buffer: &mut [u8]) -> &[u8] {
 
 #[task]
 async fn mock_battery(battery: &'static BatterySignal) {
-    loog::info!("Starting mock_battery()");
-
     let mut ticker = Ticker::every(Duration::from_secs(1));
     loop {
         ticker.next().await;

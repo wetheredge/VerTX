@@ -131,15 +131,19 @@ impl Effect {
 
 #[task]
 pub async fn run(
+    init: &'static crate::InitCounter,
     config: crate::Config,
     mut driver: crate::hal::StatusLed,
     mut mode: crate::mode::Receiver,
 ) -> ! {
-    loog::info!("Starting leds()");
+    let init = init.start(loog::intern!("leds"));
+
     let config = config.leds();
 
     let mut effect = Effect::default();
     let brightness_subscriber = config.brightness().subscribe().unwrap();
+
+    init.finish();
 
     loop {
         let (color, duration) = effect.next_frame();

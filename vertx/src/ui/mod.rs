@@ -33,7 +33,13 @@ pub(crate) enum Input {
 }
 
 #[task]
-pub(crate) async fn run(_config: crate::Config, mut ui: crate::hal::Ui) -> ! {
+pub(crate) async fn run(
+    init: &'static crate::InitCounter,
+    _config: crate::Config,
+    mut ui: crate::hal::Ui,
+) -> ! {
+    let init = init.start(loog::intern!("ui"));
+
     loog::debug_assert_eq!(
         LINE_HEIGHT,
         MogeeTextStyle::new(BinaryColor::On).line_height(),
@@ -55,6 +61,8 @@ pub(crate) async fn run(_config: crate::Config, mut ui: crate::hal::Ui) -> ! {
     let mut menu = State::Menu(view::Menu::new(below_title));
     menu.init(true, ui);
     ui.flush().await;
+
+    init.finish();
 
     let mut stack = History::<3>::new(menu);
     loop {

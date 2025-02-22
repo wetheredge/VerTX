@@ -30,7 +30,13 @@ pub(crate) struct Backpack {
 }
 
 impl Backpack {
-    pub(crate) fn new(spawner: Spawner, backpack: crate::hal::Backpack) -> Self {
+    pub(crate) fn new(
+        init: &'static crate::InitCounter,
+        spawner: Spawner,
+        backpack: crate::hal::Backpack,
+    ) -> Self {
+        let init = init.start(loog::intern!("backpack"));
+
         static CHANNEL: ConstStaticCell<TxChannel> = ConstStaticCell::new(TxChannel::new());
         static NETWORK_UP: ConstStaticCell<NetworkUp> = ConstStaticCell::new(Signal::new());
         static POWER_ACK: ConstStaticCell<PowerAck> = ConstStaticCell::new(Signal::new());
@@ -40,7 +46,7 @@ impl Backpack {
         let power_ack = POWER_ACK.take();
 
         spawner.must_spawn(init_and_tx(
-            spawner, backpack, channel, network_up, power_ack,
+            init, spawner, backpack, channel, network_up, power_ack,
         ));
 
         Self {
@@ -70,6 +76,7 @@ impl Backpack {
 
 #[task]
 async fn init_and_tx(
+    init_tracker: crate::init_counter::Tracker,
     spawner: Spawner,
     mut backpack: crate::hal::Backpack,
     messages: &'static TxChannel,
@@ -77,6 +84,7 @@ async fn init_and_tx(
     power_ack: &'static PowerAck,
 ) -> ! {
     init(&mut backpack).await;
+    init_tracker.finish();
 
     let crate::hal::Backpack { tx, rx } = backpack;
     spawner.must_spawn(rx_handler(rx, messages.sender(), network_up, power_ack));
