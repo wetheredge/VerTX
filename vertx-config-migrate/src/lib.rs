@@ -26,12 +26,14 @@ const LEN: usize = if current::BYTE_LENGTH > old::BYTE_LENGTH {
     old::BYTE_LENGTH
 };
 
-fn data() -> &'static mut [u8; LEN] {
+type DataBuf = &'static mut [u8; LEN];
+
+fn data() -> DataBuf {
     static TAKEN: AtomicBool = AtomicBool::new(false);
     // Ensure this can only run once
     assert!(!TAKEN.swap(true, atomic::Ordering::AcqRel));
 
-    #[no_mangle]
+    #[unsafe(no_mangle)]
     static mut DATA: [u8; LEN] = [0; LEN];
 
     // SAFETY: This is safe to dereference because DATA is local to this function
@@ -43,11 +45,7 @@ fn data() -> &'static mut [u8; LEN] {
     unsafe { &mut *ptr::addr_of_mut!(DATA) }
 }
 
-#[cfg(feature = "up")]
-#[no_mangle]
-extern "C" fn run() -> usize {
-    let data = data();
-
+fn up(data: DataBuf) -> usize {
     let old = old::RawConfig::deserialize(data).map_err(|_| ()).unwrap();
     let current = current::RawConfig {
         name: old.name,
@@ -61,11 +59,7 @@ extern "C" fn run() -> usize {
     current.serialize(data).map_err(|_| ()).unwrap()
 }
 
-#[cfg(feature = "down")]
-#[no_mangle]
-extern "C" fn run() -> usize {
-    let data = data();
-
+fn down(data: DataBuf) -> usize {
     let current = current::RawConfig::deserialize(data)
         .map_err(|_| ())
         .unwrap();
@@ -80,4 +74,16 @@ extern "C" fn run() -> usize {
     };
 
     old.serialize(data).map_err(|_| ()).unwrap()
+}
+
+#[unsafe(no_mangle)]
+extern "C" fn run() -> usize {
+    let data = data();
+    if cfg!(feature = "up") {
+        up(data)
+    } else if cfg!(feature = "down") {
+        down(data)
+    } else {
+        unreachable!()
+    }
 }

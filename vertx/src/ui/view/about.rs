@@ -5,14 +5,14 @@ use embedded_graphics::pixelcolor::BinaryColor;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_mogeefont::MogeeTextStyle;
+use embedded_text::TextBox;
 use embedded_text::plugin::NoPlugin;
 use embedded_text::style::{HeightMode, TextBoxStyle};
-use embedded_text::TextBox;
 
 use super::View;
 use crate::build_info;
 use crate::ui::component::{Component, QrCode, Scrolling};
-use crate::ui::{Input, StateChange, LINE_HEIGHT};
+use crate::ui::{Input, LINE_HEIGHT, StateChange};
 
 const DEBUG: &str = if cfg!(debug_assertions) {
     "debug\n"

@@ -60,10 +60,10 @@ pub async fn init(
 
 #[cfg(feature = "network-native")]
 mod native {
-    use embassy_executor::{task, Spawner};
+    use embassy_executor::{Spawner, task};
     use static_cell::ConstStaticCell;
-    use vertx_server::tasks::DhcpContext;
     use vertx_server::Stack;
+    use vertx_server::tasks::DhcpContext;
 
     use crate::api::Api;
 

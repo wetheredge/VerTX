@@ -4,8 +4,8 @@ use std::convert::Infallible;
 use std::panic;
 use std::sync::Mutex;
 
-use base64::engine::general_purpose::STANDARD_NO_PAD as base64;
 use base64::Engine as _;
+use base64::engine::general_purpose::STANDARD_NO_PAD as base64;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_sync::channel::{self, Channel};

@@ -24,7 +24,7 @@ tasks:
     cmds:
       - rm -rf out && mkdir out
       - bun run src/generate.ts
-      - rustfmt --edition 2021 out/config.rs out/current.rs out/old.rs
+      - rustfmt --config-path ../rustfmt.toml out/config.rs out/current.rs out/old.rs
       - bun run biome format --config-path=../.config/biome.json --write out/config.ts
       - sha512sum config.ts config.old.ts > out/.hashes
     status:

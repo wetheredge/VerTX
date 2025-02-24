@@ -3,15 +3,14 @@ mod codegen {
 }
 
 use core::cell::RefCell;
-use core::future::{self, Future};
 use core::marker::PhantomData;
-use core::{mem, task};
+use core::{future, mem, task};
 
 use embassy_sync::blocking_mutex::Mutex;
 use serde::{Deserialize, Serialize};
 
 use self::codegen::DeserializeError;
-pub(crate) use self::codegen::{RawConfig, Update, BYTE_LENGTH};
+pub(crate) use self::codegen::{BYTE_LENGTH, RawConfig, Update};
 use crate::hal::prelude::*;
 
 pub(crate) type RootConfig = View<codegen::key::Root>;
@@ -142,7 +141,7 @@ pub(crate) struct Subscriber {
 }
 
 impl Subscriber {
-    pub fn updated(&self) -> impl Future<Output = ()> + '_ {
+    pub fn updated(&self) -> impl Future<Output = ()> {
         future::poll_fn(move |ctx| self.manager.poll(self.subscription, ctx))
     }
 }

@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use core::future::Future;
 
 use embassy_executor::task;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
@@ -8,7 +7,7 @@ use embassy_sync::signal::Signal;
 use embassy_time::Timer;
 use esp_hal::uart::{Uart, UartRx, UartTx};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
-use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};
+use vertx_backpack_ipc::{INIT, ToBackpack, ToMain};
 
 pub(crate) struct Context {
     messages: Channel<NoopRawMutex, ToMain, 10>,
@@ -16,11 +15,11 @@ pub(crate) struct Context {
 }
 
 impl Context {
-    pub(crate) fn send_network_up(&self) -> impl Future + '_ {
+    pub(crate) fn send_network_up(&self) -> impl Future {
         self.messages.send(ToMain::NetworkUp)
     }
 
-    pub(crate) fn send_api_request(&self, request: Vec<u8>) -> impl Future + '_ {
+    pub(crate) fn send_api_request(&self, request: Vec<u8>) -> impl Future {
         self.messages.send(ToMain::ApiRequest(request))
     }
 }
