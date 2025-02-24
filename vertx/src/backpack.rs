@@ -1,4 +1,4 @@
-use embassy_executor::{task, Spawner};
+use embassy_executor::{Spawner, task};
 use embassy_futures::select;
 use embassy_sync::channel;
 use embassy_sync::once_lock::OnceLock;
@@ -7,7 +7,7 @@ use embassy_time::{Duration, Ticker};
 use embedded_io_async::{Read as _, Write as _};
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use static_cell::ConstStaticCell;
-use vertx_backpack_ipc::{ToBackpack, ToMain, INIT};
+use vertx_backpack_ipc::{INIT, ToBackpack, ToMain};
 use vertx_network::Api as _;
 
 use crate::api::Api;

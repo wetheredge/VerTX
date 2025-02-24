@@ -1,4 +1,4 @@
-use embassy_executor::{task, Spawner};
+use embassy_executor::{Spawner, task};
 use embassy_sync::signal::Signal;
 
 #[cfg(feature = "backpack")]

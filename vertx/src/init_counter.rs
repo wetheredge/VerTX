@@ -1,5 +1,4 @@
-use core::future::{self, Future};
-use core::{mem, task};
+use core::{future, mem, task};
 
 use embassy_sync::waitqueue::AtomicWaker;
 use portable_atomic::{AtomicI8, Ordering};

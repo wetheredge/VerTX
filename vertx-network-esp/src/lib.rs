@@ -5,13 +5,13 @@
 
 mod driver;
 
-use embassy_executor::{task, Spawner};
-use embassy_time::{with_timeout, Duration, Timer};
+use embassy_executor::{Spawner, task};
+use embassy_time::{Duration, Timer, with_timeout};
 use esp_hal::peripherals;
 use esp_hal::rng::Rng;
 use esp_hal::timer::AnyTimer;
-use esp_wifi::wifi::{self, WifiController, WifiError, WifiEvent, WifiState};
 use esp_wifi::EspWifiController;
+use esp_wifi::wifi::{self, WifiController, WifiError, WifiEvent, WifiState};
 use static_cell::StaticCell;
 use vertx_network::{Credentials, NetworkKind};
 

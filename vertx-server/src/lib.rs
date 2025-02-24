@@ -75,9 +75,9 @@ pub async fn init<H: vertx_network::Hal, const SOCKETS: usize>(
 pub mod tasks {
     use core::net::Ipv4Addr;
 
+    use embassy_net::Stack;
     use embassy_net::tcp::TcpSocket;
     use embassy_net::udp::{PacketMetadata, UdpSocket};
-    use embassy_net::Stack;
     use vertx_network::Api;
 
     pub async fn http<A: Api>(id: usize, stack: Stack<'_>, api: &A) -> ! {

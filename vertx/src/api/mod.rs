@@ -1,6 +1,6 @@
 mod protocol;
 
-use embassy_executor::{task, Spawner};
+use embassy_executor::{Spawner, task};
 use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Ticker};
 use static_cell::ConstStaticCell;

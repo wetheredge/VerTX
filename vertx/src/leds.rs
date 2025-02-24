@@ -2,8 +2,8 @@ use embassy_executor::task;
 use embassy_futures::select;
 use embassy_time::{Duration, Timer};
 
-use crate::hal::prelude::*;
 use crate::Mode;
+use crate::hal::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Color {
@@ -112,7 +112,7 @@ impl Effect {
                 time1,
                 color2,
                 time2,
-                ref mut state,
+                state,
             } => {
                 *state = !*state;
                 if *state {
@@ -121,7 +121,7 @@ impl Effect {
                     (*color2, Some(*time2))
                 }
             }
-            Self::Rainbow { ref mut step } => {
+            Self::Rainbow { step } => {
                 *step = (*step + 1) % RAINBOW.len();
                 (RAINBOW[*step], Some(Duration::from_hz(30)))
             }
