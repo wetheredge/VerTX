@@ -28,7 +28,7 @@ jobs:
       - name: Install cargo-machete
         uses: taiki-e/install-action@v2.48.1
         with:
-          tool: cargo-machete@0.7.0 # dep:cargo-bin:cargo-machete
+          tool: cargo-machete@0.8.0 # dep:cargo-bin:cargo-machete
       - run: cargo machete
 
   cache-rust-toolchain:

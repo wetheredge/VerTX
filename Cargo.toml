@@ -42,7 +42,7 @@ vertx-network-esp.path = "vertx-network-esp"
 vertx-server.path = "vertx-server"
 
 [workspace.metadata.bin-dependencies]
-cargo-machete = "=0.7.0"
+cargo-machete = "=0.8.0"
 cargo-nextest = "=0.9.88"
 dprint = "=0.49.0"
 probe-rs-tools = "=0.26.0"
