@@ -95,20 +95,15 @@ async fn server(
             respond::method_not_allowed(&mut tx, "GET").await?;
         } else if path == "/api" {
             return api::run(rx, tx, api, request.headers, connection).await;
-        } else {
-            let file = if let Ok(asset) =
-                configurator::ASSETS.binary_search_by_key(&path, |(route, _)| route)
-            {
-                &configurator::ASSETS[asset].1
+        } else if let Ok(asset) = configurator::ASSETS.binary_search_by_key(&path, |(r, _)| r) {
+            let asset = &configurator::ASSETS[asset].1;
+            if asset.mime.is_acceptable(accept) {
+                asset.write_response(&mut tx).await?;
             } else {
-                &configurator::INDEX
-            };
-
-            if file.mime.is_acceptable(accept) {
-                file.write_response(&mut tx).await?;
-            } else {
-                respond::not_acceptable(&mut tx, &file.mime).await?;
+                respond::not_acceptable(&mut tx, &asset.mime).await?;
             }
+        } else {
+            tx.write_all(respond::NOT_FOUND).await?;
         }
 
         if connection.is_some_and(|c| c.eq_ignore_ascii_case(b"close")) {
