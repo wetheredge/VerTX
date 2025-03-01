@@ -10,7 +10,7 @@
 		"@solidjs/router": "0.15.3",
 		"autoprefixer": "10.4.20",
 		"inter-ui": "4.1.0",
-		"lucide-solid": "0.475.0",
+		"lucide-solid": "0.477.0",
 		"postcard": "workspace:*",
 		"solid-icons": "^1.1.0",
 		"solid-js": "1.9.4"
