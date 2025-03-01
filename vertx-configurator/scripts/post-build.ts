@@ -11,33 +11,17 @@ type Asset = {
 	gzip: boolean;
 };
 
-type Segment = { content: string } | { placeholder: string };
-
-type Route = {
-	route: string;
-	segments: Array<Segment>;
-};
-
-const manifest = {
-	assets: new Array<Asset>(),
-	routes: new Array<Route>(),
-};
+const assets = new Array<Asset>();
 
 let totalSize = 0;
-const routePaths = new Array<string>();
 
 for await (const path of new Bun.Glob('**').scan(outDir)) {
-	if (path.endsWith('.html')) {
-		routePaths.push(path);
-		continue;
-	}
-
 	const rawPath = `${outDir}/${path}`;
 	const compressedPath = `${rawPath}.gz`;
 
 	const raw = Bun.file(rawPath);
 	const asset: Asset = {
-		route: path,
+		route: path.replace(/(^|\/)index\.html/, '').replace(/\.html$/, ''),
 		file: path,
 		mime: raw.type,
 		gzip: false,
@@ -55,26 +39,9 @@ for await (const path of new Bun.Glob('**').scan(outDir)) {
 	}
 
 	totalSize += size;
-	manifest.assets.push(asset);
+	assets.push(asset);
 }
 
-for (const path of routePaths) {
-	const file = Bun.file(`${outDir}/${path}`);
-	totalSize += (await file.bytes()).byteLength;
-
-	const contents = await file.text();
-	const segments = contents
-		.split(/\$([a-z-]+)\$/)
-		.map((segment, i) =>
-			i % 2 ? { placeholder: segment } : { content: segment },
-		);
-
-	manifest.routes.push({
-		route: path.replace(/\.html$/, ''),
-		segments,
-	});
-}
-
-await Bun.write(`${outDir}/manifest.json`, JSON.stringify(manifest));
+await Bun.write(`${outDir}/assets.json`, JSON.stringify(assets));
 
 console.info(`Total size: ${(totalSize / 1024).toFixed(2)}KiB`);

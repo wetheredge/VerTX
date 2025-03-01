@@ -193,12 +193,6 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
 
 fn configurator(out_dir: &str, root: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
-    struct Manifest {
-        index: Asset,
-        assets: Vec<Asset>,
-    }
-
-    #[derive(Debug, Deserialize)]
     struct Asset {
         route: String,
         file: String,
@@ -215,41 +209,36 @@ fn configurator(out_dir: &str, root: &str) -> io::Result<()> {
             .unwrap();
         assert!(configurator_build.success(), "configurator failed to build");
     }
-    let dist = configurator.join("dist");
+    let dist = &configurator.join("dist");
     println!("cargo::rerun-if-changed={}", dist.display());
 
-    let assets = fs::read_to_string(dist.join("manifest.json"))?;
-    let mut manifest: Manifest = serde_json::from_str(&assets).unwrap();
-    manifest
-        .assets
-        .sort_unstable_by(|a, b| a.route.cmp(&b.route));
+    let assets = fs::read_to_string(dist.join("assets.json"))?;
+    let mut assets: Vec<Asset> = serde_json::from_str(&assets).unwrap();
+    assets.sort_unstable_by(|a, b| a.route.cmp(&b.route));
+
+    let out = File::create(format!("{out_dir}/assets.rs"))?;
+    let out = &mut BufWriter::new(out);
 
     let write_asset = |out: &mut BufWriter<File>, asset: &Asset| {
         let (mime_head, mime_parameters) = asset.mime.split_once(';').unwrap_or((&asset.mime, ""));
         let (mime_type, mime_subtype) = mime_head.split_once('/').unwrap();
 
         let path = dist.join(&asset.file);
-        let path = path.to_string_lossy();
+        let path = path.display();
 
-        write!(out, "File {{")?;
+        write!(out, "Asset {{ ")?;
         write!(
             out,
-            "mime: Mime::new({mime_type:?}, {mime_subtype:?}, {mime_parameters:?}), "
+            "mime: Mime::new({mime_type:?}, {mime_subtype:?}, {mime_parameters:?}), ",
         )?;
         write!(out, "gzipped: {:?}, ", asset.gzip)?;
-        write!(out, "content: ::core::include_bytes!({path:?})")?;
+        write!(out, "content: ::core::include_bytes!(\"{path}\")")?;
         write!(out, " }}")
     };
 
-    let out = File::create(format!("{out_dir}/index.rs"))?;
-    let out = &mut BufWriter::new(out);
-    write_asset(out, &manifest.index)?;
-
-    let out = File::create(format!("{out_dir}/assets.rs"))?;
-    let out = &mut BufWriter::new(out);
     writeln!(out, "&[")?;
-    for asset in &manifest.assets {
-        write!(out, "({:?}, ", asset.route)?;
+    for asset in &assets {
+        write!(out, "    ({:?}, ", asset.route)?;
         write_asset(out, asset)?;
         writeln!(out, "),")?;
     }

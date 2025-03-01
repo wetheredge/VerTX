@@ -10,6 +10,9 @@ pub(super) async fn bad_request<W: Write>(response: &mut W, reason: &[u8]) -> Re
     response.write_all(reason).await
 }
 
+pub(super) const NOT_FOUND: &[u8] =
+    b"HTTP/1.1 404 Not Found\r\nContent-Type:text/plain\r\nContent-Length:9\r\n\r\nNot Found";
+
 /// 405 Method Not Allowed
 pub(super) async fn method_not_allowed<W: Write>(
     response: &mut W,

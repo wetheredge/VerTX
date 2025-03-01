@@ -2,17 +2,16 @@ use embedded_io_async::Write;
 
 use super::Mime;
 
-pub(super) static INDEX: File = include!(concat!(env!("OUT_DIR"), "/index.rs"));
-pub(super) static ASSETS: &[(&str, File)] = include!(concat!(env!("OUT_DIR"), "/assets.rs"));
+pub(super) static ASSETS: &[(&str, Asset)] = include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 
 #[derive(Debug)]
-pub(super) struct File {
+pub(super) struct Asset {
     pub(super) mime: Mime,
     gzipped: bool,
     content: &'static [u8],
 }
 
-impl File {
+impl Asset {
     pub(super) async fn write_response<W: Write>(&self, stream: &mut W) -> Result<(), W::Error> {
         stream.write_all(b"HTTP/1.1 200 Ok\r\n").await?;
 
