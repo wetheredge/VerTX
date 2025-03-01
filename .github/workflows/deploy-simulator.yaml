@@ -37,7 +37,7 @@ jobs:
         env:
           VITE_TARGET: simulator
       - run: bun run ../scripts/csp-nonce.ts
-      - uses: actions/upload-artifact@v4.6.0
+      - uses: actions/upload-artifact@v4.6.1
         with:
           name: configurator
           path: vertx-configurator/dist/
@@ -54,11 +54,11 @@ jobs:
         with:
           bun-version-file: .tool-versions
       - name: Install wasm-bindgen
-        uses: taiki-e/install-action@v2.48.1
+        uses: taiki-e/install-action@v2.49.8
         with:
           tool: wasm-bindgen@0.2.100 # dep:cargo-bin:wasm-bindgen-cli
       - name: Install wasm-opt
-        uses: taiki-e/install-action@v2.48.1
+        uses: taiki-e/install-action@v2.49.8
         with:
           tool: wasm-opt@0.116.1 # dep:cargo-bin:wasm-opt
       - run: cargo build -Zbuild-std=std,panic_abort --release --target wasm32-unknown-unknown --lib -F simulator
@@ -74,7 +74,7 @@ jobs:
         working-directory: target/simulator
       - run: cat .config/env >> "$GITHUB_ENV"
       - run: wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts target/simulator
-      - uses: actions/upload-artifact@v4.6.0
+      - uses: actions/upload-artifact@v4.6.1
         with:
           name: vertx
           path: target/simulator
@@ -94,14 +94,14 @@ jobs:
         with:
           bun-version-file: .tool-versions
       - name: Get VerTX
-        uses: actions/download-artifact@v4.1.8
+        uses: actions/download-artifact@v4.1.9
         with:
           name: vertx
           path: target/simulator
       - run: bun install --frozen-lockfile
       - run: bun run vite build
       - run: bun run ../scripts/csp-nonce.ts
-      - uses: actions/upload-artifact@v4.6.0
+      - uses: actions/upload-artifact@v4.6.1
         with:
           name: simulator
           path: vertx-simulator/dist
@@ -116,12 +116,12 @@ jobs:
       - build-simulator
     steps:
       - name: Get simulator
-        uses: actions/download-artifact@v4.1.8
+        uses: actions/download-artifact@v4.1.9
         with:
           name: simulator
           path: out
       - name: Get configurator
-        uses: actions/download-artifact@v4.1.8
+        uses: actions/download-artifact@v4.1.9
         with:
           name: configurator
           path: out/configurator

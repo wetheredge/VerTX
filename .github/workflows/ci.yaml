@@ -26,9 +26,9 @@ jobs:
       - uses: actions/checkout@v4.2.2
       - run: rm rust-toolchain.toml
       - name: Install cargo-machete
-        uses: taiki-e/install-action@v2.48.1
+        uses: taiki-e/install-action@v2.49.8
         with:
-          tool: cargo-machete@0.7.0 # dep:cargo-bin:cargo-machete
+          tool: cargo-machete@0.8.0 # dep:cargo-bin:cargo-machete
       - run: cargo machete
 
   cache-rust-toolchain:
@@ -105,7 +105,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run vite build
       - run: bun run scripts/compress.ts
-      - uses: actions/upload-artifact@v4.6.0
+      - uses: actions/upload-artifact@v4.6.1
         with:
           name: configurator
           path: vertx-configurator/dist/
@@ -133,7 +133,7 @@ jobs:
       - uses: actions/checkout@v4.2.2
       - uses: ./.github/actions/setup-rust
       - name: Get pre-built configurator
-        uses: actions/download-artifact@v4.1.8
+        uses: actions/download-artifact@v4.1.9
         with:
           name: configurator
           path: vertx-configurator/dist
@@ -171,7 +171,7 @@ jobs:
       - uses: actions/checkout@v4.2.2
       - uses: ./.github/actions/setup-rust
       - name: Get pre-built configurator
-        uses: actions/download-artifact@v4.1.8
+        uses: actions/download-artifact@v4.1.9
         with:
           name: configurator
           path: vertx-configurator/dist
@@ -193,9 +193,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2.48.1
+        uses: taiki-e/install-action@v2.49.8
         with:
-          tool: nextest@0.9.88 # dep:cargo-bin:cargo-nextest
+          tool: nextest@0.9.92 # dep:cargo-bin:cargo-nextest
       - uses: ./.github/actions/setup-rust
       - run: cargo nextest run
         working-directory: ${{ matrix.crate }}
@@ -230,7 +230,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: crate-ci/typos@v1.29.5 # dep:asdf:typos
+      - uses: crate-ci/typos@v1.29.10 # dep:asdf:typos
 
   passed:
     runs-on: ubuntu-latest

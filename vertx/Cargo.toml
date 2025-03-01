@@ -105,7 +105,7 @@ embedded-text = "=0.7.2"
 fugit = "=0.3.7"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
-portable-atomic = { version = "=1.10.0", features = ["critical-section"] }
+portable-atomic = { version = "=1.11.0", features = ["critical-section"] }
 postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }
@@ -128,7 +128,7 @@ esp-alloc = { workspace = true, optional = true }
 esp-backtrace = { workspace = true, features = ["defmt", "colors", "panic-handler", "exception-handler"], optional = true }
 esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
-esp-storage = { version = "=0.4.0", features = ["low-level", "storage", "critical-section"], optional = true }
+esp-storage = { version = "=0.5.0", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, features = ["defmt"], optional = true }
 
 # chip-rp
@@ -136,7 +136,7 @@ vertx-network-esp = { workspace = true, features = ["defmt"], optional = true }
 cortex-m-rt = { version = "=0.7.5", optional = true }
 embassy-rp = { version = "=0.3.1", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
 embedded-alloc = { version = "=0.6.0", optional = true }
-fixed = { version = "=1.28.0", optional = true }
+fixed = { version = "=1.29.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
 panic-probe = { version = "=0.3.2", features = ["print-defmt"], optional = true }
 pio = { version = "=0.2.1", optional = true }
