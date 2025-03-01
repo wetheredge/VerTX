@@ -1,9 +1,9 @@
 ---
-import iconGamepad from 'lucide-static/icons/gamepad-2.svg?raw';
-import iconInfo from 'lucide-static/icons/info.svg?raw';
-import iconPackage from 'lucide-static/icons/package.svg?raw';
-import iconPlane from 'lucide-static/icons/plane.svg?raw';
-import iconSettings from 'lucide-static/icons/settings.svg?raw';
+import IconGamepad from 'lucide-static/icons/gamepad-2.svg';
+import IconInfo from 'lucide-static/icons/info.svg';
+import IconPackage from 'lucide-static/icons/package.svg';
+import IconPlane from 'lucide-static/icons/plane.svg';
+import IconSettings from 'lucide-static/icons/settings.svg';
 
 import NavLink from './NavLink.astro';
 import * as styles from './Navigation.css';
@@ -11,10 +11,10 @@ import * as styles from './Navigation.css';
 
 <div class={styles.root}>
 	<nav class={styles.nav}>
-		<NavLink href="/" label="About" icon={iconInfo} />
-		<NavLink href="/settings" label="Settings" icon={iconSettings} />
-		<NavLink href="/updates" label="Updates" icon={iconPackage} />
-		<NavLink href="/hardware" label="Hardware" icon={iconGamepad} />
-		<NavLink href="/models" label="Models" icon={iconPlane} />
+		<NavLink href="/" label="About" icon={IconInfo} />
+		<NavLink href="/settings" label="Settings" icon={IconSettings} />
+		<NavLink href="/updates" label="Updates" icon={IconPackage} />
+		<NavLink href="/hardware" label="Hardware" icon={IconGamepad} />
+		<NavLink href="/models" label="Models" icon={IconPlane} />
 	</nav>
 </div>

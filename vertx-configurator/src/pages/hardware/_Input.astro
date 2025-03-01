@@ -1,5 +1,5 @@
 ---
-import iconFlipHorizontal from 'lucide-static/icons/flip-horizontal-2.svg?raw';
+import IconFlipHorizontal from 'lucide-static/icons/flip-horizontal-2.svg';
 import { customAlphabet } from 'nanoid';
 import Icon from '../../components/Icon.astro';
 import { iconButton } from '../../styles/components.css';
@@ -38,5 +38,5 @@ const id = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)();
   title="Reverse"
   aria-controls={id}
 >
-  <Icon size={size.buttonIcon} svg={iconFlipHorizontal} />
+  <Icon icon={IconFlipHorizontal} size={size.buttonIcon} />
 </button>

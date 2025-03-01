@@ -1,5 +1,11 @@
 ---
-import Icon from './Icon.astro';
+import Icon, { type RawIcon } from './Icon.astro';
+
+export type Props = {
+	href: string;
+	label: string;
+	icon: RawIcon;
+};
 
 const stripEndSlash = (s: string) => s.replace(/\/$/, '');
 
@@ -13,6 +19,6 @@ const active = stripEndSlash(currentPath) === stripEndSlash(href);
 ---
 
 <a href={href} class:list={{ active }}>
-	<Icon svg={icon} />
+	<Icon icon={icon} />
 	<span>{label}</span>
 </a>

@@ -1,5 +1,5 @@
 ---
-import iconMenu from 'lucide-static/icons/ellipsis-vertical.svg?raw';
+import IconMenu from 'lucide-static/icons/ellipsis-vertical.svg';
 import Icon from '../../components/Icon.astro';
 import Layout from '../../layouts/Layout.astro';
 import { iconButton } from '../../styles/components.css';
@@ -14,7 +14,7 @@ import * as styles from './_index.css';
     <div id="template" class={styles.model}>
       <span class="name" />
       <button class={`menu ${iconButton}`} type="button" title="Menu">
-        <Icon size={size.buttonIcon} svg={iconMenu} />
+        <Icon icon={IconMenu} size={size.buttonIcon}/>
       </button>
     </div>
   </div>
