@@ -11,6 +11,6 @@
 	},
 	"devDependencies": {
 		"@tsconfig/vite-react": "3.4.0",
-		"vite": "6.1.0"
+		"vite": "6.2.0"
 	}
 }
