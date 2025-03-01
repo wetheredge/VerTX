@@ -105,7 +105,7 @@ embedded-text = "=0.7.2"
 fugit = "=0.3.7"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
-portable-atomic = { version = "=1.10.0", features = ["critical-section"] }
+portable-atomic = { version = "=1.11.0", features = ["critical-section"] }
 postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }
