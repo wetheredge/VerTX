@@ -2,7 +2,7 @@ import * as types from './src/types';
 
 export const version = 3;
 
-export const config = {
+export const config: types.Config = {
 	name: types.string(20, 'VerTX'),
 	leds: {
 		brightness: types.integer('u8', 10, { min: 10 }),

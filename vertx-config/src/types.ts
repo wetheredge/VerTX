@@ -51,7 +51,9 @@ export const isBoolean = (
 	obj: Record<string, unknown>,
 ): obj is ReturnType<typeof boolean> => obj.type === typeBoolean;
 
-const leafTypes = { string, integer, enumeration, boolean } as const;
+const rawLeafFns = { string, integer, enumeration, boolean } as const;
+type LeafFns = typeof rawLeafFns;
+
 export type Leaf = {
-	[Key in keyof typeof leafTypes]: ReturnType<(typeof leafTypes)[Key]>;
+	[Key in keyof LeafFns]: ReturnType<LeafFns[Key]>;
 };
