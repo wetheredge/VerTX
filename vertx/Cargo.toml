@@ -128,7 +128,7 @@ esp-alloc = { workspace = true, optional = true }
 esp-backtrace = { workspace = true, features = ["defmt", "colors", "panic-handler", "exception-handler"], optional = true }
 esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
-esp-storage = { version = "=0.4.0", features = ["low-level", "storage", "critical-section"], optional = true }
+esp-storage = { version = "=0.5.0", features = ["low-level", "storage", "critical-section"], optional = true }
 vertx-network-esp = { workspace = true, features = ["defmt"], optional = true }
 
 # chip-rp
