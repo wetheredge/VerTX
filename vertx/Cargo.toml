@@ -136,7 +136,7 @@ vertx-network-esp = { workspace = true, features = ["defmt"], optional = true }
 cortex-m-rt = { version = "=0.7.5", optional = true }
 embassy-rp = { version = "=0.3.1", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
 embedded-alloc = { version = "=0.6.0", optional = true }
-fixed = { version = "=1.28.0", optional = true }
+fixed = { version = "=1.29.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
 panic-probe = { version = "=0.3.2", features = ["print-defmt"], optional = true }
 pio = { version = "=0.2.1", optional = true }
