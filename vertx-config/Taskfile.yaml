@@ -26,7 +26,7 @@ tasks:
       - bun run src/generate.ts
       - rustfmt --config-path ../rustfmt.toml out/config.rs out/current.rs out/old.rs
       - bun run biome format --config-path=../.config/biome.json --write out/config.ts
-      - sha512sum config.ts config.old.ts > out/.hashes
+      - sha512sum config.ts config.old.ts src/**.ts > out/.hashes
     status:
       - sha512sum --status --check out/.hashes
 
