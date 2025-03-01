@@ -1,6 +1,6 @@
 ---
-import iconMenu from 'lucide-static/icons/menu.svg?raw';
-import iconX from 'lucide-static/icons/x.svg?raw';
+import IconMenu from 'lucide-static/icons/menu.svg';
+import IconX from 'lucide-static/icons/x.svg';
 import * as styles from '../styles/components.css';
 import { size } from '../styles/constants';
 import Icon from './Icon.astro';
@@ -15,8 +15,8 @@ import './Menu.css';
   role="button"
   aria-label="Toggle navigation menu"
 >
-  <Icon size={size.buttonIcon} svg={iconMenu} />
-  <Icon size={size.buttonIcon} svg={iconX} />
+  <Icon icon={IconMenu} size={size.buttonIcon} />
+  <Icon icon={IconX} size={size.buttonIcon} />
 </label>
 
 <script>

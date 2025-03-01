@@ -5,11 +5,15 @@ import min from 'astro-min';
 const port = 8001;
 const isSimulator = process.env.VERTX_TARGET === 'simulator';
 
-const assetsPrefix = isSimulator ? 'assets/' : '';
+const assetsPrefix = isSimulator ? 'assets/' : '_';
 
 const config = {
 	// biome-ignore lint/style/useNamingConvention:
 	integrations: [min({ minify_css: true })],
+
+	experimental: {
+		svg: true,
+	},
 
 	base: isSimulator ? '/configurator' : '',
 	devToolbar: {

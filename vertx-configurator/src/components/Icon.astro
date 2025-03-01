@@ -1,16 +1,18 @@
 ---
-export type Props = {
-	size?: string;
-	svg: string;
+export type IconProps = {
+	'aria-hidden'?: boolean;
+	size?: number | string;
+	'stroke-width'?: number | string;
 };
 
-const { size = '1em', svg: rawSvg } = Astro.props;
+export type RawIcon = (props: IconProps) => unknown;
 
-const svg = rawSvg
-	.replace('<svg', '<svg aria-hidden=true')
-	.replace(/(width)="[^"]*"/, `$1="${size}"`)
-	.replace(/(height)="[^"]*"/, `$1="${size}"`)
-	.replace(/(stroke-width)="[^"]*"/, '$1="2"');
+export type Props = {
+	icon: RawIcon;
+	size?: string | number;
+};
+
+const { icon: RawIcon, size = '1em' } = Astro.props;
 ---
 
-<Fragment set:html={svg} />
+<RawIcon aria-hidden size={size} stroke-width="2" />
