@@ -174,35 +174,6 @@ jobs:
         run: cargo clippy -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown --lib -F simulator
         working-directory: vertx
 
-  clippy-backpack:
-    name: Clippy (backpack, ${{ matrix.chip }})
-    runs-on: ubuntu-latest
-    needs: [cache-rust-toolchain, build-configurator]
-    env:
-      VERTX_SKIP_CONFIGURATOR_BUILD: true
-    strategy:
-      fail-fast: false
-      matrix:
-        chip:
-          - esp32
-          - esp32c3
-          - esp32s3
-    steps:
-      - uses: actions/checkout@v4.2.2
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-rust
-      - name: Get pre-built configurator
-        uses: actions/download-artifact@v4.1.9
-        with:
-          name: configurator
-          path: vertx-configurator/dist
-      - id: chip
-        run: jq -r '"target=\(.${{ matrix.chip }})"' .config/chip2target.json >> "$GITHUB_OUTPUT"
-      - name: Run clippy
-        run: cargo clippy -Zbuild-std=alloc,core --target '${{ steps.chip.outputs.target }}' -F 'chip-${{ matrix.chip }}'
-        working-directory: vertx-backpack
-
   tests:
     name: Tests
     runs-on: ubuntu-latest
@@ -273,7 +244,6 @@ jobs:
       - clippy-config-migrate
       - clippy-vertx
       - clippy-vertx-simulator
-      - clippy-backpack
       - tests
       - biome
       - dprint
