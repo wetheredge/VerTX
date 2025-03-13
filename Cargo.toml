@@ -2,7 +2,6 @@
 resolver = "3"
 members = [
     "vertx",
-    "vertx-backpack",
     "vertx-backpack-ipc",
     "vertx-config-migrate",
     "vertx-crsf",
