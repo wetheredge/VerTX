@@ -35,14 +35,6 @@ const schema: SomeJTDSchemaType = {
 					},
 				},
 			},
-			optionalProperties: {
-				backpack: {
-					properties: {
-						tx: { ref: 'pin' },
-						rx: { ref: 'pin' },
-					},
-				},
-			},
 		},
 	},
 };

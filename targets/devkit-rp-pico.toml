@@ -5,10 +5,6 @@ leds = 6
 analog = []
 switches = []
 
-[pins.backpack]
-tx = 4
-rx = 5
-
 [pins.ui]
 up = 0
 down = 1
