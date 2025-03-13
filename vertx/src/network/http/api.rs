@@ -3,7 +3,6 @@ use base64::engine::general_purpose::STANDARD as Base64;
 use edge_ws::FrameType;
 use embedded_io_async::{Read, Write};
 use sha1::{Digest as _, Sha1};
-use vertx_network::Api;
 
 #[expect(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -22,17 +21,16 @@ enum Status {
 
 const MAGIC_KEY: &[u8] = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-pub(super) async fn run<R, W, A>(
+pub(super) async fn run<R, W>(
     mut rx: R,
     mut tx: W,
-    api: &A,
+    api: &crate::api::Api,
     headers: &[httparse::Header<'_>],
     connection: Option<&[u8]>,
 ) -> Result<(), R::Error>
 where
     R: Read,
     W: Write<Error = R::Error>,
-    A: Api,
 {
     let connection = connection.is_some_and(|c| {
         c.split(|b| *b == b',')
@@ -65,7 +63,7 @@ where
     respond_handshake(key, &mut tx).await?;
 
     let tx = &mut tx;
-    let mut api_buffer = A::buffer();
+    let mut api_buffer = crate::api::Buffer::new();
     loop {
         const RX_LEN: usize = 1 + 1 + 4 + 125; // header + short len + mask + payload
         const TX_LEN: usize = 0;

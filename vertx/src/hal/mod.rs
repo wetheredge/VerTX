@@ -8,16 +8,8 @@ macro_rules! declare_hal_types {
         pub(crate) type HalConfigStorage = impl crate::hal::traits::ConfigStorage;
         pub(crate) type HalUi = impl crate::hal::traits::Ui;
 
-        #[cfg(feature = "network-native")]
+        #[cfg(feature = "network")]
         pub(crate) type HalNetwork = impl crate::hal::traits::Network;
-
-        #[cfg(feature = "backpack")]
-        pub(crate) type HalBackpackTx = impl embedded_io_async::Write<
-            Error = impl loog::DebugFormat + embedded_io_async::Error,
-        >;
-        #[cfg(feature = "backpack")]
-        pub(crate) type HalBackpackRx =
-            impl embedded_io_async::Read<Error = impl loog::DebugFormat + embedded_io_async::Error>;
     };
 }
 
@@ -26,19 +18,13 @@ macro_rules! declare_hal_types {
 #[cfg_attr(feature = "simulator", path = "simulator/mod.rs")]
 mod implementation;
 
-#[cfg(feature = "backpack")]
-pub(crate) use implementation::HalBackpackRx as BackpackRx;
-#[cfg(feature = "backpack")]
-pub(crate) use implementation::HalBackpackTx as BackpackTx;
-#[cfg(feature = "network-native")]
+#[cfg(feature = "network")]
 pub(crate) use implementation::HalNetwork as Network;
 pub(crate) use implementation::{
     HalConfigStorage as ConfigStorage, HalReset as Reset, HalStatusLed as StatusLed, HalUi as Ui,
 };
-#[cfg(feature = "network-native")]
-pub type NetworkHal = <Network as traits::Network>::Hal;
-#[cfg(feature = "network-native")]
-pub type NetworkDriver = <NetworkHal as vertx_network::Hal>::Driver;
+#[cfg(feature = "network")]
+pub type NetworkDriver = <Network as traits::Network>::Driver;
 
 pub(crate) fn init(spawner: embassy_executor::Spawner) -> Init {
     implementation::init(spawner)
@@ -49,25 +35,15 @@ pub(crate) struct Init {
     pub(crate) status_led: StatusLed,
     pub(crate) config_storage: ConfigStorage,
     pub(crate) ui: Ui,
-    #[cfg(feature = "backpack")]
-    pub(crate) backpack: Backpack,
-    #[cfg(feature = "network-native")]
+    #[cfg(feature = "network")]
     pub(crate) network: Network,
-}
-
-#[cfg(feature = "backpack")]
-pub(crate) struct Backpack {
-    pub(crate) tx: BackpackTx,
-    pub(crate) rx: BackpackRx,
 }
 
 #[expect(unused_imports)]
 pub(crate) mod prelude {
-    pub(crate) use vertx_network::Hal as _;
-
-    pub(crate) use super::traits::{
-        ConfigStorage as _, Network as _, Reset as _, StatusLed as _, Ui as _,
-    };
+    #[cfg(feature = "network")]
+    pub(crate) use super::traits::Network as _;
+    pub(crate) use super::traits::{ConfigStorage as _, Reset as _, StatusLed as _, Ui as _};
 }
 
 pub(crate) mod traits {
@@ -87,12 +63,17 @@ pub(crate) mod traits {
         async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error>;
     }
 
-    #[cfg_attr(not(feature = "network-native"), expect(dead_code))]
+    #[cfg(feature = "network")]
     pub(crate) trait Network {
-        type Hal: vertx_network::Hal;
+        type Driver: embassy_net::driver::Driver;
 
         fn seed(&mut self) -> u64;
-        fn hal(self) -> Self::Hal;
+
+        async fn start(
+            self,
+            sta: Option<crate::network::Credentials>,
+            ap: crate::network::Credentials,
+        ) -> (crate::network::Kind, Self::Driver);
     }
 
     pub(crate) trait Reset {

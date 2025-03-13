@@ -5,20 +5,49 @@ mod respond;
 use core::ops;
 
 use atoi::FromRadix10 as _;
+use embassy_executor::{Spawner, task};
+use embassy_net::Stack;
+use embassy_net::tcp::TcpSocket;
 use embedded_io_async::{Read, Write};
-use vertx_network::Api;
 
-pub(crate) async fn run<R, W, A>(
-    mut rx: R,
-    mut tx: W,
+pub(super) const WORKERS: usize = 2;
+
+pub(super) fn spawn_all(spawner: Spawner, stack: Stack<'static>, api: &'static crate::api::Api) {
+    for id in 0..WORKERS {
+        spawner.must_spawn(run(id, stack, api));
+    }
+}
+
+#[task(pool_size = WORKERS)]
+async fn run(id: usize, stack: Stack<'static>, api: &'static crate::api::Api) -> ! {
+    const TCP_BUFFER_LEN: usize = 1024;
+    const HTTP_BUFFER_LEN: usize = 2048;
+
+    let mut rx_buffer = [0; TCP_BUFFER_LEN];
+    let mut tx_buffer = [0; TCP_BUFFER_LEN];
+    let mut http_buffer = [0; HTTP_BUFFER_LEN];
+
+    loop {
+        let mut tcp = TcpSocket::new(stack, &mut rx_buffer, &mut tx_buffer);
+
+        if let Err(err) = tcp.accept(80).await {
+            loog::warn!("http({id}): Accept error: {err:?}");
+            continue;
+        }
+
+        if let Err(err) = server(tcp, &mut http_buffer, api).await {
+            loog::error!("http({id}): Error: {err:?}");
+        }
+    }
+}
+
+async fn server(
+    mut tcp: TcpSocket<'_>,
     buffer: &mut [u8],
-    api: &A,
-) -> Result<(), R::Error>
-where
-    R: Read,
-    W: Write<Error = R::Error>,
-    A: Api,
-{
+    api: &crate::api::Api,
+) -> Result<(), embassy_net::tcp::Error> {
+    let (mut rx, mut tx) = tcp.split();
+
     let mut buffer = Buffer::new(buffer);
     loop {
         let (raw_headers, _body) = read_headers(&mut buffer, &mut rx).await?;

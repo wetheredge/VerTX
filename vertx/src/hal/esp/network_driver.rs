@@ -2,9 +2,9 @@ use core::task::Context;
 
 use esp_wifi::wifi::{self, WifiApDevice, WifiStaDevice};
 
-pub enum Driver {
-    Home(wifi::WifiDevice<'static, WifiStaDevice>),
-    Field(wifi::WifiDevice<'static, WifiApDevice>),
+pub(super) enum Driver {
+    Sta(wifi::WifiDevice<'static, WifiStaDevice>),
+    Ap(wifi::WifiDevice<'static, WifiApDevice>),
 }
 
 impl embassy_net::driver::Driver for Driver {
@@ -20,11 +20,11 @@ impl embassy_net::driver::Driver for Driver {
     fn receive(&mut self, cx: &mut Context) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
         use embassy_net::driver::Driver;
         match self {
-            Self::Home(wifi) => {
-                Driver::receive(wifi, cx).map(|(rx, tx)| (RxToken::Home(rx), TxToken::Home(tx)))
+            Self::Sta(wifi) => {
+                Driver::receive(wifi, cx).map(|(rx, tx)| (RxToken::Sta(rx), TxToken::Sta(tx)))
             }
-            Self::Field(wifi) => {
-                Driver::receive(wifi, cx).map(|(rx, tx)| (RxToken::Field(rx), TxToken::Field(tx)))
+            Self::Ap(wifi) => {
+                Driver::receive(wifi, cx).map(|(rx, tx)| (RxToken::Ap(rx), TxToken::Ap(tx)))
             }
         }
     }
@@ -32,39 +32,39 @@ impl embassy_net::driver::Driver for Driver {
     fn transmit(&mut self, cx: &mut Context) -> Option<Self::TxToken<'_>> {
         use embassy_net::driver::Driver;
         match self {
-            Self::Home(wifi) => Driver::transmit(wifi, cx).map(TxToken::Home),
-            Self::Field(wifi) => Driver::transmit(wifi, cx).map(TxToken::Field),
+            Self::Sta(wifi) => Driver::transmit(wifi, cx).map(TxToken::Sta),
+            Self::Ap(wifi) => Driver::transmit(wifi, cx).map(TxToken::Ap),
         }
     }
 
     fn link_state(&mut self, cx: &mut Context) -> embassy_net::driver::LinkState {
         use embassy_net::driver::Driver;
         match self {
-            Self::Home(wifi) => Driver::link_state(wifi, cx),
-            Self::Field(wifi) => Driver::link_state(wifi, cx),
+            Self::Sta(wifi) => Driver::link_state(wifi, cx),
+            Self::Ap(wifi) => Driver::link_state(wifi, cx),
         }
     }
 
     fn capabilities(&self) -> embassy_net::driver::Capabilities {
         use embassy_net::driver::Driver;
         match self {
-            Self::Home(wifi) => Driver::capabilities(wifi),
-            Self::Field(wifi) => Driver::capabilities(wifi),
+            Self::Sta(wifi) => Driver::capabilities(wifi),
+            Self::Ap(wifi) => Driver::capabilities(wifi),
         }
     }
 
     fn hardware_address(&self) -> embassy_net::driver::HardwareAddress {
         use embassy_net::driver::Driver;
         match self {
-            Self::Home(wifi) => Driver::hardware_address(wifi),
-            Self::Field(wifi) => Driver::hardware_address(wifi),
+            Self::Sta(wifi) => Driver::hardware_address(wifi),
+            Self::Ap(wifi) => Driver::hardware_address(wifi),
         }
     }
 }
 
-pub enum RxToken {
-    Home(wifi::WifiRxToken<WifiStaDevice>),
-    Field(wifi::WifiRxToken<WifiApDevice>),
+pub(super) enum RxToken {
+    Sta(wifi::WifiRxToken<WifiStaDevice>),
+    Ap(wifi::WifiRxToken<WifiApDevice>),
 }
 
 impl embassy_net::driver::RxToken for RxToken {
@@ -73,15 +73,15 @@ impl embassy_net::driver::RxToken for RxToken {
         F: FnOnce(&mut [u8]) -> R,
     {
         match self {
-            RxToken::Home(token) => token.consume(f),
-            RxToken::Field(token) => token.consume(f),
+            RxToken::Sta(token) => token.consume(f),
+            RxToken::Ap(token) => token.consume(f),
         }
     }
 }
 
-pub enum TxToken {
-    Home(wifi::WifiTxToken<WifiStaDevice>),
-    Field(wifi::WifiTxToken<WifiApDevice>),
+pub(super) enum TxToken {
+    Sta(wifi::WifiTxToken<WifiStaDevice>),
+    Ap(wifi::WifiTxToken<WifiApDevice>),
 }
 
 impl embassy_net::driver::TxToken for TxToken {
@@ -90,8 +90,8 @@ impl embassy_net::driver::TxToken for TxToken {
         F: FnOnce(&mut [u8]) -> R,
     {
         match self {
-            TxToken::Home(token) => token.consume(len, f),
-            TxToken::Field(token) => token.consume(len, f),
+            TxToken::Sta(token) => token.consume(len, f),
+            TxToken::Ap(token) => token.consume(len, f),
         }
     }
 }

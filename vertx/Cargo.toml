@@ -13,38 +13,34 @@ crate-type = ["cdylib", "rlib"]
 [features]
 log = [
     "loog/log",
-    "vertx-server?/log",
+    "embassy-net?/log",
 ]
 defmt = [
     "loog/defmt",
+    "embassy-net?/defmt",
     "embedded-graphics/defmt",
     "postcard/use-defmt",
-    "vertx-server?/defmt",
 ]
 
-backpack = []
+configurator = []
 
 display-ssd1306 = ["dep:ssd1306"]
 
-network-native = [
+network = [
+    "configurator",
+    "dep:embassy-net",
     "dep:rand",
-    "dep:vertx-server",
-]
-network-backpack = [
-    "backpack",
-    "dep:embedded-io-async",
-    "dep:vertx-backpack-ipc",
 ]
 
 chip-esp = [
     "defmt",
-    "network-native",
+    "network",
     "dep:esp-alloc",
     "dep:esp-backtrace",
     "dep:esp-hal",
     "dep:esp-hal-embassy",
     "dep:esp-storage",
-    "dep:vertx-network-esp",
+    "dep:esp-wifi",
 ]
 chip-esp32s3 = [
     "chip-esp",
@@ -52,12 +48,11 @@ chip-esp32s3 = [
     "esp-hal/esp32s3",
     "esp-hal-embassy/esp32s3",
     "esp-storage/esp32s3",
-    "vertx-network-esp/chip-esp32s3",
+    "esp-wifi/esp32s3",
 ]
 
 chip-rp = [
     "defmt",
-    "network-backpack",
     "dep:cortex-m-rt",
     "dep:embassy-rp",
     "dep:embedded-alloc",
@@ -82,7 +77,7 @@ chip-rp2040 = [
 
 simulator = [
     "log",
-    "network-backpack",
+    "configurator",
     "embassy-executor/arch-wasm",
     "embassy-executor/executor-thread",
     "embassy-time/wasm",
@@ -110,18 +105,21 @@ postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }
 static_cell = { workspace = true }
-vertx-network = { workspace = true }
-
-# backpack
-embedded-io-async = { workspace = true, optional = true }
-vertx-backpack-ipc = { workspace = true, optional = true }
 
 # displays
 ssd1306 = { version = "0.9.0", features = ["async"], optional = true }
 
-# network-native
+# network
+atoi = { version = "=2.0.0", default-features = false }
+base64 = { version = "=0.22.1", default-features = false }
+edge-dhcp = "=0.5.0"
+edge-ws = "=0.4.0"
+embassy-net = { workspace = true, features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
+embedded-io-async = { workspace = true }
+httparse = { version = "=1.10.0", default-features = false }
+itoa = "=1.0.14"
 rand = { version = "=0.8.5", default-features = false, features = ["min_const_gen"], optional = true }
-vertx-server = { workspace = true, optional = true }
+sha1 = { version = "=0.10.6", default-features = false }
 
 # chip-esp
 esp-alloc = { workspace = true, optional = true }
@@ -129,7 +127,7 @@ esp-backtrace = { workspace = true, features = ["defmt", "colors", "panic-handle
 esp-hal = { workspace = true, optional = true }
 esp-hal-embassy = { workspace = true, features = ["executors"], optional = true }
 esp-storage = { version = "=0.5.0", features = ["low-level", "storage", "critical-section"], optional = true }
-vertx-network-esp = { workspace = true, features = ["defmt"], optional = true }
+esp-wifi = { version = "=0.12.0", features = ["defmt", "wifi"], optional = true }
 
 # chip-rp
 # TODO: flip-link
@@ -152,6 +150,7 @@ wasm-logger = "=0.2.0"
 [build-dependencies]
 basic-toml = "=0.1.9"
 serde = { workspace = true, features = ["derive"] }
+serde_json = "=1.0.139"
 
 [[bin]]
 name = "vertx"
