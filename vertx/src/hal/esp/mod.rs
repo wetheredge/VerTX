@@ -1,5 +1,7 @@
 mod flash;
 mod leds;
+mod network;
+mod network_driver;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -67,15 +69,18 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         }
     };
 
-    let network_hal =
-        vertx_network_esp::Hal::new(spawner, rng, timg1.timer0.into(), p.RADIO_CLK, p.WIFI);
-
     super::Init {
         reset: Reset,
         status_led,
         config_storage,
         ui,
-        network: Network::new(rng, network_hal),
+        network: network::Network {
+            spawner,
+            rng,
+            timer: timg1.timer0.into(),
+            radio_clocks: p.RADIO_CLK,
+            wifi: p.WIFI,
+        },
     }
 }
 
@@ -136,30 +141,6 @@ impl super::traits::ConfigStorage for ConfigStorage {
         let mut buffer = [0u32; crate::config::BYTE_LENGTH.div_ceil(4)];
         bytemuck::cast_slice_mut(&mut buffer)[0..config.len()].copy_from_slice(config);
         self.partition.write(1, &buffer[0..len_words]).unwrap();
-    }
-}
-
-struct Network {
-    rng: Rng,
-    hal: vertx_network_esp::Hal,
-}
-
-impl Network {
-    fn new(rng: Rng, hal: vertx_network_esp::Hal) -> Self {
-        Self { rng, hal }
-    }
-}
-
-impl super::traits::Network for Network {
-    type Hal = vertx_network_esp::Hal;
-
-    fn seed(&mut self) -> u64 {
-        use rand::RngCore as _;
-        self.rng.next_u64()
-    }
-
-    fn hal(self) -> Self::Hal {
-        self.hal
     }
 }
 

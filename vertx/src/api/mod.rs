@@ -8,7 +8,15 @@ use static_cell::ConstStaticCell;
 use self::protocol::{Request, Response};
 use crate::build_info;
 
-pub(crate) type BatterySignal = Signal<crate::mutex::SingleCore, u16>;
+type BatterySignal = Signal<crate::mutex::SingleCore, u16>;
+
+pub(crate) struct Buffer([u8; 256]);
+
+impl Buffer {
+    pub(crate) const fn new() -> Self {
+        Self([0; 256])
+    }
+}
 
 pub(crate) struct Api {
     reset: &'static crate::reset::Manager,
@@ -35,20 +43,16 @@ impl Api {
             battery,
         }
     }
-}
 
-impl vertx_network::Api for Api {
-    type Buffer = [u8; 256];
-
-    fn buffer() -> Self::Buffer {
-        [0; 256]
-    }
-
-    async fn next_response<'b>(&self, buffer: &'b mut Self::Buffer) -> &'b [u8] {
+    pub(crate) async fn next_response<'b>(&self, buffer: &'b mut Buffer) -> &'b [u8] {
         encode(Response::Vbat(self.battery.wait().await), buffer)
     }
 
-    async fn handle<'b>(&self, request: &[u8], buffer: &'b mut Self::Buffer) -> Option<&'b [u8]> {
+    pub(crate) async fn handle<'b>(
+        &self,
+        request: &[u8],
+        buffer: &'b mut Buffer,
+    ) -> Option<&'b [u8]> {
         let request = match postcard::from_bytes(request) {
             Ok(request) => request,
             Err(err) => {
@@ -94,8 +98,8 @@ impl vertx_network::Api for Api {
     }
 }
 
-fn encode(response: Response, buffer: &mut [u8]) -> &[u8] {
-    match postcard::to_slice(&response, buffer) {
+fn encode(response: Response, buffer: &mut Buffer) -> &[u8] {
+    match postcard::to_slice(&response, &mut buffer.0) {
         Ok(data) => data,
         Err(err) => panic!("Failed to encode api response: {err}"),
     }

@@ -7,16 +7,17 @@ extern crate alloc;
 extern crate std;
 
 mod api;
-#[cfg(feature = "backpack")]
-mod backpack;
 mod build_info;
 mod config;
+#[cfg(feature = "configurator")]
+mod configurator;
 mod crsf;
 mod hal;
 mod init_counter;
 mod leds;
 mod mode;
 mod mutex;
+#[cfg(feature = "network")]
 mod network;
 mod reset;
 mod ui;
@@ -38,9 +39,6 @@ pub async fn main(spawner: Spawner) {
     static INITS: InitCounter = InitCounter::new();
     let inits = &INITS;
 
-    #[cfg(feature = "backpack")]
-    let backpack = backpack::Backpack::new(inits, spawner, hal.backpack);
-
     static MODE: crate::mode::Watch = Watch::new();
     let mode = &MODE;
     let mode_sender = mode.sender();
@@ -49,48 +47,46 @@ pub async fn main(spawner: Spawner) {
     let config_manager = CONFIG_MANAGER.init_with(|| config::Manager::load(hal.config_storage));
     let config = config_manager.config();
 
+    #[cfg(feature = "configurator")]
+    let configurator = configurator::Manager::new();
+
     spawner.must_spawn(leds::run(
         inits,
         config,
         hal.status_led,
         mode.receiver().unwrap(),
     ));
-    spawner.must_spawn(ui::run(inits, config, hal.ui));
+    spawner.must_spawn(ui::run(
+        inits,
+        config,
+        hal.ui,
+        #[cfg(feature = "configurator")]
+        configurator,
+    ));
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
-    let reset = RESET.init_with(|| {
-        reset::Manager::new(
-            spawner,
-            hal.reset,
-            config_manager,
-            #[cfg(feature = "backpack")]
-            backpack.clone(),
-        )
-    });
+    let reset = RESET.init_with(|| reset::Manager::new(spawner, hal.reset, config_manager));
 
     INITS.wait().await;
     loog::info!("Initialized");
     mode_sender.send(Mode::Ok);
 
-    network::START.wait().await;
-    mode_sender.send(Mode::PreConfigurator);
+    #[cfg(feature = "configurator")]
+    {
+        configurator.wait().await;
+        mode_sender.send(Mode::PreConfigurator);
 
-    static API: StaticCell<api::Api> = StaticCell::new();
-    let api = API.init_with(|| api::Api::new(spawner, reset, config_manager));
+        static API: StaticCell<api::Api> = StaticCell::new();
+        let api = API.init_with(|| api::Api::new(spawner, reset, config_manager));
 
-    network::init(
-        spawner,
-        config,
-        api,
-        #[cfg(feature = "network-native")]
-        hal.network,
-        #[cfg(feature = "network-backpack")]
-        backpack,
-    )
-    .await;
+        #[cfg(feature = "network")]
+        network::init(spawner, config, api, hal.network).await;
+        #[cfg(not(feature = "network"))]
+        todo!();
 
-    mode_sender.send(Mode::Configurator);
-    loog::info!("Network running");
+        mode_sender.send(Mode::Configurator);
+        loog::info!("Configurator running");
+    }
 }
 
 #[cfg(all(feature = "simulator", target_arch = "wasm32"))]

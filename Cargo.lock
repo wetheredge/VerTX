@@ -2770,6 +2770,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 name = "vertx"
 version = "0.0.0"
 dependencies = [
+ "atoi",
  "base64 0.22.1",
  "basic-toml",
  "bytemuck",
@@ -2779,8 +2780,11 @@ dependencies = [
  "critical-section",
  "defmt-rtt",
  "display-interface",
+ "edge-dhcp",
+ "edge-ws",
  "embassy-executor",
  "embassy-futures",
+ "embassy-net",
  "embassy-rp",
  "embassy-sync",
  "embassy-time",
@@ -2796,10 +2800,13 @@ dependencies = [
  "esp-hal",
  "esp-hal-embassy",
  "esp-storage",
+ "esp-wifi",
  "fixed",
  "fixed-macro",
  "fugit",
  "heapless",
+ "httparse",
+ "itoa",
  "loog",
  "panic-probe",
  "pio",
@@ -2808,44 +2815,13 @@ dependencies = [
  "qrcodegen-no-heap",
  "rand",
  "serde",
+ "serde_json",
+ "sha1",
  "ssd1306",
  "static_cell",
  "talc",
- "vertx-backpack-ipc",
- "vertx-network",
- "vertx-network-esp",
- "vertx-server",
  "wasm-bindgen",
  "wasm-logger",
-]
-
-[[package]]
-name = "vertx-backpack"
-version = "0.0.0"
-dependencies = [
- "defmt-rtt",
- "embassy-executor",
- "embassy-sync",
- "embassy-time",
- "esp-alloc",
- "esp-backtrace",
- "esp-hal",
- "esp-hal-embassy",
- "loog",
- "postcard",
- "static_cell",
- "vertx-backpack-ipc",
- "vertx-network",
- "vertx-network-esp",
- "vertx-server",
-]
-
-[[package]]
-name = "vertx-backpack-ipc"
-version = "0.0.0"
-dependencies = [
- "serde",
- "vertx-network",
 ]
 
 [[package]]
@@ -2864,49 +2840,6 @@ dependencies = [
  "bitfield 0.19.0",
  "crc",
  "embedded-io",
-]
-
-[[package]]
-name = "vertx-network"
-version = "0.0.0"
-dependencies = [
- "embassy-net-driver",
- "heapless",
- "serde",
-]
-
-[[package]]
-name = "vertx-network-esp"
-version = "0.0.0"
-dependencies = [
- "embassy-executor",
- "embassy-net",
- "embassy-time",
- "esp-hal",
- "esp-wifi",
- "loog",
- "static_cell",
- "vertx-network",
-]
-
-[[package]]
-name = "vertx-server"
-version = "0.0.0"
-dependencies = [
- "atoi",
- "base64 0.22.1",
- "edge-dhcp",
- "edge-ws",
- "embassy-net",
- "embedded-io-async",
- "heapless",
- "httparse",
- "itoa",
- "loog",
- "serde",
- "serde_json",
- "sha1",
- "vertx-network",
 ]
 
 [[package]]

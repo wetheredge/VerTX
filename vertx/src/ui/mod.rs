@@ -12,7 +12,6 @@ use embedded_graphics::primitives::{PrimitiveStyle, Rectangle, StyledDrawable as
 use embedded_graphics::text::renderer::TextRenderer as _;
 use embedded_graphics::text::{Baseline, Text};
 use embedded_mogeefont::MogeeTextStyle;
-use heapless::String;
 
 use self::component::Component;
 use self::history::History;
@@ -37,6 +36,7 @@ pub(crate) async fn run(
     init: &'static crate::InitCounter,
     _config: crate::Config,
     mut ui: crate::hal::Ui,
+    #[cfg(feature = "configurator")] configurator: crate::configurator::Manager,
 ) -> ! {
     let init = init.start(loog::intern!("ui"));
 
@@ -78,8 +78,9 @@ pub(crate) async fn run(
             StateChange::Push(next) => {
                 let next = match next {
                     NextState::Model(_) => Some(State::Model(view::Model)),
+                    #[cfg(feature = "configurator")]
                     NextState::Configurator => {
-                        crate::network::start();
+                        configurator.start();
                         None
                     }
                     NextState::ElrsConfig => {
@@ -111,6 +112,7 @@ enum State {
     Model(view::Model),
     Menu(view::Menu),
     #[expect(dead_code)]
+    #[cfg(feature = "network")]
     Wifi {
         network: Option<WifiNetwork>,
         uri: heapless::String<32>,
@@ -123,6 +125,7 @@ enum State {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum NextState {
     Model(usize),
+    #[cfg(feature = "configurator")]
     Configurator,
     ElrsConfig,
     About,
@@ -130,15 +133,17 @@ enum NextState {
 
 #[expect(dead_code)]
 #[derive(Debug, Clone)]
+#[cfg(feature = "network")]
 struct WifiNetwork {
     show: bool,
-    ssid: String<16>,
-    password: String<16>,
+    ssid: heapless::String<16>,
+    password: heapless::String<16>,
 }
 
+#[cfg(feature = "network")]
 impl WifiNetwork {
     #[expect(dead_code)]
-    fn new(ssid: &vertx_network::Ssid, password: &vertx_network::Password) -> Option<Self> {
+    fn new(ssid: &crate::network::Ssid, password: &crate::network::Password) -> Option<Self> {
         if let Ok(ssid) = ssid.as_str().try_into() {
             if let Ok(password) = password.as_str().try_into() {
                 return Some(Self {
@@ -173,6 +178,7 @@ impl State {
                 menu.init(display)?;
                 menu.title()
             }
+            #[cfg(feature = "network")]
             Self::Wifi { .. } => todo!(),
             Self::ElrsConfig => todo!(),
             Self::About(about) => {
@@ -189,6 +195,7 @@ impl State {
         match self {
             State::Model(model) => model.input(input),
             State::Menu(menu) => menu.input(input),
+            #[cfg(feature = "network")]
             State::Wifi { .. } => todo!(),
             State::ElrsConfig => todo!(),
             State::About(about) => about.input(input),
@@ -207,6 +214,7 @@ impl Drawable for State {
         match self {
             Self::Model(model) => model.draw(target),
             Self::Menu(menu) => menu.draw(target),
+            #[cfg(feature = "network")]
             Self::Wifi { .. } => todo!(),
             Self::ElrsConfig => todo!(),
             Self::About(about) => about.draw(target),

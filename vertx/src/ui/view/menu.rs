@@ -34,6 +34,7 @@ static CATEGORIES: &[ListItem<Category>] = &[
 ];
 
 static TOOLS: &[ListItem<NextState>] = &[
+    #[cfg(feature = "configurator")]
     ListItem::new_const("Configure", NextState::Configurator),
     ListItem::new_const("ELRS", NextState::ElrsConfig),
     ListItem::new_const("About", NextState::About),

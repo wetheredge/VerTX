@@ -143,7 +143,7 @@ jobs:
             chip: rp2040
             display: ssd1306
     env:
-      VERTX_SERVER_SKIP_CONFIGURATOR_BUILD: true
+      VERTX_SKIP_CONFIGURATOR_BUILD: true
       VERTX_TARGET: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4.2.2
@@ -179,7 +179,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [cache-rust-toolchain, build-configurator]
     env:
-      VERTX_SERVER_SKIP_CONFIGURATOR_BUILD: true
+      VERTX_SKIP_CONFIGURATOR_BUILD: true
     strategy:
       fail-fast: false
       matrix:
