@@ -64,6 +64,7 @@ pub async fn main(spawner: Spawner) {
     ));
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
+    #[cfg_attr(not(feature = "configurator"), expect(unused))]
     let reset = RESET.init_with(|| reset::Manager::new(spawner, hal.reset, config_manager));
 
     INITS.wait().await;

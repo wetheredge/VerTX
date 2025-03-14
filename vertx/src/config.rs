@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "configurator"), expect(unused))]
+
 mod codegen {
     include!(concat!(env!("OUT_DIR"), "/config.rs"));
 }
