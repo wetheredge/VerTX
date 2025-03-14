@@ -14,23 +14,10 @@ homepage = "https://vertx.cc"
 license = "MPL-2.0"
 
 [workspace.dependencies]
-defmt-rtt = "=0.4.1"
-embassy-executor = "=0.7.0"
-embassy-net = "=0.6.0"
-embassy-sync = "=0.6.2"
-embassy-time = "=0.4.0"
-embedded-io-async = "=0.6.1"
-esp-alloc = "=0.6.0"
-esp-backtrace = "=0.15.1"
-esp-hal = "=0.23.1"
-esp-hal-embassy = { version = "=0.6.0", default-features = false }
-esp-println = { version = "=0.13.1", default-features = false }
 heapless = "=0.8.0"
-log = "=0.4.26"
 loog = { git = "https://github.com/wetheredge/loog.git", rev = "4785bb8f607191354e7d3d9df8790fe998392cbc" }
 postcard = { version = "=1.1.1", default-features = false }
 serde = { version = "=1.0.218", default-features = false }
-static_cell = "=2.1.0"
 
 [workspace.metadata.bin-dependencies]
 cargo-machete = "=0.8.0"
