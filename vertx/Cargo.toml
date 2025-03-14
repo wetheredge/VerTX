@@ -29,7 +29,6 @@ display-ssd1306 = ["dep:ssd1306"]
 network = [
     "configurator",
     "dep:embassy-net",
-    "dep:rand",
 ]
 
 chip-esp = [
@@ -118,7 +117,6 @@ embassy-net = { workspace = true, features = ["dhcpv4", "dhcpv4-hostname", "tcp"
 embedded-io-async = { workspace = true }
 httparse = { version = "=1.10.0", default-features = false }
 itoa = "=1.0.14"
-rand = { version = "=0.8.5", default-features = false, features = ["min_const_gen"], optional = true }
 sha1 = { version = "=0.10.6", default-features = false }
 
 # chip-esp
@@ -162,5 +160,4 @@ workspace = true
 [package.metadata.cargo-machete]
 ignored = [
     "cortex-m-rt", # used by #[embassy-rp::main]
-    "portable-atomic", # needed to enable `critical-section` feature
 ]
