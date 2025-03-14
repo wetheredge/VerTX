@@ -5,12 +5,11 @@ use embassy_executor::Spawner;
 use embassy_futures::select;
 use embassy_rp::i2c::{self, I2c};
 use embassy_rp::pio::{self, Pio};
-use embassy_rp::uart::{self, BufferedUart};
 use embassy_rp::watchdog::Watchdog;
-use embassy_rp::{bind_interrupts, gpio, peripherals};
+use embassy_rp::{bind_interrupts, gpio, peripherals, uart};
 use embassy_time::Duration;
 use embedded_alloc::TlsfHeap;
-use static_cell::{ConstStaticCell, StaticCell};
+use static_cell::StaticCell;
 use {defmt_rtt as _, embedded_graphics as eg, panic_probe as _};
 
 use crate::ui::Input;
@@ -80,32 +79,11 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         }
     };
 
-    let backpack = {
-        static TX_BUFFER: ConstStaticCell<[u8; 32]> = ConstStaticCell::new([0; 32]);
-        static RX_BUFFER: ConstStaticCell<[u8; 32]> = ConstStaticCell::new([0; 32]);
-
-        let mut config = uart::Config::default();
-        config.baudrate = vertx_backpack_ipc::BAUDRATE;
-        let uart = BufferedUart::new(
-            p.UART1,
-            Irqs,
-            pins!(p, backpack.tx),
-            pins!(p, backpack.rx),
-            TX_BUFFER.take(),
-            RX_BUFFER.take(),
-            config,
-        );
-        let (tx, rx) = uart.split();
-
-        super::Backpack { tx, rx }
-    };
-
     super::Init {
         reset,
         status_led,
         config_storage,
         ui,
-        backpack,
     }
 }
 
