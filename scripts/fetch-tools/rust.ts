@@ -82,6 +82,8 @@ export function rust(context: Context): ListrTask {
 							await fs.rm(dir, { recursive: true });
 						}
 						fs.rename(installDir, outDir);
+
+						await $`rustup toolchain link vertx ${outDir}`.quiet();
 					},
 				},
 			]);
