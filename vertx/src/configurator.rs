@@ -20,3 +20,22 @@ impl Manager {
         START.wait()
     }
 }
+
+// Putting this in the hal implementation would be nicer, but declaring a task
+// inside the hal runs into issues with unconstrained use of some of the HAL's
+// TAIT definitions that are contained within `Api`/its fields
+#[cfg(not(feature = "network"))]
+#[embassy_executor::task]
+pub(crate) async fn run(api: &'static crate::api::Api, mut hal: crate::hal::Configurator) -> ! {
+    use crate::hal::prelude::*;
+
+    hal.start().await;
+
+    let mut buffer = crate::api::Buffer::new();
+    loop {
+        let request = hal.receive().await;
+        if let Some(response) = api.handle(request.as_ref(), &mut buffer).await {
+            hal.send(response).await;
+        }
+    }
+}

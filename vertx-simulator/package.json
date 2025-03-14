@@ -5,10 +5,7 @@
 	"version": "0.0.0",
 	"license": "MPL-2.0",
 	"type": "module",
-	"dependencies": {
-		"postcard": "workspace:*",
-		"ucobs": "1.0.0"
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"@tsconfig/vite-react": "3.4.0",
 		"vite": "6.2.0"

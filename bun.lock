@@ -46,10 +46,6 @@
     "vertx-simulator": {
       "name": "vertx-simulator",
       "version": "0.0.0",
-      "dependencies": {
-        "postcard": "workspace:*",
-        "ucobs": "1.0.0",
-      },
       "devDependencies": {
         "@tsconfig/vite-react": "3.4.0",
         "vite": "6.2.0",
@@ -554,8 +550,6 @@
     "type-fest": ["type-fest@0.21.3", "", {}, "sha512-t0rzBq87m3fVcduHDUFhKmyyX+9eo6WQjZvf51Ea/M0Q7+T374Jp1aUiyUl0GKxp8M/OETVHSDvmkyPgvX+X2w=="],
 
     "typescript": ["typescript@5.8.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ=="],
-
-    "ucobs": ["ucobs@1.0.0", "", {}, "sha512-lxOnZGWpcFOgIy8KEpS/U4yWiciIbibjPmrVPkqnBAYkqeVZtmA0MV1WzDvLQTNZNrSNeBTQTq1V+0m53fcEpA=="],
 
     "ufo": ["ufo@1.5.4", "", {}, "sha512-UsUk3byDzKd04EyoZ7U4DOlxQaD14JUKQl6/P7wiX4FNvUfm3XL246n9W5AmqwW5RSFJ27NAuM0iLscAOYUiGQ=="],
 
