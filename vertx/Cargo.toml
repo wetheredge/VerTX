@@ -28,7 +28,15 @@ display-ssd1306 = ["dep:ssd1306"]
 
 network = [
     "configurator",
+    "dep:atoi",
+    "dep:base64",
+    "dep:edge-dhcp",
+    "dep:edge-ws",
     "dep:embassy-net",
+    "dep:embedded-io-async",
+    "dep:httparse",
+    "dep:itoa",
+    "dep:sha1",
 ]
 
 chip-esp = [
@@ -109,15 +117,15 @@ static_cell = "=2.1.0"
 ssd1306 = { version = "0.9.0", features = ["async"], optional = true }
 
 # network
-atoi = { version = "=2.0.0", default-features = false }
-base64 = { version = "=0.22.1", default-features = false }
-edge-dhcp = "=0.5.0"
-edge-ws = "=0.4.0"
+atoi = { version = "=2.0.0", default-features = false, optional = true }
+base64 = { version = "=0.22.1", default-features = false, optional = true }
+edge-dhcp = { version = "=0.5.0", optional = true }
+edge-ws = { version = "=0.4.0", optional = true }
 embassy-net = { version = "=0.6.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
-embedded-io-async = "=0.6.1"
-httparse = { version = "=1.10.0", default-features = false }
-itoa = "=1.0.14"
-sha1 = { version = "=0.10.6", default-features = false }
+embedded-io-async = { version = "=0.6.1", optional = true }
+httparse = { version = "=1.10.0", default-features = false, optional = true }
+itoa = { version = "=1.0.14", optional = true }
+sha1 = { version = "=0.10.6", default-features = false, optional = true }
 
 # chip-esp
 esp-alloc = { version = "=0.6.0", optional = true }
