@@ -1,4 +1,4 @@
-mod backpack;
+mod configurator;
 
 use std::convert::Infallible;
 use std::panic;
@@ -9,7 +9,6 @@ use base64::engine::general_purpose::STANDARD_NO_PAD as base64;
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_sync::channel::{self, Channel};
-use embassy_sync::pipe::Pipe;
 use embedded_graphics as eg;
 
 use crate::ui::Input as UiInput;
@@ -24,8 +23,11 @@ mod ipc {
 
     #[wasm_bindgen(js_namespace = Vertx)]
     extern "C" {
-        #[wasm_bindgen(js_name = "backpackRx")]
-        pub fn backpack_tx(data: &[u8]);
+        #[wasm_bindgen(js_name = "openConfigurator")]
+        pub fn open_configurator();
+
+        #[wasm_bindgen(js_name = "apiRx")]
+        pub fn api_tx(response: &[u8]);
 
         #[wasm_bindgen(js_name = "loadConfig")]
         pub fn load_config() -> Option<String>;
@@ -42,13 +44,9 @@ mod ipc {
         pub fn flush_display(data: *const u8);
     }
 
-    #[wasm_bindgen(js_name = "backpackTx")]
-    pub fn backpack_rx(data: Box<[u8]>) {
-        let mut remaining = &data[..];
-        while !remaining.is_empty() {
-            let len = super::BACKPACK_RX.try_write(&data).unwrap();
-            remaining = &remaining[len..];
-        }
+    #[wasm_bindgen(js_name = "apiTx")]
+    pub fn api_rx(request: Box<[u8]>) {
+        super::configurator::push_request(request);
     }
 
     #[wasm_bindgen(js_name = "buttonPressed")]
@@ -73,7 +71,6 @@ type UiInputsRx = channel::Receiver<'static, crate::mutex::MultiCore, UiInput, 1
 
 type RawFramebuffer = [u128; 64];
 
-static BACKPACK_RX: backpack::RxPipe = Pipe::new();
 static UI_INPUTS: UiInputsChannel = Channel::new();
 static FRAMEBUFFER: Mutex<RawFramebuffer> = Mutex::new(bytemuck::zeroed());
 
@@ -85,10 +82,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         status_led: StatusLed,
         config_storage: ConfigStorage,
         ui: Ui::new(&FRAMEBUFFER, UI_INPUTS.receiver()),
-        backpack: super::Backpack {
-            tx: backpack::Tx,
-            rx: backpack::Rx(&BACKPACK_RX),
-        },
+        configurator: configurator::Configurator,
     }
 }
 

@@ -82,7 +82,7 @@ pub async fn main(spawner: Spawner) {
         #[cfg(feature = "network")]
         network::init(spawner, config, api, hal.network).await;
         #[cfg(not(feature = "network"))]
-        todo!();
+        spawner.must_spawn(configurator::run(api, hal.configurator));
 
         mode_sender.send(Mode::Configurator);
         loog::info!("Configurator running");

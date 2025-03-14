@@ -1,21 +1,10 @@
-import { createBlockEncoder, createStreamDecoder } from 'ucobs';
 import {
-	backpackTx,
+	apiTx,
 	buttonPressed,
 	initSync,
 	memoryName,
 } from '../../target/simulator/vertx.js';
 import wasmUrl from '../../target/simulator/vertx_bg.wasm?url';
-import {
-	INIT,
-	type ToBackpack,
-	ToBackpackKind,
-	type ToMain,
-	ToMainKind,
-	decode,
-	encode,
-} from './backpack-ipc';
-import { unreachable } from './utils';
 
 const globalName = 'Vertx';
 const configStorageKey = 'config';
@@ -46,10 +35,7 @@ export type Callbacks = {
 };
 
 export class Simulator {
-	#backpackInitted = false;
 	#callbacks: Callbacks;
-	#backpackDecode: (data: Uint8Array) => void;
-	#backpackEncode: (data: Uint8Array) => void;
 	#configurator: MessageEventSource | null = null;
 
 	#memory: WebAssembly.Memory;
@@ -64,22 +50,13 @@ export class Simulator {
 			throw new Error('Simulator is already running');
 		}
 
-		this.backpackRx = this.backpackRx.bind(this);
+		this.openConfigurator = this.openConfigurator.bind(this);
+		this.apiRx = this.apiRx.bind(this);
 		this.loadConfig = this.loadConfig.bind(this);
 		this.saveConfig = this.saveConfig.bind(this);
 		this.setStatusLed = this.setStatusLed.bind(this);
 		this.powerOff = this.powerOff.bind(this);
 		this.flushDisplay = this.flushDisplay.bind(this);
-
-		this.#backpackDecode = createStreamDecoder((raw) => {
-			const message = decode(
-				new DataView(raw.buffer, raw.byteOffset, raw.byteLength),
-			);
-			this.#backpackRxMessage(message);
-		});
-		this.#backpackEncode = createBlockEncoder((chunk) => {
-			backpackTx(chunk);
-		});
 
 		window.addEventListener('message', (event) => {
 			if (
@@ -91,11 +68,7 @@ export class Simulator {
 
 			this.#configurator = event.source;
 
-			const payload = new Uint8Array(event.data);
-			this.send({
-				kind: ToMainKind.ApiRequest,
-				payload,
-			});
+			apiTx(new Uint8Array(event.data));
 		});
 
 		// @ts-ignore
@@ -113,59 +86,20 @@ export class Simulator {
 		this.#display = displayContext;
 	}
 
-	send(message: ToMain) {
-		if (!this.#backpackInitted) {
-			throw new Error('Not yet initialized');
-		}
-
-		this.#backpackEncode(encode(message));
-	}
-
 	buttonPressed(button: Button) {
 		buttonPressed(button);
 	}
 
-	#backpackRxMessage(message: ToBackpack) {
-		switch (message.kind) {
-			case ToBackpackKind.StartNetwork:
-				this.#callbacks.openConfigurator();
-				this.send({ kind: ToMainKind.NetworkUp });
-				break;
-			case ToBackpackKind.ApiResponse: {
-				const { payload } = message;
-				const start = payload.byteOffset;
-				const end = start + payload.byteLength;
-				this.#configurator?.postMessage(
-					payload.buffer.slice(start, end),
-				);
-				break;
-			}
-			case ToBackpackKind.ShutDown:
-			case ToBackpackKind.Reboot:
-				this.send({ kind: ToMainKind.PowerAck });
-				break;
-
-			default:
-				unreachable(message);
-		}
-	}
-
 	// Used from wasm:
 
-	private backpackRx(raw: Uint8Array) {
-		if (this.#backpackInitted) {
-			this.#backpackDecode(raw);
-		} else if (raw.byteLength === INIT.length) {
-			for (let i = 0; i < INIT.length; i++) {
-				if (raw[i] !== INIT[i]) {
-					console.warn('Invalid backpack init message received');
-					return;
-				}
-			}
+	private openConfigurator() {
+		this.#callbacks.openConfigurator();
+	}
 
-			backpackTx(new Uint8Array(INIT));
-			this.#backpackInitted = true;
-		}
+	private apiRx(raw: Uint8Array) {
+		const start = raw.byteOffset;
+		const end = start + raw.byteLength;
+		this.#configurator?.postMessage(raw.buffer.slice(start, end));
 	}
 
 	private loadConfig() {

@@ -8,6 +8,9 @@ macro_rules! declare_hal_types {
         pub(crate) type HalConfigStorage = impl crate::hal::traits::ConfigStorage;
         pub(crate) type HalUi = impl crate::hal::traits::Ui;
 
+        #[cfg(all(feature = "configurator", not(feature = "network")))]
+        pub(crate) type HalConfigurator = impl crate::hal::traits::Configurator;
+
         #[cfg(feature = "network")]
         pub(crate) type HalNetwork = impl crate::hal::traits::Network;
     };
@@ -18,6 +21,8 @@ macro_rules! declare_hal_types {
 #[cfg_attr(feature = "simulator", path = "simulator/mod.rs")]
 mod implementation;
 
+#[cfg(all(feature = "configurator", not(feature = "network")))]
+pub(crate) use implementation::HalConfigurator as Configurator;
 #[cfg(feature = "network")]
 pub(crate) use implementation::HalNetwork as Network;
 pub(crate) use implementation::{
@@ -35,12 +40,16 @@ pub(crate) struct Init {
     pub(crate) status_led: StatusLed,
     pub(crate) config_storage: ConfigStorage,
     pub(crate) ui: Ui,
+    #[cfg(all(feature = "configurator", not(feature = "network")))]
+    pub(crate) configurator: Configurator,
     #[cfg(feature = "network")]
     pub(crate) network: Network,
 }
 
 #[expect(unused_imports)]
 pub(crate) mod prelude {
+    #[cfg(all(feature = "configurator", not(feature = "network")))]
+    pub(crate) use super::traits::Configurator as _;
     #[cfg(feature = "network")]
     pub(crate) use super::traits::Network as _;
     pub(crate) use super::traits::{ConfigStorage as _, Reset as _, StatusLed as _, Ui as _};
@@ -61,6 +70,15 @@ pub(crate) mod traits {
     pub(crate) trait StatusLed {
         type Error: Debug;
         async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error>;
+    }
+
+    #[cfg(all(feature = "configurator", not(feature = "network")))]
+    pub(crate) trait Configurator {
+        type Request: AsRef<[u8]>;
+
+        async fn start(&mut self);
+        async fn receive(&mut self) -> Self::Request;
+        async fn send(&mut self, response: &[u8]);
     }
 
     #[cfg(feature = "network")]
