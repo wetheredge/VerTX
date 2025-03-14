@@ -10,16 +10,18 @@ use embassy_net::Stack;
 use embassy_net::tcp::TcpSocket;
 use embedded_io_async::{Read, Write};
 
+use crate::configurator::Api;
+
 pub(super) const WORKERS: usize = 2;
 
-pub(super) fn spawn_all(spawner: Spawner, stack: Stack<'static>, api: &'static crate::api::Api) {
+pub(super) fn spawn_all(spawner: Spawner, stack: Stack<'static>, api: &'static Api) {
     for id in 0..WORKERS {
         spawner.must_spawn(run(id, stack, api));
     }
 }
 
 #[task(pool_size = WORKERS)]
-async fn run(id: usize, stack: Stack<'static>, api: &'static crate::api::Api) -> ! {
+async fn run(id: usize, stack: Stack<'static>, api: &'static Api) -> ! {
     const TCP_BUFFER_LEN: usize = 1024;
     const HTTP_BUFFER_LEN: usize = 2048;
 
@@ -44,7 +46,7 @@ async fn run(id: usize, stack: Stack<'static>, api: &'static crate::api::Api) ->
 async fn server(
     mut tcp: TcpSocket<'_>,
     buffer: &mut [u8],
-    api: &crate::api::Api,
+    api: &Api,
 ) -> Result<(), embassy_net::tcp::Error> {
     let (mut rx, mut tx) = tcp.split();
 

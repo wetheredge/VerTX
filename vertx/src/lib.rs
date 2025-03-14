@@ -6,7 +6,6 @@ extern crate alloc;
 #[cfg(feature = "simulator")]
 extern crate std;
 
-mod api;
 mod build_info;
 mod config;
 #[cfg(feature = "configurator")]
@@ -76,8 +75,8 @@ pub async fn main(spawner: Spawner) {
         configurator.wait().await;
         mode_sender.send(Mode::PreConfigurator);
 
-        static API: StaticCell<api::Api> = StaticCell::new();
-        let api = API.init_with(|| api::Api::new(spawner, reset, config_manager));
+        static API: StaticCell<configurator::Api> = StaticCell::new();
+        let api = API.init_with(|| configurator::Api::new(spawner, reset, config_manager));
 
         #[cfg(feature = "network")]
         network::init(spawner, config, api, hal.network).await;

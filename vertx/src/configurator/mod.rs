@@ -1,4 +1,8 @@
+mod api;
+
 use embassy_sync::signal::Signal;
+
+pub(crate) use self::api::{Api, Buffer as ApiBuffer};
 
 static START: Signal<crate::mutex::MultiCore, ()> = Signal::new();
 
@@ -26,12 +30,12 @@ impl Manager {
 // TAIT definitions that are contained within `Api`/its fields
 #[cfg(not(feature = "network"))]
 #[embassy_executor::task]
-pub(crate) async fn run(api: &'static crate::api::Api, mut hal: crate::hal::Configurator) -> ! {
+pub(crate) async fn run(api: &'static Api, mut hal: crate::hal::Configurator) -> ! {
     use crate::hal::prelude::*;
 
     hal.start().await;
 
-    let mut buffer = crate::api::Buffer::new();
+    let mut buffer = ApiBuffer::new();
     loop {
         let request = hal.receive().await;
         if let Some(response) = api.handle(request.as_ref(), &mut buffer).await {

@@ -29,7 +29,7 @@ pub(crate) struct Credentials {
 pub async fn init(
     spawner: Spawner,
     config: crate::Config,
-    api: &'static crate::api::Api,
+    api: &'static crate::configurator::Api,
     mut hal: crate::hal::Network,
 ) {
     loog::info!("Starting network");
