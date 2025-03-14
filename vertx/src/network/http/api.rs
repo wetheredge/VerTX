@@ -24,7 +24,7 @@ const MAGIC_KEY: &[u8] = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 pub(super) async fn run<R, W>(
     mut rx: R,
     mut tx: W,
-    api: &crate::api::Api,
+    api: &crate::configurator::Api,
     headers: &[httparse::Header<'_>],
     connection: Option<&[u8]>,
 ) -> Result<(), R::Error>
@@ -63,7 +63,7 @@ where
     respond_handshake(key, &mut tx).await?;
 
     let tx = &mut tx;
-    let mut api_buffer = crate::api::Buffer::new();
+    let mut api_buffer = crate::configurator::ApiBuffer::new();
     loop {
         const RX_LEN: usize = 1 + 1 + 4 + 125; // header + short len + mask + payload
         const TX_LEN: usize = 0;
