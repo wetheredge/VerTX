@@ -44,6 +44,7 @@ impl Api {
         }
     }
 
+    #[expect(unused)]
     pub(crate) async fn next_response<'b>(&self, buffer: &'b mut Buffer) -> &'b [u8] {
         encode(Response::Vbat(self.battery.wait().await), buffer)
     }

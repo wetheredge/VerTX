@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "configurator"), expect(unused))]
+
 use embassy_executor::{Spawner, task};
 use embassy_sync::signal::Signal;
 
