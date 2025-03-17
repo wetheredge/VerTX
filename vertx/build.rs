@@ -78,15 +78,15 @@ fn build_info(out_dir: &str) -> io::Result<()> {
     let branch = git_string("VERTX_GIT_BRANCH", &["branch", "--show-current"]);
     fs::write(format!("{out_dir}/git_branch"), branch)?;
 
-    let commit = git_string("VERTX_GIT_COMMIT", &["rev-parse", "--short", "HEAD"]);
-    fs::write(format!("{out_dir}/git_commit"), commit)?;
-
-    println!("cargo::rerun-if-env-changed=VERTX_GIT_DIRTY");
     let dirty = env::var("VERTX_GIT_DIRTY").map_or_else(
         |_| !git(&["status", "--porcelain"]).is_empty(),
         |env| !env.eq_ignore_ascii_case("false"),
     );
-    fs::write(format!("{out_dir}/git_dirty"), dirty.to_string())?;
+    let mut commit = git_string("VERTX_GIT_COMMIT", &["rev-parse", "--short", "HEAD"]);
+    if dirty {
+        commit.push_str("-dirty");
+    }
+    fs::write(format!("{out_dir}/git_commit"), &commit)?;
 
     let profile = env::var("PROFILE").unwrap();
     let debug = profile != "release";

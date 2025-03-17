@@ -19,9 +19,8 @@ const DEBUG: &str = if cfg!(debug_assertions) {
 } else {
     ""
 };
-const GIT_DIRTY: &str = if build_info::GIT_DIRTY { "-dirty" } else { "" };
 static ABOUT: &str = const_format::formatcp!(
-    "{target}\n{DEBUG}v{version}\n{commit}{GIT_DIRTY} ({branch})\n\n{home}",
+    "{target}\n{DEBUG}v{version}\n{commit} ({branch})\n\n{home}",
     target = build_info::TARGET,
     version = build_info::VERSION,
     commit = build_info::GIT_COMMIT,

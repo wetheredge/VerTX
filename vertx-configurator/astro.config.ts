@@ -38,6 +38,11 @@ const config = {
 				},
 			},
 		},
+		define: {
+			'import.meta.env.VERTX_TARGET': JSON.stringify(
+				process.env.VERTX_TARGET,
+			),
+		},
 		cacheDir: '.vite',
 	},
 } satisfies AstroUserConfig;

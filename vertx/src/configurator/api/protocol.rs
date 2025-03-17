@@ -24,7 +24,6 @@ pub(super) enum Response {
         debug: bool,
         git_branch: &'static str,
         git_commit: &'static str,
-        git_dirty: bool,
     },
     /// Per cell voltage in centivolts
     Vbat(u16),

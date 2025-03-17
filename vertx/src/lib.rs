@@ -77,7 +77,7 @@ pub async fn main(spawner: Spawner) {
         mode_sender.send(Mode::PreConfigurator);
 
         static API: StaticCell<configurator::Api> = StaticCell::new();
-        let api = API.init_with(|| configurator::Api::new(spawner, reset, config_manager));
+        let api = API.init_with(|| configurator::Api::new(reset, config_manager));
 
         #[cfg(feature = "network")]
         network::init(spawner, config, api, hal.network).await;

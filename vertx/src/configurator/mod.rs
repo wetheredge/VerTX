@@ -1,8 +1,8 @@
-mod api;
+pub(crate) mod api;
 
 use embassy_sync::signal::Signal;
 
-pub(crate) use self::api::{Api, Buffer as ApiBuffer};
+pub(crate) use self::api::Api;
 
 static START: Signal<crate::mutex::MultiCore, ()> = Signal::new();
 
@@ -35,11 +35,8 @@ pub(crate) async fn run(api: &'static Api, mut hal: crate::hal::Configurator) ->
 
     hal.start().await;
 
-    let mut buffer = ApiBuffer::new();
     loop {
-        let request = hal.receive().await;
-        if let Some(response) = api.handle(request.as_ref(), &mut buffer).await {
-            hal.send(response).await;
-        }
+        let (route, method, writer) = hal.receive().await;
+        loog::unwrap!(api.handle(route.as_ref(), method, writer).await);
     }
 }

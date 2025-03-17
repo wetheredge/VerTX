@@ -91,10 +91,18 @@ async fn server(
             .and_then(|s| core::str::from_utf8(s).ok())
             .unwrap_or("*/*");
 
-        if !is_get {
+        if let Some(path) = path.strip_prefix("/api") {
+            if let Ok(method) = crate::configurator::api::protocol_next::Method::try_from(
+                request.method.unwrap_or_default(),
+            ) {
+                api.handle(path, method, api::ResponseWriter(&mut tx))
+                    .await?;
+            } else {
+                tx.write_all(b"HTTP/1.1 501 Not Implemented\r\nContent-Length:0\r\n\r\n")
+                    .await?;
+            }
+        } else if !is_get {
             respond::method_not_allowed(&mut tx, "GET").await?;
-        } else if path == "/api" {
-            return api::run(rx, tx, api, request.headers, connection).await;
         } else if let Ok(asset) = configurator::ASSETS.binary_search_by_key(&path, |(r, _)| r) {
             let asset = &configurator::ASSETS[asset].1;
             if asset.mime.is_acceptable(accept) {

@@ -27,18 +27,7 @@ import * as styles from './_models.css';
 </Layout>
 
 <script>
-  type Model = {
-    id: string;
-    name: string;
-  };
-
-  const devModels: Array<Model> = [
-    { id: '0', name: 'Test 0' },
-    { id: '1', name: 'Test 1' },
-  ];
-
-  // @ts-expect-error
-  const models: Array<Model> = import.meta.env.PROD ? $models$ : devModels;
+  import { getJson } from '../api';
 
   const container: HTMLDivElement = document.querySelector('#models')!;
   const template: HTMLDivElement = document.querySelector('#template')!;
@@ -49,6 +38,7 @@ import * as styles from './_models.css';
     }
   });
 
+  const models = await getJson('models');
   for (const { id, name } of models) {
     const node = template.cloneNode(true) as typeof template;
     node.id = '';
