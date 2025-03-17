@@ -1,116 +1,186 @@
 mod protocol;
 
-use embassy_executor::{Spawner, task};
-use embassy_sync::signal::Signal;
-use embassy_time::{Duration, Ticker};
-use static_cell::ConstStaticCell;
+pub(crate) mod protocol_next {
+    use core::fmt;
 
-use self::protocol::{Request, Response};
-use crate::build_info;
+    use embedded_io_async::Write;
 
-type BatterySignal = Signal<crate::mutex::SingleCore, u16>;
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub(crate) enum Method {
+        Get,
+        Post,
+        Delete,
+    }
 
-pub(crate) struct Buffer([u8; 256]);
+    impl TryFrom<&str> for Method {
+        type Error = ();
 
-impl Buffer {
-    pub(crate) const fn new() -> Self {
-        Self([0; 256])
+        fn try_from(raw: &str) -> Result<Self, Self::Error> {
+            if raw.eq_ignore_ascii_case("get") {
+                Ok(Self::Get)
+            } else if raw.eq_ignore_ascii_case("post") {
+                Ok(Self::Post)
+            } else if raw.eq_ignore_ascii_case("delete") {
+                Ok(Self::Delete)
+            } else {
+                Err(())
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub(crate) enum ContentType {
+        Json,
+        OctetStream,
+    }
+
+    impl ContentType {
+        pub(crate) const fn as_str(&self) -> &'static str {
+            match self {
+                Self::Json => "application/json",
+                Self::OctetStream => "application/octet-stream",
+            }
+        }
+
+        #[cfg_attr(not(feature = "network"), expect(unused))]
+        pub(crate) const fn as_bytes(&self) -> &'static [u8] {
+            self.as_str().as_bytes()
+        }
+    }
+
+    impl fmt::Display for ContentType {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str(self.as_str())
+        }
+    }
+
+    pub(crate) trait WriteResponse {
+        type Error: loog::DebugFormat;
+        type BodyWriter: WriteBody<Error = Self::Error>;
+        type ChunkedBodyWriter: WriteChunkedBody<Error = Self::Error>;
+
+        async fn method_not_allowed(self, allow: &'static str) -> Result<(), Self::Error>;
+        async fn not_found(self) -> Result<(), Self::Error>;
+
+        async fn ok_empty(self) -> Result<(), Self::Error>;
+
+        async fn ok_with_len(
+            self,
+            typ: ContentType,
+            len: usize,
+        ) -> Result<Self::BodyWriter, Self::Error>;
+
+        #[expect(unused)]
+        async fn ok_chunked(self, typ: ContentType)
+        -> Result<Self::ChunkedBodyWriter, Self::Error>;
+    }
+
+    pub(crate) trait WriteBody: Write {
+        async fn finish(self) -> Result<(), Self::Error>;
+    }
+
+    #[expect(unused)]
+    pub(crate) trait WriteChunkedBody {
+        type Error;
+
+        async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error>;
+        async fn finish(self) -> Result<(), Self::Error>;
     }
 }
+
+use embedded_io_async::Write as _;
+use protocol_next::{ContentType, Method, WriteBody as _, WriteResponse};
+
+use crate::build_info;
 
 pub(crate) struct Api {
     reset: &'static crate::reset::Manager,
     config: &'static crate::config::Manager,
-
-    battery: &'static BatterySignal,
 }
 
 impl Api {
     pub(crate) fn new(
-        spawner: Spawner,
         reset: &'static crate::reset::Manager,
         config: &'static crate::config::Manager,
     ) -> Self {
-        static BATTERY: ConstStaticCell<BatterySignal> = ConstStaticCell::new(Signal::new());
-        let battery = BATTERY.take();
-
-        spawner.must_spawn(mock_battery(battery));
-
-        Self {
-            reset,
-            config,
-
-            battery,
-        }
+        Self { reset, config }
     }
 
-    #[expect(unused)]
-    pub(crate) async fn next_response<'b>(&self, buffer: &'b mut Buffer) -> &'b [u8] {
-        encode(Response::Vbat(self.battery.wait().await), buffer)
-    }
-
-    pub(crate) async fn handle<'b>(
+    pub(crate) async fn handle<W: WriteResponse>(
         &self,
-        request: &[u8],
-        buffer: &'b mut Buffer,
-    ) -> Option<&'b [u8]> {
-        let request = match postcard::from_bytes(request) {
-            Ok(request) => request,
-            Err(err) => {
-                loog::error!("Failed to parse request: {err:?}");
-                return None;
+        route: &str,
+        method: Method,
+        writer: W,
+    ) -> Result<(), W::Error> {
+        // TODO: check content-type against accept
+
+        let route = route.trim_matches('/');
+        match route {
+            "version" => {
+                if method != Method::Get {
+                    return writer.method_not_allowed("GET").await;
+                }
+
+                let release = if build_info::DEBUG {
+                    b"false".as_slice()
+                } else {
+                    b"true".as_slice()
+                };
+
+                let len = 69
+                    + build_info::TARGET.len()
+                    + build_info::VERSION.len()
+                    + release.len()
+                    + build_info::GIT_BRANCH.len()
+                    + build_info::GIT_COMMIT.len();
+
+                let mut writer = writer.ok_with_len(ContentType::Json, len).await?;
+                writer.write_all(br#"{"target":""#).await?;
+                writer.write_all(build_info::TARGET.as_bytes()).await?;
+                writer.write_all(br#"","version":""#).await?;
+                writer.write_all(build_info::VERSION.as_bytes()).await?;
+                writer.write_all(br#"","release":"#).await?;
+                writer.write_all(release).await?;
+                writer.write_all(br#","git":{"branch":""#).await?;
+                writer.write_all(build_info::GIT_BRANCH.as_bytes()).await?;
+                writer.write_all(br#"","commit":""#).await?;
+                writer.write_all(build_info::GIT_COMMIT.as_bytes()).await?;
+                writer.write_all(br#""}}"#).await?;
+                writer.finish().await
             }
-        };
+            "shut-down" => {
+                if method != Method::Post {
+                    return writer.method_not_allowed("POST").await;
+                }
 
-        // FIXME: Request needs defmt::Format impl
-        // loog::debug!("Received api request: {request:?}");
-
-        let response = match request {
-            Request::BuildInfo => Some(Response::BuildInfo {
-                target: build_info::TARGET,
-                version: build_info::VERSION,
-                debug: build_info::DEBUG,
-                git_branch: build_info::GIT_BRANCH,
-                git_commit: build_info::GIT_COMMIT,
-                git_dirty: build_info::GIT_DIRTY,
-            }),
-            Request::PowerOff => {
+                writer.ok_empty().await?;
                 self.reset.shut_down();
-                None
+                Ok(())
             }
-            // FIXME: get rid of Reboot?
-            Request::Reboot | Request::ExitConfigurator => {
+            "reboot" => {
+                if method != Method::Post {
+                    return writer.method_not_allowed("POST").await;
+                }
+
+                writer.ok_empty().await?;
                 self.reset.reboot();
-                None
+                Ok(())
             }
-            Request::Config => {
-                let mut buffer = alloc::vec![0; crate::config::BYTE_LENGTH];
-                let len = self.config.serialize(&mut buffer).unwrap();
-                buffer.truncate(len);
-                Some(Response::Config(buffer.into()))
-            }
-            Request::UpdateConfig { id, update } => {
-                let result = self.config.update(update).await.into();
-                Some(Response::ConfigUpdate { id, result })
-            }
-        };
+            "config" => match method {
+                Method::Get => {
+                    let mut buffer = [0; crate::config::BYTE_LENGTH];
+                    let len = self.config.serialize(&mut buffer).unwrap();
+                    let config = &buffer[0..len];
 
-        response.map(|response| encode(response, buffer))
-    }
-}
-
-fn encode(response: Response, buffer: &mut Buffer) -> &[u8] {
-    match postcard::to_slice(&response, &mut buffer.0) {
-        Ok(data) => data,
-        Err(err) => panic!("Failed to encode api response: {err}"),
-    }
-}
-
-#[task]
-async fn mock_battery(battery: &'static BatterySignal) {
-    let mut ticker = Ticker::every(Duration::from_secs(1));
-    loop {
-        ticker.next().await;
-        battery.signal(0);
+                    let mut writer = writer
+                        .ok_with_len(ContentType::OctetStream, config.len())
+                        .await?;
+                    writer.write_all(config).await
+                }
+                Method::Post => todo!("restore config backup"),
+                Method::Delete => todo!("reset config to defaults"),
+            },
+            _ => writer.not_found().await,
+        }
     }
 }

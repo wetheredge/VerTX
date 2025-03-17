@@ -22,9 +22,11 @@ defmt = [
     "postcard/use-defmt",
 ]
 
-configurator = []
-
 display-ssd1306 = ["dep:ssd1306"]
+
+configurator = [
+    "dep:embedded-io-async",
+]
 
 network = [
     "configurator",
@@ -33,7 +35,7 @@ network = [
     "dep:edge-dhcp",
     "dep:edge-ws",
     "dep:embassy-net",
-    "dep:embedded-io-async",
+    "dep:faster-hex",
     "dep:httparse",
     "dep:itoa",
     "dep:sha1",
@@ -116,13 +118,16 @@ static_cell = "=2.1.0"
 # displays
 ssd1306 = { version = "0.9.0", features = ["async"], optional = true }
 
+# configurator
+embedded-io-async = { version = "=0.6.1", optional = true }
+
 # network
 atoi = { version = "=2.0.0", default-features = false, optional = true }
 base64 = { version = "=0.22.1", default-features = false, optional = true }
 edge-dhcp = { version = "=0.5.0", optional = true }
 edge-ws = { version = "=0.4.0", optional = true }
 embassy-net = { version = "=0.6.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
-embedded-io-async = { version = "=0.6.1", optional = true }
+faster-hex = { version = "=0.10.0", default-features = false, optional = true }
 httparse = { version = "=1.10.0", default-features = false, optional = true }
 itoa = { version = "=1.0.14", optional = true }
 sha1 = { version = "=0.10.6", default-features = false, optional = true }

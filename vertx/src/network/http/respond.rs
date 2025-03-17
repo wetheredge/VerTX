@@ -5,7 +5,7 @@ pub(super) async fn bad_request<W: Write>(response: &mut W, reason: &[u8]) -> Re
     response
         .write_all(b"HTTP/1.1 400 Bad Request\r\nContent-Type:text/plain\r\nContent-Length:")
         .await?;
-    write_len(response, reason.len()).await?;
+    write_int(response, reason.len()).await?;
     response.write_all(b"\r\n\r\n").await?;
     response.write_all(reason).await
 }
@@ -33,13 +33,15 @@ pub(super) async fn not_acceptable<W: Write>(
     response
         .write_all(b"HTTP/1.1 406 Not Acceptable\r\nContent-Type:text/plain\r\nContent-Length:")
         .await?;
-    write_len(response, accept.len()).await?;
+    write_int(response, accept.len()).await?;
     response.write_all(b"\r\n\r\n").await?;
     accept.write(response).await
 }
 
-async fn write_len<W: Write>(response: &mut W, len: usize) -> Result<(), W::Error> {
+pub(super) async fn write_int<W: Write, I: itoa::Integer>(
+    response: &mut W,
+    int: I,
+) -> Result<(), W::Error> {
     let mut buffer = itoa::Buffer::new();
-    let len = buffer.format(len);
-    response.write_all(len.as_bytes()).await
+    response.write_all(buffer.format(int).as_bytes()).await
 }

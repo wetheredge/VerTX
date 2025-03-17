@@ -1,146 +1,115 @@
-use base64::Engine as _;
-use base64::engine::general_purpose::STANDARD as Base64;
-use edge_ws::FrameType;
-use embedded_io_async::{Read, Write};
-use sha1::{Digest as _, Sha1};
+use core::mem;
 
-#[expect(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(u16)]
-enum Status {
-    Normal = 1000,
-    GoingAway = 1001,
-    ProtocolError = 1002,
-    UnacceptableType = 1003,
-    InvalidData = 1007,
-    PolicyViolation = 1008,
-    TooBig = 1009,
-    RequiredExtension = 1010,
-    InternalError = 1011,
-}
+use embedded_io_async::Write;
+use faster_hex::hex_encode;
 
-const MAGIC_KEY: &[u8] = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+use super::respond;
+use crate::configurator::api::protocol_next::ContentType;
 
-pub(super) async fn run<R, W>(
-    mut rx: R,
-    mut tx: W,
-    api: &crate::configurator::Api,
-    headers: &[httparse::Header<'_>],
-    connection: Option<&[u8]>,
-) -> Result<(), R::Error>
-where
-    R: Read,
-    W: Write<Error = R::Error>,
-{
-    let connection = connection.is_some_and(|c| {
-        c.split(|b| *b == b',')
-            .any(|c| c.trim_ascii().eq_ignore_ascii_case(b"upgrade"))
-    });
-    let upgrade = headers
-        .iter()
-        .find(|h| h.name.eq_ignore_ascii_case("upgrade"))
-        .is_some_and(|h| h.value.eq_ignore_ascii_case(b"websocket"));
-    let key = headers.iter().find_map(|h| {
-        h.name
-            .eq_ignore_ascii_case("sec-websocket-key")
-            .then_some(h.value)
-    });
-    let version = headers.iter().find_map(|h| {
-        h.name
-            .eq_ignore_ascii_case("sec-websocket-version")
-            .then_some(h.value)
-    });
+pub(super) struct ResponseWriter<W>(pub(super) W);
 
-    let (true, true, Some(key), Some(version)) = (connection, upgrade, key, version) else {
-        super::respond::bad_request(&mut tx, b"Invalid WebSocket upgrade").await?;
-        return Ok(());
-    };
-
-    if version != b"13" {
-        tx.write_all(b"HTTP/1.1 400 Bad Request\r\nContent-Type:text/plain\r\nContent-Length:0\r\nSec-WebSocket-Version:25\r\n\r\nInvalid WebSocket version").await?;
-    }
-
-    respond_handshake(key, &mut tx).await?;
-
-    let tx = &mut tx;
-    let mut api_buffer = crate::configurator::ApiBuffer::new();
-    loop {
-        const RX_LEN: usize = 1 + 1 + 4 + 125; // header + short len + mask + payload
-        const TX_LEN: usize = 0;
-        const LEN: usize = if RX_LEN > TX_LEN { RX_LEN } else { TX_LEN };
-
-        let mut buffer = [0; LEN];
-
-        let (frame_type, payload) = match edge_ws::io::recv(&mut rx, &mut buffer).await {
-            Ok((frame_type, len)) => (frame_type, &buffer[0..len]),
-            Err(edge_ws::Error::Incomplete(_)) => {
-                // Only returned if the header cannot fit in the buffer, which cannot happen
-                // since, even at max payload length, the header is at most 14 bytes long
-                unreachable!()
-            }
-            Err(edge_ws::Error::Invalid | edge_ws::Error::InvalidLen) => {
-                return close(tx, Status::ProtocolError).await;
-            }
-            Err(edge_ws::Error::BufferOverflow) => return close(tx, Status::TooBig).await,
-            Err(edge_ws::Error::Io(err)) => return Err(err),
-        };
-
-        match frame_type {
-            FrameType::Text(_) => return close(tx, Status::UnacceptableType).await,
-            FrameType::Binary(false) => {
-                if let Some(response) = api.handle(payload, &mut api_buffer).await {
-                    send(tx, FrameType::Binary(false), response).await?;
-                }
-            }
-            FrameType::Ping => send(tx, FrameType::Pong, payload).await?,
-            FrameType::Pong => {}
-            FrameType::Close => return send(tx, FrameType::Close, payload).await,
-
-            FrameType::Binary(true) | FrameType::Continue(_) => {
-                return close(tx, Status::PolicyViolation).await;
-            }
-        }
-    }
-}
-
-async fn respond_handshake<W>(key: &[u8], tx: &mut W) -> Result<(), W::Error>
+impl<W> crate::configurator::api::protocol_next::WriteResponse for ResponseWriter<W>
 where
     W: Write,
+    W::Error: loog::DebugFormat,
 {
-    const HASH_LEN: usize = 20;
-    const ENCODED_LEN: usize = if let Some(len) = base64::encoded_len(HASH_LEN, true) {
-        len
-    } else {
-        unreachable!()
-    };
+    type BodyWriter = BodyWriter<W>;
+    type ChunkedBodyWriter = ChunkedBodyWriter<W>;
+    type Error = W::Error;
 
-    tx.write_all(b"HTTP/1.1 101 Switching Protocols\r\nConnection:Upgrade\r\nUpgrade:websocket\r\nSec-WebSocket-Accept:").await?;
+    async fn method_not_allowed(mut self, allow: &'static str) -> Result<(), Self::Error> {
+        respond::method_not_allowed(&mut self.0, allow).await
+    }
 
-    let digest = Sha1::new()
-        .chain_update(key.trim_ascii())
-        .chain_update(MAGIC_KEY)
-        .finalize();
-    let mut buffer = [0; ENCODED_LEN];
-    let len = Base64.encode_slice(digest, &mut buffer).unwrap();
-    let digest = &buffer[0..len];
+    async fn not_found(mut self) -> Result<(), Self::Error> {
+        self.0.write_all(respond::NOT_FOUND).await
+    }
 
-    tx.write_all(digest).await?;
-    tx.write_all(b"\r\n\r\n").await?;
-    Ok(())
+    async fn ok_empty(mut self) -> Result<(), Self::Error> {
+        self.0
+            .write_all(b"HTTP/1.1 200 Ok\r\nContent-Length:0\r\n\r\n")
+            .await
+    }
+
+    async fn ok_with_len(
+        self,
+        typ: ContentType,
+        len: usize,
+    ) -> Result<Self::BodyWriter, Self::Error> {
+        let mut tx = self.0;
+        tx.write_all(b"HTTP/1.1 200 Ok\r\nContent-Type:").await?;
+        tx.write_all(typ.as_bytes()).await?;
+        tx.write_all(b"\r\nContent-Length:").await?;
+        respond::write_int(&mut tx, len).await?;
+        tx.write_all(b"\r\n\r\n").await?;
+        Ok(BodyWriter(tx))
+    }
+
+    async fn ok_chunked(self, typ: ContentType) -> Result<Self::ChunkedBodyWriter, Self::Error> {
+        let mut tx = self.0;
+        tx.write_all(b"HTTP/1.1 200 Ok\r\nTransfer-Encoding:chunked\r\nContent-Type:")
+            .await?;
+        tx.write_all(typ.as_bytes()).await?;
+        tx.write_all(b"\r\n\r\n").await?;
+        Ok(ChunkedBodyWriter(tx))
+    }
 }
 
-async fn close<W: Write>(tx: &mut W, status: Status) -> Result<(), W::Error> {
-    // FIXME: wait for response?
+pub(super) struct BodyWriter<W>(W);
 
-    let payload = (status as u16).to_be_bytes();
-    send(tx, FrameType::Close, &payload).await
+impl<W: Write> embedded_io_async::ErrorType for BodyWriter<W> {
+    type Error = W::Error;
 }
 
-async fn send<W: Write>(tx: &mut W, frame_type: FrameType, payload: &[u8]) -> Result<(), W::Error> {
-    edge_ws::io::send(tx, frame_type, None, payload)
-        .await
-        .map_err(|err| match err {
-            edge_ws::Error::Io(err) => err,
-            _ => unreachable!(),
-        })
+impl<W: Write> Write for BodyWriter<W> {
+    async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+        self.0.write(buf).await
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        self.0.flush().await
+    }
+
+    async fn write_all(&mut self, buf: &[u8]) -> Result<(), Self::Error> {
+        self.0.write_all(buf).await
+    }
+}
+
+impl<W: Write> crate::configurator::api::protocol_next::WriteBody for BodyWriter<W> {
+    async fn finish(self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+}
+
+pub(super) struct ChunkedBodyWriter<W>(W);
+
+impl<W: Write> crate::configurator::api::protocol_next::WriteChunkedBody for ChunkedBodyWriter<W> {
+    type Error = W::Error;
+
+    async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error> {
+        let len: usize = chunk.iter().map(|x| x.len()).sum();
+        if len == 0 {
+            if cfg!(debug_assertions) {
+                loog::panic!("tried to send zero-length chunk");
+            }
+            return Ok(());
+        }
+
+        let mut buffer = [0; mem::size_of::<usize>() * 2];
+        // TODO: trim before hex_encode?
+        let len = hex_encode(&len.to_be_bytes(), &mut buffer).unwrap();
+        // len is verified to be > 0, so this can't return an empty string
+        let len = len.trim_start_matches('0');
+
+        self.0.write_all(len.as_bytes()).await?;
+        self.0.write_all(b"\r\n").await?;
+        for segment in chunk {
+            self.0.write_all(segment).await?;
+        }
+        self.0.write_all(b"\r\n").await
+    }
+
+    async fn finish(mut self) -> Result<(), Self::Error> {
+        self.0.write_all(b"0\r\n\r\n").await
+    }
 }

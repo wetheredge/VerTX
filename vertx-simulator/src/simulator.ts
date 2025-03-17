@@ -5,6 +5,7 @@ import {
 	memoryName,
 } from '../../target/simulator/vertx.js';
 import wasmUrl from '../../target/simulator/vertx_bg.wasm?url';
+import type { ConfiguratorRequest, ConfiguratorResponse } from './common.js';
 
 const globalName = 'Vertx';
 const configStorageKey = 'config';
@@ -58,18 +59,20 @@ export class Simulator {
 		this.powerOff = this.powerOff.bind(this);
 		this.flushDisplay = this.flushDisplay.bind(this);
 
-		window.addEventListener('message', (event) => {
-			if (
-				event.origin !== location.origin ||
-				!(event.data instanceof ArrayBuffer)
-			) {
-				return;
-			}
+		window.addEventListener(
+			'message',
+			(event: MessageEvent<ConfiguratorRequest>) => {
+				// FIXME:
+				// if (event.origin !== location.origin) {
+				// 	return;
+				// }
 
-			this.#configurator = event.source;
+				this.#configurator = event.source;
 
-			apiTx(new Uint8Array(event.data));
-		});
+				const request = event.data;
+				apiTx(request.id, request.route, request.method);
+			},
+		);
 
 		// @ts-ignore
 		globalThis[globalName] = this;
@@ -96,10 +99,36 @@ export class Simulator {
 		this.#callbacks.openConfigurator();
 	}
 
-	private apiRx(raw: Uint8Array) {
-		const start = raw.byteOffset;
-		const end = start + raw.byteLength;
-		this.#configurator?.postMessage(raw.buffer.slice(start, end));
+	private apiRx(
+		id: number,
+		status: number,
+		json: boolean,
+		body: Uint8Array<ArrayBuffer>,
+	) {
+		const headers = {
+			'Content-Type': json
+				? 'application/json'
+				: 'application/octet-stream',
+		};
+
+		const bodyStart = body.byteOffset;
+		const response: ConfiguratorResponse = {
+			id,
+			status,
+			headers,
+			body: body.buffer.slice(bodyStart, bodyStart + body.byteLength),
+		};
+
+		// FIXME: wildcard origin
+		this.#configurator?.postMessage(response, {
+			targetOrigin: '*',
+			transfer: [
+				body.buffer.slice(
+					body.byteOffset,
+					body.byteOffset + body.byteLength,
+				),
+			],
+		});
 	}
 
 	private loadConfig() {

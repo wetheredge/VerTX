@@ -1302,6 +1302,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "faster-hex"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7223ae2d2f179b803433d9c830478527e92b8117eab39460edae7f1614d9fb73"
+dependencies = [
+ "heapless",
+]
+
+[[package]]
 name = "fixed"
 version = "1.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2792,6 +2801,7 @@ dependencies = [
  "esp-hal-embassy",
  "esp-storage",
  "esp-wifi",
+ "faster-hex",
  "fixed",
  "fixed-macro",
  "fugit",

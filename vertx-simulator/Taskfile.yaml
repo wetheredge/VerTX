@@ -17,6 +17,7 @@ tasks:
       - ../bun.lock
       - ../.config/tsconfig.*
       - src/**/*
+      - ../target/simulator/*.d.ts
       - '*.config.*'
       - tsconfig.*
 

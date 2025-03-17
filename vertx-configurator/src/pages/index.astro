@@ -1,21 +1,37 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import * as styles from './_index.css';
-
-const buildTable = ['Target', 'Version', 'Profile', 'Branch', 'Commit'];
 ---
 
 <Layout>
 	<h1>About</h1>
 
 	<table class={styles.buildInfoTable}>
-		<tbody>
-			{buildTable.map((label) => (
-				<tr>
-					<th>{label}</th>
-					<td>$build.{label.toLowerCase()}$</td>
-				</tr>
-			))}
-		</tbody>
+		<tbody id="build"></tbody>
 	</table>
+
+	<noscript><p>The VerTX configurator requires JavaScript.</p></noscript>
 </Layout>
+
+<script>
+	import { getJson } from "../api";
+
+	const version = await getJson('version');
+	const table = document.getElementById('build')!;
+
+	function pushRow(name: string, value: string) {
+		const tr = document.createElement('tr');
+		const th = document.createElement('th')
+		th.innerText = name;
+		const td = document.createElement('td');
+		td.innerText = value;
+		tr.append(th, td);
+		table.append(tr);
+	}
+
+	pushRow('Target', version.target);
+	pushRow('Version', version.version);
+	pushRow('Profile', version.release ? 'release' : 'debug')
+	pushRow('Branch' , version.git.branch)
+	pushRow('Commit', version.git.commit)
+</script>
