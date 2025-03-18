@@ -24,76 +24,76 @@ import * as styles from './_models.css';
 		<ul><button class="copy">Duplicate</button></ul>
 		<ul><button class="mixer">Edit mixer</button></ul>
 	</menu>
-</Layout>
 
-<script>
-	import { getJson } from '../api';
+	<script>
+		import { getJson } from '../api';
 
-	const container: HTMLDivElement = document.querySelector('#models')!;
-	const template: HTMLDivElement = document.querySelector('#template')!;
+		const container: HTMLDivElement = document.querySelector('#models')!;
+		const template: HTMLDivElement = document.querySelector('#template')!;
 
-	template.childNodes.forEach(child => {
-		if (child.nodeType !== Node.ELEMENT_NODE) {
-			template.removeChild(child);
-		}
-	});
-
-	const models = await getJson('models');
-	for (const { id, name } of models) {
-		const node = template.cloneNode(true) as typeof template;
-		node.id = '';
-		node.dataset.id = id;
-
-		node.childNodes.forEach(rawNode => {
-			const child = rawNode as HTMLElement;
-			if (child.classList.contains('name')) {
-				child.innerText = name;
-			} else if (child.classList.contains('menu')) {
-				(child as HTMLButtonElement).addEventListener('click', (event) => showMenu(event.currentTarget as HTMLButtonElement, id));
+		template.childNodes.forEach(child => {
+			if (child.nodeType !== Node.ELEMENT_NODE) {
+				template.removeChild(child);
 			}
 		});
 
-		container.appendChild(node);
-	}
+		const models = await getJson('models');
+		for (const { id, name } of models) {
+			const node = template.cloneNode(true) as typeof template;
+			node.id = '';
+			node.dataset.id = id;
 
-	let targetModel: string | null;
-	let menuOpener: HTMLButtonElement | null;
-	const menu: HTMLMenuElement = document.querySelector('#model-menu')!;
-	menu.addEventListener('toggle', (event) => {
-		// @ts-expect-error: Missing types for ToggleEvent
-		if (event.newState === 'closed' && menuOpener != null) {
-			menuOpener.disabled = false;
-			menuOpener = null;
+			node.childNodes.forEach(rawNode => {
+				const child = rawNode as HTMLElement;
+				if (child.classList.contains('name')) {
+					child.innerText = name;
+				} else if (child.classList.contains('menu')) {
+					(child as HTMLButtonElement).addEventListener('click', (event) => showMenu(event.currentTarget as HTMLButtonElement, id));
+				}
+			});
+
+			container.appendChild(node);
 		}
-	});
-	function showMenu(button: HTMLButtonElement, modelId: string) {
-		targetModel = modelId;
-		menuOpener = button;
-		menuOpener.disabled = true;
 
-		menu.style.visibility = 'hidden';
-		menu.togglePopover();
-
-		const rect = button.getBoundingClientRect();
-		menu.style.top = `${rect.bottom + window.scrollY}px`;
-		menu.style.left = `${rect.right - menu.offsetWidth + window.scrollX}px`;
-		menu.style.visibility = '';
-	}
-
-	function menuItem(selector: string, handler: () => void) {
-		(document.querySelector(`#model-menu .${selector}`) as HTMLButtonElement).addEventListener('click', () => {
-			menu.hidePopover();
-			handler();
+		let targetModel: string | null;
+		let menuOpener: HTMLButtonElement | null;
+		const menu: HTMLMenuElement = document.querySelector('#model-menu')!;
+		menu.addEventListener('toggle', (event) => {
+			// @ts-expect-error: Missing types for ToggleEvent
+			if (event.newState === 'closed' && menuOpener != null) {
+				menuOpener.disabled = false;
+				menuOpener = null;
+			}
 		});
-	}
+		function showMenu(button: HTMLButtonElement, modelId: string) {
+			targetModel = modelId;
+			menuOpener = button;
+			menuOpener.disabled = true;
 
-	menuItem('rename', () => {
-		console.log(`TODO: rename model ${targetModel}`);
-	});
-	menuItem('copy', () => {
-		console.log(`TODO: duplicate model ${targetModel}`);
-	});
-	menuItem('mixer', () => {
-		console.log(`TODO: edit mixer ${targetModel}`);
-	});
-</script>
+			menu.style.visibility = 'hidden';
+			menu.togglePopover();
+
+			const rect = button.getBoundingClientRect();
+			menu.style.top = `${rect.bottom + window.scrollY}px`;
+			menu.style.left = `${rect.right - menu.offsetWidth + window.scrollX}px`;
+			menu.style.visibility = '';
+		}
+
+		function menuItem(selector: string, handler: () => void) {
+			(document.querySelector(`#model-menu .${selector}`) as HTMLButtonElement).addEventListener('click', () => {
+				menu.hidePopover();
+				handler();
+			});
+		}
+
+		menuItem('rename', () => {
+			console.log(`TODO: rename model ${targetModel}`);
+		});
+		menuItem('copy', () => {
+			console.log(`TODO: duplicate model ${targetModel}`);
+		});
+		menuItem('mixer', () => {
+			console.log(`TODO: edit mixer ${targetModel}`);
+		});
+	</script>
+</Layout>
