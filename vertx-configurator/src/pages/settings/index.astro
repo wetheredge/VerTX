@@ -5,47 +5,47 @@ import SettingInput from './_SettingInput.astro';
 ---
 
 <Layout showSave>
-  <h1>Settings</h1>
+	<h1>Settings</h1>
 
-  <SettingInput
-    key={configKeys.name}
-    label="Device name"
-    description="Used in the Wi-Fi SSID to differentiate this VerTX handset from any others in range."
-    type="text"
-    maxlength={20}
-  />
-  <SettingInput
-    key={configKeys.leds.brightness}
-    label="Status LED brightness"
-    type="number"
-    min={10}
-    max={255}
-  />
+	<SettingInput
+		key={configKeys.name}
+		label="Device name"
+		description="Used in the Wi-Fi SSID to differentiate this VerTX handset from any others in range."
+		type="text"
+		maxlength={20}
+	/>
+	<SettingInput
+		key={configKeys.leds.brightness}
+		label="Status LED brightness"
+		type="number"
+		min={10}
+		max={255}
+	/>
 
-  <h2>Backup</h2>
-  <p>TODO: backup and restore buttons</p>
+	<h2>Backup</h2>
+	<p>TODO: backup and restore buttons</p>
 
-  <h2>Wi-Fi</h2>
+	<h2>Wi-Fi</h2>
 
-  <SettingInput
-    key={configKeys.network.password}
-    label={"Password"}
-    type="password"
-    maxlength={64}
-  />
+	<SettingInput
+		key={configKeys.network.password}
+		label={"Password"}
+		type="password"
+		maxlength={64}
+	/>
 
-  <h3>Home</h3>
+	<h3>Home</h3>
 
-  <SettingInput
-    key={configKeys.network.home.ssid}
-    label="SSID"
-    type="text"
-    maxlength={32}
-  />
-  <SettingInput
-    key={configKeys.network.home.password}
-    label="Password"
-    type="password"
-    maxlength={64}
-  />
+	<SettingInput
+		key={configKeys.network.home.ssid}
+		label="SSID"
+		type="text"
+		maxlength={32}
+	/>
+	<SettingInput
+		key={configKeys.network.home.password}
+		label="Password"
+		type="password"
+		maxlength={64}
+	/>
 </Layout>

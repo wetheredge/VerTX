@@ -8,7 +8,7 @@ const { props } = Astro;
 ---
 
 <div id={props.containerId} class={styles.setting}>
-  <label for={getId(props.key)}>{props.label}</label>
-  {props.description && <span id={getDescriptionId(props.key)}>{props.description}</span>}
-  <slot />
+	<label for={getId(props.key)}>{props.label}</label>
+	{props.description && <span id={getDescriptionId(props.key)}>{props.description}</span>}
+	<slot />
 </div>
