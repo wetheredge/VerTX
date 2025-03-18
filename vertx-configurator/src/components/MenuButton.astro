@@ -9,25 +9,25 @@ import './Menu.css';
 ---
 
 <label
-  for={stateId}
-  class={styles.iconButton}
-  tabindex="0"
-  role="button"
-  aria-label="Toggle navigation menu"
+	for={stateId}
+	class={styles.iconButton}
+	tabindex="0"
+	role="button"
+	aria-label="Toggle navigation menu"
 >
-  <Icon icon={IconMenu} size={size.buttonIcon} />
-  <Icon icon={IconX} size={size.buttonIcon} />
+	<Icon icon={IconMenu} size={size.buttonIcon} />
+	<Icon icon={IconX} size={size.buttonIcon} />
 </label>
 
 <script>
-  import { stateId } from './menu-selectors';
+	import { stateId } from './menu-selectors';
 
-  const state: HTMLInputElement = document.querySelector(`#${stateId}`)!;
-  const button: HTMLLabelElement = document.querySelector(`[for="${stateId}"]`)!;
+	const state: HTMLInputElement = document.querySelector(`#${stateId}`)!;
+	const button: HTMLLabelElement = document.querySelector(`[for="${stateId}"]`)!;
 
-  button.addEventListener('keypress', ({ key }) => {
-    if (key === ' ' || key === 'Enter') {
-      state.checked = !state.checked;
-    }
-  });
+	button.addEventListener('keypress', ({ key }) => {
+		if (key === ' ' || key === 'Enter') {
+			state.checked = !state.checked;
+		}
+	});
 </script>

@@ -21,22 +21,22 @@ const id = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)();
 
 <span aria-hidden=true>{name}</span>
 <span
-  id={id}
-  class:list={[
-    styles.channel,
-    { center },
-  ]}
-  role="meter"
-  aria-label={label}
-  aria-valuenow={0}
-  aria-valuemin={center ? -100 : 0}
-  aria-valuemax={100}
+	id={id}
+	class:list={[
+		styles.channel,
+		{ center },
+	]}
+	role="meter"
+	aria-label={label}
+	aria-valuenow={0}
+	aria-valuemin={center ? -100 : 0}
+	aria-valuemax={100}
 />
 <button
-  class={iconButton}
-  type="button"
-  title="Reverse"
-  aria-controls={id}
+	class={iconButton}
+	type="button"
+	title="Reverse"
+	aria-controls={id}
 >
-  <Icon icon={IconFlipHorizontal} size={size.buttonIcon} />
+	<Icon icon={IconFlipHorizontal} size={size.buttonIcon} />
 </button>
