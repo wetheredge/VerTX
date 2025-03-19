@@ -119,16 +119,18 @@ export class Simulator {
 			body: body.buffer.slice(bodyStart, bodyStart + body.byteLength),
 		};
 
-		// FIXME: wildcard origin
-		this.#configurator?.postMessage(response, {
-			targetOrigin: '*',
+		const options: WindowPostMessageOptions = {
 			transfer: [
 				body.buffer.slice(
 					body.byteOffset,
 					body.byteOffset + body.byteLength,
 				),
 			],
-		});
+		};
+		if (import.meta.env.DEV) {
+			options.targetOrigin = '*';
+		}
+		this.#configurator?.postMessage(response, options);
 	}
 
 	private loadConfig() {

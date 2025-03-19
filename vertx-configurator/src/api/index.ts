@@ -29,8 +29,12 @@ async function fetchSimulator(
 		route,
 		method,
 	};
-	// FIXME: wildcard origin
-	window.opener.postMessage(request, '*');
+
+	if (import.meta.env.DEV) {
+		window.opener.postMessage(request, '*');
+	} else {
+		window.opener.postMessage(request);
+	}
 
 	return new Promise((resolve) => {
 		simulatorPromises.set(request.id, resolve);
