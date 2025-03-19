@@ -29,9 +29,9 @@ tasks:
       - tsconfig.*
 
   run:
-    desc: Run a development server
+    desc: Run a development server for use with simulator/run
     env:
-      VERTX_TARGET: '{{.target}}'
+      VERTX_TARGET: simulator
     cmd: bun run astro dev
 
   build:
@@ -72,11 +72,6 @@ tasks:
       - task: build-impl
         vars:
           target: simulator
-
-  simulator:run:
-    env:
-      VERTX_TARGET: simulator
-    cmd: bun run astro dev
 
   cache:*:
     cmd: mkdir -p dist && echo {{.MATCH}} > dist/.taskCacheKey

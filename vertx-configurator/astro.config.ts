@@ -15,7 +15,7 @@ const config = {
 		svg: true,
 	},
 
-	base: isSimulator ? '/configurator' : '',
+	base: isSimulator && import.meta.env.PROD ? '/configurator' : '',
 	devToolbar: {
 		enabled: !isSimulator,
 	},
@@ -43,6 +43,7 @@ const config = {
 				process.env.VERTX_TARGET,
 			),
 		},
+		server: { strictPort: true },
 		cacheDir: '.vite',
 	},
 } satisfies AstroUserConfig;

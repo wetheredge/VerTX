@@ -35,7 +35,10 @@ const callbacks: Callbacks = {
 		location.reload();
 	},
 	openConfigurator() {
-		configurator = window.open('/configurator/', 'vertx-configurator');
+		const url = import.meta.env.DEV
+			? 'http://localhost:8001'
+			: '/configurator/';
+		configurator = window.open(url, 'vertx-configurator');
 	},
 };
 
