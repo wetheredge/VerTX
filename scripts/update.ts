@@ -6,7 +6,7 @@ import * as path from 'node:path';
 import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
 import { $, type FileSink, Glob } from 'bun';
-import { getRepoRoot, panic } from './utils';
+import { panic, repoRoot } from './utils';
 
 const missingTools = ['asdf', 'bun', 'cargo', 'git'].filter(
 	(tool) => Bun.which(tool) == null,
@@ -37,7 +37,6 @@ if (branchExists.exitCode === 0) {
 	panic(`Branch ${branch} already exists`);
 }
 
-const repoRoot = await getRepoRoot();
 let prBody: FileSink | null = null;
 if (import.meta.env.CI) {
 	prBody = Bun.file(`${repoRoot}/.updates.md`).writer();

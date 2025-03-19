@@ -3,7 +3,7 @@
 import { exit } from 'node:process';
 import Ajv, { type SomeJTDSchemaType } from 'ajv/dist/jtd';
 import { Glob } from 'bun';
-import { getRepoRoot } from './utils';
+import { repoRoot } from './utils';
 
 const schema: SomeJTDSchemaType = {
 	definitions: {
@@ -42,11 +42,10 @@ const schema: SomeJTDSchemaType = {
 const ajv = new Ajv();
 const validate = ajv.compile(schema);
 
-const root = await getRepoRoot();
-const targets = new Glob('targets/*.toml').scan({ cwd: root });
+const targets = new Glob('targets/*.toml').scan({ cwd: repoRoot });
 let allValid = true;
 for await (const path of targets) {
-	const absolutePath = `${root}/${path}`;
+	const absolutePath = `${repoRoot}/${path}`;
 	const data = await import(absolutePath);
 	if (!validate(data.default)) {
 		allValid = false;

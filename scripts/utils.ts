@@ -1,8 +1,8 @@
 import { exit } from 'node:process';
-import { $ } from 'bun';
+import { fileURLToPath } from 'bun';
 
-export const getRepoRoot = () =>
-	$`git rev-parse --show-toplevel`.text().then((s) => s.trim());
+// NOTE: update this if this file ever gets moved out of (or deeper within) /scripts/
+export const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 export function humanBytes(bytes: number): string {
 	if (bytes < 1024) {
