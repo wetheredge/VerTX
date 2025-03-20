@@ -69,7 +69,7 @@ impl Manager {
     }
 
     /// Attempt to flush data before resetting, logging any errors
-    pub(crate) async fn flush_before_reset(&self) {
+    pub(crate) async fn flush_before_reset(self) {
         let Some(storage) = self.0.try_get() else {
             loog::warn!("Skipping flush since it was not initialized");
             return;
@@ -86,8 +86,8 @@ pub(crate) async fn run(
     init: &'static crate::InitCounter,
     storage: crate::hal::StorageFuture,
     manager: Manager,
-    config_manager: &'static crate::config::Manager,
-    models: &'static crate::models::Manager,
+    config_manager: crate::config::Manager,
+    models: crate::models::Manager,
 ) -> ! {
     let init = init.start(loog::intern!("storage"));
 

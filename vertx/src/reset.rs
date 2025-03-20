@@ -1,37 +1,27 @@
 #![cfg_attr(not(feature = "configurator"), expect(unused))]
 
-use embassy_executor::{Spawner, task};
+use embassy_executor::task;
 use embassy_sync::signal::Signal;
 
 use crate::hal::prelude::*;
 
 type ResetSignal = Signal<crate::mutex::MultiCore, Kind>;
 
-pub(crate) struct Manager {
-    reset: &'static ResetSignal,
-}
+#[derive(Clone, Copy)]
+pub(crate) struct Manager(&'static ResetSignal);
 
 impl Manager {
-    pub(crate) fn new(
-        spawner: Spawner,
-        hal: crate::hal::Reset,
-        config: &'static crate::config::Manager,
-        storage: crate::storage::Manager,
-    ) -> Self {
+    pub(crate) const fn new() -> Self {
         static RESET: ResetSignal = Signal::new();
-        let signal = &RESET;
-
-        spawner.must_spawn(reset(hal, signal, config, storage));
-
-        Self { reset: signal }
+        Self(&RESET)
     }
 
-    pub(crate) fn reboot(&self) {
-        self.reset.signal(Kind::Reboot);
+    pub(crate) fn reboot(self) {
+        self.0.signal(Kind::Reboot);
     }
 
-    pub(crate) fn shut_down(&self) {
-        self.reset.signal(Kind::ShutDown);
+    pub(crate) fn shut_down(self) {
+        self.0.signal(Kind::ShutDown);
     }
 }
 
@@ -42,13 +32,13 @@ enum Kind {
 }
 
 #[task]
-async fn reset(
+pub(crate) async fn run(
+    manager: Manager,
     mut hal: crate::hal::Reset,
-    reset: &'static ResetSignal,
-    config: &'static crate::config::Manager,
+    config: crate::config::Manager,
     storage: crate::storage::Manager,
 ) -> ! {
-    let kind = reset.wait().await;
+    let kind = manager.0.wait().await;
 
     config.save().await;
     storage.flush_before_reset().await;
