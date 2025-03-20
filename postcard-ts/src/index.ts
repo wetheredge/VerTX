@@ -79,6 +79,11 @@ export class Writer {
 		this.#view.setUint8(this.#index++, x);
 	}
 
+	rawU32(x: number) {
+		this.#view.setUint32(this.#index, x, true);
+		this.#index += 4;
+	}
+
 	varuint(x: number) {
 		let remaining = x >>> 0;
 		let done: boolean;

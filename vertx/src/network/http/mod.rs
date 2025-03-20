@@ -52,7 +52,7 @@ async fn server(
 
     let mut buffer = Buffer::new(buffer);
     loop {
-        let (raw_headers, _body) = read_headers(&mut buffer, &mut rx).await?;
+        let (raw_headers, mut body) = read_headers(&mut buffer, &mut rx).await?;
         if raw_headers.is_empty() {
             return Ok(());
         }
@@ -82,8 +82,7 @@ async fn server(
             .headers
             .iter()
             .find(|h| h.name.eq_ignore_ascii_case("content-length"))
-            .map(|h| usize::from_radix_10(h.value).0)
-            .unwrap_or_default();
+            .map(|h| usize::from_radix_10(h.value).0);
         let accept = request
             .headers
             .iter()
@@ -91,12 +90,32 @@ async fn server(
             .and_then(|s| core::str::from_utf8(s).ok())
             .unwrap_or("*/*");
 
+        let Some(content_length) = content_length else {
+            tx.write_all(b"HTTP/1.1 411 Length Required\r\nContent-Length:0\r\n\r\n")
+                .await?;
+            // Can't re-use this connection without knowing where the next request starts
+            return Ok(());
+        };
+
+        // For now, the request body has to fit entirely within the rest of the buffer
+        if content_length > body.capacity() {
+            tx.write_all(b"HTTP/1.1 413 Content Too Large\r\nContent-Length:0\r\n\r\n")
+                .await?;
+            return Ok(());
+        }
+
+        let body = read_body(&mut body, &mut rx, content_length).await?;
+
         if let Some(path) = path.strip_prefix("/api") {
             if let Ok(method) =
                 crate::configurator::api::Method::try_from(request.method.unwrap_or_default())
             {
-                api.handle(path, method, api::ResponseWriter(&mut tx))
-                    .await?;
+                let request = api::Request {
+                    method,
+                    route: path.trim_end_matches('/'),
+                    body,
+                };
+                api.handle(request, api::ResponseWriter(&mut tx)).await?;
             } else {
                 tx.write_all(b"HTTP/1.1 501 Not Implemented\r\nContent-Length:0\r\n\r\n")
                     .await?;
@@ -118,14 +137,7 @@ async fn server(
             return Ok(());
         }
 
-        let total_len = raw_headers.len() + content_length;
-        let mut total_read = buffer.len();
-        while total_read < total_len {
-            total_read += buffer.read_from(&mut rx).await?;
-        }
-        // How much was read past the end of the request
-        let extra = total_read - total_len;
-        let next_request_offset = buffer.len() - extra;
+        let next_request_offset = raw_headers.len() + body.len();
         buffer.discard_prefix(next_request_offset);
     }
 }
@@ -205,6 +217,10 @@ impl<'a> Buffer<'a> {
         self.len
     }
 
+    const fn capacity(&self) -> usize {
+        self.inner.len()
+    }
+
     async fn read_from<R: Read>(&mut self, reader: &mut R) -> Result<usize, R::Error> {
         let len = reader.read(&mut self.inner[self.len..]).await?;
         self.len += len;
@@ -280,4 +296,16 @@ fn find_body(buffer: &[u8], old_len: usize) -> Option<usize> {
     }
 
     None
+}
+
+async fn read_body<'a, R: Read>(
+    buffer: &'a mut Buffer<'_>,
+    reader: &mut R,
+    len: usize,
+) -> Result<&'a [u8], R::Error> {
+    let mut total_read = buffer.len();
+    while total_read < len {
+        total_read += buffer.read_from(reader).await?;
+    }
+    Ok(&buffer[0..len])
 }

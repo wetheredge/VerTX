@@ -14,6 +14,7 @@ use embedded_graphics as eg;
 use crate::ui::Input as UiInput;
 
 mod ipc {
+    use std::boxed::Box;
     use std::string::String;
 
     use wasm_bindgen::prelude::*;
@@ -45,8 +46,14 @@ mod ipc {
     }
 
     #[wasm_bindgen(js_name = "apiTx")]
-    pub fn api_rx(id: u32, route: String, method: WasmMethod) {
-        super::configurator::Request { id, route, method }.push();
+    pub fn api_rx(id: u32, route: String, method: WasmMethod, body: Box<[u8]>) {
+        super::configurator::Request {
+            id,
+            route,
+            method,
+            body,
+        }
+        .push();
     }
 
     #[wasm_bindgen(js_name = "buttonPressed")]

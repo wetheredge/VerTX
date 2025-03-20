@@ -1,3 +1,4 @@
+use std::boxed::Box;
 use std::convert::Infallible;
 use std::string::String;
 use std::vec::Vec;
@@ -5,7 +6,7 @@ use std::vec::Vec;
 use embassy_sync::channel::Channel;
 use wasm_bindgen::prelude::*;
 
-use crate::configurator::api::{ContentType, Method};
+use crate::configurator::api::{self, ContentType, Method};
 
 static REQUESTS: Channel<crate::mutex::MultiCore, Request, 10> = Channel::new();
 
@@ -33,6 +34,7 @@ pub(super) struct Request {
     pub(super) id: u32,
     pub(super) route: String,
     pub(super) method: WasmMethod,
+    pub(super) body: Box<[u8]>,
 }
 
 impl Request {
@@ -41,23 +43,34 @@ impl Request {
     }
 }
 
+impl api::Request for Request {
+    fn method(&self) -> Method {
+        self.method.into()
+    }
+
+    fn route(&self) -> &str {
+        &self.route
+    }
+
+    fn body(&self) -> &[u8] {
+        &self.body
+    }
+}
+
 pub(super) struct Configurator;
 
 impl crate::hal::traits::Configurator for Configurator {
-    type Route = String;
+    type Request = Request;
     type Writer = Response;
 
     async fn start(&mut self) {
         super::ipc::open_configurator();
     }
 
-    async fn receive(&mut self) -> (Self::Route, Method, Self::Writer) {
+    async fn receive(&mut self) -> (Self::Request, Self::Writer) {
         let request = REQUESTS.receive().await;
-        (
-            request.route,
-            request.method.into(),
-            Response::new(request.id),
-        )
+        let id = request.id;
+        (request, Response::new(id))
     }
 }
 
@@ -103,7 +116,7 @@ impl Drop for Response {
     }
 }
 
-impl crate::configurator::api::WriteResponse for Response {
+impl api::WriteResponse for Response {
     type BodyWriter = Self;
     type ChunkedBodyWriter = Self;
     type Error = Infallible;
@@ -155,14 +168,14 @@ impl embedded_io_async::Write for Response {
     }
 }
 
-impl crate::configurator::api::WriteBody for Response {
+impl api::WriteBody for Response {
     async fn finish(self) -> Result<(), Self::Error> {
         self.send();
         Ok(())
     }
 }
 
-impl crate::configurator::api::WriteChunkedBody for Response {
+impl api::WriteChunkedBody for Response {
     type Error = Infallible;
 
     async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error> {

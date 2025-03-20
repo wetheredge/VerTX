@@ -22,8 +22,7 @@ impl Default for RawConfig {
         }
     }
 }
-pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 37 + 69 + 37 + 69;
-
+pub(crate) const BYTE_LENGTH: usize = 242;
 #[allow(non_camel_case_types, unused)]
 pub(super) mod key {
     #[derive(Clone, Copy)]
@@ -366,22 +365,6 @@ impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Home_Passwor
     }
 }
 
-#[derive(Debug, Clone, ::serde::Deserialize)]
-#[allow(non_camel_case_types)]
-pub(crate) enum Update<'a> {
-    #[serde(borrow)]
-    Root_Name(&'a str),
-    Root_Leds_Brightness(u8),
-    #[serde(borrow)]
-    Root_Network_Hostname(&'a str),
-    #[serde(borrow)]
-    Root_Network_Password(&'a str),
-    #[serde(borrow)]
-    Root_Network_Home_Ssid(&'a str),
-    #[serde(borrow)]
-    Root_Network_Home_Password(&'a str),
-}
-
 #[derive(Debug, Clone)]
 pub(super) enum DeserializeError {
     WrongVersion,
@@ -404,50 +387,24 @@ impl RawConfig {
         postcard::to_slice(self, buffer).map(|out| out.len() + 4)
     }
 
-    pub(super) fn update(&mut self, update: Update<'_>) -> Result<usize, super::UpdateError> {
-        match update {
-            Update::Root_Name(update) => {
-                let Ok(update) = update.try_into() else {
-                    return Err(super::UpdateError::TooLarge { max: 20 });
-                };
-                self.name = update;
-                Ok(0)
-            }
-            Update::Root_Leds_Brightness(update) => {
-                if update < 10 {
-                    return Err(super::UpdateError::TooSmall { min: 10 });
-                };
-                self.leds_brightness = update;
-                Ok(1)
-            }
-            Update::Root_Network_Hostname(update) => {
-                let Ok(update) = update.try_into() else {
-                    return Err(super::UpdateError::TooLarge { max: 32 });
-                };
-                self.network_hostname = update;
-                Ok(2)
-            }
-            Update::Root_Network_Password(update) => {
-                let Ok(update) = update.try_into() else {
-                    return Err(super::UpdateError::TooLarge { max: 64 });
-                };
-                self.network_password = update;
-                Ok(3)
-            }
-            Update::Root_Network_Home_Ssid(update) => {
-                let Ok(update) = update.try_into() else {
-                    return Err(super::UpdateError::TooLarge { max: 32 });
-                };
-                self.network_home_ssid = update;
-                Ok(4)
-            }
-            Update::Root_Network_Home_Password(update) => {
-                let Ok(update) = update.try_into() else {
-                    return Err(super::UpdateError::TooLarge { max: 64 });
-                };
-                self.network_home_password = update;
-                Ok(5)
-            }
+    pub(super) fn diff(&self, other: &Self, mut different: impl FnMut(usize)) {
+        if self.name != other.name {
+            different(0);
+        }
+        if self.leds_brightness != other.leds_brightness {
+            different(1);
+        }
+        if self.network_hostname != other.network_hostname {
+            different(2);
+        }
+        if self.network_password != other.network_password {
+            different(3);
+        }
+        if self.network_home_ssid != other.network_home_ssid {
+            different(4);
+        }
+        if self.network_home_password != other.network_home_password {
+            different(5);
         }
     }
 }

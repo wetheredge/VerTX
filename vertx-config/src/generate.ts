@@ -7,5 +7,5 @@ await Promise.all([
 	rust(current, 'out/config.rs'),
 	rust(current, 'out/current.rs', true),
 	rust(old, 'out/old.rs', true),
-	typescript(current.config, 'out/config.ts'),
+	typescript(current, 'out/config.ts'),
 ]);

@@ -103,6 +103,28 @@ export function toSnakeCase(camel: string): string {
 		.join('_');
 }
 
+export function byteLength(config: types.Config): number {
+	const varint = { x8: 1, x16: 3, x32: 5, x64: 10, x128: 19 };
+	const usize = varint.x32;
+
+	let length = 4; // u32 version
+	visit(config, {
+		string(_, str) {
+			length += usize + str.length;
+		},
+		integer(_, { raw }) {
+			length += varint[raw.replace(/^[iu]/, 'x') as keyof typeof varint];
+		},
+		enumeration() {
+			length += usize;
+		},
+		boolean() {
+			length += 1;
+		},
+	});
+	return length;
+}
+
 function unreachable(x: never): never {
 	throw new Error('Reached unreachable: ', x);
 }
