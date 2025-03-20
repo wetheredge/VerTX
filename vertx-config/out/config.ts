@@ -15,14 +15,7 @@ export const configKeys = {
 	},
 } as const;
 
-export type Config = {
-	0: string;
-	1: number;
-	2: string;
-	3: string;
-	4: string;
-	5: string;
-};
+export type Config = [string, number, string, string, string, string];
 
 export function parseConfig(reader: Reader): Config {
 	// Ignore u32 version
