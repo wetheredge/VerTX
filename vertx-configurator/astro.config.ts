@@ -1,6 +1,6 @@
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
+import { minify } from '@zokki/astro-minify';
 import type { AstroUserConfig } from 'astro';
-import min from 'astro-min';
 
 const port = 8001;
 const isSimulator = process.env.VERTX_TARGET === 'simulator';
@@ -8,8 +8,7 @@ const isSimulator = process.env.VERTX_TARGET === 'simulator';
 const assetsPrefix = isSimulator ? 'assets/' : '_';
 
 const config = {
-	// biome-ignore lint/style/useNamingConvention:
-	integrations: [min({ minify_css: true })],
+	integrations: [minify({ minifyCid: false })],
 
 	experimental: {
 		svg: true,
