@@ -5,6 +5,7 @@ use core::mem::MaybeUninit;
 use embassy_sync::blocking_mutex::Mutex;
 use heapless::{String, Vec};
 use portable_atomic::{AtomicBool, Ordering};
+use static_cell::ConstStaticCell;
 
 use crate::hal::prelude::*;
 use crate::storage::{Directory, Error as StorageError, File};
@@ -39,9 +40,10 @@ impl RawName {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Manager {
-    init: AtomicBool,
-    state: Mutex<crate::mutex::MultiCore, RefCell<MaybeUninit<State>>>,
+    init: &'static AtomicBool,
+    state: &'static Mutex<crate::mutex::MultiCore, RefCell<MaybeUninit<State>>>,
 }
 
 struct State {
@@ -49,14 +51,18 @@ struct State {
 }
 
 impl Manager {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
+        static INIT: AtomicBool = AtomicBool::new(false);
+        static STATE: ConstStaticCell<Mutex<crate::mutex::MultiCore, RefCell<MaybeUninit<State>>>> =
+            ConstStaticCell::new(Mutex::new(RefCell::new(MaybeUninit::uninit())));
+
         Self {
-            init: AtomicBool::new(false),
-            state: Mutex::new(RefCell::new(MaybeUninit::uninit())),
+            init: &INIT,
+            state: STATE.take(),
         }
     }
 
-    pub fn init(&self, dir: Directory) {
+    pub fn init(self, dir: Directory) {
         if self.init.load(Ordering::Relaxed) {
             loog::warn!("models::Manager::init() called multiple times");
             return;
@@ -69,7 +75,7 @@ impl Manager {
     }
 
     pub async fn for_each(
-        &self,
+        self,
         mut callback: impl FnMut(RawName, Name),
     ) -> Result<(), StorageError> {
         let mut entries = self.state(|state| state.dir.iter()).await;
@@ -96,7 +102,7 @@ impl Manager {
         Ok(())
     }
 
-    pub async fn open(&'static self, raw: RawName) -> Result<Model, crate::storage::Error> {
+    pub async fn open(self, raw: RawName) -> Result<Model, crate::storage::Error> {
         let raw = core::str::from_utf8(&raw.bytes).unwrap();
         let dir = self.state(|state| state.dir.clone()).await;
         let mut file = dir.file(raw).await?;
@@ -105,13 +111,13 @@ impl Manager {
     }
 
     /// Busy-wait until initialized
-    async fn wait_for_init(&self) {
+    async fn wait_for_init(self) {
         while !self.init.load(Ordering::Relaxed) {
             embassy_futures::yield_now().await;
         }
     }
 
-    async fn state<T>(&self, f: impl FnOnce(&State) -> T) -> T {
+    async fn state<T>(self, f: impl FnOnce(&State) -> T) -> T {
         self.wait_for_init().await;
         self.state.lock(|state| {
             let state = state.borrow();

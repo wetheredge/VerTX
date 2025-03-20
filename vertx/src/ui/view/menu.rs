@@ -12,7 +12,7 @@ use crate::ui::{Input, NextState, StateChange};
 
 #[derive(Debug)]
 pub(in crate::ui) struct Menu {
-    models: &'static crate::models::Manager,
+    models: crate::models::Manager,
 
     current: Category,
     categories: List<Category>,
@@ -44,7 +44,7 @@ static TOOLS: &[ListItem<NextState>] = &[
 ];
 
 impl Menu {
-    pub(in crate::ui) fn new(bounds: Rectangle, models: &'static crate::models::Manager) -> Self {
+    pub(in crate::ui) fn new(bounds: Rectangle, models: crate::models::Manager) -> Self {
         let center = bounds.resized_width(1, AnchorX::Center).top_left.x;
 
         let total_width = bounds.size.width;

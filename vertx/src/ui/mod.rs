@@ -36,7 +36,7 @@ pub(crate) async fn run(
     init: &'static crate::InitCounter,
     _config: crate::Config,
     mut ui: crate::hal::Ui,
-    models: &'static crate::models::Manager,
+    models: crate::models::Manager,
     #[cfg(feature = "configurator")] configurator: crate::configurator::Manager,
 ) -> ! {
     let init = init.start(loog::intern!("ui"));

@@ -11,6 +11,7 @@ use core::{future, mem, task};
 use embassy_sync::blocking_mutex::Mutex;
 use portable_atomic::AtomicBool;
 use serde::{Deserialize, Serialize};
+use static_cell::StaticCell;
 
 use self::codegen::DeserializeError;
 pub(crate) use self::codegen::{BYTE_LENGTH, RawConfig};
@@ -21,9 +22,10 @@ pub(crate) type RootConfig = View<codegen::key::Root>;
 
 const SUBSCRIPTIONS: usize = 1;
 
+#[derive(Clone, Copy)]
 pub struct Manager {
-    init: AtomicBool,
-    state: Mutex<crate::mutex::SingleCore, RefCell<State>>,
+    init: &'static AtomicBool,
+    state: &'static Mutex<crate::mutex::SingleCore, RefCell<State>>,
 }
 
 struct State {
@@ -35,18 +37,22 @@ struct State {
 
 impl Manager {
     pub fn new() -> Self {
+        static INIT: AtomicBool = AtomicBool::new(false);
+        static STATE: StaticCell<Mutex<crate::mutex::SingleCore, RefCell<State>>> =
+            StaticCell::new();
+
         Self {
-            init: AtomicBool::new(false),
-            state: Mutex::new(RefCell::new(State {
+            init: &INIT,
+            state: STATE.init(Mutex::new(RefCell::new(State {
                 modified: false,
                 config: RawConfig::default(),
                 file: None,
                 subscriptions: heapless::Vec::new(),
-            })),
+            }))),
         }
     }
 
-    pub async fn load(&self, mut file: File) {
+    pub async fn load(self, mut file: File) {
         let mut buffer = [0; BYTE_LENGTH];
         let mut len = 0;
         loop {
@@ -88,7 +94,7 @@ impl Manager {
         self.init.store(true, portable_atomic::Ordering::Relaxed);
     }
 
-    pub async fn replace(&self, bytes: &[u8]) -> Result<(), ()> {
+    pub async fn replace(self, bytes: &[u8]) -> Result<(), ()> {
         let Ok(config) = RawConfig::deserialize(bytes) else {
             return Err(());
         };
@@ -97,11 +103,11 @@ impl Manager {
         Ok(())
     }
 
-    pub async fn reset(&self) {
+    pub async fn reset(self) {
         self.replace_impl(RawConfig::default()).await;
     }
 
-    async fn replace_impl(&self, mut config: RawConfig) {
+    async fn replace_impl(self, mut config: RawConfig) {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
             let state = &mut *state;
@@ -124,7 +130,7 @@ impl Manager {
         });
     }
 
-    pub async fn save(&self) {
+    pub async fn save(self) {
         self.wait_for_init().await;
 
         loog::debug!("Writing configuration");
@@ -150,7 +156,7 @@ impl Manager {
         }
     }
 
-    pub const fn config(&'static self) -> RootConfig {
+    pub const fn config(self) -> RootConfig {
         View {
             manager: self,
             _key: PhantomData,
@@ -159,14 +165,14 @@ impl Manager {
 
     /// Try to serialize the config. If it has not been initialized yet, this
     /// returns `None`.
-    pub fn serialize(&self, buffer: &mut [u8]) -> Option<postcard::Result<usize>> {
+    pub fn serialize(self, buffer: &mut [u8]) -> Option<postcard::Result<usize>> {
         self.is_initted().then(|| {
             self.state
                 .lock(|state| state.borrow().config.serialize(buffer))
         })
     }
 
-    pub fn subscribe(&'static self, key: usize) -> Option<Subscriber> {
+    pub fn subscribe(self, key: usize) -> Option<Subscriber> {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
             (state.subscriptions.len() < SUBSCRIPTIONS).then(|| {
@@ -179,7 +185,7 @@ impl Manager {
         })
     }
 
-    fn poll(&self, id: usize, ctx: &mut task::Context<'_>) -> task::Poll<()> {
+    fn poll(self, id: usize, ctx: &mut task::Context<'_>) -> task::Poll<()> {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
             let sub = state.subscriptions.get_mut(id).unwrap();
@@ -203,12 +209,12 @@ impl Manager {
         })
     }
 
-    fn is_initted(&self) -> bool {
+    fn is_initted(self) -> bool {
         self.init.load(portable_atomic::Ordering::Relaxed)
     }
 
     /// Busy-wait until initialized
-    async fn wait_for_init(&self) {
+    async fn wait_for_init(self) {
         while !self.is_initted() {
             embassy_futures::yield_now().await;
         }
@@ -216,7 +222,7 @@ impl Manager {
 }
 
 pub(crate) struct Subscriber {
-    manager: &'static Manager,
+    manager: Manager,
     subscription: usize,
 }
 
@@ -228,7 +234,7 @@ impl Subscriber {
 
 #[derive(Clone, Copy)]
 pub(crate) struct View<K> {
-    manager: &'static Manager,
+    manager: Manager,
     _key: PhantomData<K>,
 }
 

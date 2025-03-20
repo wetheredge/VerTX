@@ -26,7 +26,6 @@ mod utils;
 
 use embassy_executor::Spawner;
 use embassy_sync::watch::Watch;
-use static_cell::{ConstStaticCell, StaticCell};
 
 use crate::config::RootConfig as Config;
 pub(crate) use crate::init_counter::InitCounter;
@@ -44,12 +43,10 @@ pub async fn main(spawner: Spawner) {
     let mode = &MODE;
     let mode_sender = mode.sender();
 
-    static CONFIG_MANAGER: StaticCell<config::Manager> = StaticCell::new();
-    let config_manager = CONFIG_MANAGER.init_with(config::Manager::new);
+    let config_manager = config::Manager::new();
     let config = config_manager.config();
 
-    static MODELS: ConstStaticCell<models::Manager> = ConstStaticCell::new(models::Manager::new());
-    let models = &*MODELS.take();
+    let models = models::Manager::new();
 
     let storage = storage::Manager::new();
     spawner.must_spawn(storage::run(
@@ -78,10 +75,8 @@ pub async fn main(spawner: Spawner) {
         configurator,
     ));
 
-    static RESET: StaticCell<reset::Manager> = StaticCell::new();
-    #[cfg_attr(not(feature = "configurator"), expect(unused))]
-    let reset =
-        RESET.init_with(|| reset::Manager::new(spawner, hal.reset, config_manager, storage));
+    let reset = reset::Manager::new();
+    spawner.must_spawn(reset::run(reset, hal.reset, config_manager, storage));
 
     INITS.wait().await;
     loog::info!("Initialized");
@@ -92,7 +87,7 @@ pub async fn main(spawner: Spawner) {
         configurator.wait().await;
         mode_sender.send(Mode::PreConfigurator);
 
-        static API: StaticCell<configurator::Api> = StaticCell::new();
+        static API: static_cell::StaticCell<configurator::Api> = static_cell::StaticCell::new();
         let api = API.init_with(|| configurator::Api::new(reset, config_manager));
 
         #[cfg(feature = "network")]

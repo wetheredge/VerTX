@@ -7,15 +7,12 @@ use loog::defmt;
 use crate::build_info;
 
 pub(crate) struct Api {
-    reset: &'static crate::reset::Manager,
-    config: &'static crate::config::Manager,
+    reset: crate::reset::Manager,
+    config: crate::config::Manager,
 }
 
 impl Api {
-    pub(crate) fn new(
-        reset: &'static crate::reset::Manager,
-        config: &'static crate::config::Manager,
-    ) -> Self {
+    pub(crate) fn new(reset: crate::reset::Manager, config: crate::config::Manager) -> Self {
         Self { reset, config }
     }
 
