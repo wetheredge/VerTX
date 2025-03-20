@@ -92,9 +92,9 @@ async fn server(
             .unwrap_or("*/*");
 
         if let Some(path) = path.strip_prefix("/api") {
-            if let Ok(method) = crate::configurator::api::protocol_next::Method::try_from(
-                request.method.unwrap_or_default(),
-            ) {
+            if let Ok(method) =
+                crate::configurator::api::Method::try_from(request.method.unwrap_or_default())
+            {
                 api.handle(path, method, api::ResponseWriter(&mut tx))
                     .await?;
             } else {

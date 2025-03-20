@@ -5,7 +5,7 @@ use std::vec::Vec;
 use embassy_sync::channel::Channel;
 use wasm_bindgen::prelude::*;
 
-use crate::configurator::api::protocol_next::{ContentType, Method};
+use crate::configurator::api::{ContentType, Method};
 
 static REQUESTS: Channel<crate::mutex::MultiCore, Request, 10> = Channel::new();
 
@@ -103,7 +103,7 @@ impl Drop for Response {
     }
 }
 
-impl crate::configurator::api::protocol_next::WriteResponse for Response {
+impl crate::configurator::api::WriteResponse for Response {
     type BodyWriter = Self;
     type ChunkedBodyWriter = Self;
     type Error = Infallible;
@@ -155,14 +155,14 @@ impl embedded_io_async::Write for Response {
     }
 }
 
-impl crate::configurator::api::protocol_next::WriteBody for Response {
+impl crate::configurator::api::WriteBody for Response {
     async fn finish(self) -> Result<(), Self::Error> {
         self.send();
         Ok(())
     }
 }
 
-impl crate::configurator::api::protocol_next::WriteChunkedBody for Response {
+impl crate::configurator::api::WriteChunkedBody for Response {
     type Error = Infallible;
 
     async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error> {

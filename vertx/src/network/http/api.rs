@@ -4,11 +4,11 @@ use embedded_io_async::Write;
 use faster_hex::hex_encode;
 
 use super::respond;
-use crate::configurator::api::protocol_next::ContentType;
+use crate::configurator::api::ContentType;
 
 pub(super) struct ResponseWriter<W>(pub(super) W);
 
-impl<W> crate::configurator::api::protocol_next::WriteResponse for ResponseWriter<W>
+impl<W> crate::configurator::api::WriteResponse for ResponseWriter<W>
 where
     W: Write,
     W::Error: loog::DebugFormat,
@@ -75,7 +75,7 @@ impl<W: Write> Write for BodyWriter<W> {
     }
 }
 
-impl<W: Write> crate::configurator::api::protocol_next::WriteBody for BodyWriter<W> {
+impl<W: Write> crate::configurator::api::WriteBody for BodyWriter<W> {
     async fn finish(self) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -83,7 +83,7 @@ impl<W: Write> crate::configurator::api::protocol_next::WriteBody for BodyWriter
 
 pub(super) struct ChunkedBodyWriter<W>(W);
 
-impl<W: Write> crate::configurator::api::protocol_next::WriteChunkedBody for ChunkedBodyWriter<W> {
+impl<W: Write> crate::configurator::api::WriteChunkedBody for ChunkedBodyWriter<W> {
     type Error = W::Error;
 
     async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error> {

@@ -1,95 +1,6 @@
-mod protocol;
+use core::fmt;
 
-pub(crate) mod protocol_next {
-    use core::fmt;
-
-    use embedded_io_async::Write;
-
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub(crate) enum Method {
-        Get,
-        Post,
-        Delete,
-    }
-
-    impl TryFrom<&str> for Method {
-        type Error = ();
-
-        fn try_from(raw: &str) -> Result<Self, Self::Error> {
-            if raw.eq_ignore_ascii_case("get") {
-                Ok(Self::Get)
-            } else if raw.eq_ignore_ascii_case("post") {
-                Ok(Self::Post)
-            } else if raw.eq_ignore_ascii_case("delete") {
-                Ok(Self::Delete)
-            } else {
-                Err(())
-            }
-        }
-    }
-
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub(crate) enum ContentType {
-        Json,
-        OctetStream,
-    }
-
-    impl ContentType {
-        pub(crate) const fn as_str(&self) -> &'static str {
-            match self {
-                Self::Json => "application/json",
-                Self::OctetStream => "application/octet-stream",
-            }
-        }
-
-        #[cfg_attr(not(feature = "network"), expect(unused))]
-        pub(crate) const fn as_bytes(&self) -> &'static [u8] {
-            self.as_str().as_bytes()
-        }
-    }
-
-    impl fmt::Display for ContentType {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            f.write_str(self.as_str())
-        }
-    }
-
-    pub(crate) trait WriteResponse {
-        type Error: loog::DebugFormat;
-        type BodyWriter: WriteBody<Error = Self::Error>;
-        type ChunkedBodyWriter: WriteChunkedBody<Error = Self::Error>;
-
-        async fn method_not_allowed(self, allow: &'static str) -> Result<(), Self::Error>;
-        async fn not_found(self) -> Result<(), Self::Error>;
-
-        async fn ok_empty(self) -> Result<(), Self::Error>;
-
-        async fn ok_with_len(
-            self,
-            typ: ContentType,
-            len: usize,
-        ) -> Result<Self::BodyWriter, Self::Error>;
-
-        #[expect(unused)]
-        async fn ok_chunked(self, typ: ContentType)
-        -> Result<Self::ChunkedBodyWriter, Self::Error>;
-    }
-
-    pub(crate) trait WriteBody: Write {
-        async fn finish(self) -> Result<(), Self::Error>;
-    }
-
-    #[expect(unused)]
-    pub(crate) trait WriteChunkedBody {
-        type Error;
-
-        async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error>;
-        async fn finish(self) -> Result<(), Self::Error>;
-    }
-}
-
-use embedded_io_async::Write as _;
-use protocol_next::{ContentType, Method, WriteBody as _, WriteResponse};
+use embedded_io_async::Write;
 
 use crate::build_info;
 
@@ -183,4 +94,85 @@ impl Api {
             _ => writer.not_found().await,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Method {
+    Get,
+    Post,
+    Delete,
+}
+
+impl TryFrom<&str> for Method {
+    type Error = ();
+
+    fn try_from(raw: &str) -> Result<Self, Self::Error> {
+        if raw.eq_ignore_ascii_case("get") {
+            Ok(Self::Get)
+        } else if raw.eq_ignore_ascii_case("post") {
+            Ok(Self::Post)
+        } else if raw.eq_ignore_ascii_case("delete") {
+            Ok(Self::Delete)
+        } else {
+            Err(())
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ContentType {
+    Json,
+    OctetStream,
+}
+
+impl ContentType {
+    pub(crate) const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Json => "application/json",
+            Self::OctetStream => "application/octet-stream",
+        }
+    }
+
+    #[cfg_attr(not(feature = "network"), expect(unused))]
+    pub(crate) const fn as_bytes(&self) -> &'static [u8] {
+        self.as_str().as_bytes()
+    }
+}
+
+impl fmt::Display for ContentType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+pub(crate) trait WriteResponse {
+    type Error: loog::DebugFormat;
+    type BodyWriter: WriteBody<Error = Self::Error>;
+    type ChunkedBodyWriter: WriteChunkedBody<Error = Self::Error>;
+
+    async fn method_not_allowed(self, allow: &'static str) -> Result<(), Self::Error>;
+    async fn not_found(self) -> Result<(), Self::Error>;
+
+    async fn ok_empty(self) -> Result<(), Self::Error>;
+
+    async fn ok_with_len(
+        self,
+        typ: ContentType,
+        len: usize,
+    ) -> Result<Self::BodyWriter, Self::Error>;
+
+    #[expect(unused)]
+    async fn ok_chunked(self, typ: ContentType) -> Result<Self::ChunkedBodyWriter, Self::Error>;
+}
+
+pub(crate) trait WriteBody: Write {
+    async fn finish(self) -> Result<(), Self::Error>;
+}
+
+#[expect(unused)]
+pub(crate) trait WriteChunkedBody {
+    type Error;
+
+    async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error>;
+    async fn finish(self) -> Result<(), Self::Error>;
 }
