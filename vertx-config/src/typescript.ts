@@ -33,15 +33,15 @@ export async function typescript(
 	});
 	outln`} as const;\n`;
 
-	outln`export type Config = {`;
-	const type = (type: string, i: number) => outln`\t${i}: ${type}`;
+	outln`export type Config = [`;
+	const type = (type: string) => outln`\t${type},`;
 	visit(config, {
-		string: (_p, _v, i) => type('string', i),
-		integer: (_p, _v, i) => type('number', i),
-		enumeration: (_path, { name }, i) => type(name, i),
-		boolean: (_p, _v, i) => type('boolean', i),
+		string: () => type('string'),
+		integer: () => type('number'),
+		enumeration: (_path, { name }) => type(name),
+		boolean: () => type('boolean'),
 	});
-	outln`};\n`;
+	outln`];\n`;
 
 	visit(config, {
 		enumeration(_path, value) {

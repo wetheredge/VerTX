@@ -48,4 +48,35 @@ import SettingInput from './_SettingInput.astro';
 		type="password"
 		maxlength={64}
 	/>
+
+	<script>
+		import { Reader } from 'postcard';
+		import { getBinary, post } from '../../api';
+		import { encodeConfig, parseConfig } from '../../config';
+		import { getId } from './_utils';
+
+		const rawConfig = await getBinary('config');
+		const config = parseConfig(new Reader(new DataView(rawConfig)))
+
+		const getInput = (i: number) => document.getElementById(getId(i)) as (HTMLInputElement | null);
+
+		for (let i = 0; i < config.length; i++) {
+			const input = getInput(i);
+			if (input) {
+				input.value = config[i] as string;
+			}
+		}
+
+		(document.getElementById('save')! as HTMLButtonElement).addEventListener('click', async () => {
+			for (let i = 0; i < config.length; i++) {
+				const input = getInput(i);
+				if (input) {
+					const value = input.value;
+					config[i] = typeof config[i] === 'number' ? parseInt(value) : value;
+				} 
+			}
+			// TODO: display success/error result
+			await post('config', encodeConfig(config));
+		});
+	</script>
 </Layout>
