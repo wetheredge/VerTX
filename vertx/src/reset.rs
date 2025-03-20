@@ -16,11 +16,12 @@ impl Manager {
         spawner: Spawner,
         hal: crate::hal::Reset,
         config: &'static crate::config::Manager,
+        storage: crate::storage::Manager,
     ) -> Self {
         static RESET: ResetSignal = Signal::new();
         let signal = &RESET;
 
-        spawner.must_spawn(reset(hal, signal, config));
+        spawner.must_spawn(reset(hal, signal, config, storage));
 
         Self { reset: signal }
     }
@@ -45,10 +46,12 @@ async fn reset(
     mut hal: crate::hal::Reset,
     reset: &'static ResetSignal,
     config: &'static crate::config::Manager,
+    storage: crate::storage::Manager,
 ) -> ! {
     let kind = reset.wait().await;
 
     config.save().await;
+    storage.flush_before_reset().await;
 
     match kind {
         Kind::Reboot => hal.reboot(),
