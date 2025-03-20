@@ -2,6 +2,7 @@
 pub(crate) mod sd;
 
 use embassy_executor::task;
+use embassy_sync::once_lock::OnceLock;
 
 use crate::hal::prelude::*;
 
@@ -58,16 +59,40 @@ pub(crate) type Error = <crate::hal::Storage as embedded_io_async::ErrorType>::E
 pub(crate) type Directory = <crate::hal::Storage as pal::Storage>::Directory;
 pub(crate) type File = <Directory as pal::Directory>::File;
 
+#[derive(Clone, Copy)]
+pub(crate) struct Manager(&'static OnceLock<crate::hal::Storage>);
+
+impl Manager {
+    pub(crate) const fn new() -> Self {
+        static INNER: OnceLock<crate::hal::Storage> = OnceLock::new();
+        Self(&INNER)
+    }
+
+    /// Attempt to flush data before resetting, logging any errors
+    pub(crate) async fn flush_before_reset(&self) {
+        let Some(storage) = self.0.try_get() else {
+            loog::warn!("Skipping flush since it was not initialized");
+            return;
+        };
+
+        if let Err(err) = storage.flush().await {
+            loog::warn!("Failed to flush: {err:?}");
+        }
+    }
+}
+
 #[task]
 pub(crate) async fn run(
     init: &'static crate::InitCounter,
     storage: crate::hal::StorageFuture,
+    manager: Manager,
     config_manager: &'static crate::config::Manager,
     models: &'static crate::models::Manager,
 ) -> ! {
     let init = init.start(loog::intern!("storage"));
 
     let storage = storage.await;
+    let storage = manager.0.get_or_init(|| storage);
     let root = storage.root();
 
     let config = match root.file("config.bin").await {

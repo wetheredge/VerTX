@@ -51,6 +51,15 @@ pub async fn main(spawner: Spawner) {
     static MODELS: ConstStaticCell<models::Manager> = ConstStaticCell::new(models::Manager::new());
     let models = &*MODELS.take();
 
+    let storage = storage::Manager::new();
+    spawner.must_spawn(storage::run(
+        inits,
+        hal.storage,
+        storage,
+        config_manager,
+        models,
+    ));
+
     #[cfg(feature = "configurator")]
     let configurator = configurator::Manager::new();
 
@@ -60,7 +69,6 @@ pub async fn main(spawner: Spawner) {
         hal.status_led,
         mode.receiver().unwrap(),
     ));
-    spawner.must_spawn(storage::run(inits, hal.storage, config_manager, models));
     spawner.must_spawn(ui::run(
         inits,
         config,
@@ -72,7 +80,8 @@ pub async fn main(spawner: Spawner) {
 
     static RESET: StaticCell<reset::Manager> = StaticCell::new();
     #[cfg_attr(not(feature = "configurator"), expect(unused))]
-    let reset = RESET.init_with(|| reset::Manager::new(spawner, hal.reset, config_manager));
+    let reset =
+        RESET.init_with(|| reset::Manager::new(spawner, hal.reset, config_manager, storage));
 
     INITS.wait().await;
     loog::info!("Initialized");
