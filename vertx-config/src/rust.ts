@@ -1,6 +1,7 @@
 import {
 	type ConfigMeta,
 	type Path,
+	byteLength,
 	getWriter,
 	toPascalCase,
 	toSnakeCase,
@@ -57,23 +58,12 @@ export async function rust(
 	outln`    }`;
 	outln`}`;
 
-	// 4 for u32 version bytes
-	out`pub(crate) const BYTE_LENGTH: usize = 4`;
-	const varintByteLength = { x8: 1, x16: 3, x32: 5, x64: 10, x128: 19 };
-	const usizeByteLength = varintByteLength.x32;
-	visit(config, {
-		string: (_, { length }) => out` + ${length + usizeByteLength}`,
-		integer: (_, { raw }) =>
-			out` + ${varintByteLength[raw.replace(/^[iu]/, 'x') as keyof typeof varintByteLength]}`,
-		enumeration: () => out` + ${usizeByteLength}`,
-		boolean: () => out` + 1`,
-	});
-	outln`;\n`;
+	out`pub(crate) const BYTE_LENGTH: usize = ${byteLength(config)};\n`;
 
 	// Enum declarations
 	visit(config, {
 		enumeration(_path, value) {
-			outln`#[derive(Debug, Default, Clone, Copy, ::serde::Deserialize, ::serde::Serialize)]`;
+			outln`#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, ::serde::Deserialize, ::serde::Serialize)]`;
 			outln`pub(crate) enum ${value.name} {`;
 			for (const variant of value.variants) {
 				if (variant.name !== variant.ident) {
@@ -154,23 +144,6 @@ export async function rust(
 			enumeration: (path, { name }, i) => leafImplBlock(path, name, i),
 			boolean: (path, _, i) => leafImplBlock(path, 'bool', i),
 		});
-
-		// Update enum
-		outln`#[derive(Debug, Clone, ::serde::Deserialize)]`;
-		outln`#[allow(non_camel_case_types)]`;
-		outln`pub(crate) enum Update<'a> {`;
-		const updateVariant = (path: Path, type: string) =>
-			outln`${getRawKeyType(path)}(${type}),`;
-		visit(config, {
-			string: (path) => {
-				outln`#[serde(borrow)]`;
-				updateVariant(path, "&'a str");
-			},
-			integer: (path, { raw }) => updateVariant(path, raw),
-			enumeration: (path, { name }) => updateVariant(path, name),
-			boolean: (path) => updateVariant(path, 'bool'),
-		});
-		outln`}\n`;
 	}
 
 	outln`#[derive(Debug, Clone)]`;
@@ -198,37 +171,15 @@ export async function rust(
 	outln`}`;
 
 	if (!migration) {
-		outln`pub(super) fn update(&mut self, update: Update<'_>) -> Result<usize, super::UpdateError> {`;
-		outln`match update {`;
-		const updateArmStart = (path: Path, i: number) => {
-			outln`Update::${getRawKeyType(path)}(update) => {`;
-			return () => {
-				outln`self.${getFieldName(path)} = update;`;
-				outln`Ok(${i})`;
-				outln`}`;
-			};
-		};
+		outln`pub(super) fn diff(&self, other: &Self, mut different: impl FnMut(usize)) {`;
 		visit(config, {
 			leaf(path, i) {
-				updateArmStart(path, i)();
-			},
-			string(path, { length }, i) {
-				const end = updateArmStart(path, i);
-				outln`let Ok(update) = update.try_into() else { return Err(super::UpdateError::TooLarge { max: ${length} }) };`;
-				end();
-			},
-			integer(path, { min, max }, i) {
-				const end = updateArmStart(path, i);
-				if (min != null) {
-					outln`if update < ${min} { return Err(super::UpdateError::TooSmall { min: ${min} }) };`;
-				}
-				if (max != null) {
-					outln`if update > ${max} { return Err(super::UpdateError::TooLarge { max: ${max} }) };`;
-				}
-				end();
+				const field = getFieldName(path);
+				outln`    if self.${field} != other.${field} {`;
+				outln`        different(${i});`;
+				outln`    }`;
 			},
 		});
-		outln`}`;
 		outln`}`;
 	}
 

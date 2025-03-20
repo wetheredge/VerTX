@@ -13,20 +13,20 @@ export type Model = {
 	name: string;
 };
 
-type Get<T = undefined> = {
+type Get<Resp = undefined> = {
 	method: 'GET';
-	response: T;
+	response: Resp;
 };
 
-type Post<Body = undefined, T = undefined> = {
+type Post<Req = undefined, Resp = undefined> = {
 	method: 'POST';
-	request: Body;
-	response: T;
+	request: Req;
+	response: Resp;
 };
 
-type Delete<T = undefined> = {
+type Delete<Resp = undefined> = {
 	method: 'DELETE';
-	response: T;
+	response: Resp;
 };
 
 type RoutesRaw = {

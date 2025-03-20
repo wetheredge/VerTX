@@ -22,8 +22,7 @@ impl Default for RawConfig {
         }
     }
 }
-pub(crate) const BYTE_LENGTH: usize = 4 + 25 + 1 + 37 + 69 + 37 + 69;
-
+pub(crate) const BYTE_LENGTH: usize = 242;
 #[derive(Debug, Clone)]
 pub(super) enum DeserializeError {
     WrongVersion,

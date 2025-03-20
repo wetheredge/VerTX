@@ -17,16 +17,15 @@ impl Api {
         Self { reset, config }
     }
 
-    pub(crate) async fn handle<W: WriteResponse>(
+    pub(crate) async fn handle<R: Request, W: WriteResponse>(
         &self,
-        route: &str,
-        method: Method,
+        request: R,
         writer: W,
     ) -> Result<(), W::Error> {
         // TODO: check content-type against accept
 
-        let route = route.trim_matches('/');
-        match route {
+        let method = request.method();
+        match request.route() {
             "version" => {
                 if method != Method::Get {
                     return writer.method_not_allowed("GET").await;
@@ -86,10 +85,20 @@ impl Api {
                     let mut writer = writer
                         .ok_with_len(ContentType::OctetStream, config.len())
                         .await?;
-                    writer.write_all(config).await
+                    writer.write_all(config).await?;
+                    writer.finish().await
                 }
-                Method::Post => todo!("restore config backup"),
-                Method::Delete => todo!("reset config to defaults"),
+                Method::Post => match self.config.replace(request.body()).await {
+                    Ok(()) => {
+                        self.config.save().await;
+                        writer.ok_empty().await
+                    }
+                    Err(()) => todo!(),
+                },
+                Method::Delete => {
+                    self.config.reset().await;
+                    writer.ok_empty().await
+                }
             },
             _ => writer.not_found().await,
         }
@@ -143,6 +152,12 @@ impl fmt::Display for ContentType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
+}
+
+pub(crate) trait Request {
+    fn method(&self) -> Method;
+    fn route(&self) -> &str;
+    fn body(&self) -> &[u8];
 }
 
 pub(crate) trait WriteResponse {

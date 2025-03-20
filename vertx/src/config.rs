@@ -12,7 +12,7 @@ use embassy_sync::blocking_mutex::Mutex;
 use serde::{Deserialize, Serialize};
 
 use self::codegen::DeserializeError;
-pub(crate) use self::codegen::{BYTE_LENGTH, RawConfig, Update};
+pub(crate) use self::codegen::{BYTE_LENGTH, RawConfig};
 use crate::hal::prelude::*;
 
 pub(crate) type RootConfig = View<codegen::key::Root>;
@@ -56,11 +56,29 @@ impl Manager {
         }
     }
 
-    pub async fn update(&self, update: Update<'_>) -> Result<(), UpdateError> {
+    pub async fn replace(&self, bytes: &[u8]) -> Result<(), ()> {
+        let Ok(config) = RawConfig::deserialize(bytes) else {
+            return Err(());
+        };
+
+        self.replace_impl(config).await;
+        Ok(())
+    }
+
+    pub async fn reset(&self) {
+        self.replace_impl(RawConfig::default()).await;
+    }
+
+    async fn replace_impl(&self, mut config: RawConfig) {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
-            state.modified = true;
-            state.config.update(update).map(|key| {
+            let state = &mut *state;
+
+            mem::swap(&mut state.config, &mut config);
+
+            let mut modified = false;
+            state.config.diff(&config, |key| {
+                modified = true;
                 for (sub_key, sub) in &mut state.subscriptions {
                     if *sub_key == key {
                         let old_sub = mem::replace(sub, Subscription::Updated);
@@ -69,8 +87,9 @@ impl Manager {
                         }
                     }
                 }
-            })
-        })
+            });
+            state.modified |= modified;
+        });
     }
 
     pub async fn save(&self) {

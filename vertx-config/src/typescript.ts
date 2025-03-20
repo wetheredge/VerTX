@@ -1,17 +1,27 @@
 import type * as types from './types';
-import { type NonEmptyPath, getWriter, toPascalCase, visit } from './utilities';
+import {
+	type ConfigMeta,
+	type NonEmptyPath,
+	byteLength,
+	getWriter,
+	toPascalCase,
+	visit,
+} from './utilities';
 
-export async function typescript(config: types.Config, outFile: string) {
+export async function typescript(
+	{ config, version }: ConfigMeta,
+	outFile: string,
+) {
 	const { writer, out, outln } = getWriter(Bun.file(outFile));
 
-	const integerToPostcard = ({ raw }: { raw: types.RawInteger }) =>
+	const integerToPostcard = (raw: types.RawInteger) =>
 		['u8', 'i8'].includes(raw)
 			? raw
 			: raw.startsWith('u')
 				? 'varuint'
 				: 'varint';
 
-	outln`import type { Reader, Writer } from "postcard";\n`;
+	outln`import { type Reader, Writer } from "postcard";\n`;
 
 	outln`export const configKeys = {`;
 	visit(config, {
@@ -56,11 +66,30 @@ export async function typescript(config: types.Config, outFile: string) {
 	};
 	visit(config, {
 		string: () => readType('string'),
-		integer: (_path, value) => readType(integerToPostcard(value)),
+		integer: (_path, { raw }) => readType(integerToPostcard(raw)),
 		enumeration: (_path, { name }) => readType('varuint', name),
 		boolean: () => readType('boolean'),
 	});
 	outln`\t];`;
+	outln`}\n`;
+
+	outln`export function encodeConfig(config: Config): ArrayBuffer {`;
+	outln`\tconst writer = new Writer(${byteLength(config)});`;
+	outln`\twriter.rawU32(${version});`;
+	const writeField = (i: number, type: string, as?: string) => {
+		out`\twriter.${type}(config[${i}]`;
+		if (as != null) {
+			out` as ${as}`;
+		}
+		outln`);`;
+	};
+	visit(config, {
+		string: (_p, _v, i) => writeField(i, 'string'),
+		integer: (_p, { raw }, i) => writeField(i, integerToPostcard(raw)),
+		enumeration: (_p, _v, i) => writeField(i, 'varuint', 'number'),
+		boolean: (_p, _v, i) => writeField(i, 'boolean'),
+	});
+	outln`\treturn writer.done();`;
 	outln`}\n`;
 
 	const settingsByType: Record<
@@ -87,36 +116,6 @@ export async function typescript(config: types.Config, outFile: string) {
 		}
 	}
 	outln``;
-
-	outln`export type Update = `;
-	outln`\t| { key: StringSettings, value: string }`;
-	outln`\t| { key: IntegerSettings | EnumSettings, value: number }`;
-	outln`\t| { key: BooleanSettings, value: boolean };\n`;
-
-	const updateTypes = ['string', 'u8', 'i8', 'varint', 'varuint', 'boolean'];
-	const updates: Record<string, Array<number>> = Object.fromEntries(
-		updateTypes.map((key) => [key, []]),
-	);
-	visit(config, {
-		string: (_p, _v, i) => updates.string.push(i),
-		integer: (_p, v, i) => updates[integerToPostcard(v)].push(i),
-		enumeration: (_p, _v, i) => updates.varuint.push(i),
-		boolean: (_p, _v, i) => updates.boolean.push(i),
-	});
-	outln`export function encodeUpdate(writer: Writer, update:Update): ArrayBuffer {`;
-	outln`writer.varuint(update.key);`;
-	outln`switch (update.key) {`;
-	for (const [type, keys] of Object.entries(updates)) {
-		for (const i of keys) {
-			outln`case ${i}:`;
-		}
-		if (keys.length > 0) {
-			outln`writer.${type}(update.value); break;`;
-		}
-	}
-	outln`}`;
-	outln`return writer.done();`;
-	outln`}`;
 
 	await writer.end();
 }

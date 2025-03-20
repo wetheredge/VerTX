@@ -4,7 +4,27 @@ use embedded_io_async::Write;
 use faster_hex::hex_encode;
 
 use super::respond;
-use crate::configurator::api::ContentType;
+use crate::configurator::api::{ContentType, Method};
+
+pub(super) struct Request<'a> {
+    pub(super) method: Method,
+    pub(super) route: &'a str,
+    pub(super) body: &'a [u8],
+}
+
+impl crate::configurator::api::Request for Request<'_> {
+    fn method(&self) -> Method {
+        self.method
+    }
+
+    fn route(&self) -> &str {
+        self.route
+    }
+
+    fn body(&self) -> &[u8] {
+        self.body
+    }
+}
 
 pub(super) struct ResponseWriter<W>(pub(super) W);
 

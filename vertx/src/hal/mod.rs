@@ -74,13 +74,11 @@ pub(crate) mod traits {
 
     #[cfg(all(feature = "configurator", not(feature = "network")))]
     pub(crate) trait Configurator {
-        type Route: AsRef<str>;
+        type Request: crate::configurator::api::Request;
         type Writer: crate::configurator::api::WriteResponse;
 
         async fn start(&mut self);
-        async fn receive(
-            &mut self,
-        ) -> (Self::Route, crate::configurator::api::Method, Self::Writer);
+        async fn receive(&mut self) -> (Self::Request, Self::Writer);
     }
 
     #[cfg(feature = "network")]

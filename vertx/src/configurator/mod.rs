@@ -36,7 +36,7 @@ pub(crate) async fn run(api: &'static Api, mut hal: crate::hal::Configurator) ->
     hal.start().await;
 
     loop {
-        let (route, method, writer) = hal.receive().await;
-        loog::unwrap!(api.handle(route.as_ref(), method, writer).await);
+        let (request, writer) = hal.receive().await;
+        loog::unwrap!(api.handle(request, writer).await);
     }
 }

@@ -1,4 +1,4 @@
-import type { Reader, Writer } from 'postcard';
+import { type Reader, Writer } from 'postcard';
 
 export const configKeys = {
 	name: 0,
@@ -39,29 +39,19 @@ export function parseConfig(reader: Reader): Config {
 	];
 }
 
+export function encodeConfig(config: Config): ArrayBuffer {
+	const writer = new Writer(242);
+	writer.rawU32(3);
+	writer.string(config[0]);
+	writer.u8(config[1]);
+	writer.string(config[2]);
+	writer.string(config[3]);
+	writer.string(config[4]);
+	writer.string(config[5]);
+	return writer.done();
+}
+
 export type StringSettings = 0 | 2 | 3 | 4 | 5;
 export type IntegerSettings = 1;
 export type EnumSettings = never;
 export type BooleanSettings = never;
-
-export type Update =
-	| { key: StringSettings; value: string }
-	| { key: IntegerSettings | EnumSettings; value: number }
-	| { key: BooleanSettings; value: boolean };
-
-export function encodeUpdate(writer: Writer, update: Update): ArrayBuffer {
-	writer.varuint(update.key);
-	switch (update.key) {
-		case 0:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			writer.string(update.value);
-			break;
-		case 1:
-			writer.u8(update.value);
-			break;
-	}
-	return writer.done();
-}
