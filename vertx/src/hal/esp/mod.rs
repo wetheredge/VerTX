@@ -25,7 +25,7 @@ use crate::ui::Input;
 declare_hal_types!();
 
 pub(super) fn init(spawner: Spawner) -> super::Init {
-    esp_alloc::heap_allocator!(72 * 1024);
+    esp_alloc::heap_allocator!(100 * 1024);
 
     let p = esp_hal::init({
         let mut config = esp_hal::Config::default();
