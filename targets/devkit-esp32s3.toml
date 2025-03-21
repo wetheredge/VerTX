@@ -20,6 +20,6 @@ right = 17
 left = 18
 
 [display]
-type = "ssd1306"
+driver = "ssd1306"
 sda = 8
 scl = 9

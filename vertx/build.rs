@@ -6,6 +6,27 @@ use std::{env, fmt, fs, io};
 
 use serde::Deserialize;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Chip {
+    Esp,
+    Rp,
+    Stm32,
+}
+
+impl Chip {
+    fn get() -> Self {
+        if feature("CHIP_ESP") {
+            Self::Esp
+        } else if feature("CHIP_RP") {
+            Self::Rp
+        } else if feature("CHIP_STM32") {
+            Self::Stm32
+        } else {
+            unreachable!("unknown chip")
+        }
+    }
+}
+
 fn main() -> io::Result<()> {
     let out_dir = &env::var("OUT_DIR").unwrap();
     let root = &env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -25,9 +46,10 @@ fn main() -> io::Result<()> {
         let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
         println!("cargo::rerun-if-env-changed=VERTX_TARGET");
 
-        memory_layout(out_dir, root);
-        link_args();
-        target_macro(out_dir, root, &target_name)?;
+        let chip = Chip::get();
+        memory_layout(out_dir, root, chip);
+        link_args(chip);
+        target_macros(out_dir, root, chip, &target_name)?;
     }
 
     if feature("NETWORK") {
@@ -37,8 +59,8 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn memory_layout(out_dir: &str, root: &str) {
-    let path = feature("CHIP_RP").then_some("src/hal/chip/rp/memory.x");
+fn memory_layout(out_dir: &str, root: &str, chip: Chip) {
+    let path = (chip == Chip::Rp).then_some("src/hal/chip/rp/memory.x");
 
     if let Some(path) = path {
         fs::copy(format!("{root}/{path}"), format!("{out_dir}/memory.x"))
@@ -49,13 +71,11 @@ fn memory_layout(out_dir: &str, root: &str) {
     }
 }
 
-fn link_args() {
-    let mut args = if feature("CHIP_ESP") {
-        vec!["-Tlinkall.x", "-nostartfiles"]
-    } else if feature("CHIP_RP") {
-        vec!["--nmagic", "-Tlink.x", "-Tlink-rp.x"]
-    } else {
-        vec![]
+fn link_args(chip: Chip) {
+    let mut args = match chip {
+        Chip::Esp => vec!["-Tlinkall.x", "-nostartfiles"],
+        Chip::Rp => vec!["--nmagic", "-Tlink.x", "-Tlink-rp.x"],
+        Chip::Stm32 => vec!["--nmagic", "-Tlink.x"],
     };
 
     if feature("DEFMT") {
@@ -92,7 +112,7 @@ fn build_info(out_dir: &str) -> io::Result<()> {
     fs::write(format!("{out_dir}/is_debug"), debug.to_string())
 }
 
-fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
+fn target_macros(out_dir: &str, root: &str, chip: Chip, target: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
     struct Target {
         #[expect(unused)]
@@ -124,6 +144,7 @@ fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
     struct Spi {
         peripheral: Option<String>,
+        dma: Option<TxRxPeripherals>,
         #[serde(flatten)]
         pins: Tree,
     }
@@ -138,6 +159,8 @@ fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     struct Display {
         #[serde(rename = "type")]
         _type: DisplayType,
+        i2c: Option<String>,
+        dma: Option<TxRxPeripherals>,
         #[serde(flatten)]
         pins: Tree,
     }
@@ -169,6 +192,12 @@ fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     }
 
     #[derive(Debug, Deserialize)]
+    struct TxRxPeripherals {
+        tx: String,
+        rx: String,
+    }
+
+    #[derive(Debug, Deserialize)]
     #[serde(untagged)]
     enum Spec {
         Number(u8),
@@ -190,9 +219,17 @@ fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     let target = fs::read_to_string(path)?;
     let target: Target = basic_toml::from_str(&target).unwrap();
 
-    let (spi, spi_pins) = target
+    let (spi, spi_dma, spi_pins) = target
         .spi
-        .map(|spi| (spi.peripheral, spi.pins))
+        .map(|spi| (spi.peripheral, spi.dma, spi.pins))
+        .unwrap_or_default();
+    let (spi_dma_tx, spi_dma_rx) = spi_dma
+        .map(|dma| (Some(dma.tx), Some(dma.rx)))
+        .unwrap_or_default();
+    let (display_dma_tx, display_dma_rx) = target
+        .display
+        .dma
+        .map(|dma| (Some(dma.tx), Some(dma.rx)))
         .unwrap_or_default();
 
     let mut arms = Vec::new();
@@ -200,9 +237,16 @@ fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         ("leds.timer", target.leds.timer),
         ("leds.dma", target.leds.dma),
         ("spi", spi),
+        ("spi.dma.tx", spi_dma_tx),
+        ("spi.dma.rx", spi_dma_rx),
+        ("display.i2c", target.display.i2c),
+        ("display.dma.tx", display_dma_tx),
+        ("display.dma.rx", display_dma_rx),
     ];
+    println!("cargo::rustc-check-cfg=cfg(peripheral, values(any()))");
     for (path, peripheral) in peripherals {
         if let Some(peripheral) = peripheral {
+            println!(r#"cargo::rustc-cfg=peripheral="{peripheral}""#);
             arms.push((path.to_owned(), Arm::Peripheral(peripheral)));
         }
     }
@@ -232,21 +276,30 @@ fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         }
     }
 
-    let gpio = if feature("CHIP_ESP") {
-        "GPIO"
-    } else if feature("CHIP_RP") {
-        "PIN_"
-    } else {
-        unreachable!("unknown chip");
+    let gpio = match chip {
+        Chip::Esp => "GPIO",
+        Chip::Rp => "PIN_",
+        Chip::Stm32 => "P",
     };
 
-    let out = File::create(format!("{out_dir}/target_macro.rs"))?;
+    let out = File::create(format!("{out_dir}/target_macros.rs"))?;
     let out = &mut BufWriter::new(out);
 
     writeln!(out, "macro_rules! target {{")?;
     for (key, arm) in arms {
         match arm {
-            Arm::Pin(spec) => writeln!(out, "    ($p:expr, {key}) => {{ $p.{gpio}{spec} }};")?,
+            Arm::Pin(spec) => {
+                writeln!(out, "    ($p:expr, {key}) => {{ $p.{gpio}{spec} }};")?;
+
+                if let (Spec::Name(pin), Chip::Stm32) = (&spec, chip) {
+                    let exti = pin.trim_start_matches(char::is_alphabetic);
+                    writeln!(
+                        out,
+                        "    ($p:expr, ExtiInput({key} $(, $arg:expr)* $(,)?)) => {{ \
+                         ExtiInput::new($p.{gpio}{spec}, $p.EXTI{exti}, $($arg)*) }};"
+                    )?;
+                }
+            }
             Arm::PinArray(specs) => {
                 writeln!(out, "    ($p:expr, {key} $(.$method:ident())*) => {{ &[")?;
                 for spec in specs {

@@ -120,6 +120,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e764a1d40d510daf35e07be9eb06e75770908c27d411ee6c92109c9840eaaf7"
 
 [[package]]
+name = "bit_field"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc827186963e592360843fb5ba4b973e145841266c1357f7180c43526f2e5b61"
+
+[[package]]
 name = "bitfield"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -192,10 +198,19 @@ version = "0.2.0"
 source = "git+https://github.com/MabezDev/embedded-fatfs.git?rev=4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c#4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c"
 dependencies = [
  "aligned",
- "block-device-driver",
+ "block-device-driver 0.2.0 (git+https://github.com/MabezDev/embedded-fatfs.git?rev=4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c)",
  "defmt 0.3.100",
  "embedded-io-async",
  "log",
+]
+
+[[package]]
+name = "block-device-driver"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44c051592f59fe68053524b4c4935249b806f72c1f544cfb7abe4f57c3be258e"
+dependencies = [
+ "aligned",
 ]
 
 [[package]]
@@ -319,6 +334,7 @@ checksum = "8ec610d8f49840a5b376c69663b6369e71f4b34484b9b2eb29fb918d92516cb9"
 dependencies = [
  "bare-metal",
  "bitfield 0.13.2",
+ "critical-section",
  "embedded-hal 0.2.7",
  "volatile-register",
 ]
@@ -596,6 +612,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41fea5ef5bed4d3468dfd44f5c9fa4cda8f54c86d4fb4ae683eacf9d39e2ea12"
 dependencies = [
+ "defmt 0.3.100",
  "embassy-futures",
  "embassy-sync",
  "embassy-time",
@@ -722,6 +739,54 @@ dependencies = [
 ]
 
 [[package]]
+name = "embassy-stm32"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1e0bb733acdddbc7097765a47ce80bde2385647cf1d8427331931e06cff9a87"
+dependencies = [
+ "aligned",
+ "bit_field",
+ "bitflags 2.9.0",
+ "block-device-driver 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if",
+ "cortex-m",
+ "cortex-m-rt",
+ "critical-section",
+ "defmt 0.3.100",
+ "document-features",
+ "embassy-embedded-hal",
+ "embassy-futures",
+ "embassy-hal-internal",
+ "embassy-net-driver",
+ "embassy-sync",
+ "embassy-time",
+ "embassy-time-driver",
+ "embassy-time-queue-utils",
+ "embassy-usb-driver",
+ "embassy-usb-synopsys-otg",
+ "embedded-can",
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "embedded-hal-nb",
+ "embedded-io",
+ "embedded-io-async",
+ "embedded-storage",
+ "embedded-storage-async",
+ "futures-util",
+ "nb 1.1.0",
+ "proc-macro2",
+ "quote",
+ "rand_core",
+ "sdio-host 0.5.0",
+ "static_assertions",
+ "stm32-fmc",
+ "stm32-metapac",
+ "vcell",
+ "volatile-register",
+]
+
+[[package]]
 name = "embassy-sync"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -744,6 +809,7 @@ checksum = "f820157f198ada183ad62e0a66f554c610cdcd1a9f27d4b316358103ced7a1f8"
 dependencies = [
  "cfg-if",
  "critical-section",
+ "defmt 0.3.100",
  "document-features",
  "embassy-time-driver",
  "embassy-time-queue-utils",
@@ -791,6 +857,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08e753b23799329780c7ac434264026d0422044d6649ed70a73441b14a6436d7"
 dependencies = [
  "critical-section",
+ "defmt 0.3.100",
  "embassy-sync",
  "embassy-usb-driver",
 ]
@@ -2367,6 +2434,12 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "sdio-host"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f93c025f9cfe4c388c328ece47d11a54a823da3b5ad0370b22d95ad47137f85a"
+
+[[package]]
+name = "sdio-host"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b328e2cb950eeccd55b7f55c3a963691455dcd044cfb5354f0c5e68d2c2d6ee2"
@@ -2377,13 +2450,13 @@ version = "0.1.0"
 source = "git+https://github.com/MabezDev/embedded-fatfs.git?rev=4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c#4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c"
 dependencies = [
  "aligned",
- "block-device-driver",
+ "block-device-driver 0.2.0 (git+https://github.com/MabezDev/embedded-fatfs.git?rev=4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c)",
  "defmt 0.3.100",
  "embassy-futures",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
  "log",
- "sdio-host",
+ "sdio-host 0.9.0",
 ]
 
 [[package]]
@@ -2539,12 +2612,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "static_cell"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d89b0684884a883431282db1e4343f34afc2ff6996fe1f4a1664519b66e14c1e"
 dependencies = [
  "portable-atomic",
+]
+
+[[package]]
+name = "stm32-fmc"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7f0639399e2307c2446c54d91d4f1596343a1e1d5cab605b9cce11d0ab3858c"
+dependencies = [
+ "embedded-hal 0.2.7",
+]
+
+[[package]]
+name = "stm32-metapac"
+version = "16.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc520f60f6653a32479a95b9180b33908f0cbbdf106609465ee7dea98f4f5b37"
+dependencies = [
+ "cortex-m",
+ "cortex-m-rt",
 ]
 
 [[package]]
@@ -2802,6 +2900,7 @@ dependencies = [
  "bytemuck",
  "console_error_panic_hook",
  "const_format",
+ "cortex-m",
  "cortex-m-rt",
  "critical-section",
  "defmt-rtt",
@@ -2812,6 +2911,7 @@ dependencies = [
  "embassy-futures",
  "embassy-net",
  "embassy-rp",
+ "embassy-stm32",
  "embassy-sync",
  "embassy-time",
  "embedded-alloc",

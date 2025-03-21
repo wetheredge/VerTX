@@ -2,11 +2,11 @@ mod leds;
 
 use embassy_executor::Spawner;
 use embassy_futures::select;
-use embassy_rp::i2c::{self, I2c};
-use embassy_rp::pio::{self, Pio};
-use embassy_rp::spi::{self, Spi};
-use embassy_rp::watchdog::Watchdog;
-use embassy_rp::{bind_interrupts, gpio, peripherals};
+use embassy_stm32::exti::ExtiInput;
+use embassy_stm32::i2c::{self, I2c};
+use embassy_stm32::mode::Async;
+use embassy_stm32::spi::{self, Spi};
+use embassy_stm32::{bind_interrupts, gpio, peripherals, time};
 use embassy_time::Duration;
 use embedded_alloc::TlsfHeap;
 use static_cell::StaticCell;
@@ -17,14 +17,27 @@ use crate::storage::sd;
 use crate::ui::Input;
 
 bind_interrupts!(struct Irqs {
-    I2C0_IRQ => i2c::InterruptHandler<peripherals::I2C0>;
-    PIO0_IRQ_0 => pio::InterruptHandler<peripherals::PIO0>;
+    #[cfg(peripheral = "I2C1")]
+    I2C1_EV => i2c::EventInterruptHandler<peripherals::I2C1>;
+    #[cfg(peripheral = "I2C1")]
+    I2C1_ER => i2c::ErrorInterruptHandler<peripherals::I2C1>;
+
+    #[cfg(peripheral = "I2C2")]
+    I2C2_EV => i2c::EventInterruptHandler<peripherals::I2C2>;
+    #[cfg(peripheral = "I2C2")]
+    I2C2_ER => i2c::ErrorInterruptHandler<peripherals::I2C2>;
+
+    #[cfg(peripheral = "I2C3")]
+    I2C3_EV => i2c::EventInterruptHandler<peripherals::I2C3>;
+    #[cfg(peripheral = "I2C3")]
+    I2C3_ER => i2c::ErrorInterruptHandler<peripherals::I2C3>;
 });
+
+declare_hal_types!();
 
 #[global_allocator]
 static ALLOCATOR: TlsfHeap = TlsfHeap::empty();
 
-#[define_opaque(hal::Reset, hal::StatusLed, hal::StorageFuture, hal::Ui)]
 pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     static INIT_HEAP: StaticCell<()> = StaticCell::new();
     INIT_HEAP.init_with(|| {
@@ -47,93 +60,98 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         unsafe { ALLOCATOR.init(start as usize, HEAP_SIZE) };
     });
 
-    let p = embassy_rp::init(Default::default());
+    let config = embassy_stm32::Config::default();
+    let p = embassy_stm32::init(config);
 
-    let reset = Reset {
-        watchdog: Watchdog::new(p.WATCHDOG),
-    };
-
-    let status_led = {
-        let Pio {
-            mut common, sm0, ..
-        } = Pio::new(p.PIO0, Irqs);
-        let pin = target!(p, leds.status);
-        leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
-    };
-
-    let spi = Spi::new(
-        p.SPI1,
-        target!(p, spi.sclk),
-        target!(p, spi.mosi),
-        target!(p, spi.miso),
-        p.DMA_CH0,
-        p.DMA_CH1,
-        spi::Config::default(),
+    let status_led = leds::StatusDriver::new(
+        target!(p, leds.timer),
+        target!(p, leds.dma),
+        target!(p, leds.status),
     );
+
+    let spi = {
+        let mut config = spi::Config::default();
+        config.rise_fall_speed = gpio::Speed::VeryHigh; // FIXME: needed?
+        Spi::new(
+            target!(p, spi),
+            target!(p, spi.sclk),
+            target!(p, spi.mosi),
+            target!(p, spi.miso),
+            target!(p, spi.dma.tx),
+            target!(p, spi.dma.rx),
+            config,
+        )
+    };
 
     let storage = async {
         // Using impl Trait hits the `item does not constrain but has it in its
         // signature` error with the static below. Something neater would be nice, but
         // this works :/
         type SpiDevice = embedded_hal_bus::spi::ExclusiveDevice<
-            Spi<'static, peripherals::SPI1, spi::Async>,
+            Spi<'static, Async>,
             gpio::Output<'static>,
             embassy_time::Delay,
         >;
 
         static STORAGE: StaticCell<sd::Storage<SpiDevice>> = StaticCell::new();
-        let sd_cs = gpio::Output::new(target!(p, sd.cs), gpio::Level::High);
-        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, Spi::set_frequency).await;
+        let sd_cs = gpio::Output::new(target!(p, sd.cs), gpio::Level::High, gpio::Speed::VeryHigh); // FIXME: speed?
+        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
+            let mut config = spi.get_current_config();
+            config.frequency = time::hz(speed.to_Hz());
+            spi.set_config(&config).unwrap();
+        })
+        .await;
         let storage: &'static _ = STORAGE.init(storage);
         storage
     };
 
     let ui = {
-        let scl = target!(p, display.scl);
-        let sda = target!(p, display.sda);
-        let mut config = i2c::Config::default();
-        config.frequency = 1_000_000;
-        let display = hal::display::new(I2c::new_async(p.I2C0, scl, sda, Irqs, config));
+        let display = hal::display::new(I2c::new(
+            target!(p, display.i2c),
+            target!(p, display.scl),
+            target!(p, display.sda),
+            Irqs,
+            target!(p, display.dma.tx),
+            target!(p, display.dma.rx),
+            time::mhz(1),
+            i2c::Config::default(),
+        ));
 
         Ui {
             display,
-            up: gpio::Input::new(target!(p, ui.up), gpio::Pull::Up),
-            down: gpio::Input::new(target!(p, ui.down), gpio::Pull::Up),
-            right: gpio::Input::new(target!(p, ui.right), gpio::Pull::Up),
-            left: gpio::Input::new(target!(p, ui.left), gpio::Pull::Up),
+            up: target!(p, ExtiInput(ui.up, gpio::Pull::Up)),
+            down: target!(p, ExtiInput(ui.down, gpio::Pull::Up)),
+            right: target!(p, ExtiInput(ui.right, gpio::Pull::Up)),
+            left: target!(p, ExtiInput(ui.left, gpio::Pull::Up)),
         }
     };
 
     hal::Init {
-        reset,
+        reset: Reset,
         status_led,
         storage,
         ui,
     }
 }
 
-struct Reset {
-    watchdog: Watchdog,
-}
+struct Reset;
 
 impl hal::traits::Reset for Reset {
     fn shut_down(&mut self) -> ! {
-        panic!("Emulating shut down")
+        loog::panic!("Emulating shut down")
     }
 
     fn reboot(&mut self) -> ! {
-        self.watchdog.trigger_reset();
-        #[expect(clippy::empty_loop)]
-        loop {}
+        loog::todo!("reboot")
     }
 }
 
 struct Ui {
-    display: hal::display::Driver<I2c<'static, peripherals::I2C0, i2c::Async>>,
-    up: gpio::Input<'static>,
-    down: gpio::Input<'static>,
-    right: gpio::Input<'static>,
-    left: gpio::Input<'static>,
+    display: hal::display::Driver<I2c<'static, Async>>,
+    up: ExtiInput<'static>,
+    down: ExtiInput<'static>,
+    right: ExtiInput<'static>,
+    left: ExtiInput<'static>,
 }
 
 impl eg::geometry::OriginDimensions for Ui {
@@ -160,10 +178,10 @@ impl hal::traits::Ui for Ui {
     }
 
     async fn get_input(&mut self) -> crate::ui::Input {
-        async fn debounced(pin: &mut gpio::Input<'static>, input: Input) -> Input {
+        let debounced = async |pin, input| {
             crate::utils::debounced_falling_edge(pin, Duration::from_millis(20)).await;
             input
-        }
+        };
 
         let up = debounced(&mut self.up, Input::Up);
         let down = debounced(&mut self.down, Input::Down);

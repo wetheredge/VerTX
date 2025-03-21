@@ -5,13 +5,21 @@ export type Target = z.infer<typeof schema>;
 const index = z.number().nonnegative().int();
 const name = z.string().nonempty();
 const pin = z.union([index, name]);
+
 export const schema = z
 	.strictObject({
 		chip: z.string(),
 		leds: z.strictObject({
 			timer: name.optional(),
 			dma: name.optional(),
-			status: pin,
+			status: z.union([
+				pin,
+				z.strictObject({
+					red: pin,
+					green: pin,
+					blue: pin,
+				}),
+			]),
 		}),
 		sd: z.discriminatedUnion('type', [
 			z.strictObject({
@@ -22,10 +30,10 @@ export const schema = z
 		spi: z
 			.strictObject({
 				peripheral: name.optional(),
+				dma: z.strictObject({ tx: name, rx: name }).optional(),
 				sclk: pin,
 				miso: pin,
 				mosi: pin,
-				dma: z.strictObject({ tx: name, rx: name }).optional(),
 			})
 			.optional(),
 		ui: z.strictObject({
@@ -34,9 +42,18 @@ export const schema = z
 			left: pin,
 			right: pin,
 		}),
-		display: z.discriminatedUnion('type', [
+		display: z.discriminatedUnion('driver', [
 			z.strictObject({
-				type: z.literal('ssd1306'),
+				driver: z.literal('ssd1306'),
+				i2c: name.optional(),
+				dma: z.strictObject({ tx: name, rx: name }).optional(),
+				sda: pin,
+				scl: pin,
+			}),
+			z.strictObject({
+				driver: z.literal('sh1106'),
+				spi: name.optional(),
+				dma: z.strictObject({ tx: name, rx: name }).optional(),
 				sda: pin,
 				scl: pin,
 			}),

@@ -56,7 +56,7 @@ export async function build(
 }
 
 export function getFeatures(target: Target): Array<string> {
-	return [`chip-${target.chip}`, `display-${target.display.type}`];
+	return [`chip-${target.chip}`, `display-${target.display.driver}`];
 }
 
 type ChipInfo = { target: string; cpu?: string };
