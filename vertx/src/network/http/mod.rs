@@ -37,14 +37,18 @@ async fn run(id: usize, stack: Stack<'static>, api: &'static Api) -> ! {
             continue;
         }
 
-        if let Err(err) = server(tcp, &mut http_buffer, api).await {
+        if let Err(err) = server(&mut tcp, &mut http_buffer, api).await {
             loog::error!("http({id}): Error: {err:?}");
+        }
+
+        if let Err(err) = tcp.flush().await {
+            loog::warn!("http({id}): Failed to flush: {err:?}");
         }
     }
 }
 
 async fn server(
-    mut tcp: TcpSocket<'_>,
+    tcp: &mut TcpSocket<'_>,
     buffer: &mut [u8],
     api: &Api,
 ) -> Result<(), embassy_net::tcp::Error> {
@@ -90,18 +94,28 @@ async fn server(
             .and_then(|s| core::str::from_utf8(s).ok())
             .unwrap_or("*/*");
 
-        let Some(content_length) = content_length else {
-            tx.write_all(b"HTTP/1.1 411 Length Required\r\nContent-Length:0\r\n\r\n")
-                .await?;
-            // Can't re-use this connection without knowing where the next request starts
-            return Ok(());
+        let content_length = match (is_get, content_length) {
+            (true, None) => 0,
+            (false, Some(content_length)) => content_length,
+            (true, Some(_)) => {
+                // GET requests should not have a body or Content-Length
+                return tx
+                    .write_all(b"HTTP/1.1 400 Bad Request\r\nContent-Length:0\r\n\r\n")
+                    .await;
+            }
+            (false, None) => {
+                // TODO: handle Transfer-Encoding: chunked
+                return tx
+                    .write_all(b"HTTP/1.1 411 Length Required\r\nContent-Length:0\r\n\r\n")
+                    .await;
+            }
         };
 
         // For now, the request body has to fit entirely within the rest of the buffer
         if content_length > body.capacity() {
-            tx.write_all(b"HTTP/1.1 413 Content Too Large\r\nContent-Length:0\r\n\r\n")
-                .await?;
-            return Ok(());
+            return tx
+                .write_all(b"HTTP/1.1 413 Content Too Large\r\nContent-Length:0\r\n\r\n")
+                .await;
         }
 
         let body = read_body(&mut body, &mut rx, content_length).await?;
