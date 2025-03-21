@@ -12,7 +12,7 @@ use embedded_io_async::{Read, Write};
 
 use crate::configurator::Api;
 
-pub(super) const WORKERS: usize = 2;
+pub(super) const WORKERS: usize = 8;
 
 pub(super) fn spawn_all(spawner: Spawner, stack: Stack<'static>, api: &'static Api) {
     for id in 0..WORKERS {
