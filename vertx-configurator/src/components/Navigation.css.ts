@@ -1,4 +1,5 @@
 import { createVar, globalStyle, style } from '@vanilla-extract/css';
+import { iconButton } from '../styles/components.css.ts';
 import {
 	borderBase,
 	mediaIsMobile,
@@ -129,3 +130,19 @@ globalStyle(`${navLink}:not(.active):hover`, {
 globalStyle(`${navLink}:focus-visible`, {
 	borderColor: theme.color.blue,
 });
+
+export const powerButtonContainer = style({
+	display: 'inline-flex',
+	justifyContent: 'center',
+	gap: size.sm,
+
+	position: 'sticky',
+	bottom: size.sm,
+
+	borderTop: theme.border,
+	margin: padding,
+	marginTop: size.sm,
+	paddingTop: size.sm,
+});
+
+export const powerButton = iconButton;
