@@ -37,17 +37,22 @@ async fn run(id: usize, stack: Stack<'static>, api: &'static Api) -> ! {
             continue;
         }
 
-        if let Err(err) = server(&mut tcp, &mut http_buffer, api).await {
+        loog::trace!("http({id}): new connection");
+
+        if let Err(err) = server(id, &mut tcp, &mut http_buffer, api).await {
             loog::error!("http({id}): Error: {err:?}");
         }
 
         if let Err(err) = tcp.flush().await {
             loog::warn!("http({id}): Failed to flush: {err:?}");
         }
+
+        loog::trace!("http({id}): connection closed");
     }
 }
 
 async fn server(
+    id: usize,
     tcp: &mut TcpSocket<'_>,
     buffer: &mut [u8],
     api: &Api,
@@ -70,6 +75,12 @@ async fn server(
             respond::bad_request(&mut tx, b"Bad Request").await?;
             return Ok(());
         }
+
+        loog::trace!(
+            "http({id}): {=str} '{=str}'",
+            request.method.unwrap_or("<NO METHOD>"),
+            request.path.unwrap_or_default(),
+        );
 
         let is_get = request
             .method
