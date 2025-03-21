@@ -76,7 +76,7 @@ async fn server(
             .is_some_and(|method| method.eq_ignore_ascii_case("get"));
 
         let path = request.path.unwrap_or_default();
-        let path = path.strip_suffix('/').unwrap_or(path);
+        let path = path.trim_matches('/');
 
         let connection = request
             .headers
@@ -126,7 +126,7 @@ async fn server(
             {
                 let request = api::Request {
                     method,
-                    route: path.trim_end_matches('/'),
+                    route: path.trim_start_matches('/'),
                     body,
                 };
                 api.handle(request, api::ResponseWriter(&mut tx)).await?;
