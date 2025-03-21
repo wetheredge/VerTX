@@ -1,8 +1,12 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "astro/tsconfigs/strict",
-	"include": [".astro/types.d.ts", "**/*"],
-	"exclude": ["dist"],
+	"extends": "astro/tsconfigs/strictest",
+	"compilerOptions": {
+		"types": [],
+		"exactOptionalPropertyTypes": false,
+		"noImplicitReturns": false
+	},
+	"include": [".astro/types.d.ts", "src/**/*"],
 	"references": [
 		{
 			"path": "./tsconfig.bun.json"
