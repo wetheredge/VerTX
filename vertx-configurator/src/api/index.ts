@@ -163,7 +163,7 @@ const delete_ = (route: RoutesFor<'DELETE'>['path']) =>
 export { delete_ as delete };
 
 export class ApiError extends Error {
-	name = 'ApiError';
+	override name = 'ApiError';
 	route: string;
 	response: Response;
 
