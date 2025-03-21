@@ -3,6 +3,8 @@ import IconGamepad from 'lucide-static/icons/gamepad-2.svg';
 import IconInfo from 'lucide-static/icons/info.svg';
 import IconPackage from 'lucide-static/icons/package.svg';
 import IconPlane from 'lucide-static/icons/plane.svg';
+import IconPower from 'lucide-static/icons/power.svg';
+import IconRotateCcw from 'lucide-static/icons/rotate-ccw.svg';
 import IconSettings from 'lucide-static/icons/settings.svg';
 
 import NavLink from './NavLink.astro';
@@ -17,4 +19,21 @@ import * as styles from './Navigation.css';
 		<NavLink href="/hardware" label="Hardware" icon={IconGamepad} />
 		<NavLink href="/models" label="Models" icon={IconPlane} />
 	</nav>
+	<div class={styles.powerButtonContainer}>
+		<button id="shut-down" class={styles.powerButton} type="button" title="Shut down"><IconPower /></button>
+		<button id="reboot" class={styles.powerButton} type="button" title="Reboot"><IconRotateCcw /></button>
+	</div>
 </div>
+
+<script>
+	import { post } from "../api";
+
+	function powerButtonSetup(route: 'shut-down'|'reboot') {
+		(document.getElementById(route)! as HTMLButtonElement).addEventListener('click', async () => {
+			await post(route);
+		});
+	}
+
+	powerButtonSetup('shut-down');
+	powerButtonSetup('reboot');
+</script>
