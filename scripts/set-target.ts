@@ -8,8 +8,6 @@ import * as chip2target from '../.config/chip2target.json';
 const targetsDir = `${cwd()}/targets`;
 const targetEnvFile = '.env.target';
 
-const BACKPACK_CHIPS = ['esp32', 'esp32c3', 'esp32s3'];
-
 type Pins = Record<string, unknown>;
 type Target = {
 	chip: string;
@@ -35,17 +33,6 @@ const env: Record<string, string> = {
 	VERTX_RUSTC_TARGET: getRustcTarget(target.chip),
 	VERTX_FEATURES: `display-${target.pins.display.type}`,
 };
-
-if ('backpack' in target.pins) {
-	const choices = BACKPACK_CHIPS.map((name) => ({ name, value: name }));
-	const chip = await select({
-		message: 'Choose a backpack chip:',
-		choices,
-		default: import.meta.env.VERTX_BACKPACK_CHIP,
-	});
-	env.VERTX_BACKPACK_CHIP = chip;
-	env.VERTX_BACKPACK_RUSTC_TARGET = getRustcTarget(chip);
-}
 
 await Bun.write(
 	targetEnvFile,
