@@ -1,14 +1,5 @@
 version: 3
 
-includes:
-  embedded:
-    taskfile: ../.config/tasks/Taskfile.embedded.yaml
-    internal: true
-    vars:
-      chip: "{{.VERTX_CHIP}}"
-      rustcTarget: "{{.VERTX_RUSTC_TARGET}}"
-      features: "{{.VERTX_FEATURES}}"
-
 dotenv:
   - ../.env
   - .env
@@ -24,34 +15,30 @@ tasks:
       - echo 'Except for tasks starting with `simulator:`, all tasks require a target. This'
       - echo 'can be set by running `task target:set` in the root of the repo.'
 
-  check:
+  cargo:
+    internal: true
     requires:
-      vars: [VERTX_TARGET, VERTX_CHIP]
+      vars: [cmd, VERTX_CHIP, VERTX_RUSTC_TARGET]
+    cmd: cargo {{.cmd}} -Zbuild-std=alloc,core --target {{.VERTX_RUSTC_TARGET}} -F 'chip-{{.VERTX_CHIP}}{{if .VERTX_FEATURES}} {{.VERTX_FEATURES}}{{end}}' {{.args}}
+
+  check:
     cmds:
-      - task: embedded:cargo
-        vars:
-          command: clippy
-          args: "{{.CLI_ARGS}}"
+      - task: cargo
+        vars: { cmd: clippy }
 
   build:
-    requires:
-      vars: [VERTX_TARGET, VERTX_CHIP]
     cmds:
-      - task: embedded:cargo
-        vars:
-          command: build
-          args: "{{.CLI_ARGS}}"
+      - task: cargo
+        vars: { cmd: build }
       - task: post-build
         vars: { profile: debug }
 
   build:release:
-    requires:
-      vars: [VERTX_TARGET, VERTX_CHIP]
     cmds:
-      - task: embedded:cargo
+      - task: cargo
         vars:
           command: build
-          args: --release {{.CLI_ARGS}}
+          args: --release
       - task: post-build
         vars: { profile: release }
 
@@ -60,17 +47,12 @@ tasks:
     cmd: cp ../target/{{.VERTX_RUSTC_TARGET}}/{{.profile}}/vertx ../target/vertx
     silent: true
 
-  flash:
-    - task: embedded:flash
-      vars:
-        bin: ../target/vertx
-        partitions: partitions.csv
+  flash: ../.tools/bin/probe-rs run --preverify --chip {{.VERTX_CHIP}} --idf-partition-table partitions.csv ../target/vertx
 
   simulator:check:
     cmds:
       - task: simulator:cargo
         vars: { command: clippy }
-
 
   simulator:build:
     cmds:
@@ -98,7 +80,7 @@ tasks:
   simulator:optimize:
     internal: true
     dir: ..
-    cmd: .tools/bin/wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts target/simulator
+    cmd: .tools/bin/wasm-opt {{.VERTX_WASM_OPT_ARGS}} --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts target/simulator
 
   simulator:cargo:
     internal: true

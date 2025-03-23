@@ -1,9 +1,0 @@
-version: 3
-
-tasks:
-  cargo:
-    requires:
-      vars: [command, chip, rustcTarget]
-    cmd: cargo {{.command}} -Zbuild-std=alloc,core --target {{.rustcTarget}} -F 'chip-{{.chip}}{{if .features}} {{.features}}{{end}}' {{.args}}
-
-  flash: ../.tools/bin/probe-rs run --preverify --chip {{.chip}}{{if .partitions}} --idf-partition-table {{.partitions}}{{end}} {{.bin}}
