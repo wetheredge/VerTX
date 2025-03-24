@@ -1,6 +1,8 @@
 use core::fmt;
 
 use embedded_io_async::Write;
+#[cfg(feature = "defmt")]
+use loog::defmt;
 
 use crate::build_info;
 
@@ -22,6 +24,8 @@ impl Api {
         request: R,
         writer: W,
     ) -> Result<(), W::Error> {
+        loog::trace!("{:?} '{=str}'", request.method(), request.route());
+
         // TODO: check content-type against accept
 
         let method = request.method();
@@ -106,6 +110,7 @@ impl Api {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub(crate) enum Method {
     Get,
     Post,
