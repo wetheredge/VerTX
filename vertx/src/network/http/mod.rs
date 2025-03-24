@@ -240,10 +240,21 @@ struct Buffer<'a> {
 }
 
 impl<'a> Buffer<'a> {
-    fn new(inner: &'a mut [u8]) -> Self {
+    const fn new(inner: &'a mut [u8]) -> Self {
         Self { inner, len: 0 }
     }
+}
 
+impl Buffer<'static> {
+    const fn empty() -> Self {
+        Self {
+            inner: &mut [],
+            len: 0,
+        }
+    }
+}
+
+impl Buffer<'_> {
     const fn len(&self) -> usize {
         self.len
     }
@@ -273,12 +284,6 @@ impl ops::Deref for Buffer<'_> {
     }
 }
 
-impl ops::DerefMut for Buffer<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.inner
-    }
-}
-
 /// Read until end of headers, returning separate header slice & partial body
 async fn read_headers<'a, R: Read>(
     buffer: &'a mut Buffer<'_>,
@@ -287,12 +292,15 @@ async fn read_headers<'a, R: Read>(
     loop {
         let old_len = buffer.len();
         if buffer.read_from(reader).await? == 0 {
-            return Ok((&[], Buffer::new(buffer)));
+            return Ok((&[], Buffer::empty()));
         }
 
         if let Some(body_offset) = find_body(buffer, old_len) {
-            let (head, tail) = buffer.split_at_mut(body_offset);
-            return Ok((head, Buffer::new(tail)));
+            let body_len = buffer.len() - body_offset;
+            let (headers, body) = buffer.inner.split_at_mut(body_offset);
+            let mut body = Buffer::new(body);
+            body.len = body_len;
+            return Ok((headers, body));
         }
     }
 }
@@ -334,9 +342,9 @@ async fn read_body<'a, R: Read>(
     reader: &mut R,
     len: usize,
 ) -> Result<&'a [u8], R::Error> {
-    let mut total_read = buffer.len();
-    while total_read < len {
-        total_read += buffer.read_from(reader).await?;
+    while loog::dbg!(buffer.len()) < loog::dbg!(len) {
+        buffer.read_from(reader).await?;
     }
+
     Ok(&buffer[0..len])
 }
