@@ -7,6 +7,7 @@ import type { RoutesFor } from './types';
 
 type Accept = 'json' | 'binary';
 type Headers = NonNullable<NonNullable<Parameters<typeof fetch>[1]>['headers']>;
+type Body = ArrayBuffer | undefined;
 
 const isSimulator = import.meta.env.VERTX_TARGET === 'simulator';
 let simulatorRequestId = 0;
@@ -16,7 +17,7 @@ function fetchNative(
 	method: Method,
 	route: string,
 	headers: Headers,
-	body: ArrayBuffer,
+	body: Body,
 ): Promise<Response> {
 	return fetch(`/api/${route}`, { method, headers, body });
 }
@@ -25,7 +26,7 @@ async function fetchSimulator(
 	method: Method,
 	route: string,
 	_headers: Headers,
-	body: ArrayBuffer,
+	body: Body,
 ): Promise<Response> {
 	const request: ConfiguratorRequest = {
 		id: simulatorRequestId++,
@@ -92,12 +93,7 @@ async function request<T>(
 	};
 
 	const fetch = isSimulator ? fetchSimulator : fetchNative;
-	const response = await fetch(
-		method,
-		route,
-		headers,
-		body ?? new ArrayBuffer(0),
-	);
+	const response = await fetch(method, route, headers, body);
 	if (!response.ok) {
 		throw new ApiError(route, response);
 	}

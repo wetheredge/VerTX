@@ -70,12 +70,8 @@ export class Simulator {
 				this.#configurator = event.source;
 
 				const request = event.data;
-				apiTx(
-					request.id,
-					request.route,
-					request.method,
-					new Uint8Array(request.body),
-				);
+				const body = request.body ? new Uint8Array(request.body) : null;
+				apiTx(request.id, request.route, request.method, body);
 			},
 		);
 
