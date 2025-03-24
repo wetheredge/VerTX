@@ -46,7 +46,7 @@ mod ipc {
     }
 
     #[wasm_bindgen(js_name = "apiTx")]
-    pub fn api_rx(id: u32, route: String, method: WasmMethod, body: Box<[u8]>) {
+    pub fn api_rx(id: u32, route: String, method: WasmMethod, body: Option<Box<[u8]>>) {
         super::configurator::Request {
             id,
             route,

@@ -34,7 +34,7 @@ pub(super) struct Request {
     pub(super) id: u32,
     pub(super) route: String,
     pub(super) method: WasmMethod,
-    pub(super) body: Box<[u8]>,
+    pub(super) body: Option<Box<[u8]>>,
 }
 
 impl Request {
@@ -53,7 +53,7 @@ impl api::Request for Request {
     }
 
     fn body(&self) -> &[u8] {
-        &self.body
+        self.body.as_deref().unwrap_or_default()
     }
 }
 

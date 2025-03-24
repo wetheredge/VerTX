@@ -4,7 +4,7 @@ export type ConfiguratorRequest = {
 	id: number;
 	route: string;
 	method: Method;
-	body: ArrayBuffer;
+	body: ArrayBuffer | undefined;
 };
 
 export type ConfiguratorResponse = {
