@@ -131,7 +131,13 @@ async fn server(
 
         let body = read_body(&mut body, &mut rx, content_length).await?;
 
-        if let Some(path) = path.strip_prefix("/api") {
+        let (path, _query_and_hash) = path.split_once('?').unwrap_or((path, ""));
+
+        // `api` -> Some(""); `api/foo` -> Some("foo")
+        let api_path = path
+            .strip_prefix("api")
+            .and_then(|p| p.is_empty().then_some("").or_else(|| p.strip_prefix('/')));
+        if let Some(path) = api_path {
             if let Ok(method) =
                 crate::configurator::api::Method::try_from(request.method.unwrap_or_default())
             {
