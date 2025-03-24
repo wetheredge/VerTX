@@ -51,13 +51,15 @@ tasks:
     env:
       NODE_ENV: production
       VERTX_SIMULATOR: '{{.simulator}}'
-    cmd: bun run astro build
+    cmds:
+      - bun run astro build
+      - bun run scripts/prune.ts
     sources:
       - ../bun.lock
       - src/**/*
       - '*.config.*'
       - tsconfig.*
-      - scripts/post-build.ts
+      - scripts/*
       - dist/.taskCacheKey
 
   build:post:

@@ -1,8 +1,6 @@
 #!/usr/bin/env bun
 
-import { fileURLToPath } from 'bun';
-
-const outDir = fileURLToPath(new URL('../dist', import.meta.url));
+import { assetPaths, outDir, pathToRoute, prettySize } from './utils';
 
 type Asset = {
 	route: string;
@@ -12,16 +10,14 @@ type Asset = {
 };
 
 const assets = new Array<Asset>();
-
 let totalSize = 0;
-
-for await (const path of new Bun.Glob('**').scan(outDir)) {
+for await (const path of assetPaths()) {
 	const rawPath = `${outDir}/${path}`;
 	const compressedPath = `${rawPath}.gz`;
 
 	const raw = Bun.file(rawPath);
 	const asset: Asset = {
-		route: path.replace(/(^|\/)index\.html/, '').replace(/\.html$/, ''),
+		route: pathToRoute(path),
 		file: path,
 		mime: raw.type,
 		gzip: false,
@@ -29,7 +25,7 @@ for await (const path of new Bun.Glob('**').scan(outDir)) {
 
 	let size = raw.size;
 	if (raw.type.startsWith('text/')) {
-		const compressed = Bun.gzipSync(await raw.arrayBuffer());
+		const compressed = Bun.gzipSync(await raw.bytes());
 
 		if (compressed.byteLength < size) {
 			size = await Bun.write(compressedPath, compressed);
@@ -42,6 +38,8 @@ for await (const path of new Bun.Glob('**').scan(outDir)) {
 	assets.push(asset);
 }
 
-await Bun.write(`${outDir}/assets.json`, JSON.stringify(assets));
+const strip = (key: string, value: unknown) =>
+	key === 'size' || key === 'raw' ? undefined : value;
+await Bun.write(`${outDir}/assets.json`, JSON.stringify(assets, strip));
 
-console.info(`Total size: ${(totalSize / 1024).toFixed(2)}KiB`);
+console.info('Total size:', prettySize(totalSize));
