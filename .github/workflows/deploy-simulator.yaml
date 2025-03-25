@@ -37,7 +37,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run astro build
         env:
-          VERTX_TARGET: simulator
+          NODE_ENV: production
+          VERTX_SIMULATOR: true
       - run: bun run ../scripts/csp-nonce.ts
       - uses: actions/upload-artifact@v4.6.1
         with:

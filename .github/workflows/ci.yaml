@@ -120,6 +120,8 @@ jobs:
           bun-version-file: .tool-versions
       - run: bun install --frozen-lockfile
       - run: bun run astro build
+        env:
+          NODE_ENV: production
       - run: bun run scripts/post-build.ts
       - uses: actions/upload-artifact@v4.6.1
         with:
