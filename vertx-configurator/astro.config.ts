@@ -1,9 +1,10 @@
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { minify } from '@zokki/astro-minify';
 import type { AstroUserConfig } from 'astro';
+import { envField } from 'astro/config';
 
 const port = 8001;
-const isSimulator = process.env.VERTX_TARGET === 'simulator';
+const isSimulator = process.env.VERTX_SIMULATOR === 'true';
 
 const assetsPrefix = isSimulator ? 'assets/' : '_';
 
@@ -15,6 +16,16 @@ const config = {
 	},
 
 	base: isSimulator && import.meta.env.PROD ? '/configurator' : '',
+	env: {
+		schema: {
+			// biome-ignore lint/style/useNamingConvention:
+			VERTX_SIMULATOR: envField.boolean({
+				context: 'client',
+				access: 'public',
+				default: false,
+			}),
+		},
+	},
 	devToolbar: {
 		enabled: !isSimulator,
 	},

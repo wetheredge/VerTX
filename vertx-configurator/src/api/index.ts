@@ -1,3 +1,4 @@
+import { VERTX_SIMULATOR } from 'astro:env/client';
 import type {
 	ConfiguratorRequest,
 	ConfiguratorResponse,
@@ -9,7 +10,6 @@ type Accept = 'json' | 'binary';
 type Headers = NonNullable<NonNullable<Parameters<typeof fetch>[1]>['headers']>;
 type Body = ArrayBuffer | undefined;
 
-const isSimulator = import.meta.env.VERTX_TARGET === 'simulator';
 let simulatorRequestId = 0;
 const simulatorPromises = new Map<number, (resp: Response) => void>();
 
@@ -46,7 +46,7 @@ async function fetchSimulator(
 	});
 }
 
-if (isSimulator) {
+if (VERTX_SIMULATOR) {
 	window.addEventListener(
 		'message',
 		(event: MessageEvent<ConfiguratorResponse>) => {
@@ -92,7 +92,7 @@ async function request<T>(
 		Accept: accept ? mimes[accept] : '*/*',
 	};
 
-	const fetch = isSimulator ? fetchSimulator : fetchNative;
+	const fetch = VERTX_SIMULATOR ? fetchSimulator : fetchNative;
 	const response = await fetch(method, route, headers, body);
 	if (!response.ok) {
 		throw new ApiError(route, response);

@@ -31,14 +31,14 @@ tasks:
   run:
     desc: Run a development server for use with simulator/run
     env:
-      VERTX_TARGET: simulator
+      VERTX_SIMULATOR: true
     cmd: bun run astro dev
 
   build:
     - task: cache:native
     - task: build-impl
       vars:
-        target: native
+        simulator: false
     - task: build:post
 
   preview:
@@ -50,7 +50,7 @@ tasks:
     deps: [check]
     env:
       NODE_ENV: production
-      VERTX_TARGET: '{{.target}}'
+      VERTX_SIMULATOR: '{{.simulator}}'
     cmd: bun run astro build
     sources:
       - ../bun.lock
@@ -71,7 +71,7 @@ tasks:
       - task: cache:simulator
       - task: build-impl
         vars:
-          target: simulator
+          simulator: true
 
   cache:*:
     cmd: mkdir -p dist && echo {{.MATCH}} > dist/.taskCacheKey
