@@ -4,7 +4,7 @@ import { existsSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { exit } from 'node:process';
 import { $, fileURLToPath } from 'bun';
-import * as chip2Target from '../.config/chip2target.json';
+import * as chip2Target from '../.config/chips.json';
 import { schema } from './target-common';
 
 export async function build(
@@ -14,22 +14,25 @@ export async function build(
 	args: Array<string> = [],
 ) {
 	const target = schema.parse(rawTarget);
-
-	// @ts-expect-error
-	const tuple: string | undefined = chip2Target[target.chip];
-	if (!tuple) {
-		throw new Error(`Missing target tuple for chip '${target.chip}'`);
-	}
+	const chip = getChipInfo(target.chip);
 
 	const features = [
 		`chip-${target.chip}`,
 		`display-${target.pins.display.type}`,
 	].join(' ');
 
-	await $`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${tuple} -F '${features}' ${args}`.env(
+	const rustflags = [
+		process.env.RUSTFLAGS,
+		chip.cpu && `-Ctarget-cpu=${chip.cpu}`,
+	]
+		.filter((s) => s && s.length > 0)
+		.join(' ');
+
+	await $`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${args}`.env(
 		{
 			CARGO_TERM_COLOR: 'always',
 			...process.env,
+			RUSTFLAGS: rustflags,
 			VERTX_TARGET: targetName,
 		},
 	);
@@ -39,7 +42,7 @@ export async function build(
 		const isRelease = args.includes('-r') || args.includes('--release');
 		const profile = isRelease ? 'release' : 'debug';
 
-		const from = join(tuple, profile, 'vertx');
+		const from = join(chip.target, profile, 'vertx');
 		const to = join(targetDir, 'vertx');
 
 		if (existsSync(to)) {
@@ -48,6 +51,15 @@ export async function build(
 
 		symlinkSync(from, to);
 	}
+}
+
+type ChipInfo = { target: string; cpu?: string };
+function getChipInfo(chip: string): ChipInfo {
+	const info = (chip2Target as Record<string, string | ChipInfo>)[chip];
+	if (info == null) {
+		throw new Error(`Missing info for chip '${chip}'`);
+	}
+	return typeof info === 'string' ? { target: info } : info;
 }
 
 if (Bun.argv[1] === import.meta.path) {
