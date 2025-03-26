@@ -28,14 +28,18 @@ export async function build(
 		.filter((s) => s && s.length > 0)
 		.join(' ');
 
-	await $`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${args}`.env(
-		{
-			CARGO_TERM_COLOR: 'always',
-			...process.env,
-			RUSTFLAGS: rustflags,
-			VERTX_TARGET: targetName,
-		},
-	);
+	const cargo =
+		await $`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${args}`
+			.nothrow()
+			.env({
+				CARGO_TERM_COLOR: 'always',
+				...process.env,
+				RUSTFLAGS: rustflags,
+				VERTX_TARGET: targetName,
+			});
+	if (cargo.exitCode !== 0) {
+		exit(cargo.exitCode);
+	}
 
 	if (command === 'build') {
 		const targetDir = fileURLToPath(new URL('../target', import.meta.url));
