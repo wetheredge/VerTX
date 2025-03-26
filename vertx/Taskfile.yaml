@@ -37,7 +37,7 @@ tasks:
     cmds:
       - task: cargo
         vars:
-          command: build
+          cmd: build
           args: --release
       - task: post-build
         vars: { profile: release }
