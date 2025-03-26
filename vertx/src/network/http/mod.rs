@@ -342,7 +342,7 @@ async fn read_body<'a, R: Read>(
     reader: &mut R,
     len: usize,
 ) -> Result<&'a [u8], R::Error> {
-    while loog::dbg!(buffer.len()) < loog::dbg!(len) {
+    while buffer.len() < len {
         buffer.read_from(reader).await?;
     }
 
