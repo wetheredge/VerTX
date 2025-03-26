@@ -3,7 +3,6 @@
 import { cwd } from 'node:process';
 import { select } from '@inquirer/prompts';
 import { Glob } from 'bun';
-import * as chip2target from '../.config/chip2target.json';
 
 const targetsDir = `${cwd()}/targets`;
 const targetEnvFile = '.env.target';
@@ -30,8 +29,6 @@ const target: Target = await import(`${targetsDir}/${targetName}.toml`);
 const env: Record<string, string> = {
 	VERTX_TARGET: targetName,
 	VERTX_CHIP: target.chip,
-	VERTX_RUSTC_TARGET: getRustcTarget(target.chip),
-	VERTX_FEATURES: `display-${target.pins.display.type}`,
 };
 
 await Bun.write(
@@ -40,12 +37,3 @@ await Bun.write(
 		.map(([key, value]) => `${key}=${value}`)
 		.join('\n'),
 );
-
-function getRustcTarget(chip: string): string {
-	if (chip in chip2target) {
-		// @ts-expect-error
-		return chip2target[chip];
-	}
-
-	throw new Error(`Missing rustc target for chip '${chip}'`);
-}

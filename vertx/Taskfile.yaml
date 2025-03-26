@@ -15,37 +15,9 @@ tasks:
       - echo 'Except for tasks starting with `simulator:`, all tasks require a target. This'
       - echo 'can be set by running `task target:set` in the root of the repo.'
 
-  cargo:
-    internal: true
-    requires:
-      vars: [cmd, VERTX_CHIP, VERTX_RUSTC_TARGET]
-    cmd: cargo {{.cmd}} -Zbuild-std=alloc,core --target {{.VERTX_RUSTC_TARGET}} -F 'chip-{{.VERTX_CHIP}}{{if .VERTX_FEATURES}} {{.VERTX_FEATURES}}{{end}}' {{.args}}
-
-  check:
-    cmds:
-      - task: cargo
-        vars: { cmd: clippy }
-
-  build:
-    cmds:
-      - task: cargo
-        vars: { cmd: build }
-      - task: post-build
-        vars: { profile: debug }
-
-  build:release:
-    cmds:
-      - task: cargo
-        vars:
-          cmd: build
-          args: --release
-      - task: post-build
-        vars: { profile: release }
-
-  post-build:
-    internal: true
-    cmd: cp ../target/{{.VERTX_RUSTC_TARGET}}/{{.profile}}/vertx ../target/vertx
-    silent: true
+  check: bun run ../scripts/build-target.ts --command=clippy {{.VERTX_TARGET}}
+  build: bun run ../scripts/build-target.ts {{.VERTX_TARGET}}
+  build:release: bun run ../scripts/build-target.ts {{.VERTX_TARGET}} --release
 
   flash: ../.tools/bin/probe-rs run --preverify --chip {{.VERTX_CHIP}} --idf-partition-table partitions.csv ../target/vertx
 

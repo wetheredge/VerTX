@@ -137,31 +137,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: devkit-esp32s3
-            chip: esp32s3
-            display: ssd1306
-          - target: devkit-rp-pico
-            chip: rp2040
-            display: ssd1306
+        target:
+          - devkit-esp32s3
+          - devkit-rp-pico
     env:
       VERTX_SKIP_CONFIGURATOR_BUILD: true
-      VERTX_TARGET: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-rust
+      - uses: oven-sh/setup-bun@v2.0.1
+        with:
+          bun-version-file: .tool-versions
+      - run: bun install --frozen-lockfile
       - name: Get pre-built configurator
         uses: actions/download-artifact@v4.1.9
         with:
           name: configurator
           path: vertx-configurator/dist
-      - id: chip
-        run: jq -r '"target=\(.${{ matrix.chip }})"' .config/chip2target.json >> "$GITHUB_OUTPUT"
       - name: Run clippy
-        run: cargo clippy -Zbuild-std=alloc,core --target '${{ steps.chip.outputs.target }}' -F 'chip-${{ matrix.chip }} display-${{ matrix.display }}'
-        working-directory: vertx
+        run: bun run scripts/build-target.ts --command=clippy ${{ matrix.target }}
 
   clippy-vertx-simulator:
     name: Clippy (vertx simulator)

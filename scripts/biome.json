@@ -13,6 +13,16 @@
 	},
 	"overrides": [
 		{
+			"include": ["./build-target.ts", "./set-target.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useNamingConvention": "off"
+					}
+				}
+			}
+		},
+		{
 			"include": ["./check-targets.ts"],
 			"linter": {
 				"rules": {
@@ -23,31 +33,21 @@
 			}
 		},
 		{
-			"include": ["./fetch-tools/*.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noDefaultExport": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./set-target.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"useNamingConvention": "off"
-					}
-				}
-			}
-		},
-		{
 			"include": ["./fetch-tools/*.ts", "./update.ts"],
 			"linter": {
 				"rules": {
 					"style": {
 						"noNonNullAssertion": "off"
+					}
+				}
+			}
+		},
+		{
+			"include": ["./fetch-tools/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
 					}
 				}
 			}
