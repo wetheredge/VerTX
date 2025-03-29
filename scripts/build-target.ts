@@ -18,7 +18,7 @@ export async function build(
 
 	const features = [
 		`chip-${target.chip}`,
-		`display-${target.pins.display.type}`,
+		`display-${target.display.type}`,
 	].join(' ');
 
 	const rustflags = [

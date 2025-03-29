@@ -1,23 +1,23 @@
 chip = "rp2040"
 
-[pins]
-leds = 6
-sd = 7
-analog = []
-switches = []
+leds.status = 6
 
-[pins.spi]
+[sd]
+type = "spi"
+cs = 7
+
+[spi]
 sclk = 10
 mosi = 11
 miso = 12
 
-[pins.ui]
+[ui]
 up = 0
 down = 1
 right = 2
 left = 3
 
-[pins.display]
-type = 'ssd1306'
+[display]
+type = "ssd1306"
 sda = 8
 scl = 9

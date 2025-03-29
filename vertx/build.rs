@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufWriter, Write as _};
 use std::process::Command;
-use std::{env, fs, io};
+use std::{env, fmt, fs, io};
 
 use serde::Deserialize;
 
@@ -96,23 +96,30 @@ fn build_info(out_dir: &str) -> io::Result<()> {
 fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
     struct Target {
-        pins: Pins,
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Pins {
-        display: DisplayPins,
-
+        #[expect(unused)]
+        chip: String,
+        sd: Sd,
+        display: Display,
         #[serde(flatten)]
         rest: MiscPins,
     }
 
     #[derive(Debug, Deserialize)]
-    #[serde(transparent)]
-    struct MiscPins(HashMap<String, PinSpec>);
+    struct Sd {
+        #[serde(rename = "type")]
+        _type: SdType,
+        #[serde(flatten)]
+        pins: MiscPins,
+    }
 
     #[derive(Debug, Deserialize)]
-    struct DisplayPins {
+    #[serde(rename_all = "lowercase")]
+    enum SdType {
+        Spi,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Display {
         #[serde(rename = "type")]
         _type: DisplayType,
         #[serde(flatten)]
@@ -126,11 +133,31 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     }
 
     #[derive(Debug, Deserialize)]
+    #[serde(transparent)]
+    struct MiscPins(HashMap<String, PinSpec>);
+
+    #[derive(Debug, Deserialize)]
     #[serde(untagged)]
     enum PinSpec {
-        Single(u8),
-        Multiple(Vec<u8>),
+        Single(Pin),
+        Multiple(Vec<Pin>),
         Nested(MiscPins),
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(untagged)]
+    enum Pin {
+        Numbered(u8),
+        Named(String),
+    }
+
+    impl fmt::Display for Pin {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Pin::Numbered(num) => write!(f, "{num}"),
+                Pin::Named(name) => f.write_str(name),
+            }
+        }
     }
 
     impl MiscPins {
@@ -184,8 +211,9 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     let target: Target = basic_toml::from_str(&target).unwrap();
 
     let mut out = String::from("macro_rules! pins {\n");
-    target.pins.rest.format(&mut out, gpio, "");
-    target.pins.display.pins.format(&mut out, gpio, "display");
+    target.rest.format(&mut out, gpio, "");
+    target.sd.pins.format(&mut out, gpio, "sd");
+    target.display.pins.format(&mut out, gpio, "display");
     out.push_str("}\n");
 
     fs::write(format!("{out_dir}/pins.rs"), out)

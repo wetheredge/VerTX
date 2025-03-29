@@ -58,7 +58,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         let Pio {
             mut common, sm0, ..
         } = Pio::new(p.PIO0, Irqs);
-        let pin = pins!(p, leds);
+        let pin = pins!(p, leds.status);
         leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
     };
 
@@ -83,7 +83,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         >;
 
         static STORAGE: StaticCell<sd::Storage<SpiDevice>> = StaticCell::new();
-        let sd_cs = gpio::Output::new(pins!(p, sd), gpio::Level::High);
+        let sd_cs = gpio::Output::new(pins!(p, sd.cs), gpio::Level::High);
         let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
             spi.set_frequency(speed.to_Hz());
         })

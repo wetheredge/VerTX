@@ -41,7 +41,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds));
+    let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds.status));
 
     let spi = {
         let (rx_buffer, rx_descriptors, tx_buffer, tx_descriptors) = esp_hal::dma_buffers!(32000);
@@ -69,7 +69,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         >;
 
         static STORAGE: StaticCell<sd::Storage<Spi>> = StaticCell::new();
-        let sd_cs = gpio::Output::new(pins!(p, sd), gpio::Level::High);
+        let sd_cs = gpio::Output::new(pins!(p, sd.cs), gpio::Level::High);
         let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
             let config = spi::Config::default().with_frequency(speed);
             spi.apply_config(&config).unwrap();
