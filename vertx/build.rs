@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
 
         memory_layout(out_dir, root);
         link_args();
-        pins(out_dir, root, &target_name)?;
+        target_macro(out_dir, root, &target_name)?;
     }
 
     if feature("NETWORK") {
@@ -92,15 +92,25 @@ fn build_info(out_dir: &str) -> io::Result<()> {
     fs::write(format!("{out_dir}/is_debug"), debug.to_string())
 }
 
-fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
+fn target_macro(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     #[derive(Debug, Deserialize)]
     struct Target {
         #[expect(unused)]
         chip: String,
+        leds: Leds,
         sd: Sd,
+        spi: Option<Spi>,
         display: Display,
         #[serde(flatten)]
-        rest: MiscPins,
+        rest: Tree,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Leds {
+        timer: Option<String>,
+        dma: Option<String>,
+        #[serde(flatten)]
+        pins: Tree,
     }
 
     #[derive(Debug, Deserialize)]
@@ -108,7 +118,14 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         #[serde(rename = "type")]
         _type: SdType,
         #[serde(flatten)]
-        pins: MiscPins,
+        pins: Tree,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Spi {
+        peripheral: Option<String>,
+        #[serde(flatten)]
+        pins: Tree,
     }
 
     #[derive(Debug, Deserialize)]
@@ -122,7 +139,7 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         #[serde(rename = "type")]
         _type: DisplayType,
         #[serde(flatten)]
-        pins: MiscPins,
+        pins: Tree,
     }
 
     #[derive(Debug, Deserialize)]
@@ -131,66 +148,86 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
         Ssd1306,
     }
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Default)]
     #[serde(transparent)]
-    struct MiscPins(HashMap<String, PinSpec>);
+    struct Tree(HashMap<String, Node>);
 
     #[derive(Debug, Deserialize)]
     #[serde(untagged)]
-    enum PinSpec {
-        Single(Pin),
-        Multiple(Vec<Pin>),
-        Nested(MiscPins),
+    enum Node {
+        Single(Spec),
+        Multiple(Vec<Spec>),
+        Tree(Tree),
     }
 
     #[derive(Debug, Deserialize)]
     #[serde(untagged)]
-    enum Pin {
-        Numbered(u8),
-        Named(String),
+    enum Arm {
+        Pin(Spec),
+        PinArray(Vec<Spec>),
+        Peripheral(String),
     }
 
-    impl fmt::Display for Pin {
+    #[derive(Debug, Deserialize)]
+    #[serde(untagged)]
+    enum Spec {
+        Number(u8),
+        Name(String),
+    }
+
+    impl fmt::Display for Spec {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match self {
-                Pin::Numbered(num) => write!(f, "{num}"),
-                Pin::Named(name) => f.write_str(name),
+                Spec::Number(num) => write!(f, "{num}"),
+                Spec::Name(name) => f.write_str(name),
             }
         }
     }
 
-    impl MiscPins {
-        fn format(self, output: &mut String, prefix: &str, path: &str) {
-            for (key, value) in self.0 {
-                let key = key.replace('-', "_");
-                let key = if path.is_empty() {
-                    key
-                } else {
-                    format!("{path}.{key}")
-                };
-                match value {
-                    PinSpec::Single(pin) => {
-                        output.push_str("    ($p:expr, ");
-                        output.push_str(&key);
-                        output.push_str(") => { $p.");
-                        output.push_str(prefix);
-                        output.push_str(&pin.to_string());
-                        output.push_str(" };\n");
-                    }
-                    PinSpec::Multiple(pins) => {
-                        output.push_str("    ($p:expr, ");
-                        output.push_str(&key);
-                        output.push_str(" $(.$method:ident())*) => { &[");
-                        for pin in pins {
-                            output.push_str("$p.");
-                            output.push_str(prefix);
-                            output.push_str(&pin.to_string());
-                            output.push_str(" $(.$method())*,");
-                        }
-                        output.push_str("] };\n");
-                    }
-                    PinSpec::Nested(inner) => inner.format(output, prefix, &key),
-                }
+    let path = format!("{root}/../targets/{target}.toml");
+    println!("cargo::rerun-if-changed={path}");
+
+    let target = fs::read_to_string(path)?;
+    let target: Target = basic_toml::from_str(&target).unwrap();
+
+    let (spi, spi_pins) = target
+        .spi
+        .map(|spi| (spi.peripheral, spi.pins))
+        .unwrap_or_default();
+
+    let mut arms = Vec::new();
+    let peripherals = [
+        ("leds.timer", target.leds.timer),
+        ("leds.dma", target.leds.dma),
+        ("spi", spi),
+    ];
+    for (path, peripheral) in peripherals {
+        if let Some(peripheral) = peripheral {
+            arms.push((path.to_owned(), Arm::Peripheral(peripheral)));
+        }
+    }
+
+    fn pins(tree: Tree, prefix: &str) -> impl Iterator<Item = (String, Node)> {
+        tree.0.into_iter().map(move |(mut key, spec)| {
+            if !prefix.is_empty() {
+                key = format!("{prefix}.{key}");
+            }
+            (key, spec)
+        })
+    }
+    let mut stack = pins(target.leds.pins, "leds")
+        .chain(pins(target.sd.pins, "sd"))
+        .chain(pins(spi_pins, "spi"))
+        .chain(pins(target.display.pins, "display"))
+        .chain(pins(target.rest, ""))
+        .collect::<Vec<_>>();
+    while let Some((key, spec)) = stack.pop() {
+        match spec {
+            Node::Single(pin) => arms.push((key, Arm::Pin(pin))),
+            Node::Multiple(pin) => arms.push((key, Arm::PinArray(pin))),
+            Node::Tree(inner) => {
+                let iter = pins(inner, &key);
+                stack.extend(iter);
             }
         }
     }
@@ -200,22 +237,27 @@ fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
     } else if feature("CHIP_RP") {
         "PIN_"
     } else {
-        return Ok(());
+        unreachable!("unknown chip");
     };
 
-    let path = format!("{root}/../targets/{target}.toml");
-    println!("cargo::rerun-if-changed={path}");
+    let out = File::create(format!("{out_dir}/target_macro.rs"))?;
+    let out = &mut BufWriter::new(out);
 
-    let target = fs::read_to_string(path)?;
-    let target: Target = basic_toml::from_str(&target).unwrap();
-
-    let mut out = String::from("macro_rules! pins {\n");
-    target.rest.format(&mut out, gpio, "");
-    target.sd.pins.format(&mut out, gpio, "sd");
-    target.display.pins.format(&mut out, gpio, "display");
-    out.push_str("}\n");
-
-    fs::write(format!("{out_dir}/pins.rs"), out)
+    writeln!(out, "macro_rules! target {{")?;
+    for (key, arm) in arms {
+        match arm {
+            Arm::Pin(spec) => writeln!(out, "    ($p:expr, {key}) => {{ $p.{gpio}{spec} }};")?,
+            Arm::PinArray(specs) => {
+                writeln!(out, "    ($p:expr, {key} $(.$method:ident())*) => {{ &[")?;
+                for spec in specs {
+                    writeln!(out, "        $p.{gpio}{spec} $(.$method())*,")?;
+                }
+                writeln!(out, "    ] }};")?;
+            }
+            Arm::Peripheral(name) => writeln!(out, "    ($p:expr, {key}) => {{ $p.{name} }};")?,
+        }
+    }
+    writeln!(out, "}}")
 }
 
 fn configurator(out_dir: &str, root: &str) -> io::Result<()> {

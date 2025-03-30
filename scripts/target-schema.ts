@@ -2,11 +2,15 @@ import { z } from 'zod';
 
 export type Target = z.infer<typeof schema>;
 
-const pin = z.number().nonnegative().int();
+const index = z.number().nonnegative().int();
+const name = z.string().nonempty();
+const pin = z.union([index, name]);
 export const schema = z
 	.strictObject({
 		chip: z.string(),
 		leds: z.strictObject({
+			timer: name.optional(),
+			dma: name.optional(),
 			status: pin,
 		}),
 		sd: z.discriminatedUnion('type', [
@@ -17,9 +21,11 @@ export const schema = z
 		]),
 		spi: z
 			.strictObject({
+				peripheral: name.optional(),
 				sclk: pin,
 				miso: pin,
 				mosi: pin,
+				dma: z.strictObject({ tx: name, rx: name }).optional(),
 			})
 			.optional(),
 		ui: z.strictObject({

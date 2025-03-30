@@ -10,7 +10,7 @@ macro_rules! select_mod {
 mod display;
 
 #[cfg(not(feature = "simulator"))]
-include!(concat!(env!("OUT_DIR"), "/pins.rs"));
+include!(concat!(env!("OUT_DIR"), "/target_macro.rs"));
 
 pub(crate) type Reset = impl crate::hal::traits::Reset;
 pub(crate) type StorageFuture = impl core::future::Future<Output = Storage>;

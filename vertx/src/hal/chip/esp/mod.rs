@@ -43,7 +43,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds.status));
+    let status_led = leds::StatusLed::new(rmt.channel0, target!(p, leds.status));
 
     let spi = {
         #[expect(clippy::manual_div_ceil)]
@@ -53,9 +53,9 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
         Spi::new(p.SPI2, spi::Config::default())
             .unwrap()
-            .with_sck(pins!(p, spi.sclk))
-            .with_mosi(pins!(p, spi.mosi))
-            .with_miso(pins!(p, spi.miso))
+            .with_sck(target!(p, spi.sclk))
+            .with_mosi(target!(p, spi.mosi))
+            .with_miso(target!(p, spi.miso))
             .with_dma(p.DMA_CH0)
             .with_buffers(dma_rx, dma_tx)
             .into_async()
@@ -73,7 +73,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
         static STORAGE: StaticCell<sd::Storage<Spi>> = StaticCell::new();
         let sd_cs = gpio::Output::new(
-            pins!(p, sd.cs),
+            target!(p, sd.cs),
             gpio::Level::High,
             gpio::OutputConfig::default(),
         );
@@ -91,8 +91,8 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
         let i2c = I2c::new(p.I2C0, config)
             .unwrap()
-            .with_sda(pins!(p, display.sda))
-            .with_scl(pins!(p, display.scl))
+            .with_sda(target!(p, display.sda))
+            .with_scl(target!(p, display.scl))
             .into_async();
 
         let display = hal::display::new(i2c);
@@ -100,10 +100,10 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
         let config = gpio::InputConfig::default().with_pull(gpio::Pull::Up);
         Ui {
             display,
-            up: gpio::Input::new(pins!(p, ui.up), config),
-            down: gpio::Input::new(pins!(p, ui.down), config),
-            right: gpio::Input::new(pins!(p, ui.right), config),
-            left: gpio::Input::new(pins!(p, ui.left), config),
+            up: gpio::Input::new(target!(p, ui.up), config),
+            down: gpio::Input::new(target!(p, ui.down), config),
+            right: gpio::Input::new(target!(p, ui.right), config),
+            left: gpio::Input::new(target!(p, ui.left), config),
         }
     };
 

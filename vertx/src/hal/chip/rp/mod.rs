@@ -58,15 +58,15 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         let Pio {
             mut common, sm0, ..
         } = Pio::new(p.PIO0, Irqs);
-        let pin = pins!(p, leds.status);
+        let pin = target!(p, leds.status);
         leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
     };
 
     let spi = Spi::new(
         p.SPI1,
-        pins!(p, spi.sclk),
-        pins!(p, spi.mosi),
-        pins!(p, spi.miso),
+        target!(p, spi.sclk),
+        target!(p, spi.mosi),
+        target!(p, spi.miso),
         p.DMA_CH0,
         p.DMA_CH1,
         spi::Config::default(),
@@ -83,25 +83,25 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         >;
 
         static STORAGE: StaticCell<sd::Storage<SpiDevice>> = StaticCell::new();
-        let sd_cs = gpio::Output::new(pins!(p, sd.cs), gpio::Level::High);
+        let sd_cs = gpio::Output::new(target!(p, sd.cs), gpio::Level::High);
         let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, Spi::set_frequency).await;
         let storage: &'static _ = STORAGE.init(storage);
         storage
     };
 
     let ui = {
-        let scl = pins!(p, display.scl);
-        let sda = pins!(p, display.sda);
+        let scl = target!(p, display.scl);
+        let sda = target!(p, display.sda);
         let mut config = i2c::Config::default();
         config.frequency = 1_000_000;
         let display = hal::display::new(I2c::new_async(p.I2C0, scl, sda, Irqs, config));
 
         Ui {
             display,
-            up: gpio::Input::new(pins!(p, ui.up), gpio::Pull::Up),
-            down: gpio::Input::new(pins!(p, ui.down), gpio::Pull::Up),
-            right: gpio::Input::new(pins!(p, ui.right), gpio::Pull::Up),
-            left: gpio::Input::new(pins!(p, ui.left), gpio::Pull::Up),
+            up: gpio::Input::new(target!(p, ui.up), gpio::Pull::Up),
+            down: gpio::Input::new(target!(p, ui.down), gpio::Pull::Up),
+            right: gpio::Input::new(target!(p, ui.right), gpio::Pull::Up),
+            left: gpio::Input::new(target!(p, ui.left), gpio::Pull::Up),
         }
     };
 
