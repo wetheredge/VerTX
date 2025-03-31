@@ -4,6 +4,7 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"composite": true,
+		"noEmit": true,
 		"outDir": "dist"
 	}
 }
