@@ -102,7 +102,7 @@ simulator = [
 
 [dependencies]
 aligned = "=0.4.2"
-bytemuck = { version = "=1.21.0", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
+bytemuck = { version = "=1.22.0", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
 const_format = "=0.2.34"
 defmt-rtt = "=0.4.1"
 delegate = "=0.13.2"
