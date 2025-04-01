@@ -6,7 +6,7 @@
 	"workspaces": ["postcard-ts", "vertx-configurator", "vertx-simulator"],
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"@inquirer/prompts": "7.3.2",
+		"@inquirer/prompts": "7.4.0",
 		"@octokit/request": "9.2.2",
 		"@tsconfig/bun": "1.0.7",
 		"@types/bun": "1.2.5",
