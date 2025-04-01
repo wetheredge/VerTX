@@ -152,7 +152,7 @@ jobs:
           bun-version-file: .tool-versions
       - run: bun install --frozen-lockfile
       - name: Get pre-built configurator
-        uses: actions/download-artifact@v4.1.9
+        uses: actions/download-artifact@v4.2.1
         with:
           name: configurator
           path: vertx-configurator/dist
