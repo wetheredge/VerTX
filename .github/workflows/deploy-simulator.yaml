@@ -89,7 +89,7 @@ jobs:
   build-simulator:
     name: Build simulator
     runs-on: ubuntu-latest
-    needs: build-vertx
+    needs: [build-configurator, build-vertx]
     defaults:
       run:
         working-directory: vertx-simulator
