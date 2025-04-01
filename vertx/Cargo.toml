@@ -144,7 +144,7 @@ block-device-adapters = { git = "https://github.com/MabezDev/embedded-fatfs.git"
 sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
 
 # chip-esp
-esp-alloc = { version = "=0.6.0", optional = true }
+esp-alloc = { version = "=0.7.0", optional = true }
 esp-backtrace = { version = "=0.15.1", features = ["defmt", "colors", "panic-handler", "exception-handler"], optional = true }
 esp-hal = { version = "=0.23.1", optional = true }
 esp-hal-embassy = { version = "=0.6.0", default-features = false, features = ["executors"], optional = true }
