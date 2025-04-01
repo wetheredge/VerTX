@@ -6,7 +6,6 @@ use embedded_hal::digital::OutputPin;
 use embedded_hal_async::spi::{SpiBus, SpiDevice};
 use embedded_hal_bus::spi::ExclusiveDevice;
 use embedded_io_async::{ErrorType, Read, ReadExactError, Seek, SeekFrom, Write};
-use fugit::RateExtU32 as _;
 use sdspi::SdSpi;
 
 use super::pal;
@@ -76,9 +75,9 @@ where
     pub(crate) async fn new_exclusive_spi(
         mut bus: B,
         mut cs: CS,
-        set_speed: impl Fn(&mut B, fugit::HertzU32),
+        set_speed: impl Fn(&mut B, u32),
     ) -> Self {
-        set_speed(&mut bus, 400u32.kHz());
+        set_speed(&mut bus, 400_000);
 
         while let Err(err) = sdspi::sd_init(&mut bus, &mut cs).await {
             loog::warn!("SD card init delay error: {err:?}");
@@ -93,7 +92,7 @@ where
             Timer::after_millis(5).await;
         }
 
-        set_speed(sd.spi().bus_mut(), 25u32.MHz());
+        set_speed(sd.spi().bus_mut(), 25_000_000);
 
         let buf_stream = BufStream::new(sd);
         let fs = FileSystem::new(buf_stream, embedded_fatfs::FsOptions::new())

@@ -116,7 +116,7 @@ pub(crate) mod traits {
 #[cfg(feature = "display-ssd1306")]
 mod display {
     use embedded_graphics as eg;
-    use embedded_hal::i2c::I2c;
+    use embedded_hal_async::i2c::I2c;
     use ssd1306::prelude::*;
     use ssd1306::{I2CDisplayInterface, Ssd1306Async};
 

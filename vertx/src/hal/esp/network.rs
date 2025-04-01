@@ -7,7 +7,6 @@ use esp_wifi::EspWifiController;
 use esp_wifi::wifi::{self, WifiController, WifiError, WifiEvent, WifiState};
 use static_cell::StaticCell;
 
-use super::network_driver::Driver;
 use crate::network::{Credentials, Kind};
 
 pub(super) struct Network {
@@ -19,7 +18,7 @@ pub(super) struct Network {
 }
 
 impl crate::hal::traits::Network for Network {
-    type Driver = Driver;
+    type Driver = wifi::WifiDevice<'static>;
 
     fn seed(&mut self) -> u64 {
         let upper = u64::from(self.rng.random()) << 32;
@@ -37,7 +36,7 @@ impl crate::hal::traits::Network for Network {
         let initted =
             CONTROLLER.init(esp_wifi::init(self.timer, self.rng, self.radio_clocks).unwrap());
 
-        let (ap_driver, sta_driver, mut controller) = wifi::new_ap_sta(initted, self.wifi).unwrap();
+        let (mut controller, interfaces) = wifi::new(initted, self.wifi).unwrap();
 
         let mut home_connected = false;
         if let Some(sta) = sta {
@@ -48,7 +47,7 @@ impl crate::hal::traits::Network for Network {
         }
 
         let (network, driver) = if home_connected {
-            (Kind::Station, Driver::Sta(sta_driver))
+            (Kind::Station, interfaces.sta)
         } else {
             // Failed to connect to home network, start AP instead
 
@@ -68,7 +67,7 @@ impl crate::hal::traits::Network for Network {
                 .unwrap();
 
             // AP will get started by `connection()` below
-            (Kind::AccessPoint, Driver::Ap(ap_driver))
+            (Kind::AccessPoint, interfaces.ap)
         };
 
         self.spawner.must_spawn(connection(controller, network));

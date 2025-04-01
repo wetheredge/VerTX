@@ -119,7 +119,6 @@ embedded-hal-bus = { version = "=0.3.0", features = ["async"] }
 embedded-io-async = { version = "=0.6.1", features = ["defmt-03"] }
 embedded-mogeefont = "=0.1.0"
 embedded-text = "=0.7.2"
-fugit = "=0.3.7"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
 portable-atomic = { version = "=1.11.0", features = ["critical-section"] }
