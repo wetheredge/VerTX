@@ -18,6 +18,7 @@ tasks:
     cmds:
       - bun install
       - bun run scripts/fetch-tools/main.ts
+      - .tools/bin/dprint output-file-paths --config=.config/dprint.json >/dev/null
       - cd vertx-configurator && bun install
       - silent: true
         cmd: echo && echo 'Run `task set-target` to choose your hardware target'
