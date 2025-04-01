@@ -3,6 +3,16 @@
 	"extends": ["../.config/biome.json"],
 	"overrides": [
 		{
+			"include": ["vite.config.ts"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					}
+				}
+			}
+		},
+		{
 			"include": ["src/ui.ts"],
 			"linter": {
 				"rules": {

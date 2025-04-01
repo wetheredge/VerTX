@@ -1,10 +1,9 @@
 /.cache/
 /.tools/
 /target/
-dist/
+/out/
 /node_modules/
 .astro/
-.vite/
 .env
 .env.*
 .bin/

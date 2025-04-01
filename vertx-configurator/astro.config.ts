@@ -5,13 +5,13 @@ import { envField } from 'astro/config';
 import browserslist from 'browserslist';
 import viteTarget from 'browserslist-to-esbuild';
 import { browserslistToTargets as lightningTargets } from 'lightningcss';
+import { isSimulator, outDir } from './scripts/utils.ts';
 
 const port = 8001;
-const isSimulator = process.env.VERTX_SIMULATOR === 'true';
 
 const assetsPrefix = isSimulator ? 'assets/' : '_';
 
-const config = {
+const config: AstroUserConfig = {
 	integrations: [minify({ minifyCid: false })],
 
 	base: isSimulator && import.meta.env.PROD ? '/configurator' : '',
@@ -35,6 +35,7 @@ const config = {
 	scopedStyleStrategy: 'class',
 	server: { port },
 	cacheDir: '.astro',
+	outDir,
 
 	vite: {
 		plugins: [vanillaExtractPlugin()],
@@ -61,9 +62,9 @@ const config = {
 			},
 		},
 		server: { strictPort: true },
-		cacheDir: '.vite',
+		cacheDir: '../.cache/configurator/vite',
 	},
-} satisfies AstroUserConfig;
+};
 
 // biome-ignore lint/style/noDefaultExport:
 export default config;

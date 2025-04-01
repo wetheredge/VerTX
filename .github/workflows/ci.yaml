@@ -132,7 +132,7 @@ jobs:
       - uses: actions/upload-artifact@v4.6.2
         with:
           name: configurator
-          path: vertx-configurator/dist/
+          path: out
           compression-level: 1
           if-no-files-found: error
 
@@ -146,8 +146,6 @@ jobs:
         target:
           - devkit-esp32s3
           - devkit-rp-pico
-    env:
-      VERTX_SKIP_CONFIGURATOR_BUILD: true
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -162,7 +160,7 @@ jobs:
         uses: actions/download-artifact@v4.3.0
         with:
           name: configurator
-          path: vertx-configurator/dist
+          path: out
       - name: Run clippy
         run: bun run scripts/build-target.ts --command=clippy ${{ matrix.target }}
 
@@ -228,13 +226,14 @@ jobs:
         uses: actions/download-artifact@v4.3.0
         with:
           name: configurator
-          path: vertx-configurator/dist
+          path: out
       - name: Build
         run: bun run scripts/build-target.ts ${{ matrix.target }} --release
       - uses: actions/upload-artifact@v4.3.0
         with:
           name: vertx-${{ matrix.target }}
-          path: target/vertx
+          path: out/firmware/vertx_${{ matrix.target }}_release
+          if-no-files-found: error
 
   size:
     runs-on: ubuntu-latest
@@ -245,6 +244,7 @@ jobs:
         with:
           pattern: vertx-*
           path: bins
+          merge-multiple: true
       - run: |
           FLASH=(
             .boot2 .data .data.wifi .rodata .rodata.wifi
@@ -265,7 +265,7 @@ jobs:
               done
             done < <(size -A "$elf" | sed -E '/^$/d' | tail -n +3 | head -n -1)
 
-            echo "| $(echo "$elf" | cut -d/ -f2) | $(numfmt --to=iec-i --suffix=B $total) |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| $(echo "$elf" | cut -d_ -f2- | cut -d_ -f-2) | $(numfmt --to=iec-i --suffix=B $total) |" >> "$GITHUB_STEP_SUMMARY"
           done
 
   tsc:

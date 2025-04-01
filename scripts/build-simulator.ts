@@ -3,9 +3,18 @@
 import { join } from 'node:path';
 import { exit } from 'node:process';
 import { $ } from 'bun';
-import { fileAppend, isMain, orExit, repoRoot } from './utils.ts';
+import {
+	baseOutDir,
+	fileAppend,
+	fsReplaceSymlink,
+	isMain,
+	orExit,
+	repoRoot,
+} from './utils.ts';
 
-const toolsPath = import.meta.env.CI === 'true' ? '' : '.tools/bin/';
+const tool = (bin: string) =>
+	import.meta.env.CI === 'true' ? bin : join(repoRoot, '.tools', 'bin', bin);
+const firmwareOutDir = join(baseOutDir, 'firmware');
 
 export async function build(command: string, args: Array<string> = []) {
 	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${args}`;
@@ -21,17 +30,18 @@ export async function build(command: string, args: Array<string> = []) {
 		const isRelease = args.includes('-r') || args.includes('--release');
 		const profile = isRelease ? 'release' : 'debug';
 
-		const outputDir = join(repoRoot, 'target/simulator');
-		const bindgen = $`${toolsPath}wasm-bindgen --out-dir ${outputDir} --target web target/wasm32-unknown-unknown/${profile}/vertx.wasm`;
+		const outName = `simulator_${profile}`;
+		const outDir = join(firmwareOutDir, outName);
+		const bindgen = $`${tool('wasm-bindgen')} --out-dir ${outDir} --target web target/wasm32-unknown-unknown/${profile}/vertx.wasm`;
 		await orExit(bindgen.cwd(repoRoot));
 
 		await Promise.all([
 			fileAppend(
-				join(outputDir, 'vertx.d.ts'),
+				join(outDir, 'vertx.d.ts'),
 				'\nexport const memoryName: "memory";',
 			),
 			fileAppend(
-				join(outputDir, 'vertx.js'),
+				join(outDir, 'vertx.js'),
 				'\nexport const memoryName = "memory";',
 			),
 		]);
@@ -49,10 +59,10 @@ export async function build(command: string, args: Array<string> = []) {
 				'--strip-producers',
 				'--minify-imports-and-exports-and-modules',
 			];
-			const wasm = 'target/simulator/vertx_bg.wasm';
+			const wasm = 'vertx_bg.wasm';
 			const wasmOpt =
-				$`${toolsPath}wasm-opt -O3 ${passes} --output ${wasm} ${wasm}`
-					.cwd(repoRoot)
+				$`${tool('wasm-opt')} -O3 ${passes} --output ${wasm} ${wasm}`
+					.cwd(outDir)
 					.nothrow();
 
 			const renames = new Map();
@@ -62,16 +72,20 @@ export async function build(command: string, args: Array<string> = []) {
 					renames.set(from, to);
 				}
 			}
-			await orExit(wasmOpt);
+			const wasmOptResult = await wasmOpt;
+			if (wasmOptResult.exitCode !== 0) {
+				process.stderr.write(wasmOptResult.stderr);
+				exit(wasmOptResult.exitCode);
+			}
 
-			const wasmDts = Bun.file(join(outputDir, 'vertx_bg.wasm.d.ts'));
+			const wasmDts = Bun.file(join(outDir, 'vertx_bg.wasm.d.ts'));
 			let wasmDtsContents = await wasmDts.text();
 			for (const [from, to] of renames) {
 				wasmDtsContents = wasmDtsContents.replaceAll(from, to);
 			}
 			await wasmDts.write(wasmDtsContents);
 
-			const dts = Bun.file(join(outputDir, 'vertx.d.ts'));
+			const dts = Bun.file(join(outDir, 'vertx.d.ts'));
 			let dtsContents = await dts.text();
 			for (const [from, to] of renames) {
 				dtsContents = dtsContents
@@ -81,7 +95,7 @@ export async function build(command: string, args: Array<string> = []) {
 			}
 			await Bun.write(dts, dtsContents);
 
-			const js = Bun.file(join(outputDir, 'vertx.js'));
+			const js = Bun.file(join(outDir, 'vertx.js'));
 			let jsContents = await js.text();
 			jsContents = jsContents.replaceAll('imports.wbg', 'imports.a');
 			for (const [from, to] of renames) {
@@ -92,6 +106,8 @@ export async function build(command: string, args: Array<string> = []) {
 			}
 			await Bun.write(js, jsContents);
 		}
+
+		await fsReplaceSymlink(outName, join(firmwareOutDir, 'simulator'));
 	}
 }
 

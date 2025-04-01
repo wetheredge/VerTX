@@ -3,8 +3,8 @@ import {
 	buttonPressed,
 	initSync,
 	memoryName,
-} from '../../target/simulator/vertx.js';
-import wasmUrl from '../../target/simulator/vertx_bg.wasm?url';
+} from '../../out/firmware/simulator/vertx.js';
+import wasmUrl from '../../out/firmware/simulator/vertx_bg.wasm?url';
 import type { ConfiguratorRequest, ConfiguratorResponse } from './common.js';
 
 const globalName = 'Vertx';

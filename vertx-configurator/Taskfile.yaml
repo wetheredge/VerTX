@@ -36,49 +36,31 @@ tasks:
     cmd: bun run astro dev
 
   build:
-    - task: cache:native
-    - task: build-impl
-      vars:
-        simulator: false
+    - task: build:native
     - task: build:post
 
   preview:
     deps: [build]
     cmd: bun run astro preview
 
-  build-impl:
+  build:*:
     internal: true
     deps: [check]
     env:
       NODE_ENV: production
-      VERTX_SIMULATOR: '{{.simulator}}'
+      VERTX_SIMULATOR: '{{eq (index .MATCH 0) "simulator"}}'
     cmds:
       - bun run astro build
       - bun run scripts/prune.ts
-    sources:
-      - ../bun.lock
-      - src/**/*
-      - '*.config.*'
-      - tsconfig.*
-      - scripts/*
-      - dist/.taskCacheKey
 
   build:post:
     internal: true
     cmd: bun run scripts/post-build.ts
     status:
-      - ls dist | grep -q '\.gz$'
+      - ls ../out/configurator | grep -q '\.gz$'
 
   simulator:build:
     cmds:
-      - task: cache:simulator
-      - task: build-impl
-        vars:
-          simulator: true
-
-  cache:*:
-    cmd: mkdir -p dist && echo {{.MATCH}} > dist/.taskCacheKey
-    internal: true
-    silent: true
+      - task: build:simulator
 
   :*: cd .. && task {{index .MATCH 0}}

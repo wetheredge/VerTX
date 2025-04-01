@@ -1,8 +1,12 @@
 #!/usr/bin/env bun
 
 import { Glob } from 'bun';
+import { panic } from './utils.ts';
 
-const outDir = 'dist';
+const dir = Bun.argv[2];
+if (!dir) {
+	panic('Must pass directory as first argument');
+}
 
 // Caddy needs double quotes in the template, but HTMLRewriter helpfully escapes them, so give
 // HTMLRewriter a safe string, then replace it again with the proper template.
@@ -15,8 +19,8 @@ const rewriter = new HTMLRewriter().on('script, style', {
 });
 
 const promises = new Array<Promise<unknown>>();
-for await (const path of new Glob('**.html').scan(outDir)) {
-	const file = Bun.file(`${outDir}/${path}`);
+for await (const path of new Glob('**.html').scan(dir)) {
+	const file = Bun.file(`${dir}/${path}`);
 	const withMarker = await rewriter.transform(new Response(file)).text();
 	const final = withMarker.replaceAll(
 		marker,

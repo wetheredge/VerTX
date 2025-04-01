@@ -17,7 +17,7 @@ tasks:
       - ../bun.lock
       - ../.config/tsconfig.*
       - src/**/*
-      - ../target/simulator/*.d.ts
+      - ../out/firmware/simulator/*.d.ts
       - '*.config.*'
       - tsconfig.*
 
@@ -29,11 +29,11 @@ tasks:
     env:
       NODE_ENV: production
     cmds:
+      - rm -rf ../out/simulator
       - task :configurator/simulator:build
       - task :vertx/simulator:build:release
       - task: check
       - bun run vite build
-      - cp -r ../vertx-configurator/dist dist/configurator
     sources:
       - package.json
       - bun.lock
@@ -41,14 +41,12 @@ tasks:
       - src/**/*
       - '*.config.*'
       - tsconfig.*
-    generates:
-      - dist/**/*
 
   build:vertx:
     internal: true
     cmd: task :vertx/simulator:build
     status:
-      - test -f ../target/simulator/vertx.js
+      - test -f ../out/firmware/simulator/vertx.js
 
   preview:
     deps: [build]

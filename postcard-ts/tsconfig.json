@@ -5,6 +5,6 @@
 		"target": "ESNext",
 		"composite": true,
 		"noEmit": true,
-		"outDir": "dist"
+		"outDir": "../.cache/postcard-ts"
 	}
 }

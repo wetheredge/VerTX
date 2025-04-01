@@ -1,12 +1,18 @@
 #!/usr/bin/env bun
 
-import { existsSync, rmSync, symlinkSync } from 'node:fs';
+import * as fs from 'node:fs';
 import { join } from 'node:path';
 import { exit } from 'node:process';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
 import { type Target, schema } from './target-schema.ts';
-import { isMain, orExit } from './utils.ts';
+import {
+	baseOutDir,
+	fsReplaceSymlink,
+	isMain,
+	orExit,
+	repoRoot,
+} from './utils.ts';
 
 export async function build(
 	command: string,
@@ -38,18 +44,18 @@ export async function build(
 	);
 
 	if (command === 'build') {
-		const targetDir = fileURLToPath(new URL('../target', import.meta.url));
 		const isRelease = args.includes('-r') || args.includes('--release');
 		const profile = isRelease ? 'release' : 'debug';
 
-		const from = join(chip.target, profile, 'vertx');
-		const to = join(targetDir, 'vertx');
+		const bin = join(repoRoot, 'target', chip.target, profile, 'vertx');
+		const outDir = join(baseOutDir, 'firmware');
+		fs.mkdirSync(outDir, { recursive: true });
 
-		if (existsSync(to)) {
-			rmSync(to);
-		}
+		const outFile = `vertx_${targetName}_${profile}`;
+		const outPath = join(outDir, outFile);
+		fs.copyFileSync(bin, outPath, fs.constants.COPYFILE_FICLONE);
 
-		symlinkSync(from, to);
+		await fsReplaceSymlink(outFile, join(outDir, 'vertx'));
 	}
 }
 
@@ -100,7 +106,7 @@ if (isMain(import.meta.url)) {
 		new URL(`../targets/${targetName}.toml`, import.meta.url),
 	);
 
-	if (!existsSync(targetPath)) {
+	if (!fs.existsSync(targetPath)) {
 		console.error(`Cannot find target '${targetName}'`);
 		exit(1);
 	}

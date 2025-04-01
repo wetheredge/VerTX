@@ -3,7 +3,10 @@ version: 3
 dotenv:
   - ../.env
   - .env
-  - ../.env.target
+  - ../out/target
+
+vars:
+  simOutDir: out/simulator-firmware
 
 tasks:
   default:

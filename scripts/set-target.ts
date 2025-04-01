@@ -1,14 +1,16 @@
 #!/usr/bin/env bun
 
-import { cwd } from 'node:process';
+import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { Glob } from 'bun';
 import { getFeatures } from './build-target.ts';
 import { setRustAnayzerFeatures } from './set-ra-features.ts';
 import type { Target } from './target-schema.ts';
+import { baseOutDir, repoRoot } from './utils.ts';
 
-const targetsDir = `${cwd()}/targets`;
-const targetEnvFile = '.env.target';
+const targetsDir = join(repoRoot, 'targets');
+const envFile = join(baseOutDir, 'target');
 
 const targets = new Glob('*.toml').scanSync({ cwd: targetsDir });
 const choices = Array.from(targets)
@@ -27,9 +29,13 @@ const env: Record<string, string> = {
 	VERTX_CHIP: target.chip,
 };
 
+if (!existsSync(baseOutDir)) {
+	mkdirSync(baseOutDir);
+}
+
 await Promise.all([
 	Bun.write(
-		targetEnvFile,
+		envFile,
 		Object.entries(env)
 			.map(([key, value]) => `${key}=${value}`)
 			.join('\n'),

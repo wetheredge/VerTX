@@ -2,7 +2,7 @@ version: 3
 
 dotenv:
   # Used to set defaults in set-target
-  - .env.target
+  - out/target
 
 tasks:
   default:
@@ -33,6 +33,7 @@ tasks:
     desc: Delete all build artifacts
     prompt: Delete all build artifacts?
     cmds:
+      - rm -rf out
       - cargo clean
       - cd vertx-configurator && rm -rf dist .task
       - cd vertx-simulator && rm -rf dist .task

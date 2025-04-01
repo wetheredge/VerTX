@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const ports = {
@@ -9,6 +10,8 @@ const ports = {
 export default defineConfig({
 	build: {
 		target: 'esnext',
+		outDir: fileURLToPath(new URL('../out/simulator', import.meta.url)),
+		emptyOutDir: false,
 	},
 	server: {
 		...ports,
@@ -17,5 +20,5 @@ export default defineConfig({
 		},
 	},
 	preview: ports,
-	cacheDir: '.vite',
+	cacheDir: '../.cache/simulator/vite',
 });

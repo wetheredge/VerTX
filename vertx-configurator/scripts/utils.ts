@@ -1,6 +1,12 @@
-import { fileURLToPath } from 'bun';
+import { fileURLToPath } from 'node:url';
 
-export const outDir = fileURLToPath(new URL('../dist', import.meta.url));
+export const isSimulator = process.env.VERTX_SIMULATOR === 'true';
+export const outDir = fileURLToPath(
+	new URL(
+		`../../out/${isSimulator ? 'simulator/' : ''}configurator`,
+		import.meta.url,
+	),
+);
 
 export function assetPaths(): AsyncIterableIterator<string> {
 	return new Bun.Glob('**').scan(outDir);

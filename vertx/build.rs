@@ -227,19 +227,14 @@ fn configurator(out_dir: &str, root: &str) -> io::Result<()> {
         gzip: bool,
     }
 
-    let configurator = fs::canonicalize(format!("{root}/../vertx-configurator")).unwrap();
-    if env::var_os("VERTX_SKIP_CONFIGURATOR_BUILD").is_none() {
-        let configurator_build = Command::new("task")
-            .arg("build")
-            .current_dir(&configurator)
-            .status()
-            .unwrap();
-        assert!(configurator_build.success(), "configurator failed to build");
+    let configurator = format!("{root}/../out/configurator");
+    if !fs::exists(&configurator)? {
+        panic!("Build vertx-configurator first");
     }
-    let dist = &configurator.join("dist");
-    println!("cargo::rerun-if-changed={}", dist.display());
+    let configurator = fs::canonicalize(configurator).unwrap();
+    println!("cargo::rerun-if-changed={}", configurator.display());
 
-    let assets = fs::read_to_string(dist.join("assets.json"))?;
+    let assets = fs::read_to_string(configurator.join("assets.json"))?;
     let mut assets: Vec<Asset> = serde_json::from_str(&assets).unwrap();
     assets.sort_unstable_by(|a, b| a.route.cmp(&b.route));
 
@@ -250,7 +245,7 @@ fn configurator(out_dir: &str, root: &str) -> io::Result<()> {
         let (mime_head, mime_parameters) = asset.mime.split_once(';').unwrap_or((&asset.mime, ""));
         let (mime_type, mime_subtype) = mime_head.split_once('/').unwrap();
 
-        let path = dist.join(&asset.file);
+        let path = configurator.join(&asset.file);
         let path = path.display();
 
         write!(out, "Asset {{ ")?;
