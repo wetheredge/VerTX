@@ -204,7 +204,7 @@ jobs:
       - uses: actions/checkout@v4.2.2
         with:
           persist-credentials: false
-      - uses: biomejs/setup-biome@v2.3.0
+      - uses: biomejs/setup-biome@v2.5.0
         env:
           GITHUB_TOKEN: null
       - run: biome version
