@@ -129,7 +129,7 @@ serde = { workspace = true, features = ["derive", "alloc"] }
 static_cell = "=2.1.0"
 
 # displays
-ssd1306 = { version = "0.9.0", features = ["async"], optional = true }
+ssd1306 = { version = "=0.10.0", features = ["async"], optional = true }
 
 # network
 atoi = { version = "=2.0.0", default-features = false, optional = true }
