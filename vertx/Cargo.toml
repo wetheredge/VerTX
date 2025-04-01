@@ -137,7 +137,7 @@ edge-dhcp = { version = "=0.5.0", optional = true }
 embassy-net = { version = "=0.6.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
 faster-hex = { version = "=0.10.0", default-features = false, optional = true }
 httparse = { version = "=1.10.1", default-features = false, optional = true }
-itoa = { version = "=1.0.14", optional = true }
+itoa = { version = "=1.0.15", optional = true }
 
 # storage-sd
 block-device-adapters = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
