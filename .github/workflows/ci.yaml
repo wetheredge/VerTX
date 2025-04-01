@@ -188,7 +188,7 @@ jobs:
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2.49.8
         with:
-          tool: nextest@0.9.92 # dep:cargo-bin:cargo-nextest
+          tool: nextest@0.9.93 # dep:cargo-bin:cargo-nextest
       - uses: ./.github/actions/setup-rust
       - run: cargo nextest run
         working-directory: ${{ matrix.crate }}
