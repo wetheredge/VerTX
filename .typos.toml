@@ -3,4 +3,5 @@ locale = "en-us"
 
 [default.extend-words]
 relm = "relm"
+typ = "typ"
 vertx = "vertx"

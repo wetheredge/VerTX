@@ -2,7 +2,6 @@
 mod flash;
 mod leds;
 mod network;
-mod network_driver;
 
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -15,8 +14,8 @@ use esp_hal::i2c::master::{self as i2c, I2c};
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::spi::master::{self as spi, Spi};
+use esp_hal::time::Rate;
 use esp_hal::timer::timg;
-use fugit::RateExtU32 as _;
 use static_cell::StaticCell;
 use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
 
@@ -26,15 +25,11 @@ use crate::ui::Input;
 declare_hal_types!();
 
 pub(super) fn init(spawner: Spawner) -> super::Init {
-    esp_alloc::heap_allocator!(100 * 1024);
+    esp_alloc::heap_allocator!(size: 100 * 1024);
 
-    let p = esp_hal::init({
-        let mut config = esp_hal::Config::default();
-        config.cpu_clock = CpuClock::max();
-        config
-    });
+    let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
-    let rmt = Rmt::new(p.RMT, 80u32.MHz()).unwrap().into_async();
+    let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
     let rng = Rng::new(p.RNG);
     let timg0 = timg::TimerGroup::new(p.TIMG0);
     let timg1 = timg::TimerGroup::new(p.TIMG1);
@@ -69,9 +64,13 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         >;
 
         static STORAGE: StaticCell<sd::Storage<Spi>> = StaticCell::new();
-        let sd_cs = gpio::Output::new(pins!(p, sd.cs), gpio::Level::High);
+        let sd_cs = gpio::Output::new(
+            pins!(p, sd.cs),
+            gpio::Level::High,
+            gpio::OutputConfig::default(),
+        );
         let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
-            let config = spi::Config::default().with_frequency(speed);
+            let config = spi::Config::default().with_frequency(Rate::from_hz(speed));
             spi.apply_config(&config).unwrap();
         })
         .await;
@@ -80,7 +79,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
     };
 
     let ui = {
-        let config = i2c::Config::default().with_frequency(1.MHz());
+        let config = i2c::Config::default().with_frequency(Rate::from_mhz(1));
 
         let i2c = I2c::new(p.I2C0, config)
             .unwrap()
@@ -90,12 +89,13 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
 
         let display = super::display::new(i2c);
 
+        let config = gpio::InputConfig::default().with_pull(gpio::Pull::Up);
         Ui {
             display,
-            up: gpio::Input::new(pins!(p, ui.up), gpio::Pull::Up),
-            down: gpio::Input::new(pins!(p, ui.down), gpio::Pull::Up),
-            right: gpio::Input::new(pins!(p, ui.right), gpio::Pull::Up),
-            left: gpio::Input::new(pins!(p, ui.left), gpio::Pull::Up),
+            up: gpio::Input::new(pins!(p, ui.up), config),
+            down: gpio::Input::new(pins!(p, ui.down), config),
+            right: gpio::Input::new(pins!(p, ui.right), config),
+            left: gpio::Input::new(pins!(p, ui.left), config),
         }
     };
 
@@ -122,8 +122,7 @@ impl super::traits::Reset for Reset {
     }
 
     fn reboot(&mut self) -> ! {
-        esp_hal::reset::software_reset();
-        unreachable!()
+        esp_hal::system::software_reset()
     }
 }
 

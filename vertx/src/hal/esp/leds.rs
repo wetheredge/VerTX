@@ -5,7 +5,7 @@
 use core::slice::IterMut;
 
 use esp_hal::clock::Clocks;
-use esp_hal::gpio::OutputPin;
+use esp_hal::gpio::{self, OutputPin};
 use esp_hal::peripheral::Peripheral;
 use esp_hal::rmt;
 
@@ -26,34 +26,31 @@ impl<Tx: rmt::TxChannelAsync> StatusLed<Tx> {
         C: rmt::TxChannelCreatorAsync<'d, Tx, P>,
         P: OutputPin + 'd,
     {
-        let config = rmt::TxChannelConfig {
-            clk_divider: 1,
-            idle_output_level: false,
-            carrier_modulation: false,
-            idle_output: true,
-
-            ..Default::default()
-        };
+        let config = rmt::TxChannelConfig::default()
+            .with_clk_divider(1)
+            .with_carrier_modulation(false)
+            .with_idle_output(true)
+            .with_idle_output_level(gpio::Level::Low);
 
         let channel = channel.configure(pin, config).unwrap();
 
         // Assume the RMT peripheral is set up to use the APB clock
         let clocks = Clocks::get();
-        let src_clock = clocks.apb_clock.to_MHz();
+        let src_clock = clocks.apb_clock.as_mhz();
 
         Self {
             channel,
             pulses: (
                 rmt::PulseCode::new(
-                    true,
+                    gpio::Level::High,
                     ((T0H_NS * src_clock) / 1000) as u16,
-                    false,
+                    gpio::Level::Low,
                     ((T0L_NS * src_clock) / 1000) as u16,
                 ),
                 rmt::PulseCode::new(
-                    true,
+                    gpio::Level::High,
                     ((T1H_NS * src_clock) / 1000) as u16,
-                    false,
+                    gpio::Level::Low,
                     ((T1L_NS * src_clock) / 1000) as u16,
                 ),
             ),

@@ -17,18 +17,15 @@ license = "MPL-2.0"
 heapless = "=0.8.0"
 loog = { git = "https://github.com/wetheredge/loog.git", rev = "4785bb8f607191354e7d3d9df8790fe998392cbc" }
 postcard = { version = "=1.1.1", default-features = false }
-serde = { version = "=1.0.218", default-features = false }
+serde = { version = "=1.0.219", default-features = false }
 
 [workspace.metadata.bin-dependencies]
 cargo-machete = "=0.8.0"
-cargo-nextest = "=0.9.92"
-dprint = "=0.49.0"
+cargo-nextest = "=0.9.93"
+dprint = "=0.49.1"
 probe-rs-tools = "=0.27.0"
 wasm-bindgen-cli = "=0.2.100"
 wasm-opt = "=0.116.1"
-
-[patch.crates-io]
-ssd1306 = { git = "https://github.com/rust-embedded-community/ssd1306.git", rev = "f3a2f7aca421fbf3ddda45ecef0dfd1f0f12330e" }
 
 [profile.dev.package.esp-storage]
 opt-level = 3

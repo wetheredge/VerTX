@@ -84,10 +84,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
 
         static STORAGE: StaticCell<sd::Storage<SpiDevice>> = StaticCell::new();
         let sd_cs = gpio::Output::new(pins!(p, sd.cs), gpio::Level::High);
-        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
-            spi.set_frequency(speed.to_Hz());
-        })
-        .await;
+        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, Spi::set_frequency).await;
         let storage: &'static _ = STORAGE.init(storage);
         storage
     };

@@ -102,10 +102,10 @@ simulator = [
 
 [dependencies]
 aligned = "=0.4.2"
-bytemuck = { version = "=1.21.0", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
+bytemuck = { version = "=1.22.0", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
 const_format = "=0.2.34"
-defmt-rtt = "=0.4.1"
-delegate = "=0.13.2"
+defmt-rtt = "=0.4.2"
+delegate = "=0.13.3"
 display-interface = "=0.5.0"
 embassy-executor = { version = "=0.7.0", features = ["nightly"] }
 embassy-futures = "=0.1.1"
@@ -115,11 +115,10 @@ embedded-fatfs = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev =
 embedded-graphics = "=0.8.1"
 embedded-hal = "=1.0.0"
 embedded-hal-async = "=1.0.0"
-embedded-hal-bus = { version = "=0.2.0", features = ["async"] }
+embedded-hal-bus = { version = "=0.3.0", features = ["async"] }
 embedded-io-async = { version = "=0.6.1", features = ["defmt-03"] }
 embedded-mogeefont = "=0.1.0"
 embedded-text = "=0.7.2"
-fugit = "=0.3.7"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
 portable-atomic = { version = "=1.11.0", features = ["critical-section"] }
@@ -129,37 +128,37 @@ serde = { workspace = true, features = ["derive", "alloc"] }
 static_cell = "=2.1.0"
 
 # displays
-ssd1306 = { version = "0.9.0", features = ["async"], optional = true }
+ssd1306 = { version = "=0.10.0", features = ["async"], optional = true }
 
 # network
 atoi = { version = "=2.0.0", default-features = false, optional = true }
 edge-dhcp = { version = "=0.5.0", optional = true }
 embassy-net = { version = "=0.6.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
 faster-hex = { version = "=0.10.0", default-features = false, optional = true }
-httparse = { version = "=1.10.0", default-features = false, optional = true }
-itoa = { version = "=1.0.14", optional = true }
+httparse = { version = "=1.10.1", default-features = false, optional = true }
+itoa = { version = "=1.0.15", optional = true }
 
 # storage-sd
 block-device-adapters = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
 sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
 
 # chip-esp
-esp-alloc = { version = "=0.6.0", optional = true }
+esp-alloc = { version = "=0.7.0", optional = true }
 esp-backtrace = { version = "=0.15.1", features = ["defmt", "colors", "panic-handler", "exception-handler"], optional = true }
-esp-hal = { version = "=0.23.1", optional = true }
-esp-hal-embassy = { version = "=0.6.0", default-features = false, features = ["executors"], optional = true }
+esp-hal = { version = "=1.0.0-beta.0", features = ["unstable"], optional = true }
+esp-hal-embassy = { version = "=0.7.0", default-features = false, features = ["executors"], optional = true }
 esp-storage = { version = "=0.5.0", features = ["low-level", "storage", "critical-section"], optional = true }
-esp-wifi = { version = "=0.12.0", features = ["defmt", "wifi"], optional = true }
+esp-wifi = { version = "=0.13.0", features = ["defmt", "wifi"], optional = true }
 
 # chip-rp
 # TODO: flip-link
 cortex-m-rt = { version = "=0.7.5", optional = true }
-embassy-rp = { version = "=0.3.1", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
+embassy-rp = { version = "=0.4.0", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
 embedded-alloc = { version = "=0.6.0", optional = true }
 fixed = { version = "=1.29.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
 panic-probe = { version = "=0.3.2", features = ["print-defmt"], optional = true }
-pio = { version = "=0.2.1", optional = true }
+pio = { version = "=0.3.0", optional = true }
 
 [target.wasm32-unknown-unknown.dependencies]
 console_error_panic_hook = "0.1.7"
@@ -169,9 +168,9 @@ wasm-bindgen = "=0.2.100"
 wasm-logger = "=0.2.0"
 
 [build-dependencies]
-basic-toml = "=0.1.9"
+basic-toml = "=0.1.10"
 serde = { workspace = true, features = ["derive"] }
-serde_json = "=1.0.139"
+serde_json = "=1.0.140"
 
 [[bin]]
 name = "vertx"
