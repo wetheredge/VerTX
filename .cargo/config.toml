@@ -1,5 +1,6 @@
 [env]
-ESP_HAL_EMBASSY_CONFIG_TIMER_QUEUE = "multiple-integrated"
+# TODO: switch to multiple-integrated for dual-core?
+ESP_HAL_EMBASSY_CONFIG_TIMER_QUEUE = "single-integrated"
 
 [target.xtensa-esp32-none-elf]
 linker = ".tools/gcc/bin/xtensa-esp32-elf-gcc"
