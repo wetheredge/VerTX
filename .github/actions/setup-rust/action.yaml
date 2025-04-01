@@ -14,7 +14,7 @@ runs:
       shell: bash
       run: jq -r '"version=\(.rust)"' < .config/xtensa-toolchain.json >> "$GITHUB_OUTPUT"
     - id: restore
-      uses: actions/cache@v4.2.2
+      uses: actions/cache@v4.2.3
       with:
         key: rust-xtensa-${{ runner.os}}-v${{ steps.version.outputs.version }}
         path: .tools/rust
