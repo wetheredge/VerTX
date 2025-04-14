@@ -37,5 +37,3 @@ runs:
     - if: inputs.lookup-only != 'true'
       run: rustup toolchain link vertx .tools/rust
       shell: bash
-    - if: inputs.lookup-only != 'true'
-      uses: Swatinem/rust-cache@v2.7.8
