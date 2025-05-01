@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
       - run: rm rust-toolchain.toml
       - name: Install cargo-machete
-        uses: taiki-e/install-action@v2.49.40
+        uses: taiki-e/install-action@v2.50.3
         with:
           tool: cargo-machete@0.8.0 # dep:cargo-bin:cargo-machete
       - run: cargo machete
@@ -192,7 +192,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@v2.49.40
+        uses: taiki-e/install-action@v2.50.3
         with:
           tool: nextest@0.9.95 # dep:cargo-bin:cargo-nextest
       - uses: mozilla-actions/sccache-action@v0.0.9

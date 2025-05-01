@@ -62,11 +62,11 @@ jobs:
         with:
           bun-version-file: .tool-versions
       - name: Install wasm-bindgen
-        uses: taiki-e/install-action@v2.49.40
+        uses: taiki-e/install-action@v2.50.3
         with:
           tool: wasm-bindgen@0.2.100 # dep:cargo-bin:wasm-bindgen-cli
       - name: Install wasm-opt
-        uses: taiki-e/install-action@v2.49.40
+        uses: taiki-e/install-action@v2.50.3
         with:
           tool: wasm-opt@0.116.1 # dep:cargo-bin:wasm-opt
       - run: cargo build -Zbuild-std=std,panic_abort --release --target wasm32-unknown-unknown --lib -F simulator
