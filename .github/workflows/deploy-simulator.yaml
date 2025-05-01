@@ -104,7 +104,7 @@ jobs:
         with:
           bun-version-file: .tool-versions
       - name: Get VerTX
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v4.3.0
         with:
           name: vertx
           path: target/simulator
@@ -126,12 +126,12 @@ jobs:
       - build-simulator
     steps:
       - name: Get simulator
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v4.3.0
         with:
           name: simulator
           path: out
       - name: Get configurator
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v4.3.0
         with:
           name: configurator
           path: out/configurator
