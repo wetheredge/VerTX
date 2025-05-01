@@ -157,7 +157,7 @@ embassy-rp = { version = "=0.4.0", features = ["defmt", "critical-section-impl",
 embedded-alloc = { version = "=0.6.0", optional = true }
 fixed = { version = "=1.29.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
-panic-probe = { version = "=0.3.2", features = ["print-defmt"], optional = true }
+panic-probe = { version = "=1.0.0", features = ["print-defmt"], optional = true }
 pio = { version = "=0.3.0", optional = true }
 
 [target.wasm32-unknown-unknown.dependencies]
