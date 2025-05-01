@@ -7,7 +7,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@inquirer/prompts": "7.5.0",
-		"@octokit/request": "9.2.2",
+		"@octokit/request": "9.2.3",
 		"@tsconfig/bun": "1.0.7",
 		"@types/bun": "1.2.8",
 		"listr2": "8.2.5",
