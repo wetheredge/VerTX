@@ -7,7 +7,7 @@
 	"type": "module",
 	"dependencies": {
 		"astro": "5.7.10",
-		"lucide-static": "0.486.0",
+		"lucide-static": "0.503.0",
 		"nanoid": "5.1.5",
 		"postcard": "workspace:*"
 	},
