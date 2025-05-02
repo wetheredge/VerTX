@@ -224,12 +224,10 @@ function readFile(path: string): Uint8Array {
 		return new Uint8Array();
 	}
 
-	// @ts-expect-error: https://github.com/microsoft/TypeScript/issues/60612
 	return Uint8Array.fromBase64(base64);
 }
 
 function writeFile(path: string, contents: Uint8Array) {
-	// @ts-expect-error: https://github.com/microsoft/TypeScript/issues/60612
 	const base64 = contents.toBase64();
 	localStorage.setItem(getFileKey(path), base64);
 }
