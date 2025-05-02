@@ -11,10 +11,6 @@ const assetsPrefix = isSimulator ? 'assets/' : '_';
 const config = {
 	integrations: [minify({ minifyCid: false })],
 
-	experimental: {
-		svg: true,
-	},
-
 	base: isSimulator && import.meta.env.PROD ? '/configurator' : '',
 	env: {
 		schema: {

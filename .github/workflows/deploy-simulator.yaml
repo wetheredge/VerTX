@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4.2.2
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@v2.0.1
+      - uses: oven-sh/setup-bun@v2.0.2
         with:
           bun-version-file: .tool-versions
       - run: bun install --frozen-lockfile
@@ -58,15 +58,15 @@ jobs:
           persist-credentials: false
       - uses: mozilla-actions/sccache-action@v0.0.9
       - uses: ./.github/actions/setup-rust
-      - uses: oven-sh/setup-bun@v2.0.1
+      - uses: oven-sh/setup-bun@v2.0.2
         with:
           bun-version-file: .tool-versions
       - name: Install wasm-bindgen
-        uses: taiki-e/install-action@v2.49.40
+        uses: taiki-e/install-action@v2.50.3
         with:
           tool: wasm-bindgen@0.2.100 # dep:cargo-bin:wasm-bindgen-cli
       - name: Install wasm-opt
-        uses: taiki-e/install-action@v2.49.40
+        uses: taiki-e/install-action@v2.50.3
         with:
           tool: wasm-opt@0.116.1 # dep:cargo-bin:wasm-opt
       - run: cargo build -Zbuild-std=std,panic_abort --release --target wasm32-unknown-unknown --lib -F simulator
@@ -100,11 +100,11 @@ jobs:
       - uses: actions/checkout@v4.2.2
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@v2.0.1
+      - uses: oven-sh/setup-bun@v2.0.2
         with:
           bun-version-file: .tool-versions
       - name: Get VerTX
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v4.3.0
         with:
           name: vertx
           path: target/simulator
@@ -126,12 +126,12 @@ jobs:
       - build-simulator
     steps:
       - name: Get simulator
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v4.3.0
         with:
           name: simulator
           path: out
       - name: Get configurator
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v4.3.0
         with:
           name: configurator
           path: out/configurator
