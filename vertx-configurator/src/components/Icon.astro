@@ -1,7 +1,8 @@
 ---
 export type IconProps = {
 	'aria-hidden'?: boolean;
-	size?: number | string;
+	width?: number | string;
+	height?: number | string;
 	'stroke-width'?: number | string;
 };
 
@@ -15,4 +16,4 @@ export type Props = {
 const { icon: RawIcon, size = '1em' } = Astro.props;
 ---
 
-<RawIcon aria-hidden size={size} stroke-width="2" />
+<RawIcon aria-hidden width={size} height={size} stroke-width="2" />
