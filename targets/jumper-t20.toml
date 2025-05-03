@@ -6,6 +6,7 @@ green = "G1"
 blue = "C4"
 
 [sd]
+type = "spi"
 spi = "SPI2"
 dma.tx = "DMA1_CH4"
 dma.rx = "DMA1_CH3"

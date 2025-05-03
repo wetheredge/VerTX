@@ -7,8 +7,6 @@ leds.status = 38
 [sd]
 type = "spi"
 cs = 7
-
-[spi]
 sclk = 12
 mosi = 13
 miso = 14

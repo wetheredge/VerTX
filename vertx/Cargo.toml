@@ -28,6 +28,8 @@ defmt = [
     "sdspi?/defmt",
 ]
 
+display-spi = []
+display-i2c = []
 display-ssd1306 = ["dep:ssd1306"]
 
 configurator = []

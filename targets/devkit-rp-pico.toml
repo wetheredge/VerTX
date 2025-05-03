@@ -4,9 +4,8 @@ leds.status = 6
 
 [sd]
 type = "spi"
+spi = "SPI1"
 cs = 7
-
-[spi]
 sclk = 10
 mosi = 11
 miso = 12
@@ -19,5 +18,6 @@ left = 3
 
 [display]
 driver = "ssd1306"
+i2c = "I2C0"
 sda = 8
 scl = 9

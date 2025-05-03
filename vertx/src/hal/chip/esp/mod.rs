@@ -53,9 +53,9 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
         Spi::new(p.SPI2, spi::Config::default())
             .unwrap()
-            .with_sck(target!(p, spi.sclk))
-            .with_mosi(target!(p, spi.mosi))
-            .with_miso(target!(p, spi.miso))
+            .with_sck(target!(p, sd.sclk))
+            .with_mosi(target!(p, sd.mosi))
+            .with_miso(target!(p, sd.miso))
             .with_dma(p.DMA_CH0)
             .with_buffers(dma_rx, dma_tx)
             .into_async()

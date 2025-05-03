@@ -17,7 +17,9 @@ use crate::storage::sd;
 use crate::ui::Input;
 
 bind_interrupts!(struct Irqs {
+    #[cfg(peripheral = "I2C0")]
     I2C0_IRQ => i2c::InterruptHandler<peripherals::I2C0>;
+
     PIO0_IRQ_0 => pio::InterruptHandler<peripherals::PIO0>;
 });
 
@@ -63,9 +65,9 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
 
     let spi = Spi::new(
         p.SPI1,
-        target!(p, spi.sclk),
-        target!(p, spi.mosi),
-        target!(p, spi.miso),
+        target!(p, sd.sclk),
+        target!(p, sd.mosi),
+        target!(p, sd.miso),
         p.DMA_CH0,
         p.DMA_CH1,
         spi::Config::default(),
@@ -93,7 +95,7 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         let sda = target!(p, display.sda);
         let mut config = i2c::Config::default();
         config.frequency = 1_000_000;
-        let display = hal::display::new(I2c::new_async(p.I2C0, scl, sda, Irqs, config));
+        let display = hal::display::new(I2c::new_async(target!(p, display.i2c), scl, sda, Irqs, config));
 
         Ui {
             display,
@@ -129,6 +131,7 @@ impl hal::traits::Reset for Reset {
 }
 
 struct Ui {
+    // FIXME: I2C0
     display: hal::display::Driver<I2c<'static, peripherals::I2C0, i2c::Async>>,
     up: gpio::Input<'static>,
     down: gpio::Input<'static>,
