@@ -56,7 +56,6 @@ jobs:
           exists="$(curl --fail-with-body -X GET '${{ secrets.DEPLOY_HOST }}/commit/${{ steps.refs.outputs.commit }}/exists' \
             --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' \
             -H 'accept: application/json')"
-          echo "exists='$exists'"
           echo "exists=$exists" >> "$GITHUB_OUTPUT"
 
   build-configurator:
