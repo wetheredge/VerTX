@@ -42,8 +42,9 @@ jobs:
       - name: Get commit & branch
         id: refs
         run: |
-          echo 'commit=${{ steps.commit.outputs.result }}' >> "$GITHUB_OUTPUT"
+          echo 'commit=${{ fromJSON(steps.commit.outputs.result) }}' >> "$GITHUB_OUTPUT"
           echo 'branch=${{ github.head_ref || github.ref_name }}' >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
       - name: Join tailnet
         uses: tailscale/github-action@16d7e0b7812f55e668628a71630a09956522baa9
         with:
