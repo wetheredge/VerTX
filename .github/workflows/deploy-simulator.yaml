@@ -45,7 +45,7 @@ jobs:
           echo 'commit=${{ fromJSON(steps.commit.outputs.result) }}' >> "$GITHUB_OUTPUT"
           echo 'branch=${{ github.head_ref || github.ref_name }}' >> "$GITHUB_OUTPUT"
       - name: Join tailnet
-        uses: tailscale/github-action@16d7e0b7812f55e668628a71630a09956522baa9
+        uses: tailscale/github-action@v3.2.0
         with:
           oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_SECRET }}
@@ -179,7 +179,7 @@ jobs:
         if: needs.pre.outputs.commit-exists != 'true'
         run: tar --create --zstd --exclude='.[^/]*' --file=out.tar.zstd --directory=out .
       - name: Join tailnet
-        uses: tailscale/github-action@16d7e0b7812f55e668628a71630a09956522baa9
+        uses: tailscale/github-action@v3.2.0
         with:
           oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_SECRET }}
