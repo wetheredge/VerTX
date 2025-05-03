@@ -163,6 +163,10 @@ jobs:
     needs: [pre, build-configurator, build-simulator]
     if: ${{ !failure() }}
     steps:
+      - name: Debug
+        run: |
+          echo 'commit-exists=${{ needs.pre.outputs.commit-exists }}'
+          echo '!commit-exists=${{ !needs.pre.outputs.commit-exists }}'
       - name: Get simulator
         uses: actions/download-artifact@v4.3.0
         if: ${{ !needs.pre.outputs.commit-exists }}
