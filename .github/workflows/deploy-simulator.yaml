@@ -62,7 +62,7 @@ jobs:
     name: Build configurator
     runs-on: ubuntu-latest
     needs: pre
-    if: ${{ !needs.pre.outputs.commit-exists }}
+    if: needs.pre.outputs.commit-exists != 'true'
     defaults:
       run:
         working-directory: vertx-configurator
@@ -90,7 +90,7 @@ jobs:
     name: Build VerTX
     runs-on: ubuntu-latest
     needs: pre
-    if: ${{ !needs.pre.outputs.commit-exists }}
+    if: needs.pre.outputs.commit-exists != 'true'
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -166,21 +166,21 @@ jobs:
       - name: Debug
         run: |
           echo 'commit-exists=${{ needs.pre.outputs.commit-exists }}'
-          echo '!commit-exists=${{ !needs.pre.outputs.commit-exists }}'
+          echo '!commit-exists=${{ needs.pre.outputs.commit-exists != 'true' }}'
       - name: Get simulator
         uses: actions/download-artifact@v4.3.0
-        if: ${{ !needs.pre.outputs.commit-exists }}
+        if: needs.pre.outputs.commit-exists != 'true'
         with:
           name: simulator
           path: out
       - name: Get configurator
         uses: actions/download-artifact@v4.3.0
-        if: ${{ !needs.pre.outputs.commit-exists }}
+        if: needs.pre.outputs.commit-exists != 'true'
         with:
           name: configurator
           path: out/configurator
       - name: Create out.tar.zstd
-        if: ${{ !needs.pre.outputs.commit-exists }}
+        if: needs.pre.outputs.commit-exists != 'true'
         run: tar --create --zstd --exclude='.[^/]*' --file=out.tar.zstd --directory=out .
       - name: Join tailnet
         uses: tailscale/github-action@16d7e0b7812f55e668628a71630a09956522baa9
@@ -189,7 +189,7 @@ jobs:
           oauth-secret: ${{ secrets.TS_SECRET }}
           tags: tag:ci-vertx
       - name: Deploy commit
-        if: ${{ !needs.pre.outputs.commit-exists }}
+        if: needs.pre.outputs.commit-exists != 'true'
         run: |
           curl --fail-with-body -X POST '${{ secrets.DEPLOY_HOST }}/commit/${{ needs.pre.outputs.commit }}' \
             --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' \
