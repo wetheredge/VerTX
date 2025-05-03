@@ -44,7 +44,6 @@ jobs:
         run: |
           echo 'commit=${{ fromJSON(steps.commit.outputs.result) }}' >> "$GITHUB_OUTPUT"
           echo 'branch=${{ github.head_ref || github.ref_name }}' >> "$GITHUB_OUTPUT"
-          cat "$GITHUB_OUTPUT"
       - name: Join tailnet
         uses: tailscale/github-action@16d7e0b7812f55e668628a71630a09956522baa9
         with:
@@ -54,7 +53,7 @@ jobs:
       - name: Check if commit exists
         id: commit-exists
         run: |
-          exists="$(curl --fail-with-body -X GET '${{ secrets.DEPLOY_HOST }}/commit/${{ steps.refs.outputs.commit }}' \
+          exists="$(curl --fail-with-body -X GET '${{ secrets.DEPLOY_HOST }}/commit/${{ steps.refs.outputs.commit }}/exists' \
             --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' \
             -H 'accept: application/json')"
           echo "exists='$exists'"
