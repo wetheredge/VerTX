@@ -113,8 +113,6 @@ export function getFeatures(target: Target): Array<string> {
 		`chip-${target.chip}`,
 		target.sd.type === 'spi' && 'storage-sd',
 		`display-${target.display.driver}`,
-		'i2c' in target.display && 'display-i2c',
-		'spi' in target.display && 'display-spi',
 	].filter((x) => typeof x === 'string');
 }
 

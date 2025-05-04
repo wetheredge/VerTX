@@ -53,6 +53,16 @@ export const schema = z
 				sda: pin,
 				scl: pin,
 			}),
+			z.strictObject({
+				driver: z.literal('sh1106'),
+				spi: name.optional(),
+				dma: name.optional(),
+				cs: pin,
+				sclk: pin,
+				mosi: pin,
+				dc: pin,
+				reset: pin,
+			}),
 		]),
 	})
 	.readonly();

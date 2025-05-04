@@ -2522,6 +2522,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sh1106"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc12a0563ec9b3b1f99b1f64613581ebbade1347416a34766564f406c15d1bf3"
+dependencies = [
+ "embedded-graphics-core",
+ "embedded-hal 0.2.7",
+]
+
+[[package]]
 name = "sha2-const-stable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2917,6 +2927,7 @@ dependencies = [
  "embedded-alloc",
  "embedded-fatfs",
  "embedded-graphics",
+ "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
  "embedded-hal-bus",
@@ -2944,6 +2955,7 @@ dependencies = [
  "sdspi",
  "serde",
  "serde_json",
+ "sh1106",
  "ssd1306",
  "static_cell",
  "talc",

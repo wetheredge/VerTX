@@ -28,8 +28,7 @@ defmt = [
     "sdspi?/defmt",
 ]
 
-display-spi = []
-display-i2c = []
+display-sh1106 = ["dep:sh1106"]
 display-ssd1306 = ["dep:ssd1306"]
 
 configurator = []
@@ -121,6 +120,7 @@ embassy-time = { version = "=0.4.0", features = ["generic-queue-8"] }
 embedded-fatfs = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", default-features = false }
 embedded-graphics = "=0.8.1"
 embedded-hal = "=1.0.0"
+embedded-hal-02 = { package = "embedded-hal", version = "=0.2.7" }
 embedded-hal-async = "=1.0.0"
 embedded-hal-bus = { version = "=0.3.0", features = ["async"] }
 embedded-io-async = { version = "=0.6.1", features = ["defmt-03"] }
@@ -135,6 +135,7 @@ serde = { workspace = true, features = ["derive", "alloc"] }
 static_cell = "=2.1.0"
 
 # displays
+sh1106 = { version = "=0.5.0", optional = true }
 ssd1306 = { version = "=0.10.0", features = ["async"], optional = true }
 
 # network

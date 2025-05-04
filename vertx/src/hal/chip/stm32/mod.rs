@@ -73,12 +73,12 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         let mut config = spi::Config::default();
         config.rise_fall_speed = gpio::Speed::VeryHigh; // FIXME: needed?
         Spi::new(
-            target!(p, spi),
-            target!(p, spi.sclk),
-            target!(p, spi.mosi),
-            target!(p, spi.miso),
-            target!(p, spi.dma.tx),
-            target!(p, spi.dma.rx),
+            target!(p, sd.spi),
+            target!(p, sd.sclk),
+            target!(p, sd.mosi),
+            target!(p, sd.miso),
+            target!(p, sd.dma.tx),
+            target!(p, sd.dma.rx),
             config,
         )
     };
@@ -97,7 +97,7 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         let sd_cs = gpio::Output::new(target!(p, sd.cs), gpio::Level::High, gpio::Speed::VeryHigh); // FIXME: speed?
         let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
             let mut config = spi.get_current_config();
-            config.frequency = time::hz(speed.to_Hz());
+            config.frequency = time::hz(speed);
             spi.set_config(&config).unwrap();
         })
         .await;
@@ -106,19 +106,29 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     };
 
     let ui = {
-        let display = hal::display::new(I2c::new(
-            target!(p, display.i2c),
-            target!(p, display.scl),
-            target!(p, display.sda),
-            Irqs,
-            target!(p, display.dma.tx),
-            target!(p, display.dma.rx),
-            time::mhz(1),
-            i2c::Config::default(),
-        ));
+        let spi = Spi::new_blocking_txonly(
+            target!(p, display.spi),
+            target!(p, display.sclk),
+            target!(p, display.mosi),
+            // target!(p, display.dma),
+            spi::Config::default(),
+        );
+        let display = hal::display::new(
+            spi,
+            gpio::Output::new(
+                target!(p, display.cs),
+                gpio::Level::High,
+                gpio::Speed::VeryHigh,
+            ),
+            gpio::Output::new(
+                target!(p, display.dc),
+                gpio::Level::High,
+                gpio::Speed::VeryHigh,
+            ),
+        );
 
         Ui {
-            display,
+            // display,
             up: target!(p, ExtiInput(ui.up, gpio::Pull::Up)),
             down: target!(p, ExtiInput(ui.down, gpio::Pull::Up)),
             right: target!(p, ExtiInput(ui.right, gpio::Pull::Up)),
@@ -147,7 +157,7 @@ impl hal::traits::Reset for Reset {
 }
 
 struct Ui {
-    display: hal::display::Driver<I2c<'static, Async>>,
+    // display: hal::display::Driver<I2c<'static, Async>>,
     up: ExtiInput<'static>,
     down: ExtiInput<'static>,
     right: ExtiInput<'static>,
@@ -168,13 +178,15 @@ impl eg::draw_target::DrawTarget for Ui {
     where
         I: IntoIterator<Item = eg::Pixel<Self::Color>>,
     {
-        self.display.draw_iter(pixels)
+        // self.display.draw_iter(pixels)
+        Ok(()) // TODO
     }
 }
 
 impl hal::traits::Ui for Ui {
     async fn init(&mut self) -> Result<(), Self::Error> {
-        hal::display::init(&mut self.display).await
+        // hal::display::init(&mut self.display).await
+        Ok(()) // TODO
     }
 
     async fn get_input(&mut self) -> crate::ui::Input {
@@ -192,6 +204,7 @@ impl hal::traits::Ui for Ui {
     }
 
     async fn flush(&mut self) -> Result<(), Self::Error> {
-        self.display.flush().await
+        // self.display.flush().await
+        Ok(()) // TODO
     }
 }
