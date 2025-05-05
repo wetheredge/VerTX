@@ -2,7 +2,7 @@
 
 import { exit } from 'node:process';
 import { Glob } from 'bun';
-import { schema } from './target-common';
+import { schema } from './target-schema';
 import { repoRoot } from './utils';
 
 const targets = new Glob('targets/*.toml').scan({ cwd: repoRoot });
