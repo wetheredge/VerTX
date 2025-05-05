@@ -1,8 +1,11 @@
 chip = "esp32s3"
 
-leds.status = 38
 # analog = [4, 5, 6, 7]
 # switches = [11]
+
+[status]
+type = "ws2812"
+pin = 38
 
 [sd]
 type = "spi"

@@ -1,5 +1,3 @@
-mod leds;
-
 use embassy_executor::Spawner;
 use embassy_futures::select;
 use embassy_stm32::exti::ExtiInput;
@@ -63,11 +61,11 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     let config = embassy_stm32::Config::default();
     let p = embassy_stm32::init(config);
 
-    let status_led = leds::StatusDriver::new(
-        target!(p, leds.timer),
-        target!(p, leds.dma),
-        target!(p, leds.status),
-    );
+    let status_led = hal::status::rgb::Driver {
+        red: gpio::Output::new(target!(p, status.red), gpio::Level::Low, gpio::Speed::Low),
+        green: gpio::Output::new(target!(p, status.green), gpio::Level::Low, gpio::Speed::Low),
+        blue: gpio::Output::new(target!(p, status.blue), gpio::Level::Low, gpio::Speed::Low),
+    };
 
     let spi = {
         let mut config = spi::Config::default();

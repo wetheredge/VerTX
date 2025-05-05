@@ -1,9 +1,9 @@
-mod leds;
+#[cfg(feature = "status-ws2812")]
+mod ws2812;
 
 use embassy_executor::Spawner;
 use embassy_futures::select;
 use embassy_rp::i2c::{self, I2c};
-use embassy_rp::pio::{self, Pio};
 use embassy_rp::spi::{self, Spi};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio, peripherals};
@@ -20,7 +20,8 @@ bind_interrupts!(struct Irqs {
     #[cfg(peripheral = "I2C0")]
     I2C0_IRQ => i2c::InterruptHandler<peripherals::I2C0>;
 
-    PIO0_IRQ_0 => pio::InterruptHandler<peripherals::PIO0>;
+    #[cfg(feature = "status-ws2812")]
+    PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<peripherals::PIO0>;
 });
 
 #[global_allocator]
@@ -55,12 +56,16 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         watchdog: Watchdog::new(p.WATCHDOG),
     };
 
+    #[cfg(feature = "status-rgb")]
+    let status_led = hal::status::rgb::Driver {
+        red: gpio::Output::new(target!(p, status.red), gpio::Level::Low),
+        green: gpio::Output::new(target!(p, status.green), gpio::Level::Low),
+        blue: gpio::Output::new(target!(p, status.blue), gpio::Level::Low),
+    };
+    #[cfg(feature = "status-ws2812")]
     let status_led = {
-        let Pio {
-            mut common, sm0, ..
-        } = Pio::new(p.PIO0, Irqs);
-        let pin = target!(p, leds.status);
-        leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
+        let mut pio = embassy_rp::pio::Pio::new(p.PIO0, Irqs);
+        ws2812::StatusDriver::<_, 0>::new(&mut pio.common, pio.sm0, target!(p, status.pin))
     };
 
     let spi = Spi::new(
@@ -95,7 +100,13 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         let sda = target!(p, display.sda);
         let mut config = i2c::Config::default();
         config.frequency = 1_000_000;
-        let display = hal::display::new(I2c::new_async(target!(p, display.i2c), scl, sda, Irqs, config));
+        let display = hal::display::new(I2c::new_async(
+            target!(p, display.i2c),
+            scl,
+            sda,
+            Irqs,
+            config,
+        ));
 
         Ui {
             display,

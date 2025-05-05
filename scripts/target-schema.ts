@@ -16,18 +16,18 @@ export type Target = z.infer<typeof schema>;
 export const schema = z
 	.strictObject({
 		chip: z.string(),
-		leds: z.strictObject({
-			timer: name.optional(),
-			dma: name.optional(),
-			status: z.union([
+		status: z.discriminatedUnion('type', [
+			z.strictObject({
+				type: z.literal('ws2812'),
 				pin,
-				z.strictObject({
-					red: pin,
-					green: pin,
-					blue: pin,
-				}),
-			]),
-		}),
+			}),
+			z.strictObject({
+				type: z.literal('rgb'),
+				red: pin,
+				green: pin,
+				blue: pin,
+			}),
+		]),
 		sd: z.discriminatedUnion('type', [
 			z.strictObject({
 				type: z.literal('spi'),

@@ -1,6 +1,8 @@
 chip = "rp2040"
 
-leds.status = 6
+[status]
+type = "ws2812"
+pin = 6
 
 [sd]
 type = "spi"

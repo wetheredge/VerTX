@@ -31,6 +31,10 @@ defmt = [
 display-sh1106 = ["dep:sh1106"]
 display-ssd1306 = ["dep:ssd1306"]
 
+status-color-mixing = []
+status-ws2812 = ["status-color-mixing"]
+status-rgb = []
+
 configurator = []
 
 network = [
@@ -100,6 +104,7 @@ chip-cortex-m = [
 
 simulator = [
     "log",
+    "status-color-mixing",
     "configurator",
     "embassy-executor/arch-wasm",
     "embassy-executor/executor-thread",

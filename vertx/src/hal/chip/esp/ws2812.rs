@@ -61,14 +61,14 @@ impl<Tx: rmt::TxChannelAsync> StatusLed<Tx> {
 impl<Tx: rmt::TxChannelAsync> crate::hal::traits::StatusLed for StatusLed<Tx> {
     type Error = rmt::Error;
 
-    async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
+    async fn set(&mut self, color: crate::leds::Color) -> Result<(), Self::Error> {
         // 3 channels * 8 bits/pulses + stop
         let mut buffer = [rmt::PulseCode::empty(); 25];
 
         let buffer_iter = &mut buffer.iter_mut();
-        push_pulses(green, buffer_iter, self.pulses);
-        push_pulses(red, buffer_iter, self.pulses);
-        push_pulses(blue, buffer_iter, self.pulses);
+        push_pulses(color.g, buffer_iter, self.pulses);
+        push_pulses(color.r, buffer_iter, self.pulses);
+        push_pulses(color.b, buffer_iter, self.pulses);
 
         self.channel.transmit(&buffer).await
     }

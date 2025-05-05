@@ -131,8 +131,8 @@ struct StatusLed;
 impl hal::traits::StatusLed for StatusLed {
     type Error = Infallible;
 
-    async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
-        ipc::set_status_led(red, green, blue);
+    async fn set(&mut self, color: crate::leds::Color) -> Result<(), Self::Error> {
+        ipc::set_status_led(color.r, color.g, color.b);
         Ok(())
     }
 }

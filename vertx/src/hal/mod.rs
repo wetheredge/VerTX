@@ -8,6 +8,28 @@ macro_rules! select_mod {
 }
 
 mod display;
+pub(super) mod status {
+    #[cfg(feature = "status-rgb")]
+    pub(crate) mod rgb {
+        use embedded_hal::digital::OutputPin;
+
+        pub(crate) struct Driver<T> {
+            pub(crate) red: T,
+            pub(crate) green: T,
+            pub(crate) blue: T,
+        }
+
+        impl<T: OutputPin> crate::hal::traits::StatusLed for Driver<T> {
+            type Error = T::Error;
+
+            async fn set(&mut self, color: crate::leds::Color) -> Result<(), Self::Error> {
+                self.red.set_state(color.r.into())?;
+                self.green.set_state(color.g.into())?;
+                self.blue.set_state(color.b.into())
+            }
+        }
+    }
+}
 
 #[cfg(not(feature = "simulator"))]
 include!("codegen.rs");
@@ -65,7 +87,7 @@ pub(crate) mod traits {
 
     pub(crate) trait StatusLed {
         type Error: Debug;
-        async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error>;
+        async fn set(&mut self, color: crate::leds::Color) -> Result<(), Self::Error>;
     }
 
     #[cfg(all(feature = "configurator", not(feature = "network")))]

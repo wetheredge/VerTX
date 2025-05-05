@@ -1,6 +1,7 @@
 chip = "stm32f407ze"
 
-[leds.status]
+[status]
+type = "rgb"
 red = "C5"
 green = "G1"
 blue = "C4"

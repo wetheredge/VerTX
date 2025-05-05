@@ -1,7 +1,8 @@
 #[expect(unused, reason = "preserve for future OTA updates")]
 mod flash;
-mod leds;
 mod network;
+#[cfg(feature = "status-ws2812")]
+mod ws2812;
 
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -11,7 +12,6 @@ use esp_hal::clock::CpuClock;
 use esp_hal::dma::{DmaRxBuf, DmaTxBuf};
 use esp_hal::gpio;
 use esp_hal::i2c::master::{self as i2c, I2c};
-use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::time::Rate;
@@ -36,14 +36,28 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
-    let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
     let rng = Rng::new(p.RNG);
     let timg0 = timg::TimerGroup::new(p.TIMG0);
     let timg1 = timg::TimerGroup::new(p.TIMG1);
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let status_led = leds::StatusLed::new(rmt.channel0, target!(p, leds.status));
+    #[cfg(feature = "status-rgb")]
+    let status_led = {
+        let config = gpio::OutputConfig::default();
+        hal::status::rgb::Driver {
+            red: gpio::Output::new(target!(p, status.red), gpio::Level::Low, config),
+            green: gpio::Output::new(target!(p, status.green), gpio::Level::Low, config),
+            blue: gpio::Output::new(target!(p, status.blue), gpio::Level::Low, config),
+        }
+    };
+    #[cfg(feature = "status-ws2812")]
+    let status_led = {
+        let rmt = esp_hal::rmt::Rmt::new(p.RMT, Rate::from_mhz(80))
+            .unwrap()
+            .into_async();
+        self::ws2812::StatusLed::new(rmt.channel0, target!(p, status.pin))
+    };
 
     let spi = {
         #[expect(clippy::manual_div_ceil)]

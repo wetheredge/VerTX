@@ -111,6 +111,7 @@ export async function build(
 export function getFeatures(target: Target): Array<string> {
 	return [
 		`chip-${target.chip}`,
+		`status-${target.status.type}`,
 		target.sd.type === 'spi' && 'storage-sd',
 		`display-${target.display.driver}`,
 	].filter((x) => typeof x === 'string');
