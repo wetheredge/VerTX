@@ -13,6 +13,7 @@ use embedded_alloc::TlsfHeap;
 use static_cell::StaticCell;
 use {defmt_rtt as _, embedded_graphics as eg, panic_probe as _};
 
+use crate::hal;
 use crate::storage::sd;
 use crate::ui::Input;
 
@@ -26,7 +27,7 @@ declare_hal_types!();
 #[global_allocator]
 static ALLOCATOR: TlsfHeap = TlsfHeap::empty();
 
-pub(super) fn init(_spawner: Spawner) -> super::Init {
+pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     static INIT_HEAP: StaticCell<()> = StaticCell::new();
     INIT_HEAP.init_with(|| {
         use core::mem::MaybeUninit;
@@ -94,7 +95,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         let sda = pins!(p, display.sda);
         let mut config = i2c::Config::default();
         config.frequency = 1_000_000;
-        let display = super::display::new(I2c::new_async(p.I2C0, scl, sda, Irqs, config));
+        let display = hal::display::new(I2c::new_async(p.I2C0, scl, sda, Irqs, config));
 
         Ui {
             display,
@@ -105,7 +106,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
         }
     };
 
-    super::Init {
+    hal::Init {
         reset,
         status_led,
         storage,
@@ -117,7 +118,7 @@ struct Reset {
     watchdog: Watchdog,
 }
 
-impl super::traits::Reset for Reset {
+impl hal::traits::Reset for Reset {
     fn shut_down(&mut self) -> ! {
         panic!("Emulating shut down")
     }
@@ -130,7 +131,7 @@ impl super::traits::Reset for Reset {
 }
 
 struct Ui {
-    display: super::display::Driver<I2c<'static, peripherals::I2C0, i2c::Async>>,
+    display: hal::display::Driver<I2c<'static, peripherals::I2C0, i2c::Async>>,
     up: gpio::Input<'static>,
     down: gpio::Input<'static>,
     right: gpio::Input<'static>,
@@ -139,7 +140,7 @@ struct Ui {
 
 impl eg::geometry::OriginDimensions for Ui {
     fn size(&self) -> eg::geometry::Size {
-        super::display::SIZE
+        hal::display::SIZE
     }
 }
 
@@ -155,9 +156,9 @@ impl eg::draw_target::DrawTarget for Ui {
     }
 }
 
-impl super::traits::Ui for Ui {
+impl hal::traits::Ui for Ui {
     async fn init(&mut self) -> Result<(), Self::Error> {
-        super::display::init(&mut self.display).await
+        hal::display::init(&mut self.display).await
     }
 
     async fn get_input(&mut self) -> crate::ui::Input {

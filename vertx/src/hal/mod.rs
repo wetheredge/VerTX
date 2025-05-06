@@ -1,3 +1,14 @@
+macro_rules! select_mod {
+    ($($feat:literal : $mod:ident),+ $(,)?) => {$(
+        #[cfg(feature = $feat)]
+        mod $mod;
+        #[cfg(feature = $feat)]
+        pub(crate) use $mod::*;
+    )+};
+}
+
+mod display;
+
 #[cfg(not(feature = "simulator"))]
 include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 
@@ -19,24 +30,21 @@ macro_rules! declare_hal_types {
     };
 }
 
-#[cfg_attr(feature = "chip-esp", path = "esp/mod.rs")]
-#[cfg_attr(feature = "chip-rp", path = "rp/mod.rs")]
-#[cfg_attr(feature = "simulator", path = "simulator/mod.rs")]
-mod implementation;
-
 #[cfg(all(feature = "configurator", not(feature = "network")))]
-pub(crate) use implementation::HalConfigurator as Configurator;
+pub(crate) use chip::HalConfigurator as Configurator;
 #[cfg(feature = "network")]
-pub(crate) use implementation::HalNetwork as Network;
-pub(crate) use implementation::{
+pub(crate) use chip::HalNetwork as Network;
+pub(crate) use chip::{
     HalReset as Reset, HalStatusLed as StatusLed, HalStorage as Storage,
     HalStorageFuture as StorageFuture, HalUi as Ui,
 };
 #[cfg(feature = "network")]
 pub type NetworkDriver = <Network as traits::Network>::Driver;
 
+mod chip;
+
 pub(crate) fn init(spawner: embassy_executor::Spawner) -> Init {
-    implementation::init(spawner)
+    chip::init(spawner)
 }
 
 pub(crate) struct Init {
@@ -110,32 +118,5 @@ pub(crate) mod traits {
 
         async fn get_input(&mut self) -> crate::ui::Input;
         async fn flush(&mut self) -> Result<(), Self::Error>;
-    }
-}
-
-#[cfg(feature = "display-ssd1306")]
-mod display {
-    use embedded_graphics as eg;
-    use embedded_hal_async::i2c::I2c;
-    use ssd1306::prelude::*;
-    use ssd1306::{I2CDisplayInterface, Ssd1306Async};
-
-    pub(super) const SIZE: eg::geometry::Size = eg::geometry::Size {
-        width: 128,
-        height: 64,
-    };
-
-    type Size = DisplaySize128x64;
-    pub(super) type Driver<I> =
-        Ssd1306Async<I2CInterface<I>, Size, ssd1306::mode::BufferedGraphicsModeAsync<Size>>;
-
-    pub(super) fn new<I: I2c>(i2c: I) -> Driver<I> {
-        let interface = I2CDisplayInterface::new(i2c);
-        Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
-            .into_buffered_graphics_mode()
-    }
-
-    pub(super) async fn init<D: DisplayConfigAsync>(display: &mut D) -> Result<(), D::Error> {
-        display.init().await
     }
 }

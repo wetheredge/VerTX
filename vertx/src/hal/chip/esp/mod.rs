@@ -19,12 +19,13 @@ use esp_hal::timer::timg;
 use static_cell::StaticCell;
 use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
 
+use crate::hal;
 use crate::storage::sd;
 use crate::ui::Input;
 
 declare_hal_types!();
 
-pub(super) fn init(spawner: Spawner) -> super::Init {
+pub(crate) fn init(spawner: Spawner) -> hal::Init {
     esp_alloc::heap_allocator!(size: 100 * 1024);
 
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
@@ -87,7 +88,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
             .with_scl(pins!(p, display.scl))
             .into_async();
 
-        let display = super::display::new(i2c);
+        let display = hal::display::new(i2c);
 
         let config = gpio::InputConfig::default().with_pull(gpio::Pull::Up);
         Ui {
@@ -99,7 +100,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
         }
     };
 
-    super::Init {
+    hal::Init {
         reset: Reset,
         status_led,
         storage,
@@ -116,7 +117,7 @@ pub(super) fn init(spawner: Spawner) -> super::Init {
 
 struct Reset;
 
-impl super::traits::Reset for Reset {
+impl hal::traits::Reset for Reset {
     fn shut_down(&mut self) -> ! {
         panic!("Emulating shut down")
     }
@@ -127,7 +128,7 @@ impl super::traits::Reset for Reset {
 }
 
 struct Ui {
-    display: super::display::Driver<I2c<'static, esp_hal::Async>>,
+    display: hal::display::Driver<I2c<'static, esp_hal::Async>>,
     up: gpio::Input<'static>,
     down: gpio::Input<'static>,
     right: gpio::Input<'static>,
@@ -136,7 +137,7 @@ struct Ui {
 
 impl eg::geometry::OriginDimensions for Ui {
     fn size(&self) -> eg::geometry::Size {
-        super::display::SIZE
+        hal::display::SIZE
     }
 }
 
@@ -152,9 +153,9 @@ impl eg::draw_target::DrawTarget for Ui {
     }
 }
 
-impl super::traits::Ui for Ui {
+impl hal::traits::Ui for Ui {
     async fn init(&mut self) -> Result<(), Self::Error> {
-        super::display::init(&mut self.display).await
+        hal::display::init(&mut self.display).await
     }
 
     async fn get_input(&mut self) -> Input {

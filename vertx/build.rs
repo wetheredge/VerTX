@@ -25,7 +25,7 @@ fn main() -> io::Result<()> {
         let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
         println!("cargo::rerun-if-env-changed=VERTX_TARGET");
 
-        memory_layout(out_dir, root)?;
+        memory_layout(out_dir, root);
         link_args();
         pins(out_dir, root, &target_name)?;
     }
@@ -37,17 +37,16 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn memory_layout(out_dir: &str, root: &str) -> io::Result<()> {
-    let path = feature("CHIP_RP").then_some("src/hal/rp/memory.x");
+fn memory_layout(out_dir: &str, root: &str) {
+    let path = feature("CHIP_RP").then_some("src/hal/chip/rp/memory.x");
 
     if let Some(path) = path {
-        fs::copy(format!("{root}/{path}"), format!("{out_dir}/memory.x"))?;
+        fs::copy(format!("{root}/{path}"), format!("{out_dir}/memory.x"))
+            .expect("copying memory.x");
 
         println!("cargo::rustc-link-search={out_dir}");
         println!("cargo::rerun-if-changed={root}/{path}");
     }
-
-    Ok(())
 }
 
 fn link_args() {

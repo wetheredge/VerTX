@@ -10,6 +10,7 @@ use embassy_executor::Spawner;
 use embassy_sync::channel::{self, Channel};
 use embedded_graphics as eg;
 
+use crate::hal;
 use crate::ui::Input as UiInput;
 
 mod ipc {
@@ -93,8 +94,8 @@ static FRAMEBUFFER: Mutex<RawFramebuffer> = Mutex::new(bytemuck::zeroed());
 
 declare_hal_types!();
 
-pub(super) fn init(_spawner: Spawner) -> super::Init {
-    super::Init {
+pub(crate) fn init(_spawner: Spawner) -> hal::Init {
+    hal::Init {
         reset: Reset,
         status_led: StatusLed,
         storage: async { storage::Storage },
@@ -105,7 +106,7 @@ pub(super) fn init(_spawner: Spawner) -> super::Init {
 
 struct Reset;
 
-impl super::traits::Reset for Reset {
+impl hal::traits::Reset for Reset {
     fn shut_down(&mut self) -> ! {
         ipc::power_off(false);
         let _ = panic::take_hook();
@@ -122,7 +123,7 @@ impl super::traits::Reset for Reset {
 #[derive(Debug)]
 struct StatusLed;
 
-impl super::traits::StatusLed for StatusLed {
+impl hal::traits::StatusLed for StatusLed {
     type Error = Infallible;
 
     async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
@@ -179,7 +180,7 @@ impl eg::draw_target::DrawTarget for Ui {
     }
 }
 
-impl super::traits::Ui for Ui {
+impl hal::traits::Ui for Ui {
     async fn get_input(&mut self) -> crate::ui::Input {
         self.inputs.receive().await
     }
