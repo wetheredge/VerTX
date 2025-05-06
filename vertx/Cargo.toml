@@ -82,10 +82,10 @@ chip-stm32 = [
     "defmt",
     "chip-cortex-m",
 ]
-chip-stm32f407vg = [
+chip-stm32f407ze = [
     "chip-stm32",
     "cortex-m/critical-section-single-core",
-    "embassy-stm32/stm32f407vg",
+    "embassy-stm32/stm32f407ze",
 ]
 
 chip-cortex-m = [

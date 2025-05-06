@@ -144,7 +144,7 @@ jobs:
         target:
           - devkit-esp32s3
           - devkit-rp-pico
-          - devkit-stm32f407vg
+          - jumper-t20
     env:
       VERTX_SKIP_CONFIGURATOR_BUILD: true
     steps:

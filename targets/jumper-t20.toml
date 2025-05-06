@@ -1,4 +1,4 @@
-chip = "stm32f407vg"
+chip = "stm32f407ze"
 
 [leds.status]
 red = "C5"
