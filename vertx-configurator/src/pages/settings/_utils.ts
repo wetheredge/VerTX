@@ -1,4 +1,4 @@
-import type { Config } from '../../config.ts';
+import type { Config } from '~/config.ts';
 
 export type SettingProps<Key extends keyof Config = keyof Config> = {
 	key: Key;

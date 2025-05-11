@@ -1,6 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { size } from '../styles/constants.ts';
-import { theme } from '../styles/theme.css.ts';
+import { size } from '~/styles/constants.ts';
+import { theme } from '~/styles/theme.css.ts';
 
 export const buildInfoTable = style({
 	borderCollapse: 'collapse',

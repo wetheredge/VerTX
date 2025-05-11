@@ -1,15 +1,15 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { height as appBarHeight } from '../components/AppBar.css.ts';
-import { width as navWidth } from '../components/Navigation.css.ts';
-import { menuOpen } from '../components/menu-selectors.ts';
+import { height as appBarHeight } from '~/components/AppBar.css.ts';
+import { width as navWidth } from '~/components/Navigation.css.ts';
+import { menuOpen } from '~/components/menu-selectors.ts';
 import {
 	fontSize,
 	mediaIsMobile,
 	pagePadding,
 	size,
 	transition,
-} from '../styles/constants.ts';
-import { theme } from '../styles/theme.css.ts';
+} from '~/styles/constants.ts';
+import { theme } from '~/styles/theme.css.ts';
 
 globalStyle('#root', {
 	overflowX: 'hidden',

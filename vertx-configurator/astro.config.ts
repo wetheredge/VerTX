@@ -44,6 +44,11 @@ const config = {
 				},
 			},
 		},
+		resolve: {
+			alias: {
+				'~': new URL('./src', import.meta.url).pathname,
+			},
+		},
 		server: { strictPort: true },
 		cacheDir: '.vite',
 	},

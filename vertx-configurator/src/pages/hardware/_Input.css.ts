@@ -7,8 +7,8 @@ import {
 	hues,
 	opacity,
 	size,
-} from '../../styles/constants.ts';
-import { theme } from '../../styles/theme.css.ts';
+} from '~/styles/constants.ts';
+import { theme } from '~/styles/theme.css.ts';
 
 const channelHeight = size.md;
 const centerTick = size.xs;

@@ -4,7 +4,10 @@
 	"compilerOptions": {
 		"types": [],
 		"exactOptionalPropertyTypes": false,
-		"noImplicitReturns": false
+		"noImplicitReturns": false,
+		"paths": {
+			"~/*": ["./src/*"]
+		}
 	},
 	"include": [".astro/types.d.ts", "astro.config.*", "src/**/*"],
 	"references": [

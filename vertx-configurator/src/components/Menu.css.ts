@@ -1,5 +1,5 @@
 import { globalStyle } from '@vanilla-extract/css';
-import { mediaIsMobile } from '../styles/constants.ts';
+import { mediaIsMobile } from '~/styles/constants.ts';
 import { menuClosed, menuOpen, stateId } from './menu-selectors.ts';
 
 const menuButton = `[for="${stateId}"]`;

@@ -1,6 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { button } from '../../styles/components.css.ts';
-import { mediaIsMobile, size } from '../../styles/constants.ts';
+import { button } from '~/styles/components.css.ts';
+import { mediaIsMobile, size } from '~/styles/constants.ts';
 
 export const calibrate = button;
 

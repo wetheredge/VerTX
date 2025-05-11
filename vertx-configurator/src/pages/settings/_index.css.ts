@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { inputBase } from '../../styles/components.css.ts';
-import { fontSize, mediaIsMobile, size } from '../../styles/constants.ts';
-import { theme } from '../../styles/theme.css.ts';
+import { inputBase } from '~/styles/components.css.ts';
+import { fontSize, mediaIsMobile, size } from '~/styles/constants.ts';
+import { theme } from '~/styles/theme.css.ts';
 
 const gap = size.sm;
 

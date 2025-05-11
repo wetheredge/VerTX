@@ -1,13 +1,13 @@
 import { createVar, globalStyle, style } from '@vanilla-extract/css';
-import { iconButton } from '../styles/components.css.ts';
+import { iconButton } from '~/styles/components.css.ts';
 import {
 	borderBase,
 	mediaIsMobile,
 	pagePadding,
 	size,
 	transition,
-} from '../styles/constants.ts';
-import { theme } from '../styles/theme.css.ts';
+} from '~/styles/constants.ts';
+import { theme } from '~/styles/theme.css.ts';
 import { height as appBarHeight } from './AppBar.css.ts';
 import { menuClosed } from './menu-selectors.ts';
 
