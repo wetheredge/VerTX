@@ -2,7 +2,7 @@ import { $ } from 'bun';
 import type { Listr, ListrTask } from 'listr2';
 // @ts-ignore
 import { workspace } from '../../Cargo.toml';
-import type { Context } from './main';
+import type { Context } from './main.ts';
 
 type Dependencies = Array<[string, string]>;
 

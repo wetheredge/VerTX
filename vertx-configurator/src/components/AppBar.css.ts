@@ -6,7 +6,7 @@ import {
 	mediaIsMobile,
 	pagePadding,
 	size,
-} from '../styles/constants';
+} from '../styles/constants.ts';
 import { theme } from '../styles/theme.css';
 
 const rootPadding = size.sm;

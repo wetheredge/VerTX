@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { exit } from 'node:process';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
-import { schema } from './target-schema';
+import { schema } from './target-schema.ts';
 
 export async function build(
 	command: string,

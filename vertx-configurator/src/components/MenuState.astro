@@ -1,12 +1,12 @@
 ---
-import { stateId } from './menu-selectors';
+import { stateId } from './menu-selectors.ts';
 ---
 
 <input id={stateId} type="checkbox" />
 
 <script>
-	import { mediaIsMobile } from '../styles/constants'
-	import { stateId } from "./menu-selectors";
+	import { mediaIsMobile } from '../styles/constants.ts'
+	import { stateId } from './menu-selectors.ts';
 
 	const state: HTMLInputElement = document.querySelector(`#${stateId}`)!;
 

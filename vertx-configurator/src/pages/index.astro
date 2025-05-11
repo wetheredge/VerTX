@@ -13,7 +13,7 @@ import * as styles from './_index.css';
 	<noscript><p>The VerTX configurator requires JavaScript.</p></noscript>
 
 	<script>
-		import { getJson } from "../api";
+		import { getJson } from '../api/index.ts';
 
 		const version = await getJson('version');
 		const table = document.getElementById('build')!;

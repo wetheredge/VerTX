@@ -6,7 +6,9 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignore": [".vite/*"],
+		"ignore": [
+			".vite/*"
+		],
 		"ignoreUnknown": true
 	},
 	"formatter": {
@@ -18,8 +20,7 @@
 				"useSimplifiedLogicExpression": "warn"
 			},
 			"correctness": {
-				"all": true,
-				"useImportExtensions": "off"
+				"all": true
 			},
 			"style": {
 				"noDefaultExport": "error",
@@ -38,7 +39,10 @@
 				"useFilenamingConvention": {
 					"level": "error",
 					"options": {
-						"filenameCases": ["PascalCase", "kebab-case"]
+						"filenameCases": [
+							"PascalCase",
+							"kebab-case"
+						]
 					}
 				},
 				"useForOf": "warn",

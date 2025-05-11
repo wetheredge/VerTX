@@ -6,7 +6,7 @@ import {
 	toPascalCase,
 	toSnakeCase,
 	visit,
-} from './utilities';
+} from './utilities.ts';
 
 export async function rust(
 	{ config, version }: ConfigMeta,

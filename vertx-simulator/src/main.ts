@@ -1,6 +1,6 @@
 import './style.css';
-import { type Callbacks, Simulator, getModule } from './simulator';
-import { Ui } from './ui';
+import { type Callbacks, Simulator, getModule } from './simulator.ts';
+import { Ui } from './ui.ts';
 
 const rebootStorageKey = 'VerTX reboot';
 

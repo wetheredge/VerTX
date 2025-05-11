@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { assetPaths, outDir, pathToRoute, prettySize } from './utils';
+import { assetPaths, outDir, pathToRoute, prettySize } from './utils.ts';
 
 type Asset = {
 	route: string;

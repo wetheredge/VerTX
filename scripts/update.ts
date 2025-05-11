@@ -6,7 +6,7 @@ import * as path from 'node:path';
 import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
 import { $, type FileSink, Glob } from 'bun';
-import { panic, repoRoot } from './utils';
+import { panic, repoRoot } from './utils.ts';
 
 const missingTools = ['asdf', 'bun', 'cargo', 'git'].filter(
 	(tool) => Bun.which(tool) == null,

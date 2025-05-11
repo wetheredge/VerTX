@@ -1,4 +1,4 @@
-import type * as types from './types';
+import type * as types from './types.ts';
 import {
 	type ConfigMeta,
 	type NonEmptyPath,
@@ -6,7 +6,7 @@ import {
 	getWriter,
 	toPascalCase,
 	visit,
-} from './utilities';
+} from './utilities.ts';
 
 export async function typescript(
 	{ config, version }: ConfigMeta,

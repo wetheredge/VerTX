@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import sharp from 'sharp';
-import { panic } from './utils';
+import { panic } from './utils.ts';
 
 const WIDTH = 128;
 const HEIGHT = 64;

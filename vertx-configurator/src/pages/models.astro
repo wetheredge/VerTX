@@ -3,7 +3,7 @@ import IconMenu from 'lucide-static/icons/ellipsis-vertical.svg';
 import Icon from '../components/Icon.astro';
 import Layout from '../layouts/Layout.astro';
 import { iconButton } from '../styles/components.css';
-import { size } from '../styles/constants';
+import { size } from '../styles/constants.ts';
 import * as styles from './_models.css';
 ---
 
@@ -26,7 +26,7 @@ import * as styles from './_models.css';
 	</menu>
 
 	<script>
-		import { getJson } from '../api';
+		import { getJson } from '../api/index.ts';
 
 		const container: HTMLDivElement = document.querySelector('#models')!;
 		const template: HTMLDivElement = document.querySelector('#template')!;

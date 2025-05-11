@@ -3,8 +3,8 @@ import type {
 	ConfiguratorRequest,
 	ConfiguratorResponse,
 	Method,
-} from './common';
-import type { RoutesFor } from './types';
+} from './common.ts';
+import type { RoutesFor } from './types.ts';
 
 type Accept = 'json' | 'binary';
 type Headers = NonNullable<NonNullable<Parameters<typeof fetch>[1]>['headers']>;

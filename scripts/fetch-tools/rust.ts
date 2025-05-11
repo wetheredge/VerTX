@@ -4,8 +4,8 @@ import * as path from 'node:path';
 import { $, fileURLToPath } from 'bun';
 import type { Listr, ListrTask } from 'listr2';
 import * as versions from '../../.config/xtensa-toolchain.json';
-import { humanBytes } from '../utils';
-import type { Context } from './main';
+import { humanBytes } from '../utils.ts';
+import type { Context } from './main.ts';
 
 // See <https://github.com/espressif/crosstool-NG/releases/latest>
 const LLVM_TARGET_TO_GCC: Record<string, string> = {

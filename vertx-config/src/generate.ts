@@ -1,7 +1,7 @@
-import * as current from '../config';
-import * as old from '../config.old';
-import { rust } from './rust';
-import { typescript } from './typescript';
+import * as old from '../config.old.ts';
+import * as current from '../config.ts';
+import { rust } from './rust.ts';
+import { typescript } from './typescript.ts';
 
 await Promise.all([
 	rust(current, 'out/config.rs'),

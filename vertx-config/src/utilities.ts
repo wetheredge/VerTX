@@ -1,5 +1,5 @@
 import type { BunFile, FileSink } from 'bun';
-import * as types from './types';
+import * as types from './types.ts';
 
 export type ConfigMeta = {
 	config: types.Config;

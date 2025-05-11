@@ -3,7 +3,7 @@
 // Hack to remove any assets that aren't actually used. Ideally, they wouldn't get built.
 
 import { rm } from 'node:fs/promises';
-import { assetPaths, outDir, pathToRoute, prettySize } from './utils';
+import { assetPaths, outDir, pathToRoute, prettySize } from './utils.ts';
 
 type Asset = {
 	path: string;

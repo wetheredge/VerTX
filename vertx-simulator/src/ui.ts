@@ -1,4 +1,4 @@
-import { Button } from './simulator';
+import { Button } from './simulator.ts';
 
 export class Ui {
 	#status: HTMLDivElement;

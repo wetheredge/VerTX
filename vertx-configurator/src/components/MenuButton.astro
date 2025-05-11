@@ -2,9 +2,9 @@
 import IconMenu from 'lucide-static/icons/menu.svg';
 import IconX from 'lucide-static/icons/x.svg';
 import * as styles from '../styles/components.css';
-import { size } from '../styles/constants';
+import { size } from '../styles/constants.ts';
 import Icon from './Icon.astro';
-import { stateId } from './menu-selectors';
+import { stateId } from './menu-selectors.ts';
 import './Menu.css';
 ---
 
@@ -20,7 +20,7 @@ import './Menu.css';
 </label>
 
 <script>
-	import { stateId } from './menu-selectors';
+	import { stateId } from './menu-selectors.ts';
 
 	const state: HTMLInputElement = document.querySelector(`#${stateId}`)!;
 	const button: HTMLLabelElement = document.querySelector(`[for="${stateId}"]`)!;
