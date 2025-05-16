@@ -87,7 +87,7 @@ impl Scrolling {
         let available_y = self.visible_height() - self.bar_height;
         let scroll_distance = self.height - self.visible_height();
         // (offset / scroll_distance) * available_y
-        self.bar_y = div_round(available_y * self.offset, scroll_distance) as i32;
+        self.bar_y = div_round(available_y * self.offset, scroll_distance).cast_signed();
     }
 }
 

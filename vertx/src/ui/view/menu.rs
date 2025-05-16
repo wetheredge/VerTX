@@ -51,10 +51,13 @@ impl Menu {
         let height = bounds.size.height;
         let y_offset = bounds.top_left.y;
 
-        let category_bounds = Rectangle::new(bounds.top_left, Size::new(center as u32 - 1, height));
+        let category_bounds = Rectangle::new(
+            bounds.top_left,
+            Size::new(center.cast_unsigned() - 1, height),
+        );
         let submenu_bounds = Rectangle::new(
             Point::new(center + 2, y_offset),
-            Size::new(total_width - center as u32 - 2, height),
+            Size::new(total_width - center.cast_unsigned() - 2, height),
         );
 
         let mut submenu = List::new(Cow::Borrowed(TOOLS), submenu_bounds);
@@ -69,7 +72,7 @@ impl Menu {
             submenu_focused: false,
 
             center,
-            height: height as i32,
+            height: height.cast_signed(),
             y_offset,
         }
     }

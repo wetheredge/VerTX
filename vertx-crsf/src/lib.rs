@@ -474,7 +474,7 @@ impl PacketReader {
         let payload_length = length - 2;
 
         let mut payload = [0; 61];
-        reader.read_exact(&mut payload[0..payload_length as usize])?;
+        reader.read_exact(&mut payload[0..usize::from(payload_length)])?;
 
         let mut checksum = [0];
         reader.read_exact(&mut checksum)?;
@@ -513,7 +513,7 @@ impl PacketReader {
     }
 
     fn i8(&mut self) -> i8 {
-        self.u8() as i8
+        self.u8().cast_signed()
     }
 
     fn u16(&mut self) -> u16 {
@@ -523,7 +523,7 @@ impl PacketReader {
     }
 
     fn i16(&mut self) -> i16 {
-        self.u16() as i16
+        self.u16().cast_signed()
     }
 
     fn i24(&mut self) -> i32 {
@@ -548,7 +548,7 @@ impl PacketReader {
     }
 
     fn i32(&mut self) -> i32 {
-        self.u32() as i32
+        self.u32().cast_signed()
     }
 }
 
