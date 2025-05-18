@@ -21,6 +21,10 @@ tasks:
 
   flash: ../.tools/bin/probe-rs run --preverify --chip {{.VERTX_CHIP}} --idf-partition-table partitions.csv ../target/vertx
 
+  simulator:edit:
+    desc: Set up rust-analyzer config for supported editors for working on the simulator
+    cmd: bun run ../scripts/set-ra-features.ts simulator
+
   simulator:check:
     cmds:
       - task: simulator:cargo

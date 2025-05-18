@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export type Target = z.infer<typeof schema>;
+
 const pin = z.number().nonnegative().int();
 export const schema = z
 	.strictObject({

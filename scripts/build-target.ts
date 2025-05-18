@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { exit } from 'node:process';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
-import { schema } from './target-schema.ts';
+import { type Target, schema } from './target-schema.ts';
+import { isMain } from './utils.ts';
 
 export async function build(
 	command: string,
@@ -16,10 +17,7 @@ export async function build(
 	const target = schema.parse(rawTarget);
 	const chip = getChipInfo(target.chip);
 
-	const features = [
-		`chip-${target.chip}`,
-		`display-${target.display.type}`,
-	].join(' ');
+	const features = getFeatures(target).join(' ');
 
 	const rustflags = [
 		process.env.RUSTFLAGS,
@@ -57,6 +55,10 @@ export async function build(
 	}
 }
 
+export function getFeatures(target: Target): Array<string> {
+	return [`chip-${target.chip}`, `display-${target.display.type}`];
+}
+
 type ChipInfo = { target: string; cpu?: string };
 function getChipInfo(chip: string): ChipInfo {
 	const info = (chip2Target as Record<string, string | ChipInfo>)[chip];
@@ -66,7 +68,7 @@ function getChipInfo(chip: string): ChipInfo {
 	return typeof info === 'string' ? { target: info } : info;
 }
 
-if (Bun.argv[1] === import.meta.path) {
+if (isMain(import.meta.url)) {
 	const usage = `usage: scripts/${import.meta.file} [--command build/clippy/…] <target> [...args]`;
 	let args = Bun.argv.slice(2);
 

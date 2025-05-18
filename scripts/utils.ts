@@ -21,6 +21,10 @@ export function humanBytes(bytes: number): string {
 	return `${size.toFixed(2)} ${prefixes[prefix]}iB`;
 }
 
+export function isMain(importMetaUrl: string): boolean {
+	return process.argv[1] === fileURLToPath(importMetaUrl);
+}
+
 export function panic(message: string) {
 	console.error(message);
 	if (import.meta.env.CI) {
