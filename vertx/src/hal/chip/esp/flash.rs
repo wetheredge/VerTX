@@ -24,7 +24,7 @@ pub(super) fn unlock() -> Result<(), i32> {
 
 pub(super) fn read_partition_table() -> Vec<Result<Partition, PartitionError>> {
     let mut table = [0u32; PARTITION_TABLE_SIZE / 4];
-    const _: () = assert!(PARTITION_TABLE_ADDRESS % SECTOR_BYTES == 0);
+    const _: () = assert!(PARTITION_TABLE_ADDRESS.is_multiple_of(SECTOR_BYTES));
     const _: () = assert!(PARTITION_TABLE_SIZE <= SECTOR_BYTES as usize);
 
     // SAFETY:
