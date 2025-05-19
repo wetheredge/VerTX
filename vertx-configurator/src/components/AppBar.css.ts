@@ -1,5 +1,5 @@
 import { createVar, globalStyle, style } from '@vanilla-extract/css';
-import { button } from '~/styles/components.css';
+import { button } from '~/styles/components.css.ts';
 import {
 	borderWidth,
 	fontSize,
@@ -7,7 +7,7 @@ import {
 	pagePadding,
 	size,
 } from '~/styles/constants.ts';
-import { theme } from '~/styles/theme.css';
+import { theme } from '~/styles/theme.css.ts';
 
 const rootPadding = size.sm;
 
