@@ -1,7 +1,6 @@
 import { createVar, globalStyle, style } from '@vanilla-extract/css';
 import { button } from '~/styles/components.css.ts';
 import {
-	borderWidth,
 	fontSize,
 	mediaIsMobile,
 	pagePadding,
@@ -14,17 +13,10 @@ const rootPadding = size.sm;
 export const height = createVar('app-bar-height');
 const baseHeight = `${pagePadding.top} + ${rootPadding} * 2`;
 const textHeight = '1rem';
-const saveHeight = `${size.touchTarget} + ${borderWidth} * 2`;
+const buttonHeight = size.touchTarget;
 globalStyle(':root', {
 	vars: {
-		[height]: `calc(${baseHeight} + max(${textHeight}, ${saveHeight}))`,
-	},
-	'@media': {
-		[mediaIsMobile]: {
-			vars: {
-				[height]: `calc(${baseHeight} + max(${textHeight}, ${saveHeight}, ${size.touchTarget}))`,
-			},
-		},
+		[height]: `calc(${baseHeight} + max(${textHeight}, ${buttonHeight}))`,
 	},
 });
 
