@@ -8,17 +8,7 @@ tasks:
   check:
     cmds:
       - bun run biome ci .
-      - task: check:tsc
-
-  check:tsc:
-    internal: true
-    cmds:
-      - bun run tsc
-    sources:
-      - ../.config/tsconfig.*
-      - tsconfig.*
-      - '*.ts'
-      - src/**.ts
+      - bun run tsgo --project ./tsconfig.json
 
   codegen:
     cmds:

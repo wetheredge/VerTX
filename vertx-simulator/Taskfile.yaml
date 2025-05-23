@@ -12,14 +12,7 @@ tasks:
   check:tsc:
     internal: true
     deps: [build:vertx]
-    cmd: bun run tsc
-    sources:
-      - ../bun.lock
-      - ../.config/tsconfig.*
-      - src/**/*
-      - ../out/firmware/simulator/*.d.ts
-      - '*.config.*'
-      - tsconfig.*
+    cmd: bun run tsgo --project ./tsconfig.json
 
   run:
     desc: Run a development server

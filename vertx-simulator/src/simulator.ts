@@ -208,7 +208,8 @@ export class Simulator {
 		const output = this.#display.createImageData(width, height);
 
 		for (let i = 0; i < width * height; i++) {
-			const isSet = source[Math.floor(i / 8)] & (1 << (i % 8));
+			// biome-ignore lint/style/noNonNullAssertion: for loop keeps this in bounds
+			const isSet = source[Math.floor(i / 8)]! & (1 << (i % 8));
 			const channel = isSet > 0 ? 255 : 0;
 
 			output.data.set([channel, channel, channel, 255], i * 4);

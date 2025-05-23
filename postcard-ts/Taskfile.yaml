@@ -7,15 +7,6 @@ tasks:
 
   check:
     - bun run biome ci .
-    - task: check:tsc
-
-  check:tsc:
-    internal: true
-    cmd: bun run tsc
-    sources:
-      - ../bun.lock
-      - ../.config/tsconfig.*
-      - src/**/*
-      - tsconfig.*
+    - bun run tsgo --project ./tsconfig.json
 
   :*: cd .. && task {{index .MATCH 0}}

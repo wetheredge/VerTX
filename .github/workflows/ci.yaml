@@ -286,8 +286,7 @@ jobs:
       - run: bun run astro check
         working-directory: ${{ matrix.dir }}
         if: ${{ matrix.dir == 'vertx-configurator' }}
-      - run: bun run tsc
-        working-directory: ${{ matrix.dir }}
+      - run: bun run tsgo --project ${{ matrix.dir }}/tsconfig.json
 
   tsc-simulator:
     name: TypeScript (vertx-simulator)
@@ -314,8 +313,7 @@ jobs:
       - run: bun run scripts/build-simulator.ts
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
-      - run: bun run tsc
-        working-directory: vertx-simulator
+      - run: bun run tsgo --project vertx-simulator/tsconfig.json
 
   biome:
     name: Biome

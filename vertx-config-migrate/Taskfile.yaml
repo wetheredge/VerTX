@@ -12,17 +12,9 @@ tasks:
     - task: check:up
     - task: check:down
     - bun run biome ci .
-    - task: check:tsc
+    - bun run tsgo --project ./tsconfig.json
 
   check:*: cargo clippy -Zbuild-std=core {{.target}} -F {{index .MATCH 0}}
-
-  check:tsc:
-    internal: true
-    cmd: bun run tsc
-    sources:
-      - ../.config/tsconfig.*
-      - tsconfig.*
-      - '**.ts'
 
   build:
     - task: build:up
