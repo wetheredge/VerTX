@@ -13,6 +13,10 @@ export type Model = {
 	name: string;
 };
 
+type Query<T extends Record<string, { toString(): string }>> = {
+	query: T;
+};
+
 type Get<Resp = undefined> = {
 	method: 'GET';
 	response: Resp;
@@ -34,6 +38,7 @@ type RoutesRaw = {
 	reboot: Post;
 	'shut-down': Post;
 	config: Get<ArrayBuffer> | Post<ArrayBuffer> | Delete;
+	model: Query<{ id: string }> & Get<Model>;
 	models: Get<Array<Model>>;
 };
 type RoutesMap = {
