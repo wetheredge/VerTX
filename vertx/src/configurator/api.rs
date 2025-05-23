@@ -100,6 +100,19 @@ impl Api {
                     writer.ok_empty().await
                 }
             },
+            "models" => {
+                if method != Method::Get {
+                    return writer.method_not_allowed("GET").await;
+                }
+
+                // TODO: return actual data
+                let demo =
+                    br#"[{"id":"0","name":"Demo Model 0"},{"id":"1","name":"Demo Model 1"}]"#;
+
+                let mut writer = writer.ok_with_len(ContentType::Json, demo.len()).await?;
+                writer.write_all(demo).await?;
+                writer.finish().await
+            }
             _ => writer.not_found().await,
         }
     }
