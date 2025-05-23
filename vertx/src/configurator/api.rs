@@ -26,7 +26,10 @@ impl Api {
         // TODO: check content-type against accept
 
         let method = request.method();
-        match request.route() {
+        let route = request.route();
+        let (route, query) = route.split_once('?').unwrap_or((route, ""));
+
+        match route {
             "version" => {
                 if method != Method::Get {
                     return writer.method_not_allowed("GET").await;
@@ -38,26 +41,20 @@ impl Api {
                     b"true".as_slice()
                 };
 
-                let len = 69
-                    + build_info::TARGET.len()
-                    + build_info::VERSION.len()
-                    + release.len()
-                    + build_info::GIT_BRANCH.len()
-                    + build_info::GIT_COMMIT.len();
-
-                let mut writer = writer.ok_with_len(ContentType::Json, len).await?;
-                writer.write_all(br#"{"target":""#).await?;
-                writer.write_all(build_info::TARGET.as_bytes()).await?;
-                writer.write_all(br#"","version":""#).await?;
-                writer.write_all(build_info::VERSION.as_bytes()).await?;
-                writer.write_all(br#"","release":"#).await?;
-                writer.write_all(release).await?;
-                writer.write_all(br#","git":{"branch":""#).await?;
-                writer.write_all(build_info::GIT_BRANCH.as_bytes()).await?;
-                writer.write_all(br#"","commit":""#).await?;
-                writer.write_all(build_info::GIT_COMMIT.as_bytes()).await?;
-                writer.write_all(br#""}}"#).await?;
-                writer.finish().await
+                let bufs = &[
+                    br#"{"target":""#,
+                    build_info::TARGET.as_bytes(),
+                    br#"","version":""#,
+                    build_info::VERSION.as_bytes(),
+                    br#"","release":"#,
+                    release,
+                    br#","git":{"branch":""#,
+                    build_info::GIT_BRANCH.as_bytes(),
+                    br#"","commit":""#,
+                    build_info::GIT_COMMIT.as_bytes(),
+                    br#""}}"#,
+                ];
+                write_ok_split(writer, ContentType::Json, bufs).await
             }
             "shut-down" => {
                 if method != Method::Post {
@@ -100,6 +97,31 @@ impl Api {
                     writer.ok_empty().await
                 }
             },
+            "model" => {
+                if method != Method::Get {
+                    return writer.method_not_allowed("GET").await;
+                }
+
+                let id = query
+                    .split('&')
+                    .filter_map(|s| s.split_once('='))
+                    .find_map(|(key, value)| (key == "id").then_some(value));
+
+                if let Some(id) = id {
+                    // TODO: return actual data
+                    let model = &[
+                        br#"{"id":""#,
+                        id.as_bytes(),
+                        br#"","name":"Demo Model "#,
+                        id.as_bytes(),
+                        br#""}"#,
+                    ];
+
+                    write_ok_split(writer, ContentType::Json, model).await
+                } else {
+                    writer.not_found().await
+                }
+            }
             "models" => {
                 if method != Method::Get {
                     return writer.method_not_allowed("GET").await;
@@ -207,4 +229,17 @@ pub(crate) trait WriteChunkedBody {
 
     async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error>;
     async fn finish(self) -> Result<(), Self::Error>;
+}
+
+async fn write_ok_split<W: WriteResponse>(
+    writer: W,
+    typ: ContentType,
+    bufs: &[&[u8]],
+) -> Result<(), W::Error> {
+    let len = bufs.iter().fold(0, |acc, buf| acc + buf.len());
+    let mut writer = writer.ok_with_len(typ, len).await?;
+    for buf in bufs {
+        writer.write_all(buf).await?;
+    }
+    writer.finish().await
 }
