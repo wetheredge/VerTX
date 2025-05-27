@@ -46,6 +46,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
     let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds.status));
 
     let spi = {
+        #[expect(clippy::manual_div_ceil)]
         let (rx_buffer, rx_descriptors, tx_buffer, tx_descriptors) = esp_hal::dma_buffers!(32000);
         let dma_rx = DmaRxBuf::new(rx_descriptors, rx_buffer).unwrap();
         let dma_tx = DmaTxBuf::new(tx_descriptors, tx_buffer).unwrap();

@@ -50,7 +50,7 @@ impl About {
             // Additional padding between scrollbar & qr code
             text_width -= 1;
             text_height = style.measure_text_height(&mogee, ABOUT, text_width);
-        };
+        }
 
         let text_bounds =
             Rectangle::new(bounds.top_left, Size::new(text_width, bounds.size.height));
