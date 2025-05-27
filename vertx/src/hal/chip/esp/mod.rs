@@ -23,15 +23,13 @@ use crate::hal;
 use crate::storage::sd;
 use crate::ui::Input;
 
-declare_hal_types!();
-
 #[define_opaque(
-    HalNetwork,
-    HalReset,
-    HalStatusLed,
-    HalStorage,
-    HalStorageFuture,
-    HalUi
+    hal::Network,
+    hal::Reset,
+    hal::StatusLed,
+    hal::Storage,
+    hal::StorageFuture,
+    hal::Ui
 )]
 pub(crate) fn init(spawner: Spawner) -> hal::Init {
     esp_alloc::heap_allocator!(size: 100 * 1024);

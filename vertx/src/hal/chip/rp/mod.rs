@@ -22,12 +22,10 @@ bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => pio::InterruptHandler<peripherals::PIO0>;
 });
 
-declare_hal_types!();
-
 #[global_allocator]
 static ALLOCATOR: TlsfHeap = TlsfHeap::empty();
 
-#[define_opaque(HalReset, HalStatusLed, HalStorageFuture, HalUi)]
+#[define_opaque(hal::Reset, hal::StatusLed, hal::StorageFuture, hal::Ui)]
 pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     static INIT_HEAP: StaticCell<()> = StaticCell::new();
     INIT_HEAP.init_with(|| {

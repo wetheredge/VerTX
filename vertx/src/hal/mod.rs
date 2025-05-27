@@ -12,32 +12,16 @@ mod display;
 #[cfg(not(feature = "simulator"))]
 include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 
-macro_rules! hal_types {
-    ($($(#[$attr:meta])* $as:ident , $hal:ident = $trait:path;)+) => {
-        $( $(#[$attr])* pub(crate) use self::chip::$hal as $as; )+
-
-        macro_rules! declare_hal_types {
-            () => {
-                $( $(#[$attr])* pub(crate) type $hal = impl $trait; )+
-            }
-        }
-    };
-}
-
-hal_types! {
-    Reset, HalReset = crate::hal::traits::Reset;
-    StorageFuture, HalStorageFuture = core::future::Future<Output = HalStorage>;
-    Storage, HalStorage = crate::storage::pal::Storage<Error = impl loog::DebugFormat + embedded_io_async::Error>;
-    StatusLed, HalStatusLed = crate::hal::traits::StatusLed;
-    Ui, HalUi = crate::hal::traits::Ui;
-
-    #[cfg(all(feature = "configurator", not(feature = "network")))]
-    Configurator, HalConfigurator = crate::hal::traits::Configurator;
-
-    #[cfg(feature = "network")]
-    Network, HalNetwork = crate::hal::traits::Network;
-}
-
+pub(crate) type Reset = impl crate::hal::traits::Reset;
+pub(crate) type StorageFuture = impl core::future::Future<Output = Storage>;
+pub(crate) type Storage =
+    impl crate::storage::pal::Storage<Error = impl loog::DebugFormat + embedded_io_async::Error>;
+pub(crate) type StatusLed = impl crate::hal::traits::StatusLed;
+pub(crate) type Ui = impl crate::hal::traits::Ui;
+#[cfg(all(feature = "configurator", not(feature = "network")))]
+pub(crate) type Configurator = impl crate::hal::traits::Configurator;
+#[cfg(feature = "network")]
+pub(crate) type Network = impl crate::hal::traits::Network;
 #[cfg(feature = "network")]
 pub type NetworkDriver = <Network as traits::Network>::Driver;
 
