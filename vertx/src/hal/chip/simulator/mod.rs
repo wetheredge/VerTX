@@ -92,8 +92,13 @@ type RawFramebuffer = [u128; 64];
 static UI_INPUTS: UiInputsChannel = Channel::new();
 static FRAMEBUFFER: Mutex<RawFramebuffer> = Mutex::new(bytemuck::zeroed());
 
-declare_hal_types!();
-
+#[define_opaque(
+    hal::Configurator,
+    hal::Reset,
+    hal::StatusLed,
+    hal::StorageFuture,
+    hal::Ui
+)]
 pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     hal::Init {
         reset: Reset,

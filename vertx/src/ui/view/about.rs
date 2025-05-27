@@ -50,14 +50,14 @@ impl About {
             // Additional padding between scrollbar & qr code
             text_width -= 1;
             text_height = style.measure_text_height(&mogee, ABOUT, text_width);
-        };
+        }
 
         let text_bounds =
             Rectangle::new(bounds.top_left, Size::new(text_width, bounds.size.height));
         let text = TextBox::with_textbox_style(ABOUT, text_bounds, mogee, style);
         let scrolling = Scrolling::new(text_height, bounds);
 
-        let qr_x = bounds.top_left.x + (text_width + middle_padding) as i32;
+        let qr_x = bounds.top_left.x + (text_width + middle_padding).cast_signed();
         let qr_bounds = Rectangle::new(
             Point::new(qr_x, bounds.top_left.y),
             Size::new(qr_width, bounds.size.height),
@@ -91,7 +91,7 @@ impl View for About {
     }
 
     async fn input(&mut self, input: Input) -> StateChange {
-        let scroll_step = LINE_HEIGHT as i32;
+        let scroll_step = LINE_HEIGHT.cast_signed();
         match input {
             Input::Up => {
                 self.scrolling.scroll_by(-scroll_step);
@@ -115,7 +115,7 @@ impl Drawable for About {
     where
         D: DrawTarget<Color = Self::Color>,
     {
-        let scroll_offset = self.scrolling.draw(target)? as i32;
+        let scroll_offset = self.scrolling.draw(target)?.cast_signed();
 
         target.cropped(&self.text_bounds).clear(BinaryColor::Off)?;
 

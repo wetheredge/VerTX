@@ -142,7 +142,7 @@ impl<A: Clone + 'static> Drawable for List<A> {
         let skip = (scroll_offset / LINE_HEIGHT) as usize;
         let count = bounds.size.height.div_ceil(LINE_HEIGHT) as usize;
         for (i, item) in self.items.iter().enumerate().skip(skip).take(count) {
-            let y = i as i32 * LINE_HEIGHT as i32 - scroll_offset as i32;
+            let y = i as i32 * LINE_HEIGHT.cast_signed() - scroll_offset.cast_signed();
 
             let style = if i == self.selected && self.selection_visible {
                 let width = target.bounding_box().size.width;

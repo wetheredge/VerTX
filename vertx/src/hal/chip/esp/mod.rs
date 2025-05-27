@@ -23,8 +23,14 @@ use crate::hal;
 use crate::storage::sd;
 use crate::ui::Input;
 
-declare_hal_types!();
-
+#[define_opaque(
+    hal::Network,
+    hal::Reset,
+    hal::StatusLed,
+    hal::Storage,
+    hal::StorageFuture,
+    hal::Ui
+)]
 pub(crate) fn init(spawner: Spawner) -> hal::Init {
     esp_alloc::heap_allocator!(size: 100 * 1024);
 
@@ -40,6 +46,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
     let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds.status));
 
     let spi = {
+        #[expect(clippy::manual_div_ceil)]
         let (rx_buffer, rx_descriptors, tx_buffer, tx_descriptors) = esp_hal::dma_buffers!(32000);
         let dma_rx = DmaRxBuf::new(rx_descriptors, rx_buffer).unwrap();
         let dma_tx = DmaTxBuf::new(tx_descriptors, tx_buffer).unwrap();

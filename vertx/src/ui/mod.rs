@@ -54,7 +54,7 @@ pub(crate) async fn run(
 
     let below_title = {
         let mut bounds = ui.bounding_box();
-        bounds.top_left.y += TITLE_HEIGHT as i32;
+        bounds.top_left.y += TITLE_HEIGHT.cast_signed();
         bounds.size.height -= TITLE_HEIGHT;
         bounds
     };
@@ -234,7 +234,7 @@ fn draw_title(is_root: bool, title: &str, display: &mut crate::hal::Ui) -> DrawR
         1
     } else {
         // Bias toward bottom when odd
-        let y_center = (LINE_HEIGHT / 2) as i32;
+        let y_center = (LINE_HEIGHT / 2).cast_signed();
         let y_delta = 2;
         let width = 2;
 
@@ -247,7 +247,7 @@ fn draw_title(is_root: bool, title: &str, display: &mut crate::hal::Ui) -> DrawR
         width + 3
     };
 
-    let y = TITLE_HEIGHT as i32 - 2;
+    let y = TITLE_HEIGHT.cast_signed() - 2;
     let width = display.bounding_box().size.width;
     display.fill_solid(
         &Rectangle::new(Point::new(0, y), Size::new(width, 1)),

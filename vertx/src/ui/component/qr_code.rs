@@ -61,7 +61,7 @@ impl Component for QrCode<'_> {
         );
 
         if let Ok(qr_code) = qr_code {
-            loog::debug_assert_eq!(Self::size() / SCALE, qr_code.size() as u32);
+            loog::debug_assert_eq!(Self::size() / SCALE, qr_code.size().cast_unsigned());
 
             let bounds = self
                 .bounds
@@ -76,8 +76,8 @@ impl Component for QrCode<'_> {
                     return None;
                 }
 
-                let qr_x = (x / SCALE) as i32;
-                let qr_y = (y / SCALE) as i32;
+                let qr_x = (x / SCALE).cast_signed();
+                let qr_y = (y / SCALE).cast_signed();
 
                 i += 1;
                 Some(BinaryColor::from(qr_code.get_module(qr_x, qr_y)))
