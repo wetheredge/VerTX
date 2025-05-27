@@ -94,6 +94,7 @@ static FRAMEBUFFER: Mutex<RawFramebuffer> = Mutex::new(bytemuck::zeroed());
 
 declare_hal_types!();
 
+#[define_opaque(HalConfigurator, HalReset, HalStatusLed, HalStorageFuture, HalUi)]
 pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     hal::Init {
         reset: Reset,

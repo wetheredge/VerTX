@@ -27,6 +27,7 @@ declare_hal_types!();
 #[global_allocator]
 static ALLOCATOR: TlsfHeap = TlsfHeap::empty();
 
+#[define_opaque(HalReset, HalStatusLed, HalStorageFuture, HalUi)]
 pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     static INIT_HEAP: StaticCell<()> = StaticCell::new();
     INIT_HEAP.init_with(|| {

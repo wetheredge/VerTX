@@ -25,6 +25,14 @@ use crate::ui::Input;
 
 declare_hal_types!();
 
+#[define_opaque(
+    HalNetwork,
+    HalReset,
+    HalStatusLed,
+    HalStorage,
+    HalStorageFuture,
+    HalUi
+)]
 pub(crate) fn init(spawner: Spawner) -> hal::Init {
     esp_alloc::heap_allocator!(size: 100 * 1024);
 
