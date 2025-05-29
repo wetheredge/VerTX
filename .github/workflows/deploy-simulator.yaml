@@ -27,8 +27,8 @@ jobs:
     name: Check commit exists
     runs-on: ubuntu-latest
     outputs:
-      commit: ${{ steps.refs.outputs.commit }}
-      branch: ${{ steps.refs.outputs.branch }}
+      commit: ${{ fromJSON(steps.commit.outputs.result) }}
+      branch: ${{ steps.branch.outputs.branch }}
       commit-exists: ${{ steps.commit-exists.outputs.exists }}
     steps:
       - name: Shorten commit
@@ -39,11 +39,16 @@ jobs:
         with:
           script: |
             return process.env.COMMIT.substring(0, 7);
-      - name: Get commit & branch
-        id: refs
+      - name: Sanitize branch
+        id: branch
+        env:
+          RAW: ${{ github.head_ref || github.ref_name }}
         run: |
-          echo 'commit=${{ fromJSON(steps.commit.outputs.result) }}' >> "$GITHUB_OUTPUT"
-          echo 'branch=${{ github.head_ref || github.ref_name }}' >> "$GITHUB_OUTPUT"
+          sanitized="$(echo "$RAW" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9-]+/-/g; s/(^-+)|(-+$)//; s/(.{,63}).*/\1/')"
+          if [ "$RAW" != "$sanitized" ]; then
+            echo "Sanitized branch name from '$RAW' to '$sanitized'"
+          fi
+          echo "branch=$sanitized" >> "$GITHUB_OUTPUT"
       - name: Join tailnet
         uses: tailscale/github-action@v3.2.0
         with:
@@ -54,7 +59,7 @@ jobs:
       - name: Check if commit exists
         id: commit-exists
         run: |
-          exists="$(curl --fail-with-body -X GET '${{ secrets.DEPLOY_HOST }}/commit/${{ steps.refs.outputs.commit }}/exists' \
+          exists="$(curl --fail-with-body -X GET '${{ secrets.DEPLOY_HOST }}/commit/${{ fromJSON(steps.commit.outputs.result) }}/exists' \
             --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' \
             -H 'accept: application/json')"
           echo "exists=$exists" >> "$GITHUB_OUTPUT"
@@ -199,3 +204,11 @@ jobs:
             --basic -u 'simulator:${{ secrets.SIMULATOR_DEPLOY_PASSWORD }}' \
             -H 'content-type: application/json' \
             -d '{ "commit": "${{ needs.pre.outputs.commit }}", "branch": "${{ needs.pre.outputs.branch }}" }'
+      - name: Summary
+        run: |
+          echo 'Successfully deployed to:' >> "$GITHUB_STEP_SUMMARY"
+          echo '- <https://${{ needs.pre.outputs.commit }}.simulator.vertx.cc>' >> "$GITHUB_STEP_SUMMARY"
+          echo '- <https://${{ needs.pre.outputs.branch }}.simulator.vertx.cc>' >> "$GITHUB_STEP_SUMMARY"
+          if [ '${{ github.event.repository.default_branch }}' = '${{ needs.pre.outputs.branch }}' ]; then
+            echo '- <https://simulator.vertx.cc>' >> "$GITHUB_STEP_SUMMARY"
+          fi
