@@ -12,28 +12,41 @@ runs:
   steps:
     - id: version
       shell: bash
-      run: jq -r '"version=\(.rust)"' < .config/xtensa-toolchain.json >> "$GITHUB_OUTPUT"
+      run: jq -r '"rust=\(.rust)\ngcc=\(.gcc)"' < .config/xtensa-toolchain.json >> "$GITHUB_OUTPUT"
     - id: restore
       uses: actions/cache@v4.2.3
       with:
-        key: rust-xtensa-${{ runner.os}}-v${{ steps.version.outputs.version }}
-        path: .tools/rust
+        key: rust-xtensa-${{ runner.os}}-v${{ steps.version.outputs.rust }}-v2
+        path: |
+          .tools/rust
+          .tools/gcc
         lookup-only: ${{ inputs.lookup-only }}
     - if: steps.restore.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        llvmTarget="$(rustc +stable -vV | sed -n 's/host: //p')"
-        version='${{ steps.version.outputs.version }}'
+        rustTarget="$(rustc +stable -vV | sed -n 's/host: //p')"
+        rustVersion='${{ steps.version.outputs.rust }}'
+
+        gccArch="$(echo '${{ runner.arch }}' | sed 's/X64/x86_64/')"
+        gccOs="$(echo '${{ runner.os }}' | sed 's/Linux/linux-gnu/')"
+        gccVersion='${{ steps.version.outputs.gcc }}'
+
+        fetchTo() {
+          echo "Fetching '$2'"
+          mkdir -p "$1"
+          curl --proto '=https' --tlsv1.2 --fail --location "$2" | tar -xJC "$1" --strip-components 1
+        }
 
         fetchAndInstall() {
           tempDir="$(mktemp -d)"
-          curl --proto '=https' --tlsv1.2 --fail --location "$1" | tar -xJC "$tempDir" --strip-components 1
+          fetchTo "$tempDir" "$1"
           "$tempDir/install.sh" --prefix="$(pwd)/.tools/rust"
           rm -rf "$tempDir"
         }
 
-        fetchAndInstall "https://github.com/esp-rs/rust-build/releases/download/v$version/rust-$version-$llvmTarget.tar.xz"
-        fetchAndInstall "https://github.com/esp-rs/rust-build/releases/download/v$version/rust-src-$version.tar.xz"
+        fetchAndInstall "https://github.com/esp-rs/rust-build/releases/download/v$rustVersion/rust-$rustVersion-$rustTarget.tar.xz"
+        fetchAndInstall "https://github.com/esp-rs/rust-build/releases/download/v$rustVersion/rust-src-$rustVersion.tar.xz"
+        fetchTo "$(pwd)/.tools/gcc" "https://github.com/espressif/crosstool-NG/releases/download/esp-$gccVersion/xtensa-esp-elf-$gccVersion-$gccArch-$gccOs.tar.xz"
     - if: inputs.lookup-only != 'true'
       run: rustup toolchain link vertx .tools/rust
       shell: bash
