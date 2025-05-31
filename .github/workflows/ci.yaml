@@ -234,6 +234,38 @@ jobs:
           name: vertx-${{ matrix.target }}
           path: target/vertx
 
+  size:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [build]
+    steps:
+      - uses: actions/download-artifact@v4.3.0
+        with:
+          pattern: vertx-*
+          path: bins
+      - run: |
+          FLASH=(
+            .boot2 .data .data.wifi .rodata .rodata.wifi
+            .rwtext .rwtext.wifi .text .vector_table .vectors
+          )
+
+          echo '| Target | Approximate size |' >> "$GITHUB_STEP_SUMMARY"
+          echo '| ------ | ----------------:|' >> "$GITHUB_STEP_SUMMARY"
+
+          find bins -type f | while read -r elf; do
+            total=0
+            while read -r section size _; do
+              for flash in "${FLASH[@]}"; do
+                if [[ "$section" == "$flash" ]]; then
+                  total=$((total + size))
+                  break
+                fi
+              done
+            done < <(size -A "$elf" | sed -E '/^$/d' | tail -n +3 | head -n -1)
+
+            echo "| $(echo "$elf" | cut -d/ -f2) | $(numfmt --to=iec-i --suffix=B $total) |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
   biome:
     name: Biome
     runs-on: ubuntu-latest
