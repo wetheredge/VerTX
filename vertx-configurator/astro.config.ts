@@ -2,7 +2,9 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { minify } from '@zokki/astro-minify';
 import type { AstroUserConfig } from 'astro';
 import { envField } from 'astro/config';
-import browserslistToEsbuild from 'browserslist-to-esbuild';
+import browserslist from 'browserslist';
+import viteTarget from 'browserslist-to-esbuild';
+import { browserslistToTargets as lightningTargets } from 'lightningcss';
 
 const port = 8001;
 const isSimulator = process.env.VERTX_SIMULATOR === 'true';
@@ -37,7 +39,7 @@ const config = {
 	vite: {
 		plugins: [vanillaExtractPlugin()],
 		build: {
-			target: browserslistToEsbuild(),
+			target: viteTarget(),
 			rollupOptions: {
 				output: {
 					assetFileNames: `${assetsPrefix}[hash].[ext]`,
@@ -45,6 +47,13 @@ const config = {
 					entryFileNames: `${assetsPrefix}[hash].js`,
 				},
 			},
+		},
+		css: {
+			transformer: 'lightningcss',
+			lightningcss: {
+				targets: lightningTargets(browserslist()),
+			},
+			devSourcemap: true,
 		},
 		resolve: {
 			alias: {
