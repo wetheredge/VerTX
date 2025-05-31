@@ -2,6 +2,7 @@ import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { minify } from '@zokki/astro-minify';
 import type { AstroUserConfig } from 'astro';
 import { envField } from 'astro/config';
+import browserslistToEsbuild from 'browserslist-to-esbuild';
 
 const port = 8001;
 const isSimulator = process.env.VERTX_SIMULATOR === 'true';
@@ -36,6 +37,7 @@ const config = {
 	vite: {
 		plugins: [vanillaExtractPlugin()],
 		build: {
+			target: browserslistToEsbuild(),
 			rollupOptions: {
 				output: {
 					assetFileNames: `${assetsPrefix}[hash].[ext]`,
