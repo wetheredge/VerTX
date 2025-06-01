@@ -5,7 +5,7 @@ import { exit } from 'node:process';
 import { $ } from 'bun';
 import { fileAppend, isMain, orExit, repoRoot } from './utils.ts';
 
-const toolsPath = import.meta.env.CI === 'true' ? '' : '.tools/bin';
+const toolsPath = import.meta.env.CI === 'true' ? '' : '.tools/bin/';
 
 export async function build(command: string, args: Array<string> = []) {
 	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${args}`;
