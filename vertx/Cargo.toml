@@ -14,6 +14,7 @@ crate-type = ["cdylib", "rlib"]
 log = [
     "loog/log",
     "block-device-adapters?/log",
+    "edge-dhcp?/log",
     "embassy-net?/log",
     "embedded-fatfs/log",
     "sdspi?/log",
@@ -21,6 +22,7 @@ log = [
 defmt = [
     "loog/defmt",
     "block-device-adapters?/defmt",
+    "edge-dhcp?/defmt",
     "embassy-net?/defmt",
     "embedded-fatfs/defmt",
     "embedded-graphics/defmt",
@@ -109,7 +111,7 @@ delegate = "=0.13.3"
 display-interface = "=0.5.0"
 embassy-executor = { version = "=0.7.0", features = ["nightly"] }
 embassy-futures = "=0.1.1"
-embassy-sync = "=0.6.2"
+embassy-sync = "=0.7.0"
 embassy-time = { version = "=0.4.0", features = ["generic-queue-8"] }
 embedded-fatfs = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", default-features = false }
 embedded-graphics = "=0.8.1"
@@ -132,8 +134,8 @@ ssd1306 = { version = "=0.10.0", features = ["async"], optional = true }
 
 # network
 atoi = { version = "=2.0.0", default-features = false, optional = true }
-edge-dhcp = { version = "=0.5.0", optional = true }
-embassy-net = { version = "=0.6.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
+edge-dhcp = { version = "=0.6.0", optional = true }
+embassy-net = { version = "=0.7.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
 faster-hex = { version = "=0.10.0", default-features = false, optional = true }
 httparse = { version = "=1.10.1", default-features = false, optional = true }
 itoa = { version = "=1.0.15", optional = true }

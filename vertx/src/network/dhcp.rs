@@ -41,10 +41,7 @@ pub(super) async fn run(stack: Stack<'static>, address: Ipv4Addr) -> ! {
         let request = match edge_dhcp::Packet::decode(packet) {
             Ok(decoded) => decoded,
             Err(err) => {
-                loog::warn!(
-                    "Failed to decode DHCP packet: {:?}",
-                    loog::Debug2Format(&err),
-                );
+                loog::warn!("Failed to decode DHCP packet: {err:?}",);
                 continue;
             }
         };
