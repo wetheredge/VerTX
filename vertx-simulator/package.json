@@ -8,6 +8,6 @@
 	"dependencies": {},
 	"devDependencies": {
 		"@tsconfig/vite-react": "6.3.5",
-		"vite": "6.3.4"
+		"vite": "6.3.5"
 	}
 }
