@@ -2816,7 +2816,6 @@ dependencies = [
  "console_error_panic_hook",
  "const_format",
  "cortex-m-rt",
- "critical-section",
  "defmt-rtt",
  "delegate",
  "display-interface",

@@ -24,16 +24,18 @@ jobs:
   unused-dependencies:
     name: No unused dependencies
     runs-on: ubuntu-latest
+    env:
+      RUSTC_WRAPPER: null
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           persist-credentials: false
       - run: rm rust-toolchain.toml
-      - name: Install cargo-machete
+      - name: Install cargo-shear
         uses: taiki-e/install-action@v2.52.4
         with:
-          tool: cargo-machete@0.8.0 # dep:cargo-bin:cargo-machete
-      - run: cargo machete
+          tool: cargo-shear@1.3.0 # dep:cargo-bin:cargo-shear
+      - run: cargo shear
 
   cache-rust-toolchain:
     name: Cache Rust toolchain
