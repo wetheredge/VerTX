@@ -1,10 +1,9 @@
-mod leds;
+#[cfg(feature = "status-ws2812")]
+mod ws2812;
 
-use display_interface::DisplayError;
 use embassy_executor::Spawner;
 use embassy_futures::select;
 use embassy_rp::i2c::{self, I2c};
-use embassy_rp::pio::{self, Pio};
 use embassy_rp::spi::{self, Spi};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio, peripherals};
@@ -18,8 +17,11 @@ use crate::storage::sd;
 use crate::ui::Input;
 
 bind_interrupts!(struct Irqs {
+    #[cfg(peripheral = "I2C0")]
     I2C0_IRQ => i2c::InterruptHandler<peripherals::I2C0>;
-    PIO0_IRQ_0 => pio::InterruptHandler<peripherals::PIO0>;
+
+    #[cfg(feature = "status-ws2812")]
+    PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<peripherals::PIO0>;
 });
 
 #[global_allocator]
@@ -54,19 +56,23 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         watchdog: Watchdog::new(p.WATCHDOG),
     };
 
+    #[cfg(feature = "status-rgb")]
+    let status_led = hal::status::rgb::Driver {
+        red: gpio::Output::new(target!(p, status.red), gpio::Level::Low),
+        green: gpio::Output::new(target!(p, status.green), gpio::Level::Low),
+        blue: gpio::Output::new(target!(p, status.blue), gpio::Level::Low),
+    };
+    #[cfg(feature = "status-ws2812")]
     let status_led = {
-        let Pio {
-            mut common, sm0, ..
-        } = Pio::new(p.PIO0, Irqs);
-        let pin = pins!(p, leds.status);
-        leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
+        let mut pio = embassy_rp::pio::Pio::new(p.PIO0, Irqs);
+        ws2812::StatusDriver::<_, 0>::new(&mut pio.common, pio.sm0, target!(p, status.pin))
     };
 
     let spi = Spi::new(
         p.SPI1,
-        pins!(p, spi.sclk),
-        pins!(p, spi.mosi),
-        pins!(p, spi.miso),
+        target!(p, sd.sclk),
+        target!(p, sd.mosi),
+        target!(p, sd.miso),
         p.DMA_CH0,
         p.DMA_CH1,
         spi::Config::default(),
@@ -83,25 +89,31 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         >;
 
         static STORAGE: StaticCell<sd::Storage<SpiDevice>> = StaticCell::new();
-        let sd_cs = gpio::Output::new(pins!(p, sd.cs), gpio::Level::High);
+        let sd_cs = gpio::Output::new(target!(p, sd.cs), gpio::Level::High);
         let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, Spi::set_frequency).await;
         let storage: &'static _ = STORAGE.init(storage);
         storage
     };
 
     let ui = {
-        let scl = pins!(p, display.scl);
-        let sda = pins!(p, display.sda);
+        let scl = target!(p, display.scl);
+        let sda = target!(p, display.sda);
         let mut config = i2c::Config::default();
         config.frequency = 1_000_000;
-        let display = hal::display::new(I2c::new_async(p.I2C0, scl, sda, Irqs, config));
+        let display = hal::display::new(I2c::new_async(
+            target!(p, display.i2c),
+            scl,
+            sda,
+            Irqs,
+            config,
+        ));
 
         Ui {
             display,
-            up: gpio::Input::new(pins!(p, ui.up), gpio::Pull::Up),
-            down: gpio::Input::new(pins!(p, ui.down), gpio::Pull::Up),
-            right: gpio::Input::new(pins!(p, ui.right), gpio::Pull::Up),
-            left: gpio::Input::new(pins!(p, ui.left), gpio::Pull::Up),
+            up: gpio::Input::new(target!(p, ui.up), gpio::Pull::Up),
+            down: gpio::Input::new(target!(p, ui.down), gpio::Pull::Up),
+            right: gpio::Input::new(target!(p, ui.right), gpio::Pull::Up),
+            left: gpio::Input::new(target!(p, ui.left), gpio::Pull::Up),
         }
     };
 
@@ -130,6 +142,7 @@ impl hal::traits::Reset for Reset {
 }
 
 struct Ui {
+    // FIXME: I2C0
     display: hal::display::Driver<I2c<'static, peripherals::I2C0, i2c::Async>>,
     up: gpio::Input<'static>,
     down: gpio::Input<'static>,
@@ -145,7 +158,7 @@ impl eg::geometry::OriginDimensions for Ui {
 
 impl eg::draw_target::DrawTarget for Ui {
     type Color = eg::pixelcolor::BinaryColor;
-    type Error = DisplayError;
+    type Error = display_interface::DisplayError;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where

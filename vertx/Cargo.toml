@@ -28,7 +28,12 @@ defmt = [
     "sdspi?/defmt",
 ]
 
+display-sh1106 = ["dep:sh1106"]
 display-ssd1306 = ["dep:ssd1306"]
+
+status-color-mixing = []
+status-ws2812 = ["status-color-mixing"]
+status-rgb = []
 
 configurator = []
 
@@ -50,7 +55,6 @@ storage-sd = [
 chip-esp = [
     "defmt",
     "network",
-    "storage-sd",
     "dep:esp-alloc",
     "dep:esp-backtrace",
     "dep:esp-hal",
@@ -69,31 +73,38 @@ chip-esp32s3 = [
 
 chip-rp = [
     "defmt",
-    "storage-sd",
-    "dep:cortex-m-rt",
-    "dep:embassy-rp",
-    "dep:embedded-alloc",
+    "chip-cortex-m",
     "dep:fixed",
     "dep:fixed-macro",
-    "dep:panic-probe",
     "dep:pio",
-    "embassy-executor/arch-cortex-m",
-    "embassy-executor/executor-thread",
 ]
 chip-rp2040 = [
     "chip-rp",
     "embassy-rp/rp2040",
 ]
 
-# chip-stm = []
-# chip-stm32f407 = [
-#   "chip-stm",
-#   "dep:stm32f4xx-hal",
-#   "stm32f4xx-hal/stm32f407",
-# ]
+chip-stm32 = [
+    "defmt",
+    "chip-cortex-m",
+]
+chip-stm32f407ze = [
+    "chip-stm32",
+    "cortex-m/critical-section-single-core",
+    "embassy-stm32/stm32f407ze",
+]
+
+chip-cortex-m = [
+    "dep:cortex-m",
+    "dep:cortex-m-rt",
+    "dep:embedded-alloc",
+    "dep:panic-probe",
+    "embassy-executor/arch-cortex-m",
+    "embassy-executor/executor-thread",
+]
 
 simulator = [
     "log",
+    "status-color-mixing",
     "configurator",
     "embassy-executor/arch-wasm",
     "embassy-executor/executor-thread",
@@ -114,6 +125,7 @@ embassy-time = { version = "=0.4.0", features = ["generic-queue-8"] }
 embedded-fatfs = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", default-features = false }
 embedded-graphics = "=0.8.1"
 embedded-hal = "=1.0.0"
+embedded-hal-02 = { package = "embedded-hal", version = "=0.2.7" }
 embedded-hal-async = "=1.0.0"
 embedded-hal-bus = { version = "=0.3.0", features = ["async"] }
 embedded-io-async = { version = "=0.6.1", features = ["defmt-03"] }
@@ -128,6 +140,7 @@ serde = { workspace = true, features = ["derive", "alloc"] }
 static_cell = "=2.1.0"
 
 # displays
+sh1106 = { version = "=0.5.0", optional = true }
 ssd1306 = { version = "=0.10.0", features = ["async"], optional = true }
 
 # network
@@ -152,13 +165,19 @@ esp-wifi = { version = "=0.13.0", features = ["defmt", "wifi"], optional = true 
 
 # chip-rp
 # TODO: flip-link
-cortex-m-rt = { version = "=0.7.5", optional = true }
 embassy-rp = { version = "=0.4.0", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
-embedded-alloc = { version = "=0.6.0", optional = true }
 fixed = { version = "=1.29.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
-panic-probe = { version = "=1.0.0", features = ["print-defmt"], optional = true }
 pio = { version = "=0.3.0", optional = true }
+
+# chip-stm32
+embassy-stm32 = { version = "=0.2.0", features = ["defmt", "exti", "memory-x", "time-driver-any"], optional = true }
+
+# chip-cortex-m
+cortex-m = { version = "=0.7.7", features = ["inline-asm"], optional = true }
+cortex-m-rt = { version = "=0.7.5", optional = true }
+embedded-alloc = { version = "=0.6.0", optional = true }
+panic-probe = { version = "=1.0.0", features = ["print-defmt"], optional = true }
 
 [target.wasm32-unknown-unknown.dependencies]
 console_error_panic_hook = "0.1.7"
@@ -181,5 +200,6 @@ workspace = true
 
 [package.metadata.cargo-machete]
 ignored = [
+    "cortex-m", # needed to enable features on it
     "cortex-m-rt", # used by #[embassy-rp::main]
 ]

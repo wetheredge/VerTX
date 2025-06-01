@@ -5,11 +5,16 @@ use embassy_time::{Duration, Timer};
 use crate::Mode;
 use crate::hal::prelude::*;
 
+#[cfg(feature = "status-color-mixing")]
+type Channel = u8;
+#[cfg(not(feature = "status-color-mixing"))]
+type Channel = bool;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
+pub struct Color {
+    pub r: Channel,
+    pub g: Channel,
+    pub b: Channel,
 }
 
 impl Color {
@@ -19,17 +24,33 @@ impl Color {
     const MEDIUM_PURPLE: Self = Self::new(0x93, 0x70, 0xDB);
 
     const fn new(r: u8, g: u8, b: u8) -> Self {
-        Self { r, g, b }
+        #[cfg(feature = "status-color-mixing")]
+        const fn map(x: u8) -> Channel {
+            x
+        }
+
+        #[cfg(not(feature = "status-color-mixing"))]
+        const fn map(x: u8) -> Channel {
+            x > 127
+        }
+
+        Self {
+            r: map(r),
+            g: map(g),
+            b: map(b),
+        }
     }
 }
 
 macro_rules! color_array {
-    (static $name:ident = [ $(($r:expr, $g:expr, $b:expr)),* $(,)? ]) => {
+    ($(#[$attr:meta])* static $name:ident = [ $(($r:expr, $g:expr, $b:expr)),* $(,)? ]) => {
+        $(#[$attr])*
         static $name: [Color; { $(1 + $r - $r +)* 0 }] = [$(Color { r: $r, g: $g, b: $b }),*];
     };
 }
 
 color_array! {
+    #[cfg(feature = "status-color-mixing")]
     static RAINBOW = [
         (242, 138, 170), (244, 138, 161), (245, 139, 152), (246, 139, 142),
         (247, 141, 133), (246, 142, 124), (245, 144, 115), (243, 146, 106),
@@ -59,6 +80,7 @@ enum Effect {
         time2: Duration,
         state: bool,
     },
+    #[cfg(feature = "status-color-mixing")]
     Rainbow {
         step: usize,
     },
@@ -82,7 +104,10 @@ impl From<Mode> for Effect {
                 Duration::from_millis(500),
             ),
             Mode::Configurator => Effect::Solid(Color::MEDIUM_PURPLE),
+            #[cfg(feature = "status-color-mixing")]
             Mode::Updating => Effect::rainbow(),
+            #[cfg(not(feature = "status-color-mixing"))]
+            Mode::Updating => todo!(),
         }
     }
 }
@@ -98,6 +123,7 @@ impl Effect {
         }
     }
 
+    #[cfg(feature = "status-color-mixing")]
     fn rainbow() -> Self {
         Self::Rainbow {
             step: RAINBOW.len(),
@@ -121,6 +147,7 @@ impl Effect {
                     (*color2, Some(*time2))
                 }
             }
+            #[cfg(feature = "status-color-mixing")]
             Self::Rainbow { step } => {
                 *step = (*step + 1) % RAINBOW.len();
                 (RAINBOW[*step], Some(Duration::from_hz(30)))
@@ -153,7 +180,7 @@ pub async fn run(
         // let iter =
         //     smart_leds::brightness(smart_leds::gamma(iter),
         // **config.brightness.current().await);
-        driver.set(color.r, color.g, color.b).await.unwrap();
+        driver.set(color).await.unwrap();
 
         let new_mode = if let Some(timer) = timer {
             // Assume `timer` is a fraction of a second, so don't bother updating brightness

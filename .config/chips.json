@@ -6,5 +6,8 @@
 		"target": "thumbv6m-none-eabi",
 		"cpu": "cortex-m0plus"
 	},
-	"stm32f407": "thumbv7em-none-eabihf"
+	"stm32f407ze": {
+		"target": "thumbv7em-none-eabihf",
+		"cpu": "cortex-m4"
+	}
 }

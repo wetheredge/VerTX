@@ -5,8 +5,53 @@ import { join } from 'node:path';
 import { exit } from 'node:process';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
-import { type Target, schema } from './target-schema.ts';
-import { isMain } from './utils.ts';
+import { type Pin, type Target, isPin, schema } from './target-schema.ts';
+import { isMain, repoRoot } from './utils.ts';
+
+async function codegen(target: Target) {
+	const file = Bun.file(`${repoRoot}/vertx/src/hal/codegen.rs`);
+	if (await file.exists()) {
+		await file.delete();
+	}
+	const out = file.writer();
+
+	const gpioPrefix = target.chip.startsWith('esp')
+		? 'GPIO'
+		: target.chip.startsWith('rp')
+			? 'PIN_'
+			: 'P';
+	const isStm32 = target.chip.startsWith('stm32');
+
+	type Tree = { [key: string | symbol]: string | Pin | Tree };
+	function walk(tree: Tree, parent = new Array<string>()) {
+		for (const [self, value] of Object.entries(tree)) {
+			const key = [...parent, self];
+			const keyStr = key.join('.');
+			if (typeof value === 'string') {
+				out.write(`    ($p:expr, ${keyStr}) => { $p.${value} };\n`);
+			} else if (isPin(value)) {
+				const pin = `${gpioPrefix}${value.pin}`;
+				out.write(`    ($p:expr, ${keyStr}) => { $p.${pin} };\n`);
+				if (isStm32) {
+					const exti = pin.toString().replace(/^[a-zA-Z]+/, '');
+					out.write(
+						`    ($p:expr, ExtiInput(${keyStr} $(, $arg:expr)* $(,)?)) => `,
+					);
+					out.write(
+						`{ ExtiInput::new($p.${pin}, $p.EXTI${exti}, $($arg)*) };\n`,
+					);
+				}
+			} else {
+				walk(value, key);
+			}
+		}
+	}
+
+	out.write('macro_rules! target {\n');
+	walk(target);
+	out.write('}\n');
+	await out.flush();
+}
 
 export async function build(
 	command: string,
@@ -15,13 +60,21 @@ export async function build(
 	args: Array<string> = [],
 ) {
 	const target = schema.parse(rawTarget);
-	const chip = getChipInfo(target.chip);
+	await codegen(target);
 
+	const chip = getChipInfo(target.chip);
 	const features = getFeatures(target).join(' ');
+
+	const cfgs = [
+		target.sd.spi,
+		'i2c' in target.display && target.display.i2c,
+		'spi' in target.display && target.display.spi,
+	].flatMap((p) => (p ? [`--cfg=peripheral="${p}"`] : []));
 
 	const rustflags = [
 		process.env.RUSTFLAGS,
 		chip.cpu && `-Ctarget-cpu=${chip.cpu}`,
+		...cfgs,
 	]
 		.filter((s) => s && s.length > 0)
 		.join(' ');
@@ -56,7 +109,12 @@ export async function build(
 }
 
 export function getFeatures(target: Target): Array<string> {
-	return [`chip-${target.chip}`, `display-${target.display.type}`];
+	return [
+		`chip-${target.chip}`,
+		`status-${target.status.type}`,
+		target.sd.type === 'spi' && 'storage-sd',
+		`display-${target.display.driver}`,
+	].filter((x) => typeof x === 'string');
 }
 
 type ChipInfo = { target: string; cpu?: string };

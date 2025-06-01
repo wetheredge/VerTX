@@ -1,14 +1,36 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufWriter, Write as _};
 use std::process::Command;
-use std::{env, fmt, fs, io};
+use std::{env, fs, io};
 
 use serde::Deserialize;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Chip {
+    Esp,
+    Rp,
+    Stm32,
+}
+
+impl Chip {
+    fn get() -> Self {
+        if feature("CHIP_ESP") {
+            Self::Esp
+        } else if feature("CHIP_RP") {
+            Self::Rp
+        } else if feature("CHIP_STM32") {
+            Self::Stm32
+        } else {
+            unreachable!("unknown chip")
+        }
+    }
+}
 
 fn main() -> io::Result<()> {
     let out_dir = &env::var("OUT_DIR").unwrap();
     let root = &env::var("CARGO_MANIFEST_DIR").unwrap();
+
+    println!("cargo::rustc-check-cfg=cfg(peripheral, values(any()))");
 
     let config = format!("{root}/../vertx-config/out/config.rs");
     println!("cargo::rerun-if-changed={config}");
@@ -22,12 +44,9 @@ fn main() -> io::Result<()> {
     build_info(out_dir)?;
 
     if !feature("SIMULATOR") {
-        let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
-        println!("cargo::rerun-if-env-changed=VERTX_TARGET");
-
-        memory_layout(out_dir, root);
-        link_args();
-        pins(out_dir, root, &target_name)?;
+        let chip = Chip::get();
+        memory_layout(out_dir, root, chip);
+        link_args(chip);
     }
 
     if feature("NETWORK") {
@@ -37,8 +56,8 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn memory_layout(out_dir: &str, root: &str) {
-    let path = feature("CHIP_RP").then_some("src/hal/chip/rp/memory.x");
+fn memory_layout(out_dir: &str, root: &str, chip: Chip) {
+    let path = (chip == Chip::Rp).then_some("src/hal/chip/rp/memory.x");
 
     if let Some(path) = path {
         fs::copy(format!("{root}/{path}"), format!("{out_dir}/memory.x"))
@@ -49,13 +68,11 @@ fn memory_layout(out_dir: &str, root: &str) {
     }
 }
 
-fn link_args() {
-    let mut args = if feature("CHIP_ESP") {
-        vec!["-Tlinkall.x", "-nostartfiles"]
-    } else if feature("CHIP_RP") {
-        vec!["--nmagic", "-Tlink.x", "-Tlink-rp.x"]
-    } else {
-        vec![]
+fn link_args(chip: Chip) {
+    let mut args = match chip {
+        Chip::Esp => vec!["-Tlinkall.x", "-nostartfiles"],
+        Chip::Rp => vec!["--nmagic", "-Tlink.x", "-Tlink-rp.x"],
+        Chip::Stm32 => vec!["--nmagic", "-Tlink.x"],
     };
 
     if feature("DEFMT") {
@@ -90,132 +107,6 @@ fn build_info(out_dir: &str) -> io::Result<()> {
     let profile = env::var("PROFILE").unwrap();
     let debug = profile != "release";
     fs::write(format!("{out_dir}/is_debug"), debug.to_string())
-}
-
-fn pins(out_dir: &str, root: &str, target: &str) -> io::Result<()> {
-    #[derive(Debug, Deserialize)]
-    struct Target {
-        #[expect(unused)]
-        chip: String,
-        sd: Sd,
-        display: Display,
-        #[serde(flatten)]
-        rest: MiscPins,
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Sd {
-        #[serde(rename = "type")]
-        _type: SdType,
-        #[serde(flatten)]
-        pins: MiscPins,
-    }
-
-    #[derive(Debug, Deserialize)]
-    #[serde(rename_all = "lowercase")]
-    enum SdType {
-        Spi,
-    }
-
-    #[derive(Debug, Deserialize)]
-    struct Display {
-        #[serde(rename = "type")]
-        _type: DisplayType,
-        #[serde(flatten)]
-        pins: MiscPins,
-    }
-
-    #[derive(Debug, Deserialize)]
-    #[serde(rename_all = "lowercase")]
-    enum DisplayType {
-        Ssd1306,
-    }
-
-    #[derive(Debug, Deserialize)]
-    #[serde(transparent)]
-    struct MiscPins(HashMap<String, PinSpec>);
-
-    #[derive(Debug, Deserialize)]
-    #[serde(untagged)]
-    enum PinSpec {
-        Single(Pin),
-        Multiple(Vec<Pin>),
-        Nested(MiscPins),
-    }
-
-    #[derive(Debug, Deserialize)]
-    #[serde(untagged)]
-    enum Pin {
-        Numbered(u8),
-        Named(String),
-    }
-
-    impl fmt::Display for Pin {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            match self {
-                Pin::Numbered(num) => write!(f, "{num}"),
-                Pin::Named(name) => f.write_str(name),
-            }
-        }
-    }
-
-    impl MiscPins {
-        fn format(self, output: &mut String, prefix: &str, path: &str) {
-            for (key, value) in self.0 {
-                let key = key.replace('-', "_");
-                let key = if path.is_empty() {
-                    key
-                } else {
-                    format!("{path}.{key}")
-                };
-                match value {
-                    PinSpec::Single(pin) => {
-                        output.push_str("    ($p:expr, ");
-                        output.push_str(&key);
-                        output.push_str(") => { $p.");
-                        output.push_str(prefix);
-                        output.push_str(&pin.to_string());
-                        output.push_str(" };\n");
-                    }
-                    PinSpec::Multiple(pins) => {
-                        output.push_str("    ($p:expr, ");
-                        output.push_str(&key);
-                        output.push_str(" $(.$method:ident())*) => { &[");
-                        for pin in pins {
-                            output.push_str("$p.");
-                            output.push_str(prefix);
-                            output.push_str(&pin.to_string());
-                            output.push_str(" $(.$method())*,");
-                        }
-                        output.push_str("] };\n");
-                    }
-                    PinSpec::Nested(inner) => inner.format(output, prefix, &key),
-                }
-            }
-        }
-    }
-
-    let gpio = if feature("CHIP_ESP") {
-        "GPIO"
-    } else if feature("CHIP_RP") {
-        "PIN_"
-    } else {
-        return Ok(());
-    };
-
-    let path = format!("{root}/../targets/{target}.toml");
-    println!("cargo::rerun-if-changed={path}");
-
-    let target = fs::read_to_string(path)?;
-    let target: Target = basic_toml::from_str(&target).unwrap();
-
-    let mut out = String::from("macro_rules! pins {\n");
-    target.rest.format(&mut out, gpio, "");
-    target.sd.pins.format(&mut out, gpio, "sd");
-    target.display.pins.format(&mut out, gpio, "display");
-    out.push_str("}\n");
-
-    fs::write(format!("{out_dir}/pins.rs"), out)
 }
 
 fn configurator(out_dir: &str, root: &str) -> io::Result<()> {

@@ -1,0 +1,33 @@
+chip = "stm32f407ze"
+
+[status]
+type = "rgb"
+red = "C5"
+green = "G1"
+blue = "C4"
+
+[sd]
+type = "spi"
+spi = "SPI2"
+dma.tx = "DMA1_CH4"
+dma.rx = "DMA1_CH3"
+cs = "B12"
+sclk = "B13"
+mosi = "B15"
+miso = "B14"
+
+[ui]
+up = "D10"
+down = "D12"
+right = "E7"
+left = "D11"
+
+[display]
+driver = "sh1106"
+spi = "SPI3"
+dma = "DMA1_CH7"
+cs = "A15"
+dc = "C11"
+sclk = "C10"
+mosi = "C12"
+reset = "A14"

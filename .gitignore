@@ -11,5 +11,7 @@ dist/
 .task/
 *.tsbuildinfo
 
+/vertx/src/hal/codegen.rs
+
 /.helix
 /.vscode

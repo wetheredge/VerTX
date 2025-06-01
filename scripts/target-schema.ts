@@ -1,59 +1,68 @@
 import { z } from 'zod';
 
-export type Target = z.infer<typeof schema>;
+const type = Symbol();
 
-const pin = z.number().nonnegative().int();
+const index = z.number().nonnegative().int();
+const name = z.string().nonempty();
+const pin = z.union([index, name]).transform((pin) => ({ [type]: 'pin', pin }));
+export type Pin = z.infer<typeof pin>;
+export function isPin(x: Pin | object): x is Pin {
+	return type in x && x[type] === 'pin';
+}
+
+const dmaPair = z.strictObject({ tx: name, rx: name });
+
+export type Target = z.infer<typeof schema>;
 export const schema = z
 	.strictObject({
 		chip: z.string(),
-		leds: z.strictObject({
-			status: pin,
-		}),
+		status: z.discriminatedUnion('type', [
+			z.strictObject({
+				type: z.literal('ws2812'),
+				pin,
+			}),
+			z.strictObject({
+				type: z.literal('rgb'),
+				red: pin,
+				green: pin,
+				blue: pin,
+			}),
+		]),
 		sd: z.discriminatedUnion('type', [
 			z.strictObject({
 				type: z.literal('spi'),
+				spi: name.optional(),
+				dma: dmaPair.optional(),
 				cs: pin,
-			}),
-		]),
-		spi: z
-			.strictObject({
 				sclk: pin,
 				miso: pin,
 				mosi: pin,
-			})
-			.optional(),
+			}),
+		]),
 		ui: z.strictObject({
 			up: pin,
 			down: pin,
 			left: pin,
 			right: pin,
 		}),
-		display: z.discriminatedUnion('type', [
+		display: z.discriminatedUnion('driver', [
 			z.strictObject({
-				type: z.literal('ssd1306'),
+				driver: z.literal('ssd1306'),
+				i2c: name.optional(),
+				dma: dmaPair.optional(),
 				sda: pin,
 				scl: pin,
 			}),
+			z.strictObject({
+				driver: z.literal('sh1106'),
+				spi: name.optional(),
+				dma: name.optional(),
+				cs: pin,
+				sclk: pin,
+				mosi: pin,
+				dc: pin,
+				reset: pin,
+			}),
 		]),
 	})
-	.readonly()
-	.superRefine((val, ctx) => {
-		const needsSpi = val.sd.type === 'spi';
-		const hasSpi = val.spi != null;
-
-		if (needsSpi && !hasSpi) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.invalid_type,
-				path: [...ctx.path, 'spi'],
-				expected: 'object',
-				received: 'undefined',
-			});
-		} else if (hasSpi && !needsSpi) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.unrecognized_keys,
-				path: ctx.path,
-				keys: ['spi'],
-				message: '.spi is unused',
-			});
-		}
-	});
+	.readonly();

@@ -1,7 +1,8 @@
 #[expect(unused, reason = "preserve for future OTA updates")]
 mod flash;
-mod leds;
 mod network;
+#[cfg(feature = "status-ws2812")]
+mod ws2812;
 
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -11,7 +12,6 @@ use esp_hal::clock::CpuClock;
 use esp_hal::dma::{DmaRxBuf, DmaTxBuf};
 use esp_hal::gpio;
 use esp_hal::i2c::master::{self as i2c, I2c};
-use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::time::Rate;
@@ -36,14 +36,28 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
-    let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
     let rng = Rng::new(p.RNG);
     let timg0 = timg::TimerGroup::new(p.TIMG0);
     let timg1 = timg::TimerGroup::new(p.TIMG1);
 
     esp_hal_embassy::init(timg0.timer0);
 
-    let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds.status));
+    #[cfg(feature = "status-rgb")]
+    let status_led = {
+        let config = gpio::OutputConfig::default();
+        hal::status::rgb::Driver {
+            red: gpio::Output::new(target!(p, status.red), gpio::Level::Low, config),
+            green: gpio::Output::new(target!(p, status.green), gpio::Level::Low, config),
+            blue: gpio::Output::new(target!(p, status.blue), gpio::Level::Low, config),
+        }
+    };
+    #[cfg(feature = "status-ws2812")]
+    let status_led = {
+        let rmt = esp_hal::rmt::Rmt::new(p.RMT, Rate::from_mhz(80))
+            .unwrap()
+            .into_async();
+        self::ws2812::StatusLed::new(rmt.channel0, target!(p, status.pin))
+    };
 
     let spi = {
         #[expect(clippy::manual_div_ceil)]
@@ -53,9 +67,9 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
         Spi::new(p.SPI2, spi::Config::default())
             .unwrap()
-            .with_sck(pins!(p, spi.sclk))
-            .with_mosi(pins!(p, spi.mosi))
-            .with_miso(pins!(p, spi.miso))
+            .with_sck(target!(p, sd.sclk))
+            .with_mosi(target!(p, sd.mosi))
+            .with_miso(target!(p, sd.miso))
             .with_dma(p.DMA_CH0)
             .with_buffers(dma_rx, dma_tx)
             .into_async()
@@ -73,7 +87,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
         static STORAGE: StaticCell<sd::Storage<Spi>> = StaticCell::new();
         let sd_cs = gpio::Output::new(
-            pins!(p, sd.cs),
+            target!(p, sd.cs),
             gpio::Level::High,
             gpio::OutputConfig::default(),
         );
@@ -91,8 +105,8 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
 
         let i2c = I2c::new(p.I2C0, config)
             .unwrap()
-            .with_sda(pins!(p, display.sda))
-            .with_scl(pins!(p, display.scl))
+            .with_sda(target!(p, display.sda))
+            .with_scl(target!(p, display.scl))
             .into_async();
 
         let display = hal::display::new(i2c);
@@ -100,10 +114,10 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
         let config = gpio::InputConfig::default().with_pull(gpio::Pull::Up);
         Ui {
             display,
-            up: gpio::Input::new(pins!(p, ui.up), config),
-            down: gpio::Input::new(pins!(p, ui.down), config),
-            right: gpio::Input::new(pins!(p, ui.right), config),
-            left: gpio::Input::new(pins!(p, ui.left), config),
+            up: gpio::Input::new(target!(p, ui.up), config),
+            down: gpio::Input::new(target!(p, ui.down), config),
+            right: gpio::Input::new(target!(p, ui.right), config),
+            left: gpio::Input::new(target!(p, ui.left), config),
         }
     };
 

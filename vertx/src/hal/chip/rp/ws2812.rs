@@ -8,6 +8,8 @@ use embassy_time::Timer;
 use fixed::types::U24F8;
 use fixed_macro::types::U24F8;
 
+use crate::leds::Color;
+
 pub struct StatusDriver<'d, P: PioInstance, const SM: usize> {
     sm: StateMachine<'d, P, SM>,
 }
@@ -77,8 +79,8 @@ impl<'d, P: PioInstance, const SM: usize> StatusDriver<'d, P, SM> {
 impl<P: PioInstance, const SM: usize> crate::hal::traits::StatusLed for StatusDriver<'_, P, SM> {
     type Error = core::convert::Infallible;
 
-    async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
-        let word = (u32::from(green) << 24) | (u32::from(red) << 16) | (u32::from(blue) << 8);
+    async fn set(&mut self, Color { r, g, b }: Color) -> Result<(), Self::Error> {
+        let word = (u32::from(g) << 24) | (u32::from(r) << 16) | (u32::from(b) << 8);
         self.sm.tx().push(word);
         Timer::after_micros(55).await;
         Ok(())
