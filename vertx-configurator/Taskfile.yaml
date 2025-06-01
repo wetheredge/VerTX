@@ -8,6 +8,7 @@ tasks:
   check:
     - bun run biome ci .
     - task: check:astro
+    - task: check:tsc
 
   check:astro:
     internal: true
@@ -19,9 +20,9 @@ tasks:
       - '*.config.*'
       - tsconfig.*
 
-  check:tsc-scripts:
+  check:tsc:
     internal: true
-    cmd: bun run tsc scripts
+    cmd: bun run tsc
     sources:
       - ../bun.lock
       - ../.config/tsconfig.*
