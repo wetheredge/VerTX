@@ -114,19 +114,9 @@ jobs:
         uses: taiki-e/install-action@v2.52.4
         with:
           tool: wasm-opt@0.116.1 # dep:cargo-bin:wasm-opt
-      - run: cargo build -Zbuild-std=std,panic_abort --release --target wasm32-unknown-unknown --lib -F simulator
-        working-directory: vertx
+      - run: bun run scripts/build-simulator.ts --release
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
-      - run: wasm-bindgen --out-dir simulator --target web wasm32-unknown-unknown/release/vertx.wasm
-        working-directory: target
-      - name: Patch vertx.js
-        run: |
-          echo 'export const memoryName: "memory";' >> vertx.d.ts
-          echo 'export const memoryName = "memory";' >> vertx.js
-        working-directory: target/simulator
-      - run: cat .config/env >> "$GITHUB_ENV"
-      - run: wasm-opt $VERTX_WASM_OPT_ARGS --output target/simulator/vertx_bg.wasm target/simulator/vertx_bg.wasm | bun run scripts/wasm-rename.ts target/simulator
       - uses: actions/upload-artifact@v4.6.2
         with:
           name: vertx

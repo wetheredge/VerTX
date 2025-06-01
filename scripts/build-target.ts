@@ -6,7 +6,7 @@ import { exit } from 'node:process';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
 import { type Target, schema } from './target-schema.ts';
-import { isMain } from './utils.ts';
+import { isMain, orExit } from './utils.ts';
 
 export async function build(
 	command: string,
@@ -26,18 +26,16 @@ export async function build(
 		.filter((s) => s && s.length > 0)
 		.join(' ');
 
-	const cargo =
-		await $`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${args}`
+	await orExit(
+		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${args}`
 			.nothrow()
 			.env({
 				CARGO_TERM_COLOR: 'always',
 				...process.env,
 				RUSTFLAGS: rustflags,
 				VERTX_TARGET: targetName,
-			});
-	if (cargo.exitCode !== 0) {
-		exit(cargo.exitCode);
-	}
+			}),
+	);
 
 	if (command === 'build') {
 		const targetDir = fileURLToPath(new URL('../target', import.meta.url));
