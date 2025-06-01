@@ -194,7 +194,7 @@ jobs:
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2.50.3
         with:
-          tool: nextest@0.9.95 # dep:cargo-bin:cargo-nextest
+          tool: nextest@0.9.97 # dep:cargo-bin:cargo-nextest
       - uses: mozilla-actions/sccache-action@v0.0.9
       - uses: ./.github/actions/setup-rust
       - run: cargo nextest run
