@@ -5,7 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { chdir, stdout } from 'node:process';
 import { request as ghRequest } from '@octokit/request';
-import { $, type FileSink, Glob } from 'bun';
+import { $, type BunFile, type FileSink, Glob } from 'bun';
 import { panic, repoRoot } from './utils.ts';
 
 const missingTools = ['asdf', 'bun', 'cargo', 'git'].filter(
@@ -55,6 +55,27 @@ await cargoState.finish();
 
 await prBody?.end?.();
 
+async function mutateFileLines(
+	file: BunFile,
+	cb: (
+		line: string,
+		replaceLine: (line: string) => Promise<void>,
+	) => Promise<void> | Promise<undefined | boolean>,
+) {
+	const contents = await file.text();
+	const lines = contents.split('\n');
+	for (let i = 0; i < lines.length; i++) {
+		const done = await cb(lines[i]!, async (line) => {
+			lines[i] = line;
+			await Bun.write(file, lines.join('\n'));
+		});
+
+		if (done) {
+			break;
+		}
+	}
+}
+
 async function asdf() {
 	const { dep, updateWorkflows } = group('asdf');
 
@@ -63,15 +84,17 @@ async function asdf() {
 	const isVersion = /^\d/;
 
 	const file = Bun.file(path);
-	const contents = await file.text();
-	const lines = contents.split('\n');
-	for (let i = 0; i < lines.length; i++) {
-		const [line, comment] = splitComment(lines[i], commentPattern);
+	mutateFileLines(file, async (rawLine, replaceLine) => {
+		const [line, comment] = splitComment(rawLine, commentPattern);
 		if (!line) {
-			continue;
+			return;
 		}
 
-		const [tool, version] = line.split(' ');
+		const [tool, version] = line.split(' ', 2);
+		if (tool == null || version == null) {
+			return;
+		}
+
 		const done = dep(tool, version);
 
 		const latest = (await $`asdf list-all ${tool}`.text())
@@ -80,15 +103,14 @@ async function asdf() {
 			.at(-1)!;
 
 		if (version !== latest) {
-			lines[i] = `${tool} ${latest}${comment}`;
 			await Promise.all([
-				Bun.write(file, lines.join('\n')),
+				replaceLine(`${tool} ${latest}${comment}`),
 				updateWorkflows(tool, latest),
 			]);
 		}
 
 		await done(latest);
-	}
+	});
 }
 
 async function cargoBin(state: CargoState) {
@@ -109,13 +131,10 @@ async function dprint() {
 		/https:\/\/plugins\.dprint\.dev\/(?<name>\w+)-(?<version>(?:\d+\.){2}\d+)\.wasm/;
 
 	const file = Bun.file(path);
-	const contents = await file.text();
-	const lines = contents.split('\n');
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+	mutateFileLines(file, async (line, replaceLine) => {
 		const matches = line.match(pattern);
 		if (!matches) {
-			continue;
+			return;
 		}
 
 		const { name, version } = matches.groups as Record<
@@ -130,12 +149,11 @@ async function dprint() {
 		const latest = response.version;
 
 		if (version !== latest) {
-			lines[i] = line.replace(pattern, response.url);
-			await Bun.write(file, lines.join('\n'));
+			await replaceLine(line.replace(pattern, response.url));
 		}
 
 		await done(latest);
-	}
+	});
 }
 
 async function npm() {
@@ -296,24 +314,28 @@ async function cargoImpl(args: {
 	const versionId = 3;
 
 	const file = Bun.file(args.path);
-	const contents = await file.text();
-	const lines = contents.split('\n');
-	const start = lines
-		.map((s) => s.replace(/\s/, ''))
-		.indexOf(`[${args.section}]`);
-	for (let i = start + 1; i >= 0 && i < lines.length; i++) {
-		const [line, comment] = splitComment(lines[i], commentPattern);
+	let foundSection = false;
+	await mutateFileLines(file, async (rawLine, replaceLine) => {
+		const [line, comment] = splitComment(rawLine, commentPattern);
+
+		if (!foundSection) {
+			if (line.replace(/\s/, '') === `[${args.section}]`) {
+				foundSection = true;
+			} else {
+				return;
+			}
+		}
 
 		if (line.trim().startsWith('[')) {
-			break;
+			return true;
 		}
 
 		const matches = line.match(depPattern)?.slice(1);
 		if (!matches) {
-			continue;
+			return;
 		}
-		const crate = matches[crateId];
-		const current = matches[versionId];
+		const crate = matches[crateId]!;
+		const current = matches[versionId]!;
 		const rawCurrent = rawVersion(current);
 
 		const done = dep(crate, rawCurrent);
@@ -321,16 +343,21 @@ async function cargoImpl(args: {
 
 		if (rawCurrent !== latest) {
 			const exactLatest = latest.replace(/^[~^=]?/, '=');
-			lines[i] = matches.with(versionId, exactLatest).join('') + comment;
-			await Bun.write(file, lines.join('\n'));
 
-			if (args.updateWorkflows) {
-				await updateWorkflows(crate, latest);
-			}
+			await Promise.all([
+				replaceLine(
+					matches.with(versionId, exactLatest).join('') + comment,
+				),
+				args.updateWorkflows && updateWorkflows(crate, latest),
+			]);
+
+			// if (args.updateWorkflows) {
+			// 	await updateWorkflows(crate, latest);
+			// }
 		}
 
 		await done(latest);
-	}
+	});
 }
 
 async function githubActions() {
@@ -361,7 +388,8 @@ async function githubActions() {
 	});
 
 	for (const [key, paths] of [...deps].sort()) {
-		const [owner, repo, oldTag] = key.split('\0');
+		type SplitKey = [string, string, string];
+		const [owner, repo, oldTag] = key.split('\0') as SplitKey;
 		const name = `${owner}/${repo}`;
 		const done = dep(name, oldTag);
 
@@ -382,8 +410,8 @@ async function githubActions() {
 			(best, next) => {
 				const length = Math.max(best[0].length, next[0].length);
 				for (let i = 0; i <= length; i++) {
-					const digitBest = best[0][i];
-					const digitNext = next[0][i];
+					const digitBest = best[0][i]!;
+					const digitNext = next[0][i]!;
 					if (digitNext > digitBest || digitBest == null) {
 						return next;
 					}
@@ -463,7 +491,7 @@ async function forAllWorkflows(
 	for (const [dir, glob] of [
 		['workflows', '*.yaml'],
 		['actions', '*/*.yaml'],
-	]) {
+	] as const) {
 		const cwd = `${repoRoot}/.github/${dir}`;
 		for await (const path of new Glob(glob).scan({ cwd, absolute: true })) {
 			await callback(path);

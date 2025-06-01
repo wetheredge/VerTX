@@ -93,12 +93,14 @@ function updateFeatures(current: unknown, add: Array<string>) {
 	// Remove existing vertx/* entries
 	let i = 0;
 	while (i < current.length) {
-		if (current[i].startsWith('vertx/')) {
+		// biome-ignore lint/style/noNonNullAssertion: length is checked
+		if (current[i]!.startsWith('vertx/')) {
 			current.splice(i, 1);
 			continue;
 		}
 
-		if (!current[i].includes('/')) {
+		// biome-ignore lint/style/noNonNullAssertion: splice always continues, so the length check is still valid
+		if (!current[i]!.includes('/')) {
 			console.warn(`Ignoring unqualified feature: '${current[i]}'`);
 		}
 

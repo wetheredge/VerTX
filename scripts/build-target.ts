@@ -77,19 +77,25 @@ if (isMain(import.meta.url)) {
 
 	let command = 'build';
 	if (args[0] === '--command') {
+		if (args[1] == null) {
+			console.error(usage);
+			exit(1);
+		}
+
 		command = args[1];
 		args = args.slice(2);
 	} else if (args[0]?.startsWith('--command=')) {
-		command = args[0].split('=', 2)[1];
+		// biome-ignore lint/style/noNonNullAssertion: known to include an =
+		command = args[0].split('=', 2)[1]!;
 		args = args.slice(1);
 	}
 
-	if (args.length < 1) {
+	const [targetName, ...buildArgs] = args;
+	if (targetName == null) {
 		console.error(usage);
 		exit(1);
 	}
 
-	const [targetName, ...buildArgs] = args;
 	const targetPath = fileURLToPath(
 		new URL(`../targets/${targetName}.toml`, import.meta.url),
 	);

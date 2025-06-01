@@ -2,7 +2,8 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": "@tsconfig/vite-react",
 	"compilerOptions": {
-		"lib": ["ES2023", "DOM", "DOM.Iterable"]
+		"lib": ["ES2023", "DOM", "DOM.Iterable"],
+		"erasableSyntaxOnly": false
 	},
 	"include": ["src"]
 }

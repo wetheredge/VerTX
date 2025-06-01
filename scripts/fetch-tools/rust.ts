@@ -179,7 +179,7 @@ function downloadTask(url: string, downloadPath: string): ListrTask {
 
 async function getLlvmTarget(): Promise<string> {
 	const rustcVersion = await $`rustc +stable -vV`.text();
-	return rustcVersion.match(/host:\s*(.*)/)![1];
+	return rustcVersion.match(/host:\s*(.*)/)![1]!;
 }
 
 function getTempDir(prefix: string, dir = os.tmpdir()): Promise<string> {

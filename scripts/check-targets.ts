@@ -17,7 +17,9 @@ for await (const path of targets) {
 		const issues = result.error.issues.map((i) => ({
 			...i,
 			path: i.path
-				.map((k) => (typeof k === 'string' ? `.${k}` : `[${k}]`))
+				.map((k) =>
+					typeof k === 'string' ? `.${k}` : `[${String(k)}]`,
+				)
 				.join(''),
 		}));
 		const maxPathLength = Math.max(...issues.map((i) => i.path.length));

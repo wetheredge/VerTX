@@ -4,7 +4,7 @@ import { exit } from 'node:process';
 
 const direction = Bun.argv[2];
 
-if (!['up', 'down'].includes(direction)) {
+if (direction == null || !['up', 'down'].includes(direction)) {
 	console.info('Usage: migrate.ts [up|down] < config.in > config.out');
 	exit(1);
 }

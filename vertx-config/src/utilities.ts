@@ -19,7 +19,7 @@ export function getWriter(outFile: BunFile): {
 	const out: Out = (segments, ...args) =>
 		segments.forEach((s, i) => {
 			writer.write(s);
-			if (i < args.length) {
+			if (args[i] != null) {
 				writer.write(args[i].toString());
 			}
 		});
@@ -93,7 +93,10 @@ function splitCamelCase(camel: string): Array<string> {
 
 export function toPascalCase(camel: string): string {
 	return splitCamelCase(camel)
-		.map((x) => x[0].toUpperCase() + x.substring(1))
+		.map((x) => {
+			// biome-ignore lint/style/noNonNullAssertion: splitCamelCase won't return empty strings
+			return x[0]!.toUpperCase() + x.substring(1);
+		})
 		.join('');
 }
 
