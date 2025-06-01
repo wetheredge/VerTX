@@ -14,6 +14,7 @@ crate-type = ["cdylib", "rlib"]
 log = [
     "loog/log",
     "block-device-adapters?/log",
+    "edge-dhcp?/log",
     "embassy-net?/log",
     "embedded-fatfs/log",
     "sdspi?/log",
@@ -21,6 +22,7 @@ log = [
 defmt = [
     "loog/defmt",
     "block-device-adapters?/defmt",
+    "edge-dhcp?/defmt",
     "embassy-net?/defmt",
     "embedded-fatfs/defmt",
     "embedded-graphics/defmt",

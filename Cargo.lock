@@ -555,11 +555,13 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2ccd3a181a33c710e07c3f04623d7a11e9969b1e44a7276ead7873b049720cb"
 dependencies = [
+ "defmt 0.3.100",
  "edge-nal",
  "edge-raw",
  "embassy-futures",
  "embassy-time",
  "heapless",
+ "log",
  "num_enum",
  "rand_core",
 ]
@@ -754,6 +756,7 @@ checksum = "f820157f198ada183ad62e0a66f554c610cdcd1a9f27d4b316358103ced7a1f8"
 dependencies = [
  "cfg-if",
  "critical-section",
+ "defmt 0.3.100",
  "document-features",
  "embassy-time-driver",
  "embassy-time-queue-utils",
