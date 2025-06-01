@@ -50,7 +50,7 @@ jobs:
           fi
           echo "branch=$sanitized" >> "$GITHUB_OUTPUT"
       - name: Join tailnet
-        uses: tailscale/github-action@v3.2.0
+        uses: tailscale/github-action@v3.2.2
         with:
           oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_SECRET }}
@@ -185,7 +185,7 @@ jobs:
         if: needs.pre.outputs.commit-exists != 'true'
         run: tar --create --zstd --exclude='.[^/]*' --file=out.tar.zstd --directory=out .
       - name: Join tailnet
-        uses: tailscale/github-action@v3.2.0
+        uses: tailscale/github-action@v3.2.2
         with:
           oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_SECRET }}
