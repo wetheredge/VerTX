@@ -1,6 +1,9 @@
 {
 	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
 	"extends": ["../.config/biome.json"],
+	"files": {
+		"ignore": ["./out/*"]
+	},
 	"javascript": {
 		"globals": ["Bun"]
 	},

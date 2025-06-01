@@ -7,7 +7,7 @@ tasks:
 
   check:
     cmds:
-      - bun run biome ci *.ts src/*.ts
+      - bun run biome ci .
       - task: check:tsc
 
   check:tsc:

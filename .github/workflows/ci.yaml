@@ -274,7 +274,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dir: [scripts, vertx-configurator, vertx-simulator]
+        dir: [postcard-ts, scripts, vertx-config, vertx-config-migrate, vertx-configurator, vertx-simulator]
     steps:
       - uses: actions/checkout@v4.2.2
         with:
