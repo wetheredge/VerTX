@@ -1,1 +1,0 @@
-VERTX_WASM_OPT_ARGS=-O3 --converge --const-hoisting --dae-optimizing --optimize-added-constants-propagate --optimize-instructions --reorder-functions --reorder-locals --strip-target-features --strip-producers --minify-imports-and-exports-and-modules
