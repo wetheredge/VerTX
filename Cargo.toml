@@ -23,7 +23,7 @@ serde = { version = "=1.0.219", default-features = false }
 cargo-machete = "=0.8.0"
 cargo-nextest = "=0.9.97"
 dprint = "=0.50.0"
-probe-rs-tools = "=0.27.0"
+probe-rs-tools = "=0.29.0"
 wasm-bindgen-cli = "=0.2.100"
 wasm-opt = "=0.116.1"
 
