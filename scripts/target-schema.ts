@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export type Target = z.infer<typeof schema>;
 
@@ -37,23 +37,23 @@ export const schema = z
 		]),
 	})
 	.readonly()
-	.superRefine((val, ctx) => {
-		const needsSpi = val.sd.type === 'spi';
-		const hasSpi = val.spi != null;
+	.check((ctx) => {
+		const needsSpi = ctx.value.sd.type === 'spi';
+		const hasSpi = ctx.value.spi != null;
 
 		if (needsSpi && !hasSpi) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.invalid_type,
-				path: [...ctx.path, 'spi'],
+			ctx.issues.push({
+				code: 'invalid_type',
+				path: ['spi'],
 				expected: 'object',
-				received: 'undefined',
+				input: ctx.value.spi,
 			});
 		} else if (hasSpi && !needsSpi) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.unrecognized_keys,
-				path: ctx.path,
-				keys: ['spi'],
-				message: '.spi is unused',
+			ctx.issues.push({
+				code: 'custom',
+				path: ['spi'],
+				message: 'Unused and should be removed',
+				input: ctx.value,
 			});
 		}
 	});
