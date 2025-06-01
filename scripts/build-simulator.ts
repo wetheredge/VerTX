@@ -5,6 +5,8 @@ import { exit } from 'node:process';
 import { $ } from 'bun';
 import { fileAppend, isMain, orExit, repoRoot } from './utils.ts';
 
+const toolsPath = import.meta.env.CI === 'true' ? '' : '.tools/bin';
+
 export async function build(command: string, args: Array<string> = []) {
 	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${args}`;
 	await orExit(
@@ -20,7 +22,7 @@ export async function build(command: string, args: Array<string> = []) {
 		const profile = isRelease ? 'release' : 'debug';
 
 		const outputDir = join(repoRoot, 'target/simulator');
-		const bindgen = $`.tools/bin/wasm-bindgen --out-dir ${outputDir} --target web target/wasm32-unknown-unknown/${profile}/vertx.wasm`;
+		const bindgen = $`${toolsPath}wasm-bindgen --out-dir ${outputDir} --target web target/wasm32-unknown-unknown/${profile}/vertx.wasm`;
 		await orExit(bindgen.cwd(repoRoot));
 
 		await Promise.all([
@@ -49,7 +51,7 @@ export async function build(command: string, args: Array<string> = []) {
 			];
 			const wasm = 'target/simulator/vertx_bg.wasm';
 			const wasmOpt =
-				$`.tools/bin/wasm-opt -O3 ${passes} --output ${wasm} ${wasm}`
+				$`${toolsPath}wasm-opt -O3 ${passes} --output ${wasm} ${wasm}`
 					.cwd(repoRoot)
 					.nothrow();
 
