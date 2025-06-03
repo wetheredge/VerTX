@@ -61,7 +61,7 @@ export function isMain(importMetaUrl: string): boolean {
 	return process.argv[1] === fileURLToPath(importMetaUrl);
 }
 
-export function panic(message: string) {
+export function panic(message: string): never {
 	console.error(message);
 	if (import.meta.env.CI) {
 		// biome-ignore lint/suspicious/noConsoleLog:

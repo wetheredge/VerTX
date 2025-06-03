@@ -2,7 +2,7 @@
 
 import * as fs from 'node:fs';
 import { join } from 'node:path';
-import { exit } from 'node:process';
+import { parseArgs } from 'node:util';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
 import { type Target, schema } from './target-schema.ts';
@@ -11,6 +11,7 @@ import {
 	fsReplaceSymlink,
 	isMain,
 	orExit,
+	panic,
 	repoRoot,
 } from './utils.ts';
 
@@ -18,7 +19,7 @@ export async function build(
 	command: string,
 	targetName: string,
 	rawTarget: unknown,
-	args: Array<string> = [],
+	release?: boolean,
 ) {
 	const target = schema.parse(rawTarget);
 	const chip = getChipInfo(target.chip);
@@ -33,7 +34,7 @@ export async function build(
 		.join(' ');
 
 	await orExit(
-		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${args}`
+		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${release ? '--release' : ''}`
 			.nothrow()
 			.env({
 				CARGO_TERM_COLOR: 'always',
@@ -44,8 +45,7 @@ export async function build(
 	);
 
 	if (command === 'build') {
-		const isRelease = args.includes('-r') || args.includes('--release');
-		const profile = isRelease ? 'release' : 'debug';
+		const profile = release ? 'release' : 'debug';
 
 		const bin = join(repoRoot, 'target', chip.target, profile, 'vertx');
 		const outDir = join(baseOutDir, 'firmware');
@@ -73,33 +73,24 @@ function getChipInfo(chip: string): ChipInfo {
 }
 
 if (isMain(import.meta.url)) {
-	const usage = `usage: scripts/${import.meta.file} [--command build/clippy/…] <target> [...args]`;
-	let args = Bun.argv.slice(2);
+	const usage = `usage: scripts/${import.meta.file} [--command=build/clippy/…] --target=<target> -- [...args]`;
 
-	if (args[0] === '--help' || args[0] === '-h') {
-		console.info(usage);
-		exit(0);
-	}
+	const { values } = parseArgs({
+		args: Bun.argv.slice(2),
+		options: {
+			help: { short: 'h', type: 'boolean' },
+			target: { type: 'string' },
+			command: { type: 'string', default: 'build' },
+			release: { short: 'r', type: 'boolean' },
+		},
+	});
 
-	let command = 'build';
-	if (args[0] === '--command') {
-		if (args[1] == null) {
-			console.error(usage);
-			exit(1);
-		}
-
-		command = args[1];
-		args = args.slice(2);
-	} else if (args[0]?.startsWith('--command=')) {
-		// biome-ignore lint/style/noNonNullAssertion: known to include an =
-		command = args[0].split('=', 2)[1]!;
-		args = args.slice(1);
-	}
-
-	const [targetName, ...buildArgs] = args;
+	const targetName = values.target;
 	if (targetName == null) {
-		console.error(usage);
-		exit(1);
+		panic(`${usage}\n\nMissing --target`);
+	}
+	if (targetName === '') {
+		panic('Missing value for --target. Try running `task :set-target`');
 	}
 
 	const targetPath = fileURLToPath(
@@ -107,10 +98,9 @@ if (isMain(import.meta.url)) {
 	);
 
 	if (!fs.existsSync(targetPath)) {
-		console.error(`Cannot find target '${targetName}'`);
-		exit(1);
+		panic(`Cannot find target '${targetName}'`);
 	}
 
 	const target = await import(targetPath);
-	await build(command, targetName, target.default, buildArgs);
+	await build(values.command, targetName, target.default, values.release);
 }

@@ -17,9 +17,9 @@ tasks:
       - echo 'Except for tasks starting with `simulator:`, all tasks require a target. This'
       - echo 'can be set by running `task target:set` in the root of the repo.'
 
-  check: bun run ../scripts/build-target.ts --command=clippy {{.VERTX_TARGET}}
-  build: bun run ../scripts/build-target.ts {{.VERTX_TARGET}}
-  build:release: bun run ../scripts/build-target.ts {{.VERTX_TARGET}} --release
+  check: bun run ../scripts/build-target.ts --command=clippy --target={{.VERTX_TARGET}}
+  build: bun run ../scripts/build-target.ts --target={{.VERTX_TARGET}}
+  build:release: bun run ../scripts/build-target.ts --target={{.VERTX_TARGET}} --release
 
   flash: ../.tools/bin/probe-rs run --preverify --chip {{.VERTX_CHIP}} --idf-partition-table partitions.csv ../target/vertx
 

@@ -2,6 +2,7 @@
 
 import { join } from 'node:path';
 import { exit } from 'node:process';
+import { parseArgs } from 'node:util';
 import { $ } from 'bun';
 import {
 	baseOutDir,
@@ -16,8 +17,8 @@ const tool = (bin: string) =>
 	import.meta.env.CI === 'true' ? bin : join(repoRoot, '.tools', 'bin', bin);
 const firmwareOutDir = join(baseOutDir, 'firmware');
 
-export async function build(command: string, args: Array<string> = []) {
-	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${args}`;
+export async function build(command: string, release?: boolean) {
+	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${release ? '--release' : ''}`;
 	await orExit(
 		cargo.env({
 			// biome-ignore lint/style/useNamingConvention:
@@ -27,8 +28,7 @@ export async function build(command: string, args: Array<string> = []) {
 	);
 
 	if (command === 'build') {
-		const isRelease = args.includes('-r') || args.includes('--release');
-		const profile = isRelease ? 'release' : 'debug';
+		const profile = release ? 'release' : 'debug';
 
 		const outName = `simulator_${profile}`;
 		const outDir = join(firmwareOutDir, outName);
@@ -46,7 +46,7 @@ export async function build(command: string, args: Array<string> = []) {
 			),
 		]);
 
-		if (isRelease) {
+		if (release) {
 			const passes = [
 				'--converge',
 				'--const-hoisting',
@@ -113,27 +113,20 @@ export async function build(command: string, args: Array<string> = []) {
 
 if (isMain(import.meta.url)) {
 	const usage = `usage: scripts/${import.meta.file} [--command build/clippy/…] [...args]`;
-	let args = Bun.argv.slice(2);
 
-	if (args[0] === '--help' || args[0] === '-h') {
+	const { values } = parseArgs({
+		args: Bun.argv.slice(2),
+		options: {
+			help: { short: 'h', type: 'boolean' },
+			command: { type: 'string', default: 'build' },
+			release: { short: 'r', type: 'boolean' },
+		},
+	});
+
+	if (values.help) {
 		console.info(usage);
 		exit(0);
 	}
 
-	let command = 'build';
-	if (args[0] === '--command') {
-		if (args[1] == null) {
-			console.error(usage);
-			exit(1);
-		}
-
-		command = args[1];
-		args = args.slice(2);
-	} else if (args[0]?.startsWith('--command=')) {
-		// biome-ignore lint/style/noNonNullAssertion: known to include an =
-		command = args[0].split('=', 2)[1]!;
-		args = args.slice(1);
-	}
-
-	await build(command, args);
+	await build(values.command, values.release);
 }

@@ -162,7 +162,7 @@ jobs:
           name: configurator
           path: out
       - name: Run clippy
-        run: bun run scripts/build-target.ts --command=clippy ${{ matrix.target }}
+        run: bun run scripts/build-target.ts --command=clippy --target=${{ matrix.target }}
 
   clippy-vertx-simulator:
     name: Clippy (vertx simulator)
@@ -228,7 +228,7 @@ jobs:
           name: configurator
           path: out
       - name: Build
-        run: bun run scripts/build-target.ts ${{ matrix.target }} --release
+        run: bun run scripts/build-target.ts --target=${{ matrix.target }} --release
       - uses: actions/upload-artifact@v4.3.0
         with:
           name: vertx-${{ matrix.target }}
