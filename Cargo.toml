@@ -22,23 +22,11 @@ serde = { version = "=1.0.219", default-features = false }
 [workspace.metadata.bin-dependencies]
 cargo-nextest = "=0.9.97"
 cargo-shear = "=1.3.0"
+cargo-sort = "=2.0.1"
 dprint = "=0.50.0"
 probe-rs-tools = "=0.29.0"
 wasm-bindgen-cli = "=0.2.100"
 wasm-opt = "=0.116.1"
-
-[profile.dev.package.esp-storage]
-opt-level = 3
-
-[profile.dev.package.esp-wifi]
-opt-level = 3
-
-[profile.dev]
-opt-level = 1
-
-[profile.release]
-lto = true
-debug = 2
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"
@@ -92,3 +80,16 @@ unnecessary_semicolon = "warn"
 unused_trait_names = "warn"
 used_underscore_items = "warn"
 wildcard_imports = "warn"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package.esp-storage]
+opt-level = 3
+
+[profile.dev.package.esp-wifi]
+opt-level = 3
+
+[profile.release]
+lto = true
+debug = 2

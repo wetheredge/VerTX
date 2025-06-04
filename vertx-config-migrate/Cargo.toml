@@ -5,12 +5,16 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 
-[features]
-up = []
-down = []
+[package.metadata.cargo-shear]
+# All used in generated code
+ignored = ["heapless", "postcard", "serde"]
 
 [lib]
 crate-type = ["cdylib"]
+
+[features]
+up = []
+down = []
 
 [dependencies]
 heapless = { workspace = true, features = ["serde"] }
@@ -19,7 +23,3 @@ serde = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true
-
-[package.metadata.cargo-shear]
-# All used in generated code
-ignored = ["heapless", "postcard", "serde"]
