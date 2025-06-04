@@ -1,0 +1,14 @@
+[tasks]
+check.run = "bun run ../scripts/build-target.ts --command=clippy --target=$VERTX_TARGET"
+build.run = "bun run ../scripts/build-target.ts --target=$VERTX_TARGET"
+"build:release".run = "bun run ../scripts/build-target.ts --target=$VERTX_TARGET --release"
+
+flash.run = "probe-rs --preverify --chip $VERTX_CHIP --idf-partition-table partitions.csv ../out/firmware/vertx"
+
+"simulator:check".run = "bun run ../scripts/build-simulator.ts --command=clippy"
+"simulator:build".run = "bun run ../scripts/build-simulator.ts"
+"simulator:build:release".run = "bun run ../scripts/build-simulator.ts --release"
+
+[tasks."simulator:edit"]
+desc = "Set up rust-analyzer config for supported editors for working on the simulator"
+run = "bun run ../scripts/set-ra-features.ts simulator"

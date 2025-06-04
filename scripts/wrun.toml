@@ -1,0 +1,5 @@
+[tasks.check]
+run = [
+    "bun run biome ci",
+    "bun run tsgo --project ./tsconfig.json",
+]
