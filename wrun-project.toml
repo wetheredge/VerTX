@@ -1,0 +1,60 @@
+env-files = [".env", "out/target"]
+
+packages = [
+    "postcard-ts",
+    "scripts",
+    "vertx",
+    "vertx-config",
+    "vertx-config-migrate",
+    "vertx-configurator",
+    "vertx-crsf",
+    "vertx-simulator",
+]
+
+[tasks.setup]
+desc = "Setup needed after first clone and dependency updates"
+run = [
+    "mise install",
+    "bun install",
+    "bun run scripts/fetch-rust.ts",
+    # Install dprint plugins:
+    "dprint output-file-paths --config=.config/dprint.json >/dev/null",
+    "@echo && echo 'Run `wrun target` to select a build target'",
+]
+
+[tasks.format]
+desc = "Format everything"
+run = [
+    "cargo fmt --all",
+    "dprint --config=.config/dprint.json fmt",
+    "bun run biome format --write",
+]
+
+[tasks.clean]
+desc = "Delete all build artifacts"
+run = [
+    "rm -rf out",
+    "cargo clean",
+]
+
+[tasks.target]
+desc = "Set the target to build firmware for"
+run = "@bun run scripts/set-target.ts"
+
+[tasks."targets:check"]
+desc = "Validate all target specifications"
+run = "bun run scripts/check-targets.ts"
+
+[tasks.check]
+desc = "Typecheck & lint almost everything. Skips `vertx/check`"
+run = [
+    { task = "targets:check" },
+    { task = "scripts/check" },
+    { task = "postcard-ts/check" },
+    { task = "vertx-crsf/check" },
+    { task = "vertx-config/check" },
+    { task = "vertx-config-migrate/check" },
+    { task = "vertx/simulator:check" },
+    { task = "vertx-configurator/check" },
+    { task = "vertx-simulator/check" },
+]

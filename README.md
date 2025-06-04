@@ -50,30 +50,25 @@ After installing the above list:
 
 ```shell
 $ mise install
-$ task setup
+$ wrun setup
 ```
 
 ### Workflow
 
-Most development tasks are run using [`task`](https://taskfile.dev). Run `task`
-without any arguments to get a list of all the tasks available in the current
-directory.
-
-`task :foo` runs a task `foo` defined in the project root from anywhere in the
-repository. When in the project root, `task foo/bar` runs the task `bar` defined
-in the directory `vertx-foo`. This can be combined with `:` (ie
-`task :foo/bar`).
+Most development tasks are run using [`wrun`]. Run `wrun` without any arguments
+to get a list of all the tasks available in the current directory. See
+`wrun --help` for tips.
 
 ### Simulator
 
 The simulator runs VerTX as a web app. Most functionality works, even the
 configurator, although you will need to allow popups. It's deployed at
-<https://simulator.vertx.cc/>. To start it locally, run:
+<https://simulator.vertx.cc/>. To start it locally, run both tasks in parallel:
 
 ```shell
-$ task :configurator/run
+$ wrun vertx-configurator/simulator:run
 
-$ task :simulator/run
+$ wrun vertx-simulator/run
 ```
 
 ## License
@@ -96,3 +91,4 @@ All other code is licensed under the
 [ExpressLRS]: https://www.expresslrs.org/
 [OpenTX]: https://github.com/opentx/opentx
 [stm32]: https://github.com/wetheredge/VerTX/pull/102
+[`wrun`]: https://github.com/wetheredge/wrun

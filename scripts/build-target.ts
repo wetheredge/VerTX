@@ -90,7 +90,7 @@ if (isMain(import.meta.url)) {
 		panic(`${usage}\n\nMissing --target`);
 	}
 	if (targetName === '') {
-		panic('Missing value for --target. Try running `task :set-target`');
+		panic('Missing value for --target. Try running `wrun /target`');
 	}
 
 	const targetPath = fileURLToPath(

@@ -1,0 +1,21 @@
+[tasks]
+check.run = [
+    "cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -F up",
+    "cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -F down",
+    "bun run biome ci",
+    "bun run tsgo --project ./tsconfig.json",
+]
+
+build.run = [
+    { task = "build:up" },
+    { task = "build:down" },
+]
+
+"build:up".run = [
+    "cargo build -Zbuild-std=core --release --target wasm32-unknown-unknown -F up",
+    "wasm-opt -Oz --strip-producers --output ../target/migrate-up.wasm ../target/wasm32-unknown-unknown/release/vertx_config_migrate.wasm",
+]
+"build:down".run = [
+    "cargo build -Zbuild-std=core --release --target wasm32-unknown-unknown -F down",
+    "wasm-opt -Oz --strip-producers --output ../target/migrate-down.wasm ../target/wasm32-unknown-unknown/release/vertx_config_migrate.wasm",
+]

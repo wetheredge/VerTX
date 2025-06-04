@@ -6,8 +6,6 @@
 .astro/
 .env
 .env.*
-.bin/
-.task/
 *.tsbuildinfo
 
 /.helix
