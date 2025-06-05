@@ -16,8 +16,10 @@ tasks:
   setup:
     desc: Setup needed after first clone and dependency updates
     cmds:
+      - mise install
       - bun install
-      - bun run scripts/fetch-tools/main.ts
+      - bun run scripts/fetch-rust.ts
+      # Install dprint plugins:
       - .tools/bin/dprint output-file-paths --config=.config/dprint.json >/dev/null
       - silent: true
         cmd: echo && echo 'Run `task set-target` to choose your hardware target'

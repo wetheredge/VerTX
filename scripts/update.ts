@@ -8,7 +8,7 @@ import { request as ghRequest } from '@octokit/request';
 import { $, type BunFile, type FileSink, Glob } from 'bun';
 import { panic, repoRoot } from './utils.ts';
 
-const missingTools = ['asdf', 'bun', 'cargo', 'git'].filter(
+const missingTools = ['mise', 'bun', 'cargo', 'git'].filter(
 	(tool) => Bun.which(tool) == null,
 );
 if (missingTools.length > 0) {
@@ -25,11 +25,6 @@ if (anyChanges.exitCode !== 0) {
 	panic('There are uncommitted changes');
 }
 
-const currentBranch = await $`git rev-parse --abbrev-ref HEAD`.text();
-if (!['main', 'ci'].includes(currentBranch.trim())) {
-	panic('Not on main or ci branch');
-}
-
 const branchExists = await $`git rev-parse --verify --quiet ${branch}`
 	.nothrow()
 	.quiet();
@@ -44,14 +39,11 @@ if (import.meta.env.CI) {
 
 chdir(repoRoot);
 await $`git switch -c updates`.quiet();
-const cargoState = await getCargoState();
-await asdf();
-await cargoBin(cargoState);
+await mise();
 await dprint();
 await npm();
-await cargo(cargoState);
+await cargo();
 await githubActions();
-await cargoState.finish();
 
 await prBody?.end?.();
 
@@ -76,51 +68,51 @@ async function mutateFileLines(
 	}
 }
 
-async function asdf() {
-	const { dep, updateWorkflows } = group('asdf');
+async function mise() {
+	const { dep, updateWorkflows } = group('mise');
 
-	const path = '.tool-versions';
-	const commentPattern = /\s*#.*$/;
-	const isVersion = /^\d/;
+	type Install = {
+		version: string;
+		source?: {
+			path?: string;
+		};
+	};
 
-	const file = Bun.file(path);
-	mutateFileLines(file, async (rawLine, replaceLine) => {
-		const [line, comment] = splitComment(rawLine, commentPattern);
-		if (!line) {
-			return;
+	const newLocal = $`mise ls --json`;
+	const tools: Record<string, Array<Install>> = await newLocal.json();
+	for (const [tool, installs] of Object.entries(tools)) {
+		const inRepo = installs.find(({ source }) => {
+			if (source?.path) {
+				const repoRel = path.relative(repoRoot, source.path);
+				return !(repoRel.startsWith('..') || path.isAbsolute(repoRel));
+			}
+		});
+
+		if (inRepo) {
+			const current = inRepo.version;
+			const done = dep(tool, current);
+
+			let latest: string | undefined;
+			if (current.includes('-')) {
+				latest = (await $`mise latest ${tool}`.text()).trim();
+			} else {
+				const all = await $`mise ls-remote ${tool}`.text();
+				const isStable = (v: string) => !v.includes('-');
+				latest = all.trim().split('\n').findLast(isStable);
+			}
+
+			if (!latest) {
+				console.warn(`Failed to get latest version for ${tool}`);
+			} else if (current !== latest) {
+				await Promise.all([
+					$`mise use ${tool}@${latest}`.quiet(),
+					updateWorkflows(tool, latest),
+				]);
+			}
+
+			await done(latest ?? current);
 		}
-
-		const [tool, version] = line.split(' ', 2);
-		if (tool == null || version == null) {
-			return;
-		}
-
-		const done = dep(tool, version);
-
-		const latest = (await $`asdf list-all ${tool}`.text())
-			.split('\n')
-			.filter((l) => isVersion.test(l))
-			.at(-1)!;
-
-		if (version !== latest) {
-			await Promise.all([
-				replaceLine(`${tool} ${latest}${comment}`),
-				updateWorkflows(tool, latest),
-			]);
-		}
-
-		await done(latest);
-	});
-}
-
-async function cargoBin(state: CargoState) {
-	await cargoImpl({
-		state,
-		group: 'cargo-bin',
-		path: 'Cargo.toml',
-		section: 'workspace.metadata.bin-dependencies',
-		updateWorkflows: true,
-	});
+	}
 }
 
 async function dprint() {
@@ -212,52 +204,69 @@ async function npmImpl(name: string) {
 	}
 }
 
-async function cargo(state: CargoState) {
+async function cargo() {
+	const tempCrateDir = await mkdtemp(path.join(os.tmpdir(), 'rust-updates-'));
+	await $`cargo init --vcs none --name updates ${tempCrateDir}`.quiet();
+
+	const tempManifest = `${tempCrateDir}/Cargo.toml`;
+	const tempManifestLastLine = async () => {
+		const contents = await Bun.file(tempManifest).text();
+		return contents.trim().split('\n').at(-1) ?? '';
+	};
+
+	if ((await tempManifestLastLine()) !== '[dependencies]') {
+		panic("Generated Cargo.toml doesn't end with [dependencies] table");
+	}
+
+	const getLatest = async (dep: string) => {
+		await $`cargo add ${dep}`.cwd(tempCrateDir).quiet();
+		const metadata =
+			await $`cargo metadata --no-deps --frozen --format-version 1`.json();
+		const latest: string = metadata.packages[0].dependencies[0].req;
+		await $`cargo rm ${dep}`.quiet();
+		return latest.replace(/^[~^=]?/, '=');
+	};
+
 	await cargoImpl({
-		state,
+		getLatest,
 		group: 'cargo(workspace)',
 		path: 'Cargo.toml',
 		section: 'workspace.dependencies',
 	});
 
 	const metadata =
-		await $`cargo metadata --no-deps --format-version 1`.text();
-	const members = JSON.parse(metadata).packages.map(
-		(p: { name: string }) => p.name,
-	);
+		await $`cargo metadata --no-deps --format-version 1`.json();
+	const members = metadata.packages.map((p: { name: string }) => p.name);
 
 	for (const dir of members) {
 		await cargoImpl({
-			state,
+			getLatest,
 			group: `cargo(${dir})`,
 			path: `${dir}/Cargo.toml`,
 			section: 'dependencies',
 		});
 		await cargoImpl({
-			state,
+			getLatest,
 			group: `cargo(${dir} build)`,
 			path: `${dir}/Cargo.toml`,
 			section: 'build-dependencies',
 		});
 		await cargoImpl({
-			state,
+			getLatest,
 			group: `cargo(${dir} dev)`,
 			path: `${dir}/Cargo.toml`,
 			section: 'dev-dependencies',
 		});
 		await cargoImpl({
-			state,
+			getLatest,
 			group: `cargo(${dir} wasm)`,
 			path: `${dir}/Cargo.toml`,
 			section: 'target.wasm32-unknown-unknown.dependencies',
 		});
 	}
 
-	const generatedLockfile = await $`cargo generate-lockfile`
-		.quiet()
-		.nothrow()
-		.then((sh) => sh.exitCode !== 0);
-	if (generatedLockfile) {
+	const generateLockfile = await $`cargo generate-lockfile`.quiet().nothrow();
+	if (generateLockfile.exitCode !== 0) {
 		await commit('Recreate Cargo.lock');
 		console.info('Recreated Cargo.lock');
 	} else {
@@ -266,40 +275,12 @@ async function cargo(state: CargoState) {
 			'Failed to regenerate lockfile! Fix the issue and recreate it manually',
 		);
 	}
-}
 
-type CargoState = {
-	getLatest: (dep: string) => Promise<string>;
-	finish: () => Promise<void>;
-};
-
-async function getCargoState(): Promise<CargoState> {
-	const dir = await mkdtemp(path.join(os.tmpdir(), 'rust-updates-'));
-	await $`cargo init --vcs none --name updates ${dir}`.quiet();
-	const cargoTomlLastLine = () =>
-		Bun.file(`${dir}/Cargo.toml`)
-			.text()
-			.then((s) => s.trim().split('\n').at(-1)!);
-
-	if ((await cargoTomlLastLine()) !== '[dependencies]') {
-		panic("Generated Cargo.toml doesn't end with [dependencies] table");
-	}
-
-	return {
-		async getLatest(dep) {
-			await $`cargo add ${dep}`.cwd(dir).quiet();
-			const latest = (await cargoTomlLastLine()).split('"').at(1)!;
-			await $`cargo rm ${dep}`.cwd(dir).quiet();
-			return latest;
-		},
-		async finish() {
-			await rm(dir, { recursive: true });
-		},
-	};
+	await rm(tempCrateDir, { recursive: true });
 }
 
 async function cargoImpl(args: {
-	state: CargoState;
+	getLatest: (dep: string) => Promise<string>;
 	group: string;
 	path: string;
 	section: string;
@@ -339,21 +320,13 @@ async function cargoImpl(args: {
 		const rawCurrent = rawVersion(current);
 
 		const done = dep(crate, rawCurrent);
-		const latest = await args.state.getLatest(crate);
+		const latest = await args.getLatest(crate);
 
 		if (rawCurrent !== latest) {
-			const exactLatest = latest.replace(/^[~^=]?/, '=');
-
 			await Promise.all([
-				replaceLine(
-					matches.with(versionId, exactLatest).join('') + comment,
-				),
+				replaceLine(matches.with(versionId, latest).join('') + comment),
 				args.updateWorkflows && updateWorkflows(crate, latest),
 			]);
-
-			// if (args.updateWorkflows) {
-			// 	await updateWorkflows(crate, latest);
-			// }
 		}
 
 		await done(latest);

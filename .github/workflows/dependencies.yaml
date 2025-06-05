@@ -32,14 +32,12 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
       - uses: ./.github/actions/setup-rust
-      - uses: asdf-vm/actions/setup@v3
-      - name: Install asdf plugins
-        run: |
-          asdf plugin add actionlint https://github.com/crazy-matt/asdf-actionlint
-          asdf plugin add bun https://github.com/cometkim/asdf-bun
-          asdf plugin add task https://github.com/particledecay/asdf-task
-          asdf plugin add typos https://github.com/aschiavon91/asdf-typos
-      - run: asdf install bun
+      - uses: jdx/mise-action@v2.2.3
+        with:
+          install: false
+      - uses: oven-sh/setup-bun@v2.0.2
+        with:
+          bun-version-file: .tool-versions
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - run: bun run scripts/update.ts

@@ -33,21 +33,11 @@
 			}
 		},
 		{
-			"include": ["./fetch-tools/*.ts", "./update.ts"],
+			"include": ["./update.ts"],
 			"linter": {
 				"rules": {
 					"style": {
 						"noNonNullAssertion": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./fetch-tools/*.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noDefaultExport": "off"
 					}
 				}
 			}

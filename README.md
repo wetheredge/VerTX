@@ -41,21 +41,15 @@ Non-goals:
 ### Pre-requisites
 
 - [`rustup`](https://rustup.rs/)
+- [`mise`](https://mise.jdx.dev/installing-mise.html)
 - Optionally
   [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall#installation)
   for faster installs
-- [`asdf`](https://asdf-vm.com/guide/getting-started.html)
 
 After installing the above list:
 
 ```shell
-# Install asdf plugins
-$ asdf plugin add actionlint https://github.com/crazy-matt/asdf-actionlint
-$ asdf plugin add bun https://github.com/cometkim/asdf-bun
-$ asdf plugin add task https://github.com/particledecay/asdf-task
-$ asdf plugin add typos https://github.com/aschiavon91/asdf-typos
-
-$ asdf install
+$ mise install
 $ task setup
 ```
 

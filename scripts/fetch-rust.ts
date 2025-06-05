@@ -2,33 +2,43 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { $, fileURLToPath } from 'bun';
-import type { Listr, ListrTask } from 'listr2';
-import * as versions from '../../.config/xtensa-toolchain.json';
-import { humanBytes } from '../utils.ts';
-import type { Context } from './main.ts';
+import { Listr, type ListrTask } from 'listr2';
+import * as versions from '../.config/xtensa-toolchain.json';
+import { humanBytes, repoRoot } from './utils.ts';
 
 // See <https://github.com/espressif/crosstool-NG/releases/latest>
 const LLVM_TARGET_TO_GCC: Record<string, string> = {
 	'x86_64-unknown-linux-gnu': 'x86_64-linux-gnu',
 };
 
-export function rust(context: Context): ListrTask {
-	const namespace = 'rust';
-	const version = versions.rust;
+const toolsDir = path.join(repoRoot, '.tools');
+const getDirs = (namespace: string, version: string) => ({
+	out: path.join(toolsDir, namespace),
+	download: path.join(
+		path.join(repoRoot, '.cache/downloads'),
+		namespace,
+		version,
+	),
+});
 
-	const outDir = path.join(context.outDir, namespace);
-	const downloadDir = path.join(context.downloadDir, namespace, version);
+await fs.mkdir(toolsDir, { recursive: true });
+
+await new Listr([rust(), gcc()]).run();
+
+function rust(): ListrTask {
+	const version = versions.rust;
+	const dirs = getDirs('rust', version);
 
 	return {
 		title: `Xtensa Rust v${version}`,
 		async skip() {
-			const output = await $`${outDir}/bin/rustc --version`
+			const output = await $`${dirs.out}/bin/rustc --version`
 				.nothrow()
 				.text();
 			return output.trimEnd().endsWith(`(${version})`);
 		},
 		async task(_ctx, task): Promise<Listr> {
-			await fs.mkdir(downloadDir, { recursive: true });
+			await fs.mkdir(dirs.download, { recursive: true });
 
 			const target = await getLlvmTarget();
 			const assets = [
@@ -43,26 +53,24 @@ export function rust(context: Context): ListrTask {
 			];
 
 			const extracted = new Array<string>();
-
 			const assetTasks = assets.map((asset): ListrTask => {
-				const downloadPath = path.join(downloadDir, asset.name);
+				const downloadPath = path.join(dirs.download, asset.name);
 				return {
 					title: asset.name,
-					task: (_ctx, task) =>
-						task.newListr([
+					task: (_ctx, task) => {
+						return task.newListr([
 							downloadTask(asset.url, downloadPath),
 							{
 								title: 'extract',
 								async task() {
-									const dir = await getTempDir(
-										`${asset.name}-`,
-									);
+									const tempPrefix = `${asset.name}-`;
+									const dir = await getTempDir(tempPrefix);
 									await $`tar -xf ${downloadPath} -C ${dir} --strip-components 1`.quiet();
-
 									extracted.push(dir);
 								},
 							},
-						]),
+						]);
+					},
 				};
 			});
 
@@ -71,19 +79,16 @@ export function rust(context: Context): ListrTask {
 				{
 					title: 'install',
 					async task() {
-						await fs.rm(outDir, { recursive: true, force: true });
-						await fs.mkdir(context.outDir, { recursive: true });
-						const installDir = await getTempDir(
-							'.rust-xtensa-install-',
-							context.outDir,
-						);
+						await fs.rm(dirs.out, { recursive: true, force: true });
+						const tempPrefix = '.rust-xtensa-install-';
+						const tempDir = await getTempDir(tempPrefix, toolsDir);
 						for (const dir of extracted) {
-							await $`${dir}/install.sh --prefix=${installDir}`.quiet();
+							await $`${dir}/install.sh --prefix=${tempDir}`.quiet();
 							await fs.rm(dir, { recursive: true });
 						}
-						fs.rename(installDir, outDir);
+						fs.rename(tempDir, dirs.out);
 
-						await $`rustup toolchain link vertx ${outDir}`.quiet();
+						await $`rustup toolchain link vertx ${dirs.out}`.quiet();
 					},
 				},
 			]);
@@ -91,53 +96,50 @@ export function rust(context: Context): ListrTask {
 	};
 }
 
-export function gcc(context: Context): ListrTask {
+function gcc(): ListrTask {
 	const namespace = 'gcc';
 	const version = versions.gcc;
 
-	const outDir = path.join(context.outDir, namespace);
-	const downloadDir = path.join(context.downloadDir, namespace, version);
+	const dirs = getDirs(namespace, version);
 
 	return {
 		title: `Xtensa GCC v${version}`,
 		async skip() {
 			const output =
-				await $`${outDir}/bin/xtensa-esp32s3-elf-gcc --version`
+				await $`${dirs.out}/bin/xtensa-esp32s3-elf-gcc --version`
 					.nothrow()
 					.text();
 			return output.includes(version);
 		},
 		async task(_ctx, task): Promise<Listr> {
-			await fs.mkdir(downloadDir, { recursive: true });
+			await fs.mkdir(dirs.download, { recursive: true });
 
 			const llvmTarget = await getLlvmTarget();
-			if (!(llvmTarget in LLVM_TARGET_TO_GCC)) {
+			const target = LLVM_TARGET_TO_GCC[llvmTarget];
+			if (target == null) {
 				const file = path.relative(
 					process.cwd(),
 					fileURLToPath(import.meta.url),
 				);
 				throw new Error(
-					`Missing mapping from llvm target '${llvmTarget}' to the xtensa gcc name. Please update ${file} and send a PR`,
+					`Missing mapping from llvm target '${llvmTarget}' to the xtensa gcc name for this platform. Please update ${file} and send a PR`,
 				);
 			}
-			const target = LLVM_TARGET_TO_GCC[llvmTarget];
 
 			const url = `https://github.com/espressif/crosstool-NG/releases/download/esp-${version}/xtensa-esp-elf-${version}-${target}.tar.xz`;
-			const downloadPath = path.join(downloadDir, 'gcc.tar.xz');
+			const downloadPath = path.join(dirs.download, 'gcc.tar.xz');
 
 			return task.newListr([
 				downloadTask(url, downloadPath),
 				{
 					title: 'install',
 					async task() {
-						const tempDir = await getTempDir(
-							`.${namespace}-`,
-							context.outDir,
-						);
+						const tempPrefix = `.${namespace}-`;
+						const tempDir = await getTempDir(tempPrefix, toolsDir);
 						await $`tar -xf ${downloadPath} -C ${tempDir} --strip-components 1`.quiet();
 
-						await fs.rm(outDir, { recursive: true, force: true });
-						await fs.rename(tempDir, outDir);
+						await fs.rm(dirs.out, { recursive: true, force: true });
+						await fs.rename(tempDir, dirs.out);
 					},
 				},
 			]);
@@ -162,7 +164,7 @@ function downloadTask(url: string, downloadPath: string): ListrTask {
 			const length = rawLength ? humanBytes(rawLength) : null;
 
 			let downloaded = 0;
-			for await (const chunk of response.body!) {
+			for await (const chunk of response.body ?? []) {
 				writer.write(chunk);
 				downloaded += chunk.byteLength;
 				if (rawLength) {
@@ -179,6 +181,7 @@ function downloadTask(url: string, downloadPath: string): ListrTask {
 
 async function getLlvmTarget(): Promise<string> {
 	const rustcVersion = await $`rustc +stable -vV`.text();
+	// biome-ignore lint/style/noNonNullAssertion:
 	return rustcVersion.match(/host:\s*(.*)/)![1]!;
 }
 
