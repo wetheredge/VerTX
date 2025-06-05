@@ -193,9 +193,11 @@ jobs:
             -d '{ "commit": "${{ needs.pre.outputs.commit }}", "branch": "${{ needs.pre.outputs.branch }}" }'
       - name: Summary
         run: |
-          echo 'Successfully deployed to:' >> "$GITHUB_STEP_SUMMARY"
-          echo '- <https://${{ needs.pre.outputs.commit }}.simulator.vertx.cc>' >> "$GITHUB_STEP_SUMMARY"
-          echo '- <https://${{ needs.pre.outputs.branch }}.simulator.vertx.cc>' >> "$GITHUB_STEP_SUMMARY"
-          if [ '${{ github.event.repository.default_branch }}' = '${{ needs.pre.outputs.branch }}' ]; then
-            echo '- <https://simulator.vertx.cc>' >> "$GITHUB_STEP_SUMMARY"
-          fi
+          {
+            echo 'Successfully deployed to:'
+            echo '- <https://${{ needs.pre.outputs.commit }}.simulator.vertx.cc>'
+            echo '- <https://${{ needs.pre.outputs.branch }}.simulator.vertx.cc>'
+            if [ '${{ github.event.repository.default_branch }}' = '${{ needs.pre.outputs.branch }}' ]; then
+              echo '- <https://simulator.vertx.cc>'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

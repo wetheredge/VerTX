@@ -47,7 +47,7 @@ jobs:
           echo '${{ vars.GH_SSH_PUB_KEYS }}' >> "$HOME/.ssh/known_hosts"
           echo '${{ secrets.UPDATES_SSH_KEY }}' >> "$HOME/.ssh/id_updates"
           chmod -R 600 "$HOME/.ssh/id_updates"
-          eval `ssh-agent`
+          eval "$(ssh-agent -s)"
           ssh-add "$HOME/.ssh/id_updates"
           git remote set-url origin git@github.com:${{ github.repository }}.git
           git push --set-upstream origin updates
