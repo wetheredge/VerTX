@@ -1,0 +1,30 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": [
+		"helpers:pinGitHubActionDigestsToSemver",
+		"npm:unpublishSafe",
+		"replacements:all",
+		"schedule:monthly",
+		"workarounds:all"
+	],
+	"configMigration": true,
+	"semanticCommits": "disabled",
+	"pinDigests": true,
+	"rangeStrategy": "pin",
+	"packageRules": [
+		{
+			"groupName": "all dependencies",
+			"groupSlug": "all",
+			"matchPackageNames": ["*"]
+		},
+		{
+			"matchDepNames": ["cargo:*"],
+			"rangeStrategy": "bump"
+		},
+		{
+			"matchDatasources": ["github-runners"],
+			"groupSlug": "runners",
+			"groupName": "GitHub runners"
+		}
+	]
+}
