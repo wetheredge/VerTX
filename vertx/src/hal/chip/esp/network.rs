@@ -1,3 +1,5 @@
+use alloc::string::ToString as _;
+
 use embassy_executor::{Spawner, task};
 use embassy_time::{Duration, Timer, with_timeout};
 use esp_hal::peripherals;
@@ -12,9 +14,9 @@ use crate::network::{Credentials, Kind};
 pub(super) struct Network {
     pub(super) spawner: Spawner,
     pub(super) rng: Rng,
-    pub(super) timer: AnyTimer,
-    pub(super) radio_clocks: peripherals::RADIO_CLK,
-    pub(super) wifi: peripherals::WIFI,
+    pub(super) timer: AnyTimer<'static>,
+    pub(super) radio_clocks: peripherals::RADIO_CLK<'static>,
+    pub(super) wifi: peripherals::WIFI<'static>,
 }
 
 impl crate::hal::traits::Network for Network {
@@ -52,7 +54,7 @@ impl crate::hal::traits::Network for Network {
             // Failed to connect to home network, start AP instead
 
             let ap_config = wifi::AccessPointConfiguration {
-                ssid: ap.ssid,
+                ssid: ap.ssid.to_string(),
                 ssid_hidden: false,
                 channel: 1,
                 secondary_channel: None,
@@ -85,10 +87,10 @@ async fn connect_to_sta(
     );
 
     let config = wifi::ClientConfiguration {
-        ssid: credentials.ssid,
+        ssid: credentials.ssid.to_string(),
         bssid: None,
         auth_method: wifi::AuthMethod::WPA2Personal,
-        password: credentials.password,
+        password: credentials.password.to_string(),
         channel: None,
     };
 
