@@ -36,7 +36,7 @@
       "devDependencies": {
         "@astrojs/check": "0.9.4",
         "@vanilla-extract/css": "1.17.3",
-        "@vanilla-extract/vite-plugin": "5.0.4",
+        "@vanilla-extract/vite-plugin": "5.0.3",
         "@zokki/astro-minify": "1.1.0",
         "browserslist": "4.25.0",
         "browserslist-config-baseline": "0.4.0",
@@ -421,7 +421,7 @@
 
     "@vanilla-extract/private": ["@vanilla-extract/private@1.0.8", "", {}, "sha512-oRAbUlq1SyTWCo7dQnTVm+xgJMqNl8K1dEempQHXzQvUuyEfBabMt0wNGf+VCHzvKbx/Bzr9p/2wy8WA9+2z2g=="],
 
-    "@vanilla-extract/vite-plugin": ["@vanilla-extract/vite-plugin@5.0.4", "", { "dependencies": { "@vanilla-extract/compiler": "^0.2.1", "@vanilla-extract/integration": "^8.0.3" }, "peerDependencies": { "vite": "^5.0.0 || ^6.0.0" } }, "sha512-W+6kOZZF4nt+TF/savpSyU1ijb1GKZ/Su/SA71JMHXJKMvkB4AwibLgZUSbrvSeBQaBCsl+ZtZCqLQHeEXLNqA=="],
+    "@vanilla-extract/vite-plugin": ["@vanilla-extract/vite-plugin@5.0.3", "", { "dependencies": { "@vanilla-extract/compiler": "^0.2.0", "@vanilla-extract/integration": "^8.0.2" }, "peerDependencies": { "vite": "^5.0.0 || ^6.0.0" } }, "sha512-yivg/0e08FOu44U/bBzPRYYGeG3QtKTlMvxVeAkuAWyXBZ9mj2GjMCbgFLmChL7iIcV/hNp7DoLxBI9bdwJgLg=="],
 
     "@volar/kit": ["@volar/kit@2.4.14", "", { "dependencies": { "@volar/language-service": "2.4.14", "@volar/typescript": "2.4.14", "typesafe-path": "^0.2.2", "vscode-languageserver-textdocument": "^1.0.11", "vscode-uri": "^3.0.8" }, "peerDependencies": { "typescript": "*" } }, "sha512-kBcmHjEodtmYGJELHePZd2JdeYm4ZGOd9F/pQ1YETYIzAwy4Z491EkJ1nRSo/GTxwKt0XYwYA/dHSEgXecVHRA=="],
 
