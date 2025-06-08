@@ -111,7 +111,7 @@ simulator = [
 
 [dependencies]
 aligned = "=0.4.2"
-bytemuck = { version = "=1.23.0", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
+bytemuck = { version = "=1.23.1", features = ["const_zeroed", "extern_crate_alloc", "min_const_generics"] }
 const_format = "=0.2.34"
 defmt-rtt = "=1.0.0"
 delegate = "=0.13.3"
@@ -130,7 +130,7 @@ embedded-mogeefont = "=0.1.0"
 embedded-text = "=0.7.2"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
-portable-atomic = { version = "=1.11.0", features = ["critical-section"] }
+portable-atomic = { version = "=1.11.1", features = ["critical-section"] }
 postcard = { workspace = true }
 qrcodegen-no-heap = "=1.8.1"
 serde = { workspace = true, features = ["derive", "alloc"] }
@@ -152,12 +152,12 @@ block-device-adapters = { git = "https://github.com/MabezDev/embedded-fatfs.git"
 sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
 
 # chip-esp
-esp-alloc = { version = "=0.7.0", optional = true }
-esp-backtrace = { version = "=0.15.1", features = ["defmt", "colors", "panic-handler", "exception-handler"], optional = true }
-esp-hal = { version = "=1.0.0-beta.0", features = ["unstable"], optional = true }
-esp-hal-embassy = { version = "=0.7.0", default-features = false, features = ["executors"], optional = true }
-esp-storage = { version = "=0.5.0", features = ["low-level", "storage", "critical-section"], optional = true }
-esp-wifi = { version = "=0.13.0", features = ["defmt", "wifi"], optional = true }
+esp-alloc = { version = "=0.8.0", optional = true }
+esp-backtrace = { version = "=0.16.0", features = ["defmt", "colors", "panic-handler", "exception-handler"], optional = true }
+esp-hal = { version = "=1.0.0-beta.1", features = ["unstable"], optional = true }
+esp-hal-embassy = { version = "=0.8.1", default-features = false, features = ["executors"], optional = true }
+esp-storage = { version = "=0.6.0", features = ["low-level", "storage", "critical-section"], optional = true }
+esp-wifi = { version = "=0.14.1", features = ["defmt", "wifi"], optional = true }
 
 # chip-rp
 # TODO: flip-link
@@ -170,7 +170,7 @@ panic-probe = { version = "=1.0.0", features = ["print-defmt"], optional = true 
 pio = { version = "=0.3.0", optional = true }
 
 [target.wasm32-unknown-unknown.dependencies]
-console_error_panic_hook = "0.1.7"
+console_error_panic_hook = "=0.1.7"
 talc = "=4.4.2"
 wasm-bindgen = "=0.2.100"
 wasm-logger = "=0.2.0"
