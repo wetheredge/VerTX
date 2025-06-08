@@ -9,7 +9,6 @@
 	],
 	"configMigration": true,
 	"semanticCommits": "disabled",
-	"pinDigests": true,
 	"rangeStrategy": "pin",
 	"packageRules": [
 		{
