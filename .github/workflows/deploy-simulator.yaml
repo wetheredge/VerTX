@@ -26,7 +26,7 @@ env:
 jobs:
   pre:
     name: Check commit exists
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       commit: ${{ fromJSON(steps.commit.outputs.result) }}
       branch: ${{ steps.branch.outputs.branch }}
@@ -67,7 +67,7 @@ jobs:
 
   build-configurator:
     name: Build configurator
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: pre
     if: needs.pre.outputs.commit-exists != 'true'
     steps:
@@ -90,7 +90,7 @@ jobs:
 
   build-vertx:
     name: Build VerTX
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: pre
     if: needs.pre.outputs.commit-exists != 'true'
     steps:
@@ -117,7 +117,7 @@ jobs:
 
   build-simulator:
     name: Build simulator
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [build-configurator, build-vertx]
     steps:
       - uses: actions/checkout@v4.2.2
@@ -141,7 +141,7 @@ jobs:
 
   deploy:
     name: Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [pre, build-configurator, build-simulator]
     if: ${{ !failure() }}
     steps:

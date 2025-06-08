@@ -24,7 +24,7 @@ env:
 jobs:
   unused-dependencies:
     name: No unused dependencies
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       RUSTC_WRAPPER: null
     steps:
@@ -38,7 +38,7 @@ jobs:
       - run: cargo shear
 
   cargo-sort:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       RUSTC_WRAPPER: null
     steps:
@@ -53,7 +53,7 @@ jobs:
 
   cache-rust-toolchain:
     name: Cache Rust toolchain
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -64,7 +64,7 @@ jobs:
 
   check-targets:
     name: Check targets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -74,7 +74,7 @@ jobs:
 
   config-codegen:
     name: Check config codegen
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -82,7 +82,7 @@ jobs:
       - run: cd vertx-config && sha512sum --status --check out/.hashes
 
   rustfmt:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     steps:
       - uses: actions/checkout@v4.2.2
@@ -94,7 +94,7 @@ jobs:
   # Only run for entrypoints; dependencies will be checked where they are used
   clippy:
     name: Clippy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     strategy:
       fail-fast: false
@@ -111,7 +111,7 @@ jobs:
 
   clippy-config-migrate:
     name: Clippy (config-migrate)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     steps:
       - uses: actions/checkout@v4.2.2
@@ -124,7 +124,7 @@ jobs:
 
   build-configurator:
     name: Build configurator
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: vertx-configurator
@@ -146,7 +146,7 @@ jobs:
 
   clippy-vertx:
     name: Clippy (vertx, ${{ matrix.target }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [cache-rust-toolchain, build-configurator]
     strategy:
       fail-fast: false
@@ -171,7 +171,7 @@ jobs:
 
   clippy-vertx-simulator:
     name: Clippy (vertx simulator)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [cache-rust-toolchain, build-configurator]
     steps:
       - uses: actions/checkout@v4.2.2
@@ -185,7 +185,7 @@ jobs:
 
   tests:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     strategy:
       fail-fast: false
@@ -206,7 +206,7 @@ jobs:
 
   build:
     name: Build (${{ matrix.target }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [cache-rust-toolchain, build-configurator]
     strategy:
       fail-fast: false
@@ -237,7 +237,7 @@ jobs:
           if-no-files-found: error
 
   size:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always()
     needs: build
     steps:
@@ -271,7 +271,7 @@ jobs:
 
   tsc:
     name: TypeScript
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -288,7 +288,7 @@ jobs:
 
   tsc-simulator:
     name: TypeScript (vertx-simulator)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     steps:
       - uses: actions/checkout@v4.2.2
@@ -307,7 +307,7 @@ jobs:
 
   biome:
     name: Biome
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -324,7 +324,7 @@ jobs:
         working-directory: ${{ matrix.dir }}
 
   dprint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -336,7 +336,7 @@ jobs:
 
   typos:
     name: Typos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -344,7 +344,7 @@ jobs:
       - uses: crate-ci/typos@v1.32.0 # dep:asdf:typos
 
   passed:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - unused-dependencies
       - cargo-sort
