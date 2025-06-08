@@ -1,5 +1,5 @@
 name: cargo-install
-description: cargo-install from .tool-versions
+description: cargo-install from mise
 
 inputs:
   tool:
@@ -18,9 +18,9 @@ runs:
         read -ra TOOLS <<< "$TOOLS"
         declare -a output
         for tool in "${TOOLS[@]}"; do
-          version="$(grep -E "^cargo:$tool\s" .tool-versions | awk '{print $2}')"
+          version="$(sed -En "s/.*\"cargo:$tool\"\s*=\s*\"([^\"]+)\".*/\1/p" .config/mise.toml)"
           if [[ -z "$version" ]]; then
-            echo "$tool is not in .tool-versions"
+            echo "$tool is not in mise config"
             exit 1
           fi
           output+=("$tool@$version")
