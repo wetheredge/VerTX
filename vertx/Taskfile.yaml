@@ -21,7 +21,7 @@ tasks:
   build: bun run ../scripts/build-target.ts --target={{.VERTX_TARGET}}
   build:release: bun run ../scripts/build-target.ts --target={{.VERTX_TARGET}} --release
 
-  flash: ../.tools/bin/probe-rs run --preverify --chip {{.VERTX_CHIP}} --idf-partition-table partitions.csv ../target/vertx
+  flash: ../.tools/bin/probe-rs run --preverify --chip {{.VERTX_CHIP}} --idf-partition-table partitions.csv ../out/firmware/vertx
 
   simulator:edit:
     desc: Set up rust-analyzer config for supported editors for working on the simulator
