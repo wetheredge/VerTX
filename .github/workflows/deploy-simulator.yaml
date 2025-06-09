@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Shorten commit
         id: commit
-        uses: actions/github-script@v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
           COMMIT: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         with:
@@ -51,7 +51,7 @@ jobs:
           fi
           echo "branch=$sanitized" >> "$GITHUB_OUTPUT"
       - name: Join tailnet
-        uses: tailscale/github-action@v3.2.2
+        uses: tailscale/github-action@6986d2c82a91fbac2949fe01f5bab95cf21b5102 # v3.2.2
         with:
           oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_SECRET }}
@@ -71,7 +71,7 @@ jobs:
     needs: pre
     if: needs.pre.outputs.commit-exists != 'true'
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
@@ -81,7 +81,7 @@ jobs:
           NODE_ENV: production
           VERTX_SIMULATOR: true
       - run: bun run scripts/csp-nonce.ts out/simulator/configurator
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: configurator
           path: out/simulator
@@ -94,10 +94,10 @@ jobs:
     needs: pre
     if: needs.pre.outputs.commit-exists != 'true'
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - uses: ./.github/actions/setup-bun
         with:
@@ -108,7 +108,7 @@ jobs:
       - run: bun run scripts/build-simulator.ts --release
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: vertx
           path: out
@@ -120,19 +120,19 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [build-configurator, build-vertx]
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
       - name: Get VerTX
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: vertx
           path: out
       - run: bun run vite build
         working-directory: vertx-simulator
       - run: bun run scripts/csp-nonce.ts out/simulator
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: simulator
           path: out/simulator
@@ -146,13 +146,13 @@ jobs:
     if: ${{ !failure() }}
     steps:
       - name: Get simulator
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         if: needs.pre.outputs.commit-exists != 'true'
         with:
           name: simulator
           path: out
       - name: Get configurator
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         if: needs.pre.outputs.commit-exists != 'true'
         with:
           name: configurator
@@ -161,7 +161,7 @@ jobs:
         if: needs.pre.outputs.commit-exists != 'true'
         run: tar --create --zstd --exclude='.[^/]*' --file=out.tar.zstd --directory=out .
       - name: Join tailnet
-        uses: tailscale/github-action@v3.2.2
+        uses: tailscale/github-action@6986d2c82a91fbac2949fe01f5bab95cf21b5102 # v3.2.2
         with:
           oauth-client-id: ${{ secrets.TS_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_SECRET }}

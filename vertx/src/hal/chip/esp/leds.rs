@@ -6,7 +6,6 @@ use core::slice::IterMut;
 
 use esp_hal::clock::Clocks;
 use esp_hal::gpio::{self, OutputPin};
-use esp_hal::peripheral::Peripheral;
 use esp_hal::rmt;
 
 const PERIOD: u32 = 1250; // 800kHz
@@ -21,10 +20,9 @@ pub struct StatusLed<Tx> {
 }
 
 impl<Tx: rmt::TxChannelAsync> StatusLed<Tx> {
-    pub fn new<'d, C, P>(channel: C, pin: impl Peripheral<P = P> + 'd) -> Self
+    pub fn new<'d, C>(channel: C, pin: impl OutputPin + 'd) -> Self
     where
-        C: rmt::TxChannelCreatorAsync<'d, Tx, P>,
-        P: OutputPin + 'd,
+        C: rmt::TxChannelCreatorAsync<'d, Tx>,
     {
         let config = rmt::TxChannelConfig::default()
             .with_clk_divider(1)

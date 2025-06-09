@@ -28,7 +28,7 @@ jobs:
     env:
       RUSTC_WRAPPER: null
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - run: rm rust-toolchain.toml
@@ -42,7 +42,7 @@ jobs:
     env:
       RUSTC_WRAPPER: null
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - run: rm rust-toolchain.toml
@@ -55,7 +55,7 @@ jobs:
     name: Cache Rust toolchain
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-rust
@@ -66,7 +66,7 @@ jobs:
     name: Check targets
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
@@ -76,7 +76,7 @@ jobs:
     name: Check config codegen
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - run: cd vertx-config && sha512sum --status --check out/.hashes
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-rust
@@ -102,10 +102,10 @@ jobs:
         crate:
           - vertx-crsf
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - run: cargo clippy --all-targets -p ${{ matrix.crate }}
 
@@ -114,10 +114,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - run: cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -p vertx-config-migrate -F up
       - run: cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -p vertx-config-migrate -F down
@@ -129,7 +129,7 @@ jobs:
       run:
         working-directory: vertx-configurator
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
@@ -137,7 +137,7 @@ jobs:
         env:
           NODE_ENV: production
       - run: bun run scripts/post-build.ts
-      - uses: actions/upload-artifact@v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: configurator
           path: out
@@ -155,14 +155,14 @@ jobs:
           - devkit-esp32s3
           - devkit-rp-pico
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - uses: ./.github/actions/setup-bun
       - name: Get pre-built configurator
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: configurator
           path: out
@@ -174,10 +174,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [cache-rust-toolchain, build-configurator]
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - name: Run clippy
         run: cargo clippy -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown --lib -F simulator
@@ -193,13 +193,13 @@ jobs:
         crate:
           - vertx-crsf
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/cargo-install
         with:
           tool: cargo-nextest
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - run: cargo nextest run
         working-directory: ${{ matrix.crate }}
@@ -217,20 +217,20 @@ jobs:
     env:
       VERTX_SKIP_CONFIGURATOR_BUILD: true
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - uses: ./.github/actions/setup-bun
       - name: Get pre-built configurator
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: configurator
           path: out
       - name: Build
         run: bun run scripts/build-target.ts --target=${{ matrix.target }} --release
-      - uses: actions/upload-artifact@v4.3.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: vertx-${{ matrix.target }}
           path: out/firmware/vertx_${{ matrix.target }}_release
@@ -241,7 +241,7 @@ jobs:
     if: always()
     needs: build
     steps:
-      - uses: actions/download-artifact@v4.3.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: vertx-*
           path: bins
@@ -277,7 +277,7 @@ jobs:
       matrix:
         dir: [postcard-ts, scripts, vertx-config, vertx-config-migrate, vertx-configurator]
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
@@ -291,10 +291,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs: cache-rust-toolchain
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - uses: ./.github/actions/setup-bun
       - uses: ./.github/actions/cargo-install
@@ -313,10 +313,10 @@ jobs:
       matrix:
         dir: [postcard-ts, scripts, vertx-config, vertx-config-migrate, vertx-configurator, vertx-simulator]
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: biomejs/setup-biome@v2.5.0
+      - uses: biomejs/setup-biome@a9763ed3d2388f5746f9dc3e1a55df7f4609bc89 # v2.5.1
         env:
           GITHUB_TOKEN: null
       - run: biome version
@@ -326,10 +326,10 @@ jobs:
   dprint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: dprint/check@v2.2
+      - uses: dprint/check@2f1cf31537886c3bfb05591c031f7744e48ba8a1 # v2.2
         with:
           dprint-version: 0.50.0 # dep:cargo-bin:dprint
           config-path: .config/dprint.json
@@ -338,10 +338,10 @@ jobs:
     name: Typos
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: crate-ci/typos@v1.32.0 # dep:asdf:typos
+      - uses: crate-ci/typos@b1ae8d918b6e85bd611117d3d9a3be4f903ee5e4 # v1.33.1 # dep:asdf:typos
 
   passed:
     runs-on: ubuntu-24.04
