@@ -11,16 +11,10 @@ runs:
   steps:
     - id: version
       shell: bash
-      run: |
-        version="$(sed -En "s/.*\bbun\"?\s*=\s*\"([^\"]+)\".*/\1/p" .config/mise.toml)"
-        if [[ -z "$version" ]]; then
-          echo 'Bun is not in mise config'
-          exit 1
-        fi
-        echo "bun=$version" >> "$GITHUB_OUTPUT"
+      run: .github/scripts/get-mise-version.sh bun >> "$GITHUB_OUTPUT"
     - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
       with:
-        bun-version: ${{ steps.version.outputs.tools }}
+        bun-version: ${{ steps.version.outputs.version }}
     - run: bun install --frozen-lockfile
       shell: bash
       if: inputs.install == 'true'
