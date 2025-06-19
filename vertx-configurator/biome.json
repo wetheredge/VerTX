@@ -4,16 +4,6 @@
 	"overrides": [
 		{
 			"include": ["astro.config.ts"],
-			"linter": {
-				"rules": {
-					"correctness": {
-						"noNodejsModules": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./scripts/*.ts"],
 			"javascript": {
 				"globals": ["Bun"]
 			},

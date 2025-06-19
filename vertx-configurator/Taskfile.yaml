@@ -12,7 +12,7 @@ tasks:
 
   check:astro:
     internal: true
-    cmd: bun run astro check
+    cmd: bun run -b astro check
     sources:
       - ../bun.lock
       - ../.config/tsconfig.*
@@ -27,31 +27,22 @@ tasks:
     cmd: bun run astro dev
 
   build:
-    - task: build:native
-    - task: build:post
+    - task: build-impl:native
 
   preview:
     deps: [build]
     cmd: bun run astro preview
 
-  build:*:
+  build-impl:*:
     internal: true
     deps: [check]
     env:
       NODE_ENV: production
       VERTX_SIMULATOR: '{{eq (index .MATCH 0) "simulator"}}'
-    cmds:
-      - bun run astro build
-      - bun run scripts/prune.ts
-
-  build:post:
-    internal: true
-    cmd: bun run scripts/post-build.ts
-    status:
-      - ls ../out/configurator | grep -q '\.gz$'
+    cmd: bun run -b astro build
 
   simulator:build:
     cmds:
-      - task: build:simulator
+      - task: build-impl:simulator
 
   :*: cd .. && task {{index .MATCH 0}}

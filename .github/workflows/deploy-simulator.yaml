@@ -75,7 +75,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
-      - run: bun run astro build
+      - run: bun run -b astro build
         working-directory: vertx-configurator
         env:
           NODE_ENV: production
