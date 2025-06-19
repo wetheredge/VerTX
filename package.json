@@ -7,7 +7,6 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@inquirer/prompts": "7.5.3",
-		"@octokit/request": "10.0.2",
 		"@tsconfig/bun": "1.0.8",
 		"@types/bun": "1.2.15",
 		"@typescript/native-preview": "7.0.0-dev.20250608.1",
