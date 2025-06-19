@@ -5,3 +5,6 @@ locale = "en-us"
 relm = "relm"
 typ = "typ"
 vertx = "vertx"
+
+[default.extend-identifiers]
+noInferrableTypes = "noInferrableTypes"
