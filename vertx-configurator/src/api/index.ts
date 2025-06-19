@@ -93,8 +93,7 @@ async function request<T>(
 	};
 
 	const headers = {
-		// biome-ignore lint/style/useNamingConvention:
-		Accept: accept ? mimes[accept] : '*/*',
+		accept: accept ? mimes[accept] : '*/*',
 	};
 
 	let fullRoute = route;

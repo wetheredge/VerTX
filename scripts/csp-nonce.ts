@@ -18,7 +18,7 @@ const rewriter = new HTMLRewriter().on('script, style', {
 	},
 });
 
-const promises = new Array<Promise<unknown>>();
+const promises: Array<Promise<unknown>> = [];
 for await (const path of new Glob('**.html').scan(dir)) {
 	const file = Bun.file(`${dir}/${path}`);
 	const withMarker = await rewriter.transform(new Response(file)).text();

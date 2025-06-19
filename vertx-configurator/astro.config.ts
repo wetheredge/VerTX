@@ -5,7 +5,7 @@ import type { AstroIntegration, AstroUserConfig } from 'astro';
 import { envField } from 'astro/config';
 import browserslist from 'browserslist';
 import viteTarget from 'browserslist-to-esbuild';
-import { Glob, fileURLToPath } from 'bun';
+import { fileURLToPath, Glob } from 'bun';
 import { browserslistToTargets as lightningTargets } from 'lightningcss';
 
 const port = 8001;
@@ -32,7 +32,7 @@ const config: AstroUserConfig = {
 	base: isSimulator && import.meta.env.PROD ? '/configurator' : '',
 	env: {
 		schema: {
-			// biome-ignore lint/style/useNamingConvention:
+			// biome-ignore lint/style/useNamingConvention: environment variable
 			VERTX_SIMULATOR: envField.boolean({
 				context: 'client',
 				access: 'public',
@@ -104,7 +104,7 @@ function vertx(options: VertxOptions): undefined | AstroIntegration {
 		gzip: boolean;
 	};
 
-	const baseAssets = new Array<AssetBase>();
+	const baseAssets: Array<AssetBase> = [];
 
 	return {
 		name: 'vertx',
@@ -173,5 +173,5 @@ function vertx(options: VertxOptions): undefined | AstroIntegration {
 	};
 }
 
-// biome-ignore lint/style/noDefaultExport:
+// biome-ignore lint/style/noDefaultExport: required by Astro
 export default config;

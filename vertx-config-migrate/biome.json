@@ -1,6 +1,7 @@
 {
 	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-	"extends": ["../.config/biome.json"],
+	"root": false,
+	"extends": "//",
 	"javascript": {
 		"globals": ["Bun"]
 	},
@@ -10,27 +11,5 @@
 				"noNodejsModules": "off"
 			}
 		}
-	},
-	"overrides": [
-		{
-			"include": ["./update.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noNonNullAssertion": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./set-target.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"useNamingConvention": "off"
-					}
-				}
-			}
-		}
-	]
+	}
 }

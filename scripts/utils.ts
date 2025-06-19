@@ -23,9 +23,10 @@ export async function fsReplaceSymlink(target: string, path: string) {
 	try {
 		await fs.lstat(path);
 		await fs.rm(path);
-	} catch (e) {
-		// biome-ignore lint/suspicious/noExplicitAny:
-		if ((e as any)?.code !== 'ENOENT') {
+
+		// biome-ignore lint/suspicious/noExplicitAny: there doesn't seem to be a specific Error subclass to use with an instanceof check
+	} catch (e: any) {
+		if (!('code' in e && e.code === 'ENOENT')) {
 			throw e;
 		}
 	}
@@ -64,7 +65,6 @@ export function isMain(importMetaUrl: string): boolean {
 export function panic(message: string): never {
 	console.error(message);
 	if (import.meta.env.CI) {
-		// biome-ignore lint/suspicious/noConsoleLog:
 		console.log(`::error::${message}\n`);
 	}
 	exit(1);

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
-import { type Target, schema } from './target-schema.ts';
+import { schema, type Target } from './target-schema.ts';
 import {
 	baseOutDir,
 	fsReplaceSymlink,

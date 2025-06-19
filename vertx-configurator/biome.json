@@ -1,9 +1,13 @@
 {
 	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-	"extends": ["../.config/biome.json"],
+	"root": false,
+	"extends": "//",
+	"files": {
+		"includes": ["!.astro/**"]
+	},
 	"overrides": [
 		{
-			"include": ["astro.config.ts"],
+			"includes": ["astro.config.ts"],
 			"javascript": {
 				"globals": ["Bun"]
 			},
@@ -16,7 +20,7 @@
 			}
 		},
 		{
-			"include": ["*.astro"],
+			"includes": ["**/*.astro"],
 			"linter": {
 				"rules": {
 					"correctness": {
@@ -27,11 +31,16 @@
 			}
 		},
 		{
-			"include": [":*.astro"],
+			"includes": ["**/*.astro", "**/*.css.ts"],
 			"linter": {
 				"rules": {
 					"style": {
-						"useFilenamingConvention": "off"
+						"useFilenamingConvention": {
+							"level": "on",
+							"options": {
+								"filenameCases": ["PascalCase", "camelCase"]
+							}
+						}
 					}
 				}
 			}

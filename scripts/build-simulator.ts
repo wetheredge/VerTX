@@ -21,7 +21,7 @@ export async function build(command: string, release?: boolean) {
 	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${release ? '--release' : ''}`;
 	await orExit(
 		cargo.env({
-			// biome-ignore lint/style/useNamingConvention:
+			// biome-ignore lint/style/useNamingConvention: environment variable
 			CARGO_TERM_COLOR: 'always',
 			...process.env,
 		}),

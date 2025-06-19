@@ -1,0 +1,109 @@
+{
+	"$schema": "node_modules/@biomejs/biome/configuration_schema.json",
+	"root": true,
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true,
+	},
+	"formatter": {
+		"indentWidth": 4,
+	},
+	"linter": {
+		"domains": {
+			"project": "all",
+		},
+		"rules": {
+			"nursery": {
+				// Checked by TypeScript
+				"noUnresolvedImports": "off",
+			},
+			"complexity": {
+				"noUselessStringConcat": "on",
+				"noVoid": "on",
+				"useSimplifiedLogicExpression": "on",
+				"useWhile": "on",
+			},
+			"correctness": "on",
+			"performance": {
+				"noBarrelFile": "on",
+				"noDynamicNamespaceImportAccess": "on",
+				"noReExportAll": "on",
+			},
+			"style": {
+				"noCommonJs": "error",
+				"noDefaultExport": "on",
+				"noEnum": "on",
+				"noExportedImports": "on",
+				"noInferrableTypes": "on",
+				"noNamespace": "on",
+				"noNegationElse": "on",
+				"noParameterAssign": "on",
+				"noParameterProperties": "on",
+				"noSubstr": "on",
+				"noUnusedTemplateLiteral": "on",
+				"noUselessElse": "on",
+				"noYodaExpression": "on",
+				"useAsConstAssertion": "on",
+				"useAtIndex": "on",
+				"useBlockStatements": "on",
+				"useCollapsedElseIf": "on",
+				"useCollapsedIf": "on",
+				"useConsistentArrayType": {
+					"level": "on",
+					"options": {
+						"syntax": "generic",
+					},
+				},
+				"useConsistentBuiltinInstantiation": "on",
+				"useConsistentMemberAccessibility": "on",
+				"useDefaultParameterLast": "on",
+				"useExplicitLengthCheck": "on",
+				"useFilenamingConvention": {
+					"level": "on",
+					"options": {
+						"filenameCases": [
+							"kebab-case"
+						],
+					},
+				},
+				"useForOf": "on",
+				"useNamingConvention": "on",
+				"useNodeAssertStrict": "on",
+				"useNumberNamespace": "on",
+				"useSelfClosingElements": "on",
+				"useShorthandAssign": "on",
+				"useSingleVarDeclarator": "on",
+				"useThrowNewError": "on",
+				"useThrowOnlyError": "on",
+				"useTrimStartEnd": "on",
+			},
+			"suspicious": {
+				"noEmptyBlockStatements": "on",
+				"noEvolvingTypes": "on",
+				"noReactSpecificProps": "on",
+				"noVar": "on",
+				"useAwait": "on",
+				"useErrorMessage": "on",
+				"useGuardForIn": "on",
+				"useNumberToFixedDigitsArgument": "on",
+			},
+		},
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+		},
+	},
+	"json": {
+		"formatter": {
+			// Only applies to *.jsonc
+			"trailingCommas": "all",
+		},
+	},
+	"css": {
+		"formatter": {
+			"enabled": true,
+		},
+	},
+}

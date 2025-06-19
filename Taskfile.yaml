@@ -29,7 +29,7 @@ tasks:
     cmds:
       - cargo fmt --all
       - .tools/bin/dprint --config .config/dprint.json fmt
-      - bun run biome format --config-path=.config/biome.json --write .
+      - bun run biome format --write
 
   clean:
     desc: Delete all build artifacts

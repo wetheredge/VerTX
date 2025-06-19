@@ -10,7 +10,7 @@
 		"scripts"
 	],
 	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
+		"@biomejs/biome": "2.0.0",
 		"@tsconfig/bun": "1.0.8",
 		"@types/bun": "1.2.15",
 		"@typescript/native-preview": "7.0.0-dev.20250608.1",

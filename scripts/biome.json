@@ -1,6 +1,7 @@
 {
 	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-	"extends": ["../.config/biome.json"],
+	"root": false,
+	"extends": "//",
 	"javascript": {
 		"globals": ["Bun", "HTMLRewriter"]
 	},
@@ -8,36 +9,19 @@
 		"rules": {
 			"correctness": {
 				"noNodejsModules": "off"
+			},
+			"suspicious": {
+				"noConsole": "off"
 			}
 		}
 	},
 	"overrides": [
 		{
-			"include": ["./build-target.ts", "./set-target.ts"],
+			"includes": ["build-target.ts", "set-target.ts"],
 			"linter": {
 				"rules": {
 					"style": {
 						"useNamingConvention": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./check-targets.ts"],
-			"linter": {
-				"rules": {
-					"suspicious": {
-						"noConsoleLog": "off"
-					}
-				}
-			}
-		},
-		{
-			"include": ["./update.ts"],
-			"linter": {
-				"rules": {
-					"style": {
-						"noNonNullAssertion": "off"
 					}
 				}
 			}

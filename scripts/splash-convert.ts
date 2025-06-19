@@ -25,7 +25,7 @@ for (let i = 0; i < WIDTH * HEIGHT; ) {
 		output.write('    0x');
 	}
 
-	const bits = [];
+	const bits: Array<number> = [];
 	for (; bits.length < 16; i++) {
 		// biome-ignore lint/style/noNonNullAssertion: known to be non-null after the image dimensions check above
 		bits.push(Math.trunc(pixels.at(i)! / 255));

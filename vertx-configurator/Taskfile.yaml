@@ -6,7 +6,7 @@ tasks:
     silent: true
 
   check:
-    - bun run biome ci .
+    - bun run biome ci
     - task: check:astro
     - bun run tsgo --project ./tsconfig.json
 

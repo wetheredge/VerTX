@@ -1,9 +1,9 @@
 import type * as types from './types.ts';
 import {
-	type ConfigMeta,
-	type NonEmptyPath,
 	byteLength,
+	type ConfigMeta,
 	getWriter,
+	type NonEmptyPath,
 	toPascalCase,
 	visit,
 } from './utilities.ts';
@@ -21,6 +21,7 @@ export async function typescript(
 				? 'varuint'
 				: 'varint';
 
+	outln`// biome-ignore lint/correctness/noUndeclaredDependencies: the symlink breaks package.json resolution`;
 	outln`import { type Reader, Writer } from "postcard";\n`;
 
 	outln`export const configKeys = {`;

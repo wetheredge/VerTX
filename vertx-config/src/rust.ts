@@ -1,8 +1,8 @@
 import {
-	type ConfigMeta,
-	type Path,
 	byteLength,
+	type ConfigMeta,
 	getWriter,
+	type Path,
 	toPascalCase,
 	toSnakeCase,
 	visit,

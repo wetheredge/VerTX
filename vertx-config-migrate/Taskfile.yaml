@@ -11,7 +11,7 @@ tasks:
   check:
     - task: check:up
     - task: check:down
-    - bun run biome ci .
+    - bun run biome ci
     - bun run tsgo --project ./tsconfig.json
 
   check:*: cargo clippy -Zbuild-std=core {{.target}} -F {{index .MATCH 0}}

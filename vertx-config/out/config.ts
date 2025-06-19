@@ -1,3 +1,4 @@
+// biome-ignore lint/correctness/noUndeclaredDependencies: the symlink breaks package.json resolution
 import { type Reader, Writer } from 'postcard';
 
 export const configKeys = {

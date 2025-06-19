@@ -7,7 +7,7 @@ tasks:
 
   check:
     cmds:
-      - bun run biome ci .
+      - bun run biome ci
       - bun run tsgo --project ./tsconfig.json
 
   :*: cd .. && task {{index .MATCH 0}}

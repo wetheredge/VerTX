@@ -53,8 +53,9 @@ async function open(path: string) {
 	return Bun.file(absolute);
 }
 
+/** Get a nested value from an object by path, creating missing objects along the way and assigning a default value if needed. */
 function get(
-	// biome-ignore lint/suspicious/noExplicitAny:
+	// biome-ignore lint/suspicious/noExplicitAny: impossible to know what type this should be
 	from: any,
 	path: Array<string>,
 	defaultValue: unknown,
@@ -110,8 +111,7 @@ function updateFeatures(current: unknown, add: Array<string>) {
 	current.push(...add.map((f) => `vertx/${f}`));
 }
 
-// biome-ignore lint/suspicious/noExplicitAny:
-function isStrArray(value: any): value is Array<string> {
+function isStrArray(value: unknown): value is Array<string> {
 	if (!Array.isArray(value)) {
 		return false;
 	}

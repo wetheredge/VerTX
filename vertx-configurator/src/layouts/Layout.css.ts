@@ -1,7 +1,7 @@
 import { globalStyle } from '@vanilla-extract/css';
 import { height as appBarHeight } from '~/components/AppBar.css.ts';
-import { width as navWidth } from '~/components/Navigation.css.ts';
 import { menuOpen } from '~/components/menu-selectors.ts';
+import { width as navWidth } from '~/components/Navigation.css.ts';
 import {
 	fontSize,
 	mediaIsMobile,

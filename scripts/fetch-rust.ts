@@ -52,7 +52,7 @@ function rust(): ListrTask {
 				},
 			];
 
-			const extracted = new Array<string>();
+			const extracted: Array<string> = [];
 			const assetTasks = assets.map((asset): ListrTask => {
 				const downloadPath = path.join(dirs.download, asset.name);
 				return {
@@ -180,9 +180,12 @@ function downloadTask(url: string, downloadPath: string): ListrTask {
 }
 
 async function getLlvmTarget(): Promise<string> {
-	const rustcVersion = await $`rustc +stable -vV`.text();
-	// biome-ignore lint/style/noNonNullAssertion:
-	return rustcVersion.match(/host:\s*(.*)/)![1]!;
+	const output = await $`rustc +stable -vV`.text();
+	const version = output.match(/host:\s*(.*)/)?.[1];
+	if (version == null) {
+		throw new Error('failed to get llvm target');
+	}
+	return version;
 }
 
 function getTempDir(prefix: string, dir = os.tmpdir()): Promise<string> {

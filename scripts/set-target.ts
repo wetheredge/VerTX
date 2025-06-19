@@ -13,9 +13,10 @@ const targetsDir = join(repoRoot, 'targets');
 const envFile = join(baseOutDir, 'target');
 
 const targets = new Glob('*.toml').scanSync({ cwd: targetsDir });
+const fileExtension = /\.\w+$/;
 const choices = Array.from(targets)
 	.toSorted()
-	.map((path) => ({ value: path.replace(/\.\w+$/, '') }));
+	.map((path) => ({ value: path.replace(fileExtension, '') }));
 const targetName = await select({
 	message: 'Choose a target:',
 	choices,

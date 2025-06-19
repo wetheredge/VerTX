@@ -1,9 +1,17 @@
 {
 	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-	"extends": ["../.config/biome.json"],
+	"root": false,
+	"extends": "//",
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noConstEnum": "off"
+			}
+		}
+	},
 	"overrides": [
 		{
-			"include": ["vite.config.ts"],
+			"includes": ["vite.config.ts"],
 			"linter": {
 				"rules": {
 					"correctness": {
@@ -13,7 +21,7 @@
 			}
 		},
 		{
-			"include": ["src/ui.ts"],
+			"includes": ["src/ui.ts"],
 			"linter": {
 				"rules": {
 					"style": {
