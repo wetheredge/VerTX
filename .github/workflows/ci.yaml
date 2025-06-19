@@ -346,8 +346,10 @@ jobs:
         with:
           tool: typos@${{ steps.version.outputs.version }}
       - name: Run typos
-        # Based on <https://github.com/crate-ci/typos/blob/022bdbe8ce21237ca3a95659bd6b8aef48389b9f/action/format_gh.sh>
-        run: typos | jq --raw-output --slurp 'map(select(.type="typo")) | map("::warning file=\(.path),line=\(.line),col=\(.byte_offset)::`\(.typo)` should be `\(.corrections // [] | join("` or `"))`") | join("\n")'
+        run: |
+          # Based on <https://github.com/crate-ci/typos/blob/022bdbe8ce21237ca3a95659bd6b8aef48389b9f/action/format_gh.sh>
+          git ls-files | typos --file-list - --format json | jq --raw-output --slurp 'map(select(.type="typo")) | map("::error file=\(.path),line=\(.line),col=\(.byte_offset)::`\(.typo)` should be `\(.corrections // [] | join("` or `"))`") | join("\n")'
+          git ls-files | typos --file-list -
 
   passed:
     runs-on: ubuntu-24.04
