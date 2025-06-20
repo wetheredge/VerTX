@@ -27,6 +27,6 @@ tasks:
       RUSTFLAGS: -Cpanic=abort -Copt-level=z
     cmds:
       - cargo build -Zbuild-std=core --release {{.target}} -F {{.direction}}
-      - ../.tools/bin/wasm-opt -Oz --strip-producers --output ../target/migrate-{{.direction}}.wasm ../target/wasm32-unknown-unknown/release/vertx_config_migrate.wasm
+      - wasm-opt -Oz --strip-producers --output ../target/migrate-{{.direction}}.wasm ../target/wasm32-unknown-unknown/release/vertx_config_migrate.wasm
 
   :*: cd .. && task {{index .MATCH 0}}

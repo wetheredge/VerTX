@@ -13,8 +13,6 @@ import {
 	repoRoot,
 } from './utils.ts';
 
-const tool = (bin: string) =>
-	import.meta.env.CI === 'true' ? bin : join(repoRoot, '.tools', 'bin', bin);
 const firmwareOutDir = join(baseOutDir, 'firmware');
 
 export async function build(command: string, release?: boolean) {
@@ -32,7 +30,7 @@ export async function build(command: string, release?: boolean) {
 
 		const outName = `simulator_${profile}`;
 		const outDir = join(firmwareOutDir, outName);
-		const bindgen = $`${tool('wasm-bindgen')} --out-dir ${outDir} --target web target/wasm32-unknown-unknown/${profile}/vertx.wasm`;
+		const bindgen = $`wasm-bindgen --out-dir ${outDir} --target web target/wasm32-unknown-unknown/${profile}/vertx.wasm`;
 		await orExit(bindgen.cwd(repoRoot));
 
 		await Promise.all([
@@ -60,10 +58,9 @@ export async function build(command: string, release?: boolean) {
 				'--minify-imports-and-exports-and-modules',
 			];
 			const wasm = 'vertx_bg.wasm';
-			const wasmOpt =
-				$`${tool('wasm-opt')} -O3 ${passes} --output ${wasm} ${wasm}`
-					.cwd(outDir)
-					.nothrow();
+			const wasmOpt = $`wasm-opt -O3 ${passes} --output ${wasm} ${wasm}`
+				.cwd(outDir)
+				.nothrow();
 
 			const renames = new Map();
 			for await (const line of wasmOpt.lines()) {

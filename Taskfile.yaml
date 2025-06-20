@@ -20,7 +20,7 @@ tasks:
       - bun install
       - bun run scripts/fetch-rust.ts
       # Install dprint plugins:
-      - .tools/bin/dprint output-file-paths --config=.config/dprint.json >/dev/null
+      - dprint output-file-paths --config=.config/dprint.json >/dev/null
       - silent: true
         cmd: echo && echo 'Run `task set-target` to choose your hardware target'
 
@@ -28,7 +28,7 @@ tasks:
     desc: Format everything
     cmds:
       - cargo fmt --all
-      - .tools/bin/dprint --config .config/dprint.json fmt
+      - dprint --config .config/dprint.json fmt
       - bun run biome format --write
 
   clean:

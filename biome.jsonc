@@ -62,9 +62,7 @@
 				"useFilenamingConvention": {
 					"level": "on",
 					"options": {
-						"filenameCases": [
-							"kebab-case"
-						],
+						"filenameCases": ["kebab-case"],
 					},
 				},
 				"useForOf": "on",
