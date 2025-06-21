@@ -1,0 +1,3 @@
+[tasks]
+check.run = "cargo clippy"
+test.run = "cargo nextest run"

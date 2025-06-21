@@ -1,0 +1,22 @@
+[tasks.check]
+run = [
+    "bun run biome ci",
+    { task = "vertx/simulator:build" },
+    "bun run tsgo --project ./tsconfig.json",
+]
+
+[tasks.run]
+desc = "Run a development server"
+run = "bun run vite"
+
+[tasks.build]
+run = [
+    "rm -rf ../out/simulator",
+    { task = "vertx-configurator/simulator:build" },
+    { task = "vertx/simulator:build:release" },
+    "NODE_ENV=production bun run vite build",
+]
+
+[tasks.preview]
+desc = "Preview the latest build"
+run = "bun run vite preview"
