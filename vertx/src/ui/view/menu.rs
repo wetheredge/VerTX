@@ -76,6 +76,32 @@ impl Menu {
             y_offset,
         }
     }
+
+    async fn update_submenu(&mut self) {
+        let Some(&submenu) = self.categories.selected() else {
+            loog::panic!("Menu categories should not be empty");
+        };
+
+        if submenu != self.current {
+            let items = match submenu {
+                Category::Tools => Cow::Borrowed(TOOLS),
+                Category::Models => {
+                    let mut items = Vec::new();
+                    self.models
+                        .for_each(|raw_name, name| {
+                            items.push(ListItem::new(
+                                name.as_str().to_owned(),
+                                NextState::Model(raw_name),
+                            ));
+                        })
+                        .await;
+                    Cow::Owned(items)
+                }
+            };
+            self.submenu.set_items(items);
+            self.current = submenu;
+        }
+    }
 }
 
 impl Component for Menu {
@@ -125,38 +151,15 @@ impl View for Menu {
             match input {
                 Input::Up => {
                     self.categories.select_up();
+                    self.update_submenu().await;
                     StateChange::Update
                 }
                 Input::Down => {
                     self.categories.select_down();
+                    self.update_submenu().await;
                     StateChange::Update
                 }
                 Input::Forward => {
-                    let Some(&submenu) = self.categories.selected() else {
-                        // Should be unreachable
-                        return StateChange::None;
-                    };
-
-                    if submenu != self.current {
-                        let items = match submenu {
-                            Category::Tools => Cow::Borrowed(TOOLS),
-                            Category::Models => {
-                                let mut items = Vec::new();
-                                self.models
-                                    .for_each(|raw_name, name| {
-                                        items.push(ListItem::new(
-                                            name.as_str().to_owned(),
-                                            NextState::Model(raw_name),
-                                        ));
-                                    })
-                                    .await;
-                                Cow::Owned(items)
-                            }
-                        };
-                        self.submenu.set_items(items);
-                        self.current = submenu;
-                    }
-
                     self.submenu_focused = true;
                     self.submenu.set_selection_visible(true);
                     StateChange::Update
