@@ -23,7 +23,7 @@ function fetchNative(
 	return fetch(`/api/${route}`, { method, headers, body });
 }
 
-async function fetchSimulator(
+function fetchSimulator(
 	method: Method,
 	route: string,
 	_headers: Headers,
