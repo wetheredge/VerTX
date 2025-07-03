@@ -5,7 +5,7 @@ import {
 	memoryName,
 } from '../../out/firmware/simulator/vertx.js';
 import wasmUrl from '../../out/firmware/simulator/vertx_bg.wasm?url';
-import type { ConfiguratorRequest, ConfiguratorResponse } from './common.js';
+import { type ConfiguratorResponse, isRequest } from './common.js';
 
 const globalName = 'Vertx';
 const getFileKey = (path: string) => `file:${path}`;
@@ -62,21 +62,20 @@ export class Simulator {
 		this.powerOff = this.powerOff.bind(this);
 		this.flushDisplay = this.flushDisplay.bind(this);
 
-		window.addEventListener(
-			'message',
-			(event: MessageEvent<ConfiguratorRequest>) => {
-				// FIXME:
-				// if (event.origin !== location.origin) {
-				// 	return;
-				// }
+		window.addEventListener('message', (event) => {
+			if (
+				!isRequest(event.data) ||
+				(import.meta.env.PROD && event.origin !== location.origin)
+			) {
+				return;
+			}
 
-				this.#configurator = event.source;
+			this.#configurator = event.source;
 
-				const request = event.data;
-				const body = request.body ? new Uint8Array(request.body) : null;
-				apiTx(request.id, request.route, request.method, body);
-			},
-		);
+			const request = event.data;
+			const body = request.body ? new Uint8Array(request.body) : null;
+			apiTx(request.id, request.route, request.method, body);
+		});
 
 		// @ts-ignore
 		globalThis[globalName] = this;
@@ -117,6 +116,7 @@ export class Simulator {
 
 		const bodyStart = body.byteOffset;
 		const response: ConfiguratorResponse = {
+			vertx: 'response',
 			id,
 			status,
 			headers,

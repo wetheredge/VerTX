@@ -1,9 +1,5 @@
 import { VERTX_SIMULATOR } from 'astro:env/client';
-import type {
-	ConfiguratorRequest,
-	ConfiguratorResponse,
-	Method,
-} from './common.ts';
+import { type ConfiguratorRequest, isResponse, type Method } from './common.ts';
 import type { RoutesFor } from './types.ts';
 
 type Accept = 'json' | 'binary';
@@ -30,6 +26,7 @@ function fetchSimulator(
 	body: Body,
 ): Promise<Response> {
 	const request: ConfiguratorRequest = {
+		vertx: 'request',
 		id: simulatorRequestId++,
 		route,
 		method,
@@ -48,16 +45,20 @@ function fetchSimulator(
 }
 
 if (VERTX_SIMULATOR) {
-	window.addEventListener(
-		'message',
-		(event: MessageEvent<ConfiguratorResponse>) => {
-			const { id, body, ...init } = event.data;
-			const resolve = simulatorPromises.get(id);
-			if (resolve) {
-				resolve(new Response(body, init));
-			}
-		},
-	);
+	window.addEventListener('message', (event) => {
+		if (
+			!isResponse(event.data) ||
+			(import.meta.env.PROD && event.origin !== location.origin)
+		) {
+			return;
+		}
+
+		const { id, body, ...init } = event.data;
+		const resolve = simulatorPromises.get(id);
+		if (resolve) {
+			resolve(new Response(body, init));
+		}
+	});
 }
 
 async function request<T>(
