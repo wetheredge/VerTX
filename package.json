@@ -15,5 +15,8 @@
 		"@types/bun": "1.2.15",
 		"@typescript/native-preview": "7.0.0-dev.20250608.1",
 		"typescript": "5.8.3"
+	},
+	"overrides": {
+		"lightningcss": "npm:lightningcss-wasm@1.30.1"
 	}
 }
