@@ -5,7 +5,7 @@ use core::mem::MaybeUninit;
 use embassy_sync::blocking_mutex::Mutex;
 use heapless::{String, Vec};
 use portable_atomic::{AtomicBool, Ordering};
-use static_cell::ConstStaticCell;
+use static_cell::StaticCell;
 
 use crate::hal::prelude::*;
 use crate::storage::{Directory, Error as StorageError, File};
@@ -53,13 +53,12 @@ struct State {
 impl Manager {
     pub fn new() -> Self {
         static INIT: AtomicBool = AtomicBool::new(false);
-        static STATE: ConstStaticCell<Mutex<crate::mutex::MultiCore, RefCell<MaybeUninit<State>>>> =
-            ConstStaticCell::new(Mutex::new(RefCell::new(MaybeUninit::uninit())));
+        static STATE: StaticCell<Mutex<crate::mutex::MultiCore, RefCell<MaybeUninit<State>>>> =
+            StaticCell::new();
 
-        Self {
-            init: &INIT,
-            state: STATE.take(),
-        }
+        let state = STATE.init_with(|| Mutex::new(RefCell::new(MaybeUninit::uninit())));
+
+        Self { init: &INIT, state }
     }
 
     pub fn init(self, dir: Directory) {

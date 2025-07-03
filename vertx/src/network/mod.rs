@@ -4,7 +4,7 @@ mod http;
 use core::net::Ipv4Addr;
 
 use embassy_executor::{Spawner, task};
-use static_cell::ConstStaticCell;
+use static_cell::StaticCell;
 
 use crate::hal::prelude::*;
 
@@ -34,9 +34,8 @@ pub async fn init(
 ) {
     loog::info!("Starting network");
 
-    static RESOURCES: ConstStaticCell<embassy_net::StackResources<{ WORKERS }>> =
-        ConstStaticCell::new(embassy_net::StackResources::new());
-    let resources = RESOURCES.take();
+    static RESOURCES: StaticCell<embassy_net::StackResources<{ WORKERS }>> = StaticCell::new();
+    let resources = RESOURCES.init_with(embassy_net::StackResources::new);
 
     let hostname = "vertx".try_into().unwrap();
 
