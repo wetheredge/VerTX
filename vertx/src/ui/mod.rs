@@ -151,14 +151,14 @@ struct WifiNetwork {
 impl WifiNetwork {
     #[expect(dead_code)]
     fn new(ssid: &crate::network::Ssid, password: &crate::network::Password) -> Option<Self> {
-        if let Ok(ssid) = ssid.as_str().try_into() {
-            if let Ok(password) = password.as_str().try_into() {
-                return Some(Self {
-                    show: true,
-                    ssid,
-                    password,
-                });
-            }
+        if let Ok(ssid) = ssid.as_str().try_into()
+            && let Ok(password) = password.as_str().try_into()
+        {
+            return Some(Self {
+                show: true,
+                ssid,
+                password,
+            });
         }
 
         None
