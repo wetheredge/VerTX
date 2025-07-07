@@ -1,8 +1,7 @@
 mod api;
+mod buffer;
 mod configurator;
 mod respond;
-
-use core::ops;
 
 use atoi::FromRadix10 as _;
 use embassy_executor::{Spawner, task};
@@ -10,6 +9,7 @@ use embassy_net::Stack;
 use embassy_net::tcp::TcpSocket;
 use embedded_io_async::{Read, Write};
 
+use self::buffer::Buffer;
 use crate::configurator::Api;
 
 pub(super) const WORKERS: usize = 8;
@@ -234,56 +234,6 @@ impl Mime {
     }
 }
 
-struct Buffer<'a> {
-    inner: &'a mut [u8],
-    len: usize,
-}
-
-impl<'a> Buffer<'a> {
-    const fn new(inner: &'a mut [u8]) -> Self {
-        Self { inner, len: 0 }
-    }
-}
-
-impl Buffer<'static> {
-    const fn empty() -> Self {
-        Self {
-            inner: &mut [],
-            len: 0,
-        }
-    }
-}
-
-impl Buffer<'_> {
-    const fn len(&self) -> usize {
-        self.len
-    }
-
-    const fn capacity(&self) -> usize {
-        self.inner.len()
-    }
-
-    async fn read_from<R: Read>(&mut self, reader: &mut R) -> Result<usize, R::Error> {
-        let len = reader.read(&mut self.inner[self.len..]).await?;
-        self.len += len;
-        Ok(len)
-    }
-
-    fn discard_prefix(&mut self, prefix: usize) {
-        let remaining = prefix..self.len;
-        self.len = remaining.len();
-        self.inner.copy_within(remaining, 0);
-    }
-}
-
-impl ops::Deref for Buffer<'_> {
-    type Target = [u8];
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner[..self.len]
-    }
-}
-
 /// Read until end of headers, returning separate header slice & partial body
 async fn read_headers<'a, R: Read>(
     buffer: &'a mut Buffer<'_>,
@@ -296,11 +246,7 @@ async fn read_headers<'a, R: Read>(
         }
 
         if let Some(body_offset) = find_body(buffer, old_len) {
-            let body_len = buffer.len() - body_offset;
-            let (headers, body) = buffer.inner.split_at_mut(body_offset);
-            let mut body = Buffer::new(body);
-            body.len = body_len;
-            return Ok((headers, body));
+            return Ok(buffer.split_at(body_offset));
         }
     }
 }
