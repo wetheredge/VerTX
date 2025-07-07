@@ -58,6 +58,7 @@ async fn server(
     api: &Api,
 ) -> Result<(), embassy_net::tcp::Error> {
     let (mut rx, mut tx) = tcp.split();
+    let mut tx_buffer = [0; 0];
 
     let mut buffer = Buffer::new(buffer);
     loop {
@@ -146,7 +147,8 @@ async fn server(
                     route: path.trim_start_matches('/'),
                     body,
                 };
-                api.handle(request, api::ResponseWriter(&mut tx)).await?;
+                api.handle(request, api::ResponseWriter::new(&mut tx, &mut tx_buffer))
+                    .await?;
             } else {
                 tx.write_all(b"HTTP/1.1 501 Not Implemented\r\nContent-Length:0\r\n\r\n")
                     .await?;

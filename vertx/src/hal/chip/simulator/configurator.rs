@@ -184,8 +184,8 @@ impl api::WriteBody for Response {
 impl api::WriteChunkedBody for Response {
     type Error = Infallible;
 
-    async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error> {
-        for chunk in chunk {
+    async fn write(&mut self, chunks: &[&[u8]]) -> Result<(), Self::Error> {
+        for chunk in chunks {
             self.body.extend_from_slice(chunk);
         }
         Ok(())

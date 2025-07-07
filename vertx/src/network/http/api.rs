@@ -1,4 +1,4 @@
-use core::mem;
+use core::{iter, mem};
 
 use embedded_io_async::Write;
 use faster_hex::hex_encode;
@@ -26,33 +26,43 @@ impl crate::configurator::api::Request for Request<'_> {
     }
 }
 
-pub(super) struct ResponseWriter<W>(pub(super) W);
+pub(super) struct ResponseWriter<'a, W> {
+    inner: W,
+    #[expect(dead_code)]
+    buffer: &'a mut [u8],
+}
 
-impl<W> crate::configurator::api::WriteResponse for ResponseWriter<W>
+impl<'a, W> ResponseWriter<'a, W> {
+    pub(super) fn new(inner: W, buffer: &'a mut [u8]) -> Self {
+        Self { inner, buffer }
+    }
+}
+
+impl<'a, W> crate::configurator::api::WriteResponse for ResponseWriter<'a, W>
 where
     W: Write,
     W::Error: loog::DebugFormat,
 {
     type BodyWriter = BodyWriter<W>;
-    type ChunkedBodyWriter = ChunkedBodyWriter<W>;
+    type ChunkedBodyWriter = ChunkedBodyWriter<'a, W>;
     type Error = W::Error;
 
     async fn method_not_allowed(mut self, allow: &'static str) -> Result<(), Self::Error> {
-        respond::method_not_allowed(&mut self.0, allow).await
+        respond::method_not_allowed(&mut self.inner, allow).await
     }
 
     async fn not_found(mut self) -> Result<(), Self::Error> {
-        self.0.write_all(respond::NOT_FOUND).await
+        self.inner.write_all(respond::NOT_FOUND).await
     }
 
     async fn service_unavailable(mut self) -> Result<(), Self::Error> {
-        self.0
+        self.inner
             .write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length:0\r\n\r\n")
             .await
     }
 
     async fn ok_empty(mut self) -> Result<(), Self::Error> {
-        self.0
+        self.inner
             .write_all(b"HTTP/1.1 200 Ok\r\nContent-Length:0\r\n\r\n")
             .await
     }
@@ -62,7 +72,7 @@ where
         typ: ContentType,
         len: usize,
     ) -> Result<Self::BodyWriter, Self::Error> {
-        let mut tx = self.0;
+        let mut tx = self.inner;
         tx.write_all(b"HTTP/1.1 200 Ok\r\nContent-Type:").await?;
         tx.write_all(typ.as_bytes()).await?;
         tx.write_all(b"\r\nContent-Length:").await?;
@@ -72,12 +82,19 @@ where
     }
 
     async fn ok_chunked(self, typ: ContentType) -> Result<Self::ChunkedBodyWriter, Self::Error> {
-        let mut tx = self.0;
-        tx.write_all(b"HTTP/1.1 200 Ok\r\nTransfer-Encoding:chunked\r\nContent-Type:")
+        let Self { mut inner, buffer } = self;
+
+        inner
+            .write_all(b"HTTP/1.1 200 Ok\r\nTransfer-Encoding:chunked\r\nContent-Type:")
             .await?;
-        tx.write_all(typ.as_bytes()).await?;
-        tx.write_all(b"\r\n\r\n").await?;
-        Ok(ChunkedBodyWriter(tx))
+        inner.write_all(typ.as_bytes()).await?;
+        inner.write_all(b"\r\n\r\n").await?;
+
+        Ok(ChunkedBodyWriter {
+            inner,
+            buffer,
+            buffered: 0,
+        })
     }
 }
 
@@ -107,35 +124,66 @@ impl<W: Write> crate::configurator::api::WriteBody for BodyWriter<W> {
     }
 }
 
-pub(super) struct ChunkedBodyWriter<W>(W);
+#[expect(dead_code)]
+pub(super) struct ChunkedBodyWriter<'a, W> {
+    inner: W,
+    buffer: &'a mut [u8],
+    buffered: usize,
+}
 
-impl<W: Write> crate::configurator::api::WriteChunkedBody for ChunkedBodyWriter<W> {
+impl<W: Write> crate::configurator::api::WriteChunkedBody for ChunkedBodyWriter<'_, W> {
     type Error = W::Error;
 
-    async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error> {
-        let len: usize = chunk.iter().map(|x| x.len()).sum();
-        if len == 0 {
-            if cfg!(debug_assertions) {
-                loog::panic!("tried to send zero-length chunk");
+    async fn write(&mut self, chunks: &[&[u8]]) -> Result<(), Self::Error> {
+        let len: usize = chunks.iter().map(|x| x.len()).sum();
+        let len = self.buffered + len;
+
+        if len < self.buffer.len() {
+            for chunk in chunks {
+                let new_len = self.buffered + chunk.len();
+                self.buffer[self.buffered..new_len].copy_from_slice(chunk);
+                self.buffered = new_len;
             }
             return Ok(());
         }
 
-        let mut buffer = [0; mem::size_of::<usize>() * 2];
-        // TODO: trim before hex_encode?
-        let len = hex_encode(&len.to_be_bytes(), &mut buffer).unwrap();
-        // len is verified to be > 0, so this can't return an empty string
-        let len = len.trim_start_matches('0');
-
-        self.0.write_all(len.as_bytes()).await?;
-        self.0.write_all(b"\r\n").await?;
-        for segment in chunk {
-            self.0.write_all(segment).await?;
-        }
-        self.0.write_all(b"\r\n").await
+        write_chunk(&mut self.inner, &self.buffer[0..self.buffered], chunks).await
     }
 
     async fn finish(mut self) -> Result<(), Self::Error> {
-        self.0.write_all(b"0\r\n\r\n").await
+        write_chunk(&mut self.inner, &self.buffer[0..self.buffered], &[]).await?;
+        self.inner.write_all(b"0\r\n\r\n").await
     }
+}
+
+#[expect(dead_code)]
+async fn write_chunk<W: Write>(
+    writer: &mut W,
+    buffer: &[u8],
+    rest: &[&[u8]],
+) -> Result<(), W::Error> {
+    let len = buffer.len() + rest.iter().map(|x| x.len()).sum::<usize>();
+    if len == 0 {
+        if cfg!(debug_assertions) {
+            loog::panic!("tried to send a zero-length chunk");
+        }
+        return Ok(());
+    }
+
+    let mut hex_buffer = [0; mem::size_of::<usize>() * 2];
+    // TODO: trim before hex_encode?
+    let len = hex_encode(&len.to_be_bytes(), &mut hex_buffer).unwrap();
+    // len is verified to be > 0, so this won't return an empty string
+    let len = len.trim_start_matches('0');
+
+    writer.write_all(len.as_bytes()).await?;
+    writer.write_all(b"\r\n").await?;
+
+    for segment in iter::once(&buffer).chain(rest.iter()) {
+        if !segment.is_empty() {
+            writer.write_all(segment).await?;
+        }
+    }
+
+    writer.write_all(b"\r\n").await
 }

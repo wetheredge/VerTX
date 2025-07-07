@@ -227,7 +227,7 @@ pub(crate) trait WriteBody: Write {
 pub(crate) trait WriteChunkedBody {
     type Error;
 
-    async fn write(&mut self, chunk: &[&[u8]]) -> Result<(), Self::Error>;
+    async fn write(&mut self, chunks: &[&[u8]]) -> Result<(), Self::Error>;
     async fn finish(self) -> Result<(), Self::Error>;
 }
 
