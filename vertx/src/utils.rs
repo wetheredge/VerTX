@@ -2,7 +2,7 @@ use core::convert::Infallible;
 
 use embassy_time::{Duration, Timer};
 
-#[cfg_attr(feature = "simulator", expect(unused))]
+#[cfg_attr(any(test, feature = "simulator"), expect(unused))]
 pub(crate) async fn debounced_falling_edge<P>(pin: &mut P, delay: Duration)
 where
     P: embedded_hal_async::digital::Wait + embedded_hal::digital::InputPin<Error = Infallible>,

@@ -31,7 +31,7 @@ fn main() -> io::Result<()> {
             target_name, "simulator",
             "Must set VERTX_TARGET=simulator when building the simulator"
         );
-    } else {
+    } else if target_name != "test" {
         memory_layout(out_dir, root);
         link_args();
         pins(out_dir, root, &target_name)?;

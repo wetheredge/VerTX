@@ -3,7 +3,7 @@
 #![feature(type_alias_impl_trait)]
 
 extern crate alloc;
-#[cfg(feature = "simulator")]
+#[cfg(any(test, feature = "simulator"))]
 extern crate std;
 
 mod build_info;

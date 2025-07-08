@@ -124,7 +124,7 @@ impl<W: Write> crate::configurator::api::WriteBody for BodyWriter<W> {
     }
 }
 
-#[expect(dead_code)]
+#[cfg_attr(not(test), expect(dead_code))]
 pub(super) struct ChunkedBodyWriter<'a, W> {
     inner: W,
     buffer: &'a mut [u8],
@@ -156,7 +156,7 @@ impl<W: Write> crate::configurator::api::WriteChunkedBody for ChunkedBodyWriter<
     }
 }
 
-#[expect(dead_code)]
+#[cfg_attr(not(test), expect(dead_code))]
 async fn write_chunk<W: Write>(
     writer: &mut W,
     buffer: &[u8],
@@ -164,9 +164,6 @@ async fn write_chunk<W: Write>(
 ) -> Result<(), W::Error> {
     let len = buffer.len() + rest.iter().map(|x| x.len()).sum::<usize>();
     if len == 0 {
-        if cfg!(debug_assertions) {
-            loog::panic!("tried to send a zero-length chunk");
-        }
         return Ok(());
     }
 
@@ -186,4 +183,41 @@ async fn write_chunk<W: Write>(
     }
 
     writer.write_all(b"\r\n").await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::configurator::api::WriteChunkedBody as _;
+
+    #[tokio::test]
+    async fn no_empty_chunks() {
+        struct MockWriter {
+            done: bool,
+        }
+
+        impl embedded_io_async::ErrorType for MockWriter {
+            type Error = core::convert::Infallible;
+        }
+
+        impl Write for MockWriter {
+            async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
+                if self.done {
+                    panic!("Tried to write after an empty chunk: {buf:?}");
+                }
+
+                self.done = buf.is_empty();
+                Ok(buf.len())
+            }
+        }
+
+        let mut buffer = [0; 10];
+        let mut writer = ChunkedBodyWriter {
+            inner: MockWriter { done: false },
+            buffer: &mut buffer,
+            buffered: 0,
+        };
+
+        writer.write(&[b"test"]).await.unwrap();
+    }
 }

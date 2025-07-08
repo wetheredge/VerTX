@@ -12,6 +12,7 @@ const STATIC_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 0, 0, 1);
 const WORKERS: usize = http::WORKERS + 2; // 1 for DHCP + 1 overhead
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(test, expect(unused))]
 pub(crate) enum Kind {
     Station,
     AccessPoint,
@@ -21,6 +22,7 @@ pub(crate) type Ssid = heapless::String<32>;
 pub(crate) type Password = heapless::String<64>;
 
 #[derive(Debug)]
+#[cfg_attr(test, expect(unused))]
 pub(crate) struct Credentials {
     pub(crate) ssid: Ssid,
     pub(crate) password: Password,
