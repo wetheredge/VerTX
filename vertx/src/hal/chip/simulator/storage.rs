@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::convert::Infallible;
 use std::string::String;
 use std::vec::{self, Vec};
 
@@ -48,17 +49,8 @@ impl PartialEq for Entry {
 
 impl Eq for Entry {}
 
-#[derive(Debug, Clone, Copy)]
-pub(super) enum NeverError {}
-
-impl embedded_io_async::Error for NeverError {
-    fn kind(&self) -> embedded_io_async::ErrorKind {
-        match *self {}
-    }
-}
-
 impl ErrorType for Storage {
-    type Error = NeverError;
+    type Error = Infallible;
 }
 
 impl pal::Storage for Storage {
@@ -85,7 +77,7 @@ impl Directory {
 }
 
 impl ErrorType for Directory {
-    type Error = NeverError;
+    type Error = Infallible;
 }
 
 impl pal::Directory for Directory {
@@ -112,7 +104,7 @@ impl File {
 }
 
 impl ErrorType for File {
-    type Error = NeverError;
+    type Error = Infallible;
 }
 
 impl Seek for File {
@@ -186,7 +178,7 @@ impl DirectoryIter {
 }
 
 impl ErrorType for DirectoryIter {
-    type Error = NeverError;
+    type Error = Infallible;
 }
 
 impl pal::DirectoryIter for DirectoryIter {
@@ -200,7 +192,7 @@ impl pal::DirectoryIter for DirectoryIter {
 }
 
 impl ErrorType for Entry {
-    type Error = NeverError;
+    type Error = Infallible;
 }
 
 impl pal::Entry for Entry {
