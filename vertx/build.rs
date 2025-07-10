@@ -21,7 +21,9 @@ fn main() -> io::Result<()> {
 
     build_info(out_dir)?;
 
-    let target_name = env::var("VERTX_TARGET").expect("VERTX_TARGET should be set");
+    let Ok(target_name) = env::var("VERTX_TARGET") else {
+        panic!("VERTX_TARGET must be set");
+    };
     println!("cargo::rerun-if-env-changed=VERTX_TARGET");
 
     if feature("SIMULATOR") {
