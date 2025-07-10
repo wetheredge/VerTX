@@ -22,6 +22,7 @@ export async function build(command: string, release?: boolean) {
 			// biome-ignore lint/style/useNamingConvention: environment variable
 			CARGO_TERM_COLOR: 'always',
 			...process.env,
+			VERTX_TARGET: 'simulator',
 		}),
 	);
 

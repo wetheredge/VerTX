@@ -188,9 +188,8 @@ jobs:
           persist-credentials: false
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
-      - name: Run clippy
-        run: cargo clippy -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown --lib -F simulator
-        working-directory: vertx
+      - uses: ./.github/actions/setup-bun
+      - run: bun run scripts/build-simulator.ts --release
 
   tests:
     name: Tests
