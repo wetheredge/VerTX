@@ -16,15 +16,15 @@ import {
 const firmwareOutDir = join(baseOutDir, 'firmware');
 
 export async function build(command: string, release?: boolean) {
+	// biome-ignore-start lint/style/useNamingConvention: env vars
+	const cargoEnv = {
+		CARGO_TERM_COLOR: 'always',
+		...process.env,
+		VERTX_TARGET: 'simulator',
+	};
+	// biome-ignore-end lint/style/useNamingConvention: env vars
 	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${release ? '--release' : ''}`;
-	await orExit(
-		cargo.env({
-			// biome-ignore lint/style/useNamingConvention: environment variable
-			CARGO_TERM_COLOR: 'always',
-			...process.env,
-			VERTX_TARGET: 'simulator',
-		}),
-	);
+	await orExit(cargo.env(cargoEnv));
 
 	if (command === 'build') {
 		const profile = release ? 'release' : 'debug';
