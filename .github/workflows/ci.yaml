@@ -328,7 +328,12 @@ jobs:
         env:
           GITHUB_TOKEN: null
       - run: biome version
-      - run: biome ci --reporter=github --error-on-warnings .
+      - run: |
+          output="$(biome ci --reporter=github --error-on-warnings .)"
+          echo "$output"
+          if [[ -n "$output" ]]; then
+            exit 1
+          fi
         working-directory: ${{ matrix.dir }}
 
   dprint:
