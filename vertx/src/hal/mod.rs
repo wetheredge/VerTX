@@ -9,7 +9,7 @@ macro_rules! select_mod {
 
 mod display;
 
-#[cfg(not(feature = "simulator"))]
+#[cfg(not(any(test, feature = "simulator")))]
 include!(concat!(env!("OUT_DIR"), "/pins.rs"));
 
 pub(crate) type Reset = impl crate::hal::traits::Reset;

@@ -24,6 +24,7 @@ const LINE_HEIGHT: u32 = 11;
 const TITLE_HEIGHT: u32 = LINE_HEIGHT + 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(test, expect(unused))]
 pub(crate) enum Input {
     Up,
     Down,
