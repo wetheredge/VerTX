@@ -1,7 +1,6 @@
-use core::convert::Infallible;
-use core::task;
+use std::convert::Infallible;
 use std::string::String;
-use std::{format, future};
+use std::{format, future, task};
 
 use display_interface::DisplayError;
 use embedded_graphics as eg;
@@ -9,14 +8,47 @@ use embedded_io_async::ErrorType;
 
 use crate::hal;
 
-#[define_opaque(hal::Reset, hal::StatusLed, hal::StorageFuture, hal::Ui, hal::Network)]
+#[define_opaque(
+    hal::Reset,
+    hal::Rng,
+    hal::StatusLed,
+    hal::StorageFuture,
+    hal::Ui,
+    hal::Wifi
+)]
 pub(crate) fn init(_spawner: embassy_executor::Spawner) -> hal::Init {
     hal::Init {
+        rng: Rng,
         reset: Reset,
         status_led: StatusLed,
         storage: async { Storage },
         ui: Ui,
-        network: Network,
+        wifi: Wifi,
+    }
+}
+
+struct Rng;
+
+// chosen by fair dice roll.
+// guaranteed to be random.
+const RANDOM: u8 = 4;
+
+impl rand::RngCore for Rng {
+    fn next_u32(&mut self) -> u32 {
+        RANDOM.into()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        RANDOM.into()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        dest.fill(RANDOM);
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
+        self.fill_bytes(dest);
+        Ok(())
     }
 }
 
@@ -207,24 +239,17 @@ impl hal::traits::Ui for Ui {
     }
 }
 
-struct Network;
+struct Wifi;
 struct NetworkDriver;
 struct NetworkToken;
 
-impl hal::traits::Network for Network {
+impl hal::traits::Wifi for Wifi {
     type Driver = NetworkDriver;
-
-    fn seed(&mut self) -> u64 {
-        // chosen by fair dice roll.
-        // guaranteed to be random.
-        4
-    }
 
     async fn start(
         self,
-        _sta: Option<crate::network::Credentials>,
-        _ap: crate::network::Credentials,
-    ) -> (crate::network::Kind, Self::Driver) {
+        _config: crate::network::wifi::Config,
+    ) -> (Self::Driver, crate::network::wifi::Kind) {
         todo!()
     }
 }

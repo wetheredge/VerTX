@@ -1,7 +1,7 @@
 #[expect(unused, reason = "preserve for future OTA updates")]
 mod flash;
 mod leds;
-mod network;
+mod wifi;
 
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -24,8 +24,9 @@ use crate::storage::sd;
 use crate::ui::Input;
 
 #[define_opaque(
-    hal::Network,
+    hal::Wifi,
     hal::Reset,
+    hal::Rng,
     hal::StatusLed,
     hal::Storage,
     hal::StorageFuture,
@@ -108,11 +109,12 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
     };
 
     hal::Init {
+        rng,
         reset: Reset,
         status_led,
         storage,
         ui,
-        network: network::Network {
+        wifi: wifi::Wifi {
             spawner,
             rng,
             timer: timg1.timer0.into(),
