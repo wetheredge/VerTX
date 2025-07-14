@@ -22,6 +22,8 @@ mod network;
 mod reset;
 mod storage;
 mod ui;
+#[cfg(feature = "usb")]
+mod usb;
 mod utils;
 
 use embassy_executor::Spawner;
@@ -75,6 +77,9 @@ pub async fn main(spawner: Spawner) {
         configurator,
     ));
 
+    #[cfg(feature = "usb")]
+    let usb = usb::init(spawner, hal.usb);
+
     let reset = reset::Manager::new();
     spawner.must_spawn(reset::run(reset, hal.reset, config_manager, storage));
 
@@ -92,6 +97,8 @@ pub async fn main(spawner: Spawner) {
 
         #[cfg(feature = "network")]
         {
+            #[cfg(feature = "network-usb-ethernet")]
+            let init = network::Init::Ethernet(usb.network);
             #[cfg(feature = "network-wifi")]
             let init = network::Init::Wifi(hal.wifi);
             network::init(spawner, config, api, hal.get_network_seed, init).await;

@@ -709,6 +709,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "embassy-net-driver-channel"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4818c32afec43e3cae234f324bad9a976c9aa7501022d26ff60a4017a1a006b7"
+dependencies = [
+ "embassy-futures",
+ "embassy-net-driver",
+ "embassy-sync 0.6.2",
+]
+
+[[package]]
 name = "embassy-rp"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -814,6 +825,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc55c748d16908a65b166d09ce976575fb8852cf60ccd06174092b41064d8f83"
 dependencies = [
  "embassy-executor",
+ "heapless",
+]
+
+[[package]]
+name = "embassy-usb"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e651b9b7b47b514e6e6d1940a6e2e300891a2c33641917130643602a0cb6386"
+dependencies = [
+ "embassy-futures",
+ "embassy-net-driver-channel",
+ "embassy-sync 0.6.2",
+ "embassy-usb-driver 0.1.1",
  "heapless",
 ]
 
@@ -2886,6 +2910,7 @@ dependencies = [
  "embassy-rp",
  "embassy-sync 0.7.0",
  "embassy-time",
+ "embassy-usb",
  "embedded-alloc",
  "embedded-fatfs",
  "embedded-graphics",

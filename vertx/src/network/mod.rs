@@ -1,7 +1,8 @@
-#[cfg(not(feature = "network-wifi"))]
+#[cfg(not(any(feature = "network-usb-ethernet", feature = "network-wifi")))]
 compile_error!("At least one network implementation must be enabled");
 
 mod dhcp;
+mod driver;
 mod http;
 #[cfg(feature = "network-wifi")]
 pub(crate) mod wifi;
@@ -15,6 +16,8 @@ const STATIC_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 0, 0, 1);
 const WORKERS: usize = http::WORKERS + 2; // 1 for DHCP + 1 overhead
 
 pub enum Init {
+    #[cfg(feature = "network-usb-ethernet")]
+    Ethernet(crate::usb::ncm_cdc::NetDriver),
     #[cfg(feature = "network-wifi")]
     Wifi(crate::hal::Wifi),
 }
@@ -39,10 +42,12 @@ pub async fn init(
     let resources = RESOURCES.init_with(embassy_net::StackResources::new);
 
     let (driver, kind) = match init {
+        #[cfg(feature = "network-usb-ethernet")]
+        Init::Ethernet(driver) => (driver::Driver::Ethernet(driver), Kind::StaticIp),
         #[cfg(feature = "network-wifi")]
         Init::Wifi(wifi) => {
             let (driver, kind) = wifi::init(config, wifi).await;
-            (driver, kind.into())
+            (driver::Driver::Wifi(driver), kind.into())
         }
     };
 
@@ -73,6 +78,6 @@ pub async fn init(
 }
 
 #[task]
-async fn network(mut runner: embassy_net::Runner<'static, wifi::Driver>) -> ! {
+async fn network(mut runner: embassy_net::Runner<'static, driver::Driver>) -> ! {
     runner.run().await
 }
