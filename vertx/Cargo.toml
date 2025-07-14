@@ -64,6 +64,7 @@ usb = [
 
 chip-esp = [
     "defmt",
+    "network-usb-ethernet",
     "network-wifi",
     "storage-sd",
     "dep:esp-alloc",

@@ -97,10 +97,11 @@ pub async fn main(spawner: Spawner) {
 
         #[cfg(feature = "network")]
         {
-            #[cfg(feature = "network-usb-ethernet")]
-            let init = network::Init::Ethernet(usb.network);
+            // TODO: switch these and allow choosing
             #[cfg(feature = "network-wifi")]
             let init = network::Init::Wifi(hal.wifi);
+            #[cfg(feature = "network-usb-ethernet")]
+            let init = network::Init::Ethernet(usb.network);
             network::init(spawner, config, api, hal.get_network_seed, init).await;
         }
         #[cfg(not(feature = "network"))]
