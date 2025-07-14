@@ -20,6 +20,8 @@ pub(crate) type Storage =
     impl crate::storage::pal::Storage<Error = impl loog::DebugFormat + embedded_io_async::Error>;
 pub(crate) type StatusLed = impl crate::hal::traits::StatusLed;
 pub(crate) type Ui = impl crate::hal::traits::Ui;
+#[cfg(feature = "usb")]
+pub(crate) type Usb = impl embassy_usb::driver::Driver<'static>;
 #[cfg(all(feature = "configurator", not(feature = "network")))]
 pub(crate) type Configurator = impl crate::hal::traits::Configurator;
 #[cfg(feature = "network-wifi")]
@@ -38,6 +40,8 @@ pub(crate) struct Init {
     pub(crate) status_led: StatusLed,
     pub(crate) storage: StorageFuture,
     pub(crate) ui: Ui,
+    #[cfg(feature = "usb")]
+    pub(crate) usb: Usb,
     #[cfg(all(feature = "configurator", not(feature = "network")))]
     pub(crate) configurator: Configurator,
     #[cfg(feature = "network-wifi")]

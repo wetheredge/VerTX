@@ -51,11 +51,16 @@ network = [
     "dep:httparse",
     "dep:itoa",
 ]
+network-usb-ethernet = ["network", "usb"]
 network-wifi = ["network"]
 
 storage-sd = [
     "dep:block-device-adapters",
     "dep:sdspi",
+]
+
+usb = [
+    "dep:embassy-usb",
 ]
 
 rng = ["dep:rand"]
@@ -83,6 +88,7 @@ chip-esp32s3 = [
 chip-rp = [
     "defmt",
     "storage-sd",
+    "network-usb-ethernet",
     "dep:cortex-m-rt",
     "dep:embassy-rp",
     "dep:embedded-alloc",
@@ -154,6 +160,9 @@ itoa = { version = "=1.0.15", optional = true }
 # storage-sd
 block-device-adapters = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
 sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
+
+# usb
+embassy-usb = { version = "=0.4.0", default-features = false, optional = true }
 
 # rng
 rand = { version = "=0.8.5", default-features = false, optional = true }
