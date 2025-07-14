@@ -4,7 +4,7 @@ test.run = "VERTX_TARGET=test cargo nextest run --lib -F network,loog/log"
 build.run = "bun run ../scripts/build-target.ts --target=$VERTX_TARGET"
 "build:release".run = "bun run ../scripts/build-target.ts --target=$VERTX_TARGET --release"
 
-flash.run = "probe-rs --preverify --chip $VERTX_CHIP --idf-partition-table partitions.csv ../out/firmware/vertx"
+flash.run = "probe-rs run --preverify --chip $VERTX_CHIP --idf-partition-table partitions.csv ../out/firmware/vertx"
 
 "simulator:check".run = "bun run ../scripts/build-simulator.ts --command=clippy"
 "simulator:build".run = "bun run ../scripts/build-simulator.ts"
