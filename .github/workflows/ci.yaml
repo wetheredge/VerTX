@@ -229,7 +229,7 @@ jobs:
         with:
           name: configurator
           path: out
-      - run: cargo nextest run -p vertx --lib -F network,loog/log
+      - run: cargo nextest run -p vertx --lib -F network-wifi,loog/log
         env:
           VERTX_TARGET: test
 

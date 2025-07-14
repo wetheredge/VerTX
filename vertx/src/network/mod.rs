@@ -1,86 +1,69 @@
+#[cfg(not(feature = "network-wifi"))]
+compile_error!("At least one network implementation must be enabled");
+
 mod dhcp;
 mod http;
+#[cfg(feature = "network-wifi")]
+pub(crate) mod wifi;
 
 use core::net::Ipv4Addr;
 
 use embassy_executor::{Spawner, task};
 use static_cell::StaticCell;
 
-use crate::hal::prelude::*;
-
 const STATIC_ADDRESS: Ipv4Addr = Ipv4Addr::new(10, 0, 0, 1);
 const WORKERS: usize = http::WORKERS + 2; // 1 for DHCP + 1 overhead
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(test, expect(unused))]
-pub(crate) enum Kind {
-    Station,
-    AccessPoint,
+pub enum Init {
+    #[cfg(feature = "network-wifi")]
+    Wifi(crate::hal::Wifi),
 }
 
-pub(crate) type Ssid = heapless::String<32>;
-pub(crate) type Password = heapless::String<64>;
-
-#[derive(Debug)]
-#[cfg_attr(test, expect(unused))]
-pub(crate) struct Credentials {
-    pub(crate) ssid: Ssid,
-    pub(crate) password: Password,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(unused)]
+pub enum Kind {
+    StaticIp,
+    DhcpClient,
 }
 
 pub async fn init(
     spawner: Spawner,
     config: crate::Config,
     api: &'static crate::configurator::Api,
-    mut hal: crate::hal::Network,
+    get_seed: crate::hal::GetNetworkSeed,
+    init: Init,
 ) {
     loog::info!("Starting network");
 
     static RESOURCES: StaticCell<embassy_net::StackResources<{ WORKERS }>> = StaticCell::new();
     let resources = RESOURCES.init_with(embassy_net::StackResources::new);
 
-    let hostname = "vertx".try_into().unwrap();
-
-    let (sta, ap) = config.network().lock(|config| {
-        let sta = {
-            let home = config.home();
-            let ssid = home.ssid();
-            let password = home.password();
-
-            (!ssid.is_empty() && !password.is_empty()).then(|| Credentials {
-                ssid: ssid.clone(),
-                password: password.clone(),
-            })
-        };
-
-        let ap = Credentials {
-            ssid: "VerTX".try_into().unwrap(),
-            password: config.password().clone(),
-        };
-
-        (sta, ap)
-    });
-
-    let seed = hal.seed();
-    let (kind, driver) = hal.start(sta, ap).await;
+    let (driver, kind) = match init {
+        #[cfg(feature = "network-wifi")]
+        Init::Wifi(wifi) => {
+            let (driver, kind) = wifi::init(config, wifi).await;
+            (driver, kind.into())
+        }
+    };
 
     let config = match kind {
-        Kind::Station => {
-            let mut config = embassy_net::DhcpConfig::default();
-            config.hostname = Some(hostname);
-            embassy_net::Config::dhcpv4(config)
-        }
-        Kind::AccessPoint => embassy_net::Config::ipv4_static(embassy_net::StaticConfigV4 {
+        Kind::StaticIp => embassy_net::Config::ipv4_static(embassy_net::StaticConfigV4 {
             address: embassy_net::Ipv4Cidr::new(STATIC_ADDRESS, 24),
             gateway: Some(STATIC_ADDRESS),
             dns_servers: heapless::Vec::new(),
         }),
+        Kind::DhcpClient => {
+            let hostname = config.network().hostname().lock(Clone::clone);
+            let mut config = embassy_net::DhcpConfig::default();
+            config.hostname = Some(hostname);
+            embassy_net::Config::dhcpv4(config)
+        }
     };
 
-    let (stack, runner) = embassy_net::new(driver, config, resources, seed);
+    let (stack, runner) = embassy_net::new(driver, config, resources, get_seed());
     spawner.must_spawn(network(runner));
 
-    if kind == Kind::AccessPoint {
+    if kind == Kind::StaticIp {
         spawner.must_spawn(dhcp::run(stack, STATIC_ADDRESS));
     }
 
@@ -90,6 +73,6 @@ pub async fn init(
 }
 
 #[task]
-async fn network(mut runner: embassy_net::Runner<'static, crate::hal::NetworkDriver>) -> ! {
+async fn network(mut runner: embassy_net::Runner<'static, wifi::Driver>) -> ! {
     runner.run().await
 }

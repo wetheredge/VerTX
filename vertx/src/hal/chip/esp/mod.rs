@@ -1,8 +1,8 @@
 #[expect(unused, reason = "preserve for future OTA updates")]
 mod flash;
 mod leds;
-mod network;
 mod ui;
+mod wifi;
 
 use embassy_executor::Spawner;
 use esp_hal::clock::CpuClock;
@@ -21,12 +21,13 @@ use crate::hal;
 use crate::storage::sd;
 
 #[define_opaque(
-    hal::Network,
+    hal::GetNetworkSeed,
     hal::Reset,
     hal::StatusLed,
     hal::Storage,
     hal::StorageFuture,
-    hal::Ui
+    hal::Ui,
+    hal::Wifi
 )]
 pub(crate) fn init(spawner: Spawner) -> hal::Init {
     esp_alloc::heap_allocator!(size: 100 * 1024);
@@ -34,7 +35,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
     let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
-    let rng = Rng::new(p.RNG);
+    let mut rng = Rng::new(p.RNG);
     let timg0 = timg::TimerGroup::new(p.TIMG0);
     let timg1 = timg::TimerGroup::new(p.TIMG1);
 
@@ -109,7 +110,16 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
         status_led,
         storage,
         ui,
-        network: network::Network {
+        get_network_seed: move || {
+            let mut bytes = [0; 8];
+            rng.read(&mut bytes);
+            #[expect(
+                clippy::host_endian_bytes,
+                reason = "a random seed doesn't need to be portable"
+            )]
+            u64::from_ne_bytes(bytes)
+        },
+        wifi: wifi::Wifi {
             spawner,
             rng,
             timer: timg1.timer0.into(),

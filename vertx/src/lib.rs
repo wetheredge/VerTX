@@ -91,7 +91,11 @@ pub async fn main(spawner: Spawner) {
         let api = API.init_with(|| configurator::Api::new(reset, config_manager));
 
         #[cfg(feature = "network")]
-        network::init(spawner, config, api, hal.network).await;
+        {
+            #[cfg(feature = "network-wifi")]
+            let init = network::Init::Wifi(hal.wifi);
+            network::init(spawner, config, api, hal.get_network_seed, init).await;
+        }
         #[cfg(not(feature = "network"))]
         spawner.must_spawn(configurator::run(api, hal.configurator));
 

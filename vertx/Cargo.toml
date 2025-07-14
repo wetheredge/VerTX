@@ -50,6 +50,7 @@ network = [
     "dep:httparse",
     "dep:itoa",
 ]
+network-wifi = ["network"]
 
 storage-sd = [
     "dep:block-device-adapters",
@@ -58,7 +59,7 @@ storage-sd = [
 
 chip-esp = [
     "defmt",
-    "network",
+    "network-wifi",
     "storage-sd",
     "dep:esp-alloc",
     "dep:esp-backtrace",
