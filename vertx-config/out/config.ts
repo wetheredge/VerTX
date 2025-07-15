@@ -8,8 +8,10 @@ export const configKeys = {
 	},
 	network: {
 		hostname: 2,
-		password: 3,
-		home: {
+		ap: {
+			password: 3,
+		},
+		sta: {
 			ssid: 4,
 			password: 5,
 		},
@@ -35,7 +37,7 @@ export function parseConfig(reader: Reader): Config {
 
 export function encodeConfig(config: Config): ArrayBuffer {
 	const writer = new Writer(242);
-	writer.rawU32(3);
+	writer.rawU32(4);
 	writer.string(config[0]);
 	writer.u8(config[1]);
 	writer.string(config[2]);

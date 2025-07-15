@@ -7,7 +7,7 @@ use embassy_rp::i2c::{self, I2c};
 use embassy_rp::pio::{self, Pio};
 use embassy_rp::spi::{self, Spi};
 use embassy_rp::watchdog::Watchdog;
-use embassy_rp::{bind_interrupts, gpio, peripherals};
+use embassy_rp::{bind_interrupts, gpio, peripherals, usb};
 use embassy_time::Duration;
 use embedded_alloc::TlsfHeap;
 use static_cell::StaticCell;
@@ -20,12 +20,20 @@ use crate::ui::Input;
 bind_interrupts!(struct Irqs {
     I2C0_IRQ => i2c::InterruptHandler<peripherals::I2C0>;
     PIO0_IRQ_0 => pio::InterruptHandler<peripherals::PIO0>;
+    USBCTRL_IRQ => usb::InterruptHandler<peripherals::USB>;
 });
 
 #[global_allocator]
 static ALLOCATOR: TlsfHeap = TlsfHeap::empty();
 
-#[define_opaque(hal::Reset, hal::StatusLed, hal::StorageFuture, hal::Ui)]
+#[define_opaque(
+    hal::Reset,
+    hal::Rng,
+    hal::StatusLed,
+    hal::StorageFuture,
+    hal::Ui,
+    hal::Usb
+)]
 pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     static INIT_HEAP: StaticCell<()> = StaticCell::new();
     INIT_HEAP.init_with(|| {
@@ -105,11 +113,15 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         }
     };
 
+    let usb = usb::Driver::new(p.USB, Irqs);
+
     hal::Init {
+        rng: embassy_rp::clocks::RoscRng,
         reset,
         status_led,
         storage,
         ui,
+        usb,
     }
 }
 
