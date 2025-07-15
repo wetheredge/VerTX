@@ -284,7 +284,7 @@ jobs:
           echo '| Target | Approximate size |' >> "$GITHUB_STEP_SUMMARY"
           echo '| ------ | ----------------:|' >> "$GITHUB_STEP_SUMMARY"
 
-          find bins -type f | while read -r elf; do
+          find bins -type f | sort | while read -r elf; do
             total=0
             while read -r section size _; do
               for flash in "${FLASH[@]}"; do
@@ -295,7 +295,7 @@ jobs:
               done
             done < <(size -A "$elf" | sed -E '/^$/d' | tail -n +3 | head -n -1)
 
-            echo "| $(echo "$elf" | cut -d_ -f2- | cut -d_ -f-2) | $(numfmt --to=iec-i --suffix=B $total) |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| $(echo "$elf" | cut -d_ -f2- | rev | cut -d_ -f2- | rev) | $(numfmt --to=iec-i --suffix=B $total) |" >> "$GITHUB_STEP_SUMMARY"
           done
 
   tsc:
