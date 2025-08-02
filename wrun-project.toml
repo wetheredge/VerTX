@@ -25,17 +25,22 @@ run = [
 [tasks.format]
 desc = "Format everything"
 run = [
-    "cargo fmt --all",
     "dprint --config=.config/dprint.json fmt",
     "bun run biome format --write",
+    "cargo fmt --all",
 ]
 
 [tasks.clean]
 desc = "Delete all build artifacts"
 run = [
     "rm -rf out",
+    { task = "mark-caches" },
     "cargo clean",
 ]
+
+[tasks.clean-all]
+desc = "Delete all build artifacts and downloaded tools/depedencies"
+run = "rm -rf .cache .tools out target node_modules"
 
 [tasks.target]
 desc = "Set the target to build firmware for"
@@ -57,4 +62,15 @@ run = [
     { task = "vertx/simulator:check" },
     { task = "vertx-configurator/check" },
     { task = "vertx-simulator/check" },
+]
+
+[tasks.mark-caches]
+internal = true
+run = [
+    "@mkdir -p out .cache .tools",
+    "@echo 'Signature: 8a477f597d28d172789f06886806bc55' > out/CACHEDIR.TAG",
+    "@echo '# This file is a cache directory tag created by VerTX build tooling.' >> out/CACHEDIR.TAG",
+    "@echo '# For information about cache directory tags see https://bford.info/cachedir/' >> out/CACHEDIR.TAG",
+    "@cp out/CACHEDIR.TAG .cache/CACHEDIR.TAG",
+    "@cp out/CACHEDIR.TAG .tools/CACHEDIR.TAG",
 ]
