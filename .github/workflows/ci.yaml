@@ -379,7 +379,7 @@ jobs:
           persist-credentials: false
       - id: version
         run: .github/scripts/get-mise-version.sh typos >> "$GITHUB_OUTPUT"
-      - uses: taiki-e/install-action@9185c192a96ba09167ad8663015b3fbbf007ec79 # v2.56.2
+      - uses: taiki-e/install-action@d31232495ad76f47aad66e3501e47780b49f0f3e # v2.57.5
         with:
           tool: typos@${{ steps.version.outputs.version }}
       - name: Run typos
