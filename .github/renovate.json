@@ -10,6 +10,7 @@
 	"configMigration": true,
 	"semanticCommits": "disabled",
 	"rangeStrategy": "pin",
+	"separateMajorMinor": false,
 	"packageRules": [
 		{
 			"groupName": "all dependencies",
