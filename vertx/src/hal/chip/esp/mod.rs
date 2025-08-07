@@ -116,7 +116,6 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
             spawner,
             rng,
             timer: timg1.timer0.into(),
-            radio_clocks: p.RADIO_CLK,
             wifi: p.WIFI,
         },
     }

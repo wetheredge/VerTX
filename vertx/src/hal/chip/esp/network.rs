@@ -15,7 +15,6 @@ pub(super) struct Network {
     pub(super) spawner: Spawner,
     pub(super) rng: Rng,
     pub(super) timer: AnyTimer<'static>,
-    pub(super) radio_clocks: peripherals::RADIO_CLK<'static>,
     pub(super) wifi: peripherals::WIFI<'static>,
 }
 
@@ -35,8 +34,7 @@ impl crate::hal::traits::Network for Network {
         ap: crate::network::Credentials,
     ) -> (Kind, Self::Driver) {
         static CONTROLLER: StaticCell<EspWifiController> = StaticCell::new();
-        let initted =
-            CONTROLLER.init(esp_wifi::init(self.timer, self.rng, self.radio_clocks).unwrap());
+        let initted = CONTROLLER.init(esp_wifi::init(self.timer, self.rng).unwrap());
 
         let (mut controller, interfaces) = wifi::new(initted, self.wifi).unwrap();
 
