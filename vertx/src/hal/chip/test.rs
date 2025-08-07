@@ -56,8 +56,6 @@ struct File(String);
 impl crate::storage::pal::Storage for Storage {
     type Directory = Directory;
 
-    const FILENAME_BYTES: usize = 100;
-
     fn root(&self) -> Self::Directory {
         Directory(String::from("/"))
     }

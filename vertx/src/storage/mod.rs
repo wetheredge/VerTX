@@ -13,8 +13,6 @@ pub(crate) mod pal {
     pub(crate) trait Storage: ErrorType {
         type Directory: Directory<Error = Self::Error>;
 
-        const FILENAME_BYTES: usize;
-
         fn root(&self) -> Self::Directory;
         async fn flush(&self) -> Result<(), Self::Error>;
     }

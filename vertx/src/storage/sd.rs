@@ -110,8 +110,6 @@ impl<S: SpiDevice> ErrorType for &Storage<S> {
 impl<'a, S: SpiDevice> pal::Storage for &'a Storage<S> {
     type Directory = Directory<'a, S>;
 
-    const FILENAME_BYTES: usize = 12;
-
     fn root(&self) -> Self::Directory {
         Directory {
             storage: &self.0,

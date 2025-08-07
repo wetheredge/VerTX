@@ -31,7 +31,7 @@ pub(super) struct Entry {
 
 impl PartialOrd for Entry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.path.cmp(&other.path))
+        Some(self.cmp(other))
     }
 }
 
@@ -56,7 +56,6 @@ impl ErrorType for Storage {
 impl pal::Storage for Storage {
     type Directory = Directory;
 
-    const FILENAME_BYTES: usize = 12;
 
     fn root(&self) -> Self::Directory {
         Directory(String::with_capacity(0))
