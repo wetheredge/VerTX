@@ -1,6 +1,6 @@
 [tasks]
 check.run = "bun run ../scripts/build-target.ts --command=clippy --target=$VERTX_TARGET"
-test.run = "VERTX_TARGET=test cargo nextest run --lib -F network,loog/log"
+test.run = "VERTX_TARGET=test cargo nextest run --lib -F network-wifi,loog/log"
 build.run = "bun run ../scripts/build-target.ts --target=$VERTX_TARGET"
 "build:release".run = "bun run ../scripts/build-target.ts --target=$VERTX_TARGET --release"
 

@@ -51,9 +51,9 @@ fn up(data: DataBuf) -> usize {
         name: old.name,
         leds_brightness: old.leds_brightness,
         network_hostname: old.network_hostname,
-        network_password: old.network_password,
-        network_home_ssid: old.network_home_ssid,
-        network_home_password: old.network_home_password,
+        network_ap_password: old.network_password,
+        network_sta_ssid: old.network_home_ssid,
+        network_sta_password: old.network_home_password,
     };
 
     current.serialize(data).map_err(|_| ()).unwrap()
@@ -67,10 +67,9 @@ fn down(data: DataBuf) -> usize {
         name: current.name,
         leds_brightness: current.leds_brightness,
         network_hostname: current.network_hostname,
-        network_password: current.network_password,
-        network_home_ssid: current.network_home_ssid,
-        network_home_password: current.network_home_password,
-        ..Default::default()
+        network_password: current.network_ap_password,
+        network_home_ssid: current.network_sta_ssid,
+        network_home_password: current.network_sta_password,
     };
 
     old.serialize(data).map_err(|_| ()).unwrap()

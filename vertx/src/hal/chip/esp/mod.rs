@@ -1,7 +1,7 @@
 #[expect(unused, reason = "preserve for future OTA updates")]
 mod flash;
 mod leds;
-mod network;
+mod wifi;
 
 use display_interface::DisplayError;
 use embassy_executor::Spawner;
@@ -11,12 +11,13 @@ use esp_hal::clock::CpuClock;
 use esp_hal::dma::{DmaRxBuf, DmaTxBuf};
 use esp_hal::gpio;
 use esp_hal::i2c::master::{self as i2c, I2c};
+use esp_hal::otg_fs::{self as usb, Usb};
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::time::Rate;
 use esp_hal::timer::timg;
-use static_cell::StaticCell;
+use static_cell::{ConstStaticCell, StaticCell};
 use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
 
 use crate::hal;
@@ -24,12 +25,14 @@ use crate::storage::sd;
 use crate::ui::Input;
 
 #[define_opaque(
-    hal::Network,
+    hal::Wifi,
     hal::Reset,
+    hal::Rng,
     hal::StatusLed,
     hal::Storage,
     hal::StorageFuture,
-    hal::Ui
+    hal::Ui,
+    hal::Usb
 )]
 pub(crate) fn init(spawner: Spawner) -> hal::Init {
     esp_alloc::heap_allocator!(size: 100 * 1024);
@@ -107,12 +110,22 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
         }
     };
 
+    let usb = {
+        let usb = Usb::new(p.USB0, p.GPIO20, p.GPIO19);
+
+        static EP_OUT_BUFFER: ConstStaticCell<[u8; 1024]> = ConstStaticCell::new([0; 1024]);
+        let config = usb::asynch::Config::default();
+        usb::asynch::Driver::new(usb, EP_OUT_BUFFER.take(), config)
+    };
+
     hal::Init {
+        rng,
         reset: Reset,
         status_led,
         storage,
         ui,
-        network: network::Network {
+        usb,
+        wifi: wifi::Wifi {
             spawner,
             rng,
             timer: timg1.timer0.into(),
