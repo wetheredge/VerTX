@@ -59,7 +59,6 @@ import * as styles from './_models.css.ts';
 		let menuOpener: HTMLButtonElement | null;
 		const menu: HTMLMenuElement = document.querySelector('#model-menu')!;
 		menu.addEventListener('toggle', (event) => {
-			// @ts-expect-error: Missing types for ToggleEvent
 			if (event.newState === 'closed' && menuOpener != null) {
 				menuOpener.disabled = false;
 				menuOpener = null;
