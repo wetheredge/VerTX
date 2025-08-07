@@ -93,15 +93,19 @@
 			"quoteStyle": "single",
 		},
 	},
-	"json": {
-		"formatter": {
-			// Only applies to *.jsonc
-			"trailingCommas": "all",
-		},
-	},
 	"css": {
 		"formatter": {
 			"enabled": true,
 		},
 	},
+	"overrides": [
+		{
+			"includes": ["*.jsonc"],
+			"json": {
+				"formatter": {
+					"trailingCommas": "all",
+				},
+			},
+		},
+	],
 }
