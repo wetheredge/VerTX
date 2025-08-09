@@ -2,8 +2,8 @@
 //!
 //! Based on <https://github.com/embassy-rs/embassy/blob/ff3f354893a77f4aba0025c047568dd6855f3a4f/examples/rp/src/bin/pio_ws2812.rs>.
 
-use embassy_rp::clocks;
 use embassy_rp::pio::{Instance as PioInstance, PioPin, StateMachine};
+use embassy_rp::{Peri, clocks};
 use embassy_time::Timer;
 use fixed::types::U24F8;
 use fixed_macro::types::U24F8;
@@ -16,7 +16,7 @@ impl<'d, P: PioInstance, const SM: usize> StatusDriver<'d, P, SM> {
     pub fn new(
         pio: &mut embassy_rp::pio::Common<'d, P>,
         mut sm: StateMachine<'d, P, SM>,
-        pin: impl PioPin,
+        pin: Peri<'d, impl PioPin>,
     ) -> Self {
         // prepare the PIO program
         let side_set = pio::SideSet::new(false, 1, false);
