@@ -1,14 +1,12 @@
 mod configurator;
 mod storage;
+mod ui;
 
 use std::convert::Infallible;
 use std::panic;
-use std::sync::Mutex;
 
-use display_interface::DisplayError;
 use embassy_executor::Spawner;
-use embassy_sync::channel::{self, Channel};
-use embedded_graphics as eg;
+use embassy_sync::channel::Channel;
 
 use crate::hal;
 use crate::ui::Input as UiInput;
@@ -84,13 +82,7 @@ mod ipc {
 /// SAFETY: The runtime environment must be single-threaded WASM.
 static ALLOCATOR: talc::TalckWasm = unsafe { talc::TalckWasm::new_global() };
 
-type UiInputsChannel = Channel<crate::mutex::MultiCore, UiInput, 10>;
-type UiInputsRx = channel::Receiver<'static, crate::mutex::MultiCore, UiInput, 10>;
-
-type RawFramebuffer = [u128; 64];
-
-static UI_INPUTS: UiInputsChannel = Channel::new();
-static FRAMEBUFFER: Mutex<RawFramebuffer> = Mutex::new(bytemuck::zeroed());
+static UI_INPUTS: ui::InputsChannel = Channel::new();
 
 #[define_opaque(
     hal::Configurator,
@@ -104,7 +96,7 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         reset: Reset,
         status_led: StatusLed,
         storage: async { storage::Storage },
-        ui: Ui::new(&FRAMEBUFFER, UI_INPUTS.receiver()),
+        ui: ui::Ui::new(UI_INPUTS.receiver()),
         configurator: configurator::Configurator,
     }
 }
@@ -133,66 +125,6 @@ impl hal::traits::StatusLed for StatusLed {
 
     async fn set(&mut self, red: u8, green: u8, blue: u8) -> Result<(), Self::Error> {
         ipc::set_status_led(red, green, blue);
-        Ok(())
-    }
-}
-
-struct Ui {
-    framebuffer: &'static Mutex<RawFramebuffer>,
-    inputs: UiInputsRx,
-}
-
-impl Ui {
-    fn new(framebuffer: &'static Mutex<RawFramebuffer>, inputs: UiInputsRx) -> Self {
-        Self {
-            framebuffer,
-            inputs,
-        }
-    }
-}
-
-impl eg::geometry::OriginDimensions for Ui {
-    fn size(&self) -> eg::geometry::Size {
-        eg::geometry::Size {
-            width: 128,
-            height: 64,
-        }
-    }
-}
-
-impl eg::draw_target::DrawTarget for Ui {
-    type Color = eg::pixelcolor::BinaryColor;
-    type Error = DisplayError;
-
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = eg::Pixel<Self::Color>>,
-    {
-        use eg::geometry::Point;
-
-        let mut data = self.framebuffer.lock().unwrap();
-
-        for eg::Pixel(Point { x, y }, color) in pixels {
-            if (0..64).contains(&y) && (0..128).contains(&x) {
-                let color = color == Self::Color::On;
-                let col = x as u128;
-                let row = y as usize;
-                data[row] = data[row] & !(1 << col) | (u128::from(color) << col);
-            }
-        }
-
-        Ok(())
-    }
-}
-
-impl hal::traits::Ui for Ui {
-    async fn get_input(&mut self) -> crate::ui::Input {
-        self.inputs.receive().await
-    }
-
-    async fn flush(&mut self) -> Result<(), Self::Error> {
-        let data = self.framebuffer.lock().unwrap();
-        ipc::flush_display(data.as_ptr().cast());
         Ok(())
     }
 }

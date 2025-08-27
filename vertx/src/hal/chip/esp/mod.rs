@@ -2,11 +2,9 @@
 mod flash;
 mod leds;
 mod network;
+mod ui;
 
-use display_interface::DisplayError;
 use embassy_executor::Spawner;
-use embassy_futures::select;
-use embassy_time::Duration;
 use esp_hal::clock::CpuClock;
 use esp_hal::dma::{DmaRxBuf, DmaTxBuf};
 use esp_hal::gpio;
@@ -17,11 +15,10 @@ use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::time::Rate;
 use esp_hal::timer::timg;
 use static_cell::StaticCell;
-use {defmt_rtt as _, embedded_graphics as eg, esp_backtrace as _};
+use {defmt_rtt as _, esp_backtrace as _};
 
 use crate::hal;
 use crate::storage::sd;
-use crate::ui::Input;
 
 #[define_opaque(
     hal::Network,
@@ -98,7 +95,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
         let display = hal::display::new(i2c);
 
         let config = gpio::InputConfig::default().with_pull(gpio::Pull::Up);
-        Ui {
+        ui::Ui {
             display,
             up: gpio::Input::new(pins!(p, ui.up), config),
             down: gpio::Input::new(pins!(p, ui.down), config),
@@ -130,55 +127,5 @@ impl hal::traits::Reset for Reset {
 
     fn reboot(&mut self) -> ! {
         esp_hal::system::software_reset()
-    }
-}
-
-struct Ui {
-    display: hal::display::Driver<I2c<'static, esp_hal::Async>>,
-    up: gpio::Input<'static>,
-    down: gpio::Input<'static>,
-    right: gpio::Input<'static>,
-    left: gpio::Input<'static>,
-}
-
-impl eg::geometry::OriginDimensions for Ui {
-    fn size(&self) -> eg::geometry::Size {
-        hal::display::SIZE
-    }
-}
-
-impl eg::draw_target::DrawTarget for Ui {
-    type Color = eg::pixelcolor::BinaryColor;
-    type Error = DisplayError;
-
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = eg::Pixel<Self::Color>>,
-    {
-        self.display.draw_iter(pixels)
-    }
-}
-
-impl hal::traits::Ui for Ui {
-    async fn init(&mut self) -> Result<(), Self::Error> {
-        hal::display::init(&mut self.display).await
-    }
-
-    async fn get_input(&mut self) -> Input {
-        async fn debounced(pin: &mut gpio::Input<'static>, input: Input) -> Input {
-            crate::utils::debounced_falling_edge(pin, Duration::from_millis(20)).await;
-            input
-        }
-
-        let up = debounced(&mut self.up, Input::Up);
-        let down = debounced(&mut self.down, Input::Down);
-        let right = debounced(&mut self.right, Input::Forward);
-        let left = debounced(&mut self.left, Input::Back);
-
-        select::select_array([up, down, left, right]).await.0
-    }
-
-    async fn flush(&mut self) -> Result<(), Self::Error> {
-        self.display.flush().await
     }
 }
