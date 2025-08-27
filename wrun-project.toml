@@ -14,6 +14,7 @@ packages = [
 [tasks.setup]
 desc = "Setup needed after first clone and dependency updates"
 run = [
+    { task = "mark-caches" },
     "mise install",
     "bun install",
     "bun run scripts/fetch-rust.ts",
