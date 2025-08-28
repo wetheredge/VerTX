@@ -1,10 +1,25 @@
 macro_rules! select_mod {
-    ($($feat:literal : $mod:ident),+ $(,)?) => {$(
+    ($($feat:literal => $mod:ident),+ $(,)?) => {$(
         #[cfg(feature = $feat)]
         mod $mod;
         #[cfg(feature = $feat)]
         pub(crate) use $mod::*;
     )+};
+    (
+        $($feat:literal => $mod:ident,)+
+        test => $test:ident $(,)?
+    ) => {
+        $(
+            #[cfg(feature = $feat)]
+            mod $mod;
+            #[cfg(all(feature = $feat, not(test)))]
+            pub(crate) use $mod::*;
+        )+
+        #[cfg(test)]
+        mod $test;
+        #[cfg(test)]
+        pub(crate) use $test::*;
+    };
 }
 
 mod display;
