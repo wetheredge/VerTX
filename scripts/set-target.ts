@@ -4,8 +4,8 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { Glob } from 'bun';
-import { getFeatures } from './build-target.ts';
-import { setRustAnayzerFeatures } from './set-ra-features.ts';
+import { getChipInfo, getFeatures } from './build-target.ts';
+import { setRustAnayzerConfig } from './set-ra-config.ts';
 import type { Target } from './target-schema.ts';
 import { baseOutDir, repoRoot } from './utils.ts';
 
@@ -25,6 +25,7 @@ const targetName = await select({
 const target: Target = await import(`${targetsDir}/${targetName}.toml`);
 
 const features = getFeatures(target);
+const targetTriple = getChipInfo(target.chip).target;
 const env: Record<string, string> = {
 	VERTX_TARGET: targetName,
 	VERTX_CHIP: target.chip,
@@ -41,5 +42,5 @@ await Promise.all([
 			.map(([key, value]) => `${key}=${value}`)
 			.join('\n'),
 	),
-	setRustAnayzerFeatures(features),
+	setRustAnayzerConfig(targetTriple, features, env),
 ]);

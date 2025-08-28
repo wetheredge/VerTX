@@ -12,4 +12,4 @@ flash.run = "probe-rs run --preverify --chip $VERTX_CHIP --idf-partition-table p
 
 [tasks."simulator:edit"]
 desc = "Set up rust-analyzer config for supported editors for working on the simulator"
-run = "bun run ../scripts/set-ra-features.ts simulator"
+run = "bun run ../scripts/set-ra-config.ts --simulator"

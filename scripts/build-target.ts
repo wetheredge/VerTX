@@ -104,5 +104,11 @@ if (isMain(import.meta.url)) {
 	}
 
 	const target = await import(targetPath);
-	await build(values.command, targetName, target.default, values.release, positionals);
+	await build(
+		values.command,
+		targetName,
+		target.default,
+		values.release,
+		positionals,
+	);
 }
