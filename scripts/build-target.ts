@@ -20,6 +20,7 @@ export async function build(
 	targetName: string,
 	rawTarget: unknown,
 	release?: boolean,
+	extraArgs: Array<string> = [],
 ) {
 	const target = schema.parse(rawTarget);
 	const chip = getChipInfo(target.chip);
@@ -34,7 +35,7 @@ export async function build(
 		.join(' ');
 
 	await orExit(
-		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${release ? '--release' : ''}`
+		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${release ? '--release' : ''} ${extraArgs}`
 			.nothrow()
 			.env({
 				CARGO_TERM_COLOR: 'always',
@@ -63,8 +64,8 @@ export function getFeatures(target: Target): Array<string> {
 	return [`chip-${target.chip}`, `display-${target.display.type}`];
 }
 
-type ChipInfo = { target: string; cpu?: string };
-function getChipInfo(chip: string): ChipInfo {
+export type ChipInfo = { target: string; cpu?: string };
+export function getChipInfo(chip: string): ChipInfo {
 	const info = (chip2Target as Record<string, string | ChipInfo>)[chip];
 	if (info == null) {
 		throw new Error(`Missing info for chip '${chip}'`);
@@ -75,7 +76,7 @@ function getChipInfo(chip: string): ChipInfo {
 if (isMain(import.meta.url)) {
 	const usage = `usage: scripts/${import.meta.file} [--command=build/clippy/…] --target=<target> -- [...args]`;
 
-	const { values } = parseArgs({
+	const { values, positionals } = parseArgs({
 		args: Bun.argv.slice(2),
 		options: {
 			help: { short: 'h', type: 'boolean' },
@@ -83,6 +84,7 @@ if (isMain(import.meta.url)) {
 			command: { type: 'string', default: 'build' },
 			release: { short: 'r', type: 'boolean' },
 		},
+		allowPositionals: true,
 	});
 
 	const targetName = values.target;
@@ -102,5 +104,5 @@ if (isMain(import.meta.url)) {
 	}
 
 	const target = await import(targetPath);
-	await build(values.command, targetName, target.default, values.release);
+	await build(values.command, targetName, target.default, values.release, positionals);
 }
