@@ -35,5 +35,8 @@
 			"groupSlug": "runners",
 			"groupName": "GitHub runners"
 		}
-	]
+	],
+	"vulnerabilityAlerts": {
+		"enabled": false
+	}
 }
