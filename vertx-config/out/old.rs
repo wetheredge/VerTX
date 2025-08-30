@@ -7,7 +7,6 @@ pub(crate) struct RawConfig {
     pub(super) network_password: ::heapless::String<64>,
     pub(super) network_home_ssid: ::heapless::String<32>,
     pub(super) network_home_password: ::heapless::String<64>,
-    pub(super) expert: bool,
 }
 
 #[allow(clippy::derivable_impls)]
@@ -20,11 +19,10 @@ impl Default for RawConfig {
             network_password: Default::default(),
             network_home_ssid: Default::default(),
             network_home_password: Default::default(),
-            expert: false,
         }
     }
 }
-pub(crate) const BYTE_LENGTH: usize = 243;
+pub(crate) const BYTE_LENGTH: usize = 242;
 #[derive(Debug, Clone)]
 pub(super) enum DeserializeError {
     WrongVersion,
@@ -34,7 +32,7 @@ pub(super) enum DeserializeError {
 impl RawConfig {
     pub(super) fn deserialize(from: &[u8]) -> Result<Self, DeserializeError> {
         let (version, from) = from.split_at(4);
-        if version == u32::to_le_bytes(2) {
+        if version == u32::to_le_bytes(3) {
             postcard::from_bytes(from).map_err(DeserializeError::Postcard)
         } else {
             Err(DeserializeError::WrongVersion)
@@ -43,7 +41,7 @@ impl RawConfig {
 
     pub(super) fn serialize(&self, buffer: &mut [u8]) -> postcard::Result<usize> {
         let (version, buffer) = buffer.split_at_mut(4);
-        version.copy_from_slice(&u32::to_le_bytes(2));
+        version.copy_from_slice(&u32::to_le_bytes(3));
         postcard::to_slice(self, buffer).map(|out| out.len() + 4)
     }
 }

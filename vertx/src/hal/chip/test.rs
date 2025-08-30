@@ -1,7 +1,6 @@
-use core::convert::Infallible;
-use core::task;
+use std::convert::Infallible;
 use std::string::String;
-use std::{format, future};
+use std::{format, future, task};
 
 use display_interface::DisplayError;
 use embedded_graphics as eg;
@@ -9,14 +8,26 @@ use embedded_io_async::ErrorType;
 
 use crate::hal;
 
-#[define_opaque(hal::Reset, hal::StatusLed, hal::StorageFuture, hal::Ui, hal::Network)]
+#[define_opaque(
+    hal::GetNetworkSeed,
+    hal::Reset,
+    hal::StatusLed,
+    hal::StorageFuture,
+    hal::Ui,
+    hal::Wifi
+)]
 pub(crate) fn init(_spawner: embassy_executor::Spawner) -> hal::Init {
     hal::Init {
         reset: Reset,
         status_led: StatusLed,
         storage: async { Storage },
         ui: Ui,
-        network: Network,
+        get_network_seed: || {
+            // chosen by fair dice roll.
+            // guaranteed to be random.
+            4
+        },
+        wifi: Wifi,
     }
 }
 
@@ -205,24 +216,17 @@ impl hal::traits::Ui for Ui {
     }
 }
 
-struct Network;
+struct Wifi;
 struct NetworkDriver;
 struct NetworkToken;
 
-impl hal::traits::Network for Network {
+impl hal::traits::Wifi for Wifi {
     type Driver = NetworkDriver;
-
-    fn seed(&mut self) -> u64 {
-        // chosen by fair dice roll.
-        // guaranteed to be random.
-        4
-    }
 
     async fn start(
         self,
-        _sta: Option<crate::network::Credentials>,
-        _ap: crate::network::Credentials,
-    ) -> (crate::network::Kind, Self::Driver) {
+        _config: crate::network::wifi::Config,
+    ) -> (Self::Driver, crate::network::wifi::Kind) {
         todo!()
     }
 }

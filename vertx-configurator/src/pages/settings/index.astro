@@ -28,7 +28,7 @@ import SettingInput from './_SettingInput.astro';
 	<h2>Wi-Fi</h2>
 
 	<SettingInput
-		key={configKeys.network.password}
+		key={configKeys.network.ap.password}
 		label={"Password"}
 		type="password"
 		maxlength={64}
@@ -37,13 +37,13 @@ import SettingInput from './_SettingInput.astro';
 	<h3>Home</h3>
 
 	<SettingInput
-		key={configKeys.network.home.ssid}
+		key={configKeys.network.sta.ssid}
 		label="SSID"
 		type="text"
 		maxlength={32}
 	/>
 	<SettingInput
-		key={configKeys.network.home.password}
+		key={configKeys.network.sta.password}
 		label="Password"
 		type="password"
 		maxlength={64}

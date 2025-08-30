@@ -4,9 +4,9 @@ pub(crate) struct RawConfig {
     pub(super) name: ::heapless::String<20>,
     pub(super) leds_brightness: u8,
     pub(super) network_hostname: ::heapless::String<32>,
-    pub(super) network_password: ::heapless::String<64>,
-    pub(super) network_home_ssid: ::heapless::String<32>,
-    pub(super) network_home_password: ::heapless::String<64>,
+    pub(super) network_ap_password: ::heapless::String<64>,
+    pub(super) network_sta_ssid: ::heapless::String<32>,
+    pub(super) network_sta_password: ::heapless::String<64>,
 }
 
 #[allow(clippy::derivable_impls)]
@@ -16,9 +16,9 @@ impl Default for RawConfig {
             name: "VerTX".try_into().unwrap(),
             leds_brightness: 10,
             network_hostname: "vertx".try_into().unwrap(),
-            network_password: Default::default(),
-            network_home_ssid: Default::default(),
-            network_home_password: Default::default(),
+            network_ap_password: Default::default(),
+            network_sta_ssid: Default::default(),
+            network_sta_password: Default::default(),
         }
     }
 }
@@ -38,13 +38,15 @@ pub(super) mod key {
     #[derive(Clone, Copy)]
     pub(crate) struct Root_Network_Hostname;
     #[derive(Clone, Copy)]
-    pub(crate) struct Root_Network_Password;
+    pub(crate) struct Root_Network_Ap;
     #[derive(Clone, Copy)]
-    pub(crate) struct Root_Network_Home;
+    pub(crate) struct Root_Network_Ap_Password;
     #[derive(Clone, Copy)]
-    pub(crate) struct Root_Network_Home_Ssid;
+    pub(crate) struct Root_Network_Sta;
     #[derive(Clone, Copy)]
-    pub(crate) struct Root_Network_Home_Password;
+    pub(crate) struct Root_Network_Sta_Ssid;
+    #[derive(Clone, Copy)]
+    pub(crate) struct Root_Network_Sta_Password;
 }
 
 #[allow(unused)]
@@ -196,14 +198,14 @@ impl super::View<key::Root_Network> {
         }
     }
 
-    pub(crate) fn password(&self) -> super::View<key::Root_Network_Password> {
+    pub(crate) fn ap(&self) -> super::View<key::Root_Network_Ap> {
         super::View {
             manager: self.manager,
             _key: ::core::marker::PhantomData,
         }
     }
 
-    pub(crate) fn home(&self) -> super::View<key::Root_Network_Home> {
+    pub(crate) fn sta(&self) -> super::View<key::Root_Network_Sta> {
         super::View {
             manager: self.manager,
             _key: ::core::marker::PhantomData,
@@ -220,14 +222,14 @@ impl super::LockedView<'_, key::Root_Network> {
         }
     }
 
-    pub(crate) fn password(&self) -> super::LockedView<'_, key::Root_Network_Password> {
+    pub(crate) fn ap(&self) -> super::LockedView<'_, key::Root_Network_Ap> {
         super::LockedView {
             config: self.config,
             _key: ::core::marker::PhantomData,
         }
     }
 
-    pub(crate) fn home(&self) -> super::LockedView<'_, key::Root_Network_Home> {
+    pub(crate) fn sta(&self) -> super::LockedView<'_, key::Root_Network_Sta> {
         super::LockedView {
             config: self.config,
             _key: ::core::marker::PhantomData,
@@ -257,31 +259,10 @@ impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Hostname> {
 }
 
 #[allow(unused)]
-impl super::View<key::Root_Network_Password> {
-    pub(crate) fn lock<T>(&self, f: impl FnOnce(&::heapless::String<64>) -> T) -> T {
-        self.manager
-            .state
-            .lock(|state| f(&state.borrow().config.network_password))
-    }
-
-    pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
-        self.manager.subscribe(3)
-    }
-}
-
-impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Password> {
-    type Target = ::heapless::String<64>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.config.network_password
-    }
-}
-
-#[allow(unused)]
-impl super::View<key::Root_Network_Home> {
+impl super::View<key::Root_Network_Ap> {
     pub(crate) fn lock<T>(
         &self,
-        f: impl FnOnce(super::LockedView<'_, key::Root_Network_Home>) -> T,
+        f: impl FnOnce(super::LockedView<'_, key::Root_Network_Ap>) -> T,
     ) -> T {
         self.manager.state.lock(|state| {
             f(super::LockedView {
@@ -291,14 +272,7 @@ impl super::View<key::Root_Network_Home> {
         })
     }
 
-    pub(crate) fn ssid(&self) -> super::View<key::Root_Network_Home_Ssid> {
-        super::View {
-            manager: self.manager,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-
-    pub(crate) fn password(&self) -> super::View<key::Root_Network_Home_Password> {
+    pub(crate) fn password(&self) -> super::View<key::Root_Network_Ap_Password> {
         super::View {
             manager: self.manager,
             _key: ::core::marker::PhantomData,
@@ -307,15 +281,8 @@ impl super::View<key::Root_Network_Home> {
 }
 
 #[allow(unused)]
-impl super::LockedView<'_, key::Root_Network_Home> {
-    pub(crate) fn ssid(&self) -> super::LockedView<'_, key::Root_Network_Home_Ssid> {
-        super::LockedView {
-            config: self.config,
-            _key: ::core::marker::PhantomData,
-        }
-    }
-
-    pub(crate) fn password(&self) -> super::LockedView<'_, key::Root_Network_Home_Password> {
+impl super::LockedView<'_, key::Root_Network_Ap> {
+    pub(crate) fn password(&self) -> super::LockedView<'_, key::Root_Network_Ap_Password> {
         super::LockedView {
             config: self.config,
             _key: ::core::marker::PhantomData,
@@ -324,11 +291,78 @@ impl super::LockedView<'_, key::Root_Network_Home> {
 }
 
 #[allow(unused)]
-impl super::View<key::Root_Network_Home_Ssid> {
+impl super::View<key::Root_Network_Ap_Password> {
+    pub(crate) fn lock<T>(&self, f: impl FnOnce(&::heapless::String<64>) -> T) -> T {
+        self.manager
+            .state
+            .lock(|state| f(&state.borrow().config.network_ap_password))
+    }
+
+    pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
+        self.manager.subscribe(3)
+    }
+}
+
+impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Ap_Password> {
+    type Target = ::heapless::String<64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.config.network_ap_password
+    }
+}
+
+#[allow(unused)]
+impl super::View<key::Root_Network_Sta> {
+    pub(crate) fn lock<T>(
+        &self,
+        f: impl FnOnce(super::LockedView<'_, key::Root_Network_Sta>) -> T,
+    ) -> T {
+        self.manager.state.lock(|state| {
+            f(super::LockedView {
+                config: &state.borrow().config,
+                _key: ::core::marker::PhantomData,
+            })
+        })
+    }
+
+    pub(crate) fn ssid(&self) -> super::View<key::Root_Network_Sta_Ssid> {
+        super::View {
+            manager: self.manager,
+            _key: ::core::marker::PhantomData,
+        }
+    }
+
+    pub(crate) fn password(&self) -> super::View<key::Root_Network_Sta_Password> {
+        super::View {
+            manager: self.manager,
+            _key: ::core::marker::PhantomData,
+        }
+    }
+}
+
+#[allow(unused)]
+impl super::LockedView<'_, key::Root_Network_Sta> {
+    pub(crate) fn ssid(&self) -> super::LockedView<'_, key::Root_Network_Sta_Ssid> {
+        super::LockedView {
+            config: self.config,
+            _key: ::core::marker::PhantomData,
+        }
+    }
+
+    pub(crate) fn password(&self) -> super::LockedView<'_, key::Root_Network_Sta_Password> {
+        super::LockedView {
+            config: self.config,
+            _key: ::core::marker::PhantomData,
+        }
+    }
+}
+
+#[allow(unused)]
+impl super::View<key::Root_Network_Sta_Ssid> {
     pub(crate) fn lock<T>(&self, f: impl FnOnce(&::heapless::String<32>) -> T) -> T {
         self.manager
             .state
-            .lock(|state| f(&state.borrow().config.network_home_ssid))
+            .lock(|state| f(&state.borrow().config.network_sta_ssid))
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
@@ -336,20 +370,20 @@ impl super::View<key::Root_Network_Home_Ssid> {
     }
 }
 
-impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Home_Ssid> {
+impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Sta_Ssid> {
     type Target = ::heapless::String<32>;
 
     fn deref(&self) -> &Self::Target {
-        &self.config.network_home_ssid
+        &self.config.network_sta_ssid
     }
 }
 
 #[allow(unused)]
-impl super::View<key::Root_Network_Home_Password> {
+impl super::View<key::Root_Network_Sta_Password> {
     pub(crate) fn lock<T>(&self, f: impl FnOnce(&::heapless::String<64>) -> T) -> T {
         self.manager
             .state
-            .lock(|state| f(&state.borrow().config.network_home_password))
+            .lock(|state| f(&state.borrow().config.network_sta_password))
     }
 
     pub(crate) fn subscribe(&self) -> Option<super::Subscriber> {
@@ -357,11 +391,11 @@ impl super::View<key::Root_Network_Home_Password> {
     }
 }
 
-impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Home_Password> {
+impl ::core::ops::Deref for super::LockedView<'_, key::Root_Network_Sta_Password> {
     type Target = ::heapless::String<64>;
 
     fn deref(&self) -> &Self::Target {
-        &self.config.network_home_password
+        &self.config.network_sta_password
     }
 }
 
@@ -374,7 +408,7 @@ pub(super) enum DeserializeError {
 impl RawConfig {
     pub(super) fn deserialize(from: &[u8]) -> Result<Self, DeserializeError> {
         let (version, from) = from.split_at(4);
-        if version == u32::to_le_bytes(3) {
+        if version == u32::to_le_bytes(4) {
             postcard::from_bytes(from).map_err(DeserializeError::Postcard)
         } else {
             Err(DeserializeError::WrongVersion)
@@ -383,7 +417,7 @@ impl RawConfig {
 
     pub(super) fn serialize(&self, buffer: &mut [u8]) -> postcard::Result<usize> {
         let (version, buffer) = buffer.split_at_mut(4);
-        version.copy_from_slice(&u32::to_le_bytes(3));
+        version.copy_from_slice(&u32::to_le_bytes(4));
         postcard::to_slice(self, buffer).map(|out| out.len() + 4)
     }
 
@@ -397,13 +431,13 @@ impl RawConfig {
         if self.network_hostname != other.network_hostname {
             different(2);
         }
-        if self.network_password != other.network_password {
+        if self.network_ap_password != other.network_ap_password {
             different(3);
         }
-        if self.network_home_ssid != other.network_home_ssid {
+        if self.network_sta_ssid != other.network_sta_ssid {
             different(4);
         }
-        if self.network_home_password != other.network_home_password {
+        if self.network_sta_password != other.network_sta_password {
             different(5);
         }
     }
