@@ -6,7 +6,7 @@
 	"license": "MPL-2.0",
 	"type": "module",
 	"dependencies": {
-		"astro": "5.12.8",
+		"astro": "5.13.2",
 		"lucide-static": "0.536.0",
 		"nanoid": "5.1.5",
 		"postcard": "workspace:*"
