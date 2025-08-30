@@ -9,55 +9,45 @@ use esp_wifi::EspWifiController;
 use esp_wifi::wifi::{self, WifiController, WifiError, WifiEvent, WifiState};
 use static_cell::StaticCell;
 
-use crate::network::{Credentials, Kind};
+use crate::network::wifi::{Config, Credentials, Kind};
 
-pub(super) struct Network {
+pub(super) struct Wifi {
     pub(super) spawner: Spawner,
     pub(super) rng: Rng,
     pub(super) timer: AnyTimer<'static>,
     pub(super) wifi: peripherals::WIFI<'static>,
 }
 
-impl crate::hal::traits::Network for Network {
+impl crate::hal::traits::Wifi for Wifi {
     type Driver = wifi::WifiDevice<'static>;
 
-    fn seed(&mut self) -> u64 {
-        let upper = u64::from(self.rng.random()) << 32;
-        let lower = u64::from(self.rng.random());
-
-        upper | lower
-    }
-
-    async fn start(
-        self,
-        sta: Option<crate::network::Credentials>,
-        ap: crate::network::Credentials,
-    ) -> (Kind, Self::Driver) {
+    async fn start(self, config: Config) -> (Self::Driver, Kind) {
         static CONTROLLER: StaticCell<EspWifiController> = StaticCell::new();
         let initted = CONTROLLER.init(esp_wifi::init(self.timer, self.rng).unwrap());
 
         let (mut controller, interfaces) = wifi::new(initted, self.wifi).unwrap();
 
         let mut home_connected = false;
-        if let Some(sta) = sta {
+        if let Some(sta) = config.sta {
             match connect_to_sta(&mut controller, sta).await {
                 Ok(connected) => home_connected = connected,
                 Err(err) => loog::error!("Failed to join home wifi: {err:?}"),
             }
         }
 
-        let (network, driver) = if home_connected {
+        let (kind, driver) = if home_connected {
             (Kind::Station, interfaces.sta)
         } else {
             // Failed to connect to home network, start AP instead
 
             let ap_config = wifi::AccessPointConfiguration {
-                ssid: ap.ssid.to_string(),
+                ssid: config.ap.ssid.to_string(),
                 ssid_hidden: false,
                 channel: 1,
                 secondary_channel: None,
                 // auth_method: wifi::AuthMethod::WPA2Personal,
-                // password: password.clone(),
+                // FIXME: set password
+                // password: config.ap.password.clone(),
                 // max_connections: 1,
                 ..Default::default()
             };
@@ -70,8 +60,8 @@ impl crate::hal::traits::Network for Network {
             (Kind::AccessPoint, interfaces.ap)
         };
 
-        self.spawner.must_spawn(connection(controller, network));
-        (network, driver)
+        self.spawner.must_spawn(connection(controller, kind));
+        (driver, kind)
     }
 }
 

@@ -1,6 +1,6 @@
 import * as types from './src/types.ts';
 
-export const version = 3;
+export const version = 4;
 
 export const config: types.Config = {
 	name: types.string(20, 'VerTX'),
@@ -9,8 +9,10 @@ export const config: types.Config = {
 	},
 	network: {
 		hostname: types.string(32, 'vertx'),
-		password: types.string(64),
-		home: {
+		ap: {
+			password: types.string(64),
+		},
+		sta: {
 			ssid: types.string(32),
 			password: types.string(64),
 		},

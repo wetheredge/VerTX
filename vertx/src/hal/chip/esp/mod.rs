@@ -1,32 +1,35 @@
 #[expect(unused, reason = "preserve for future OTA updates")]
 mod flash;
 mod leds;
-mod network;
 mod ui;
+mod wifi;
 
 use embassy_executor::Spawner;
 use esp_hal::clock::CpuClock;
 use esp_hal::dma::{DmaRxBuf, DmaTxBuf};
 use esp_hal::gpio;
 use esp_hal::i2c::master::{self as i2c, I2c};
+use esp_hal::otg_fs::{self as usb, Usb};
 use esp_hal::rmt::Rmt;
 use esp_hal::rng::Rng;
 use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::time::Rate;
 use esp_hal::timer::timg;
-use static_cell::StaticCell;
+use static_cell::{ConstStaticCell, StaticCell};
 use {defmt_rtt as _, esp_backtrace as _};
 
 use crate::hal;
 use crate::storage::sd;
 
 #[define_opaque(
-    hal::Network,
+    hal::GetNetworkSeed,
     hal::Reset,
     hal::StatusLed,
     hal::Storage,
     hal::StorageFuture,
-    hal::Ui
+    hal::Ui,
+    hal::Usb,
+    hal::Wifi
 )]
 pub(crate) fn init(spawner: Spawner) -> hal::Init {
     esp_alloc::heap_allocator!(size: 100 * 1024);
@@ -34,7 +37,7 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
     let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
-    let rng = Rng::new(p.RNG);
+    let mut rng = Rng::new(p.RNG);
     let timg0 = timg::TimerGroup::new(p.TIMG0);
     let timg1 = timg::TimerGroup::new(p.TIMG1);
 
@@ -104,12 +107,30 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
         }
     };
 
+    let usb = {
+        let usb = Usb::new(p.USB0, p.GPIO20, p.GPIO19);
+
+        static EP_OUT_BUFFER: ConstStaticCell<[u8; 1024]> = ConstStaticCell::new([0; 1024]);
+        let config = usb::asynch::Config::default();
+        usb::asynch::Driver::new(usb, EP_OUT_BUFFER.take(), config)
+    };
+
     hal::Init {
         reset: Reset,
         status_led,
         storage,
         ui,
-        network: network::Network {
+        usb,
+        get_network_seed: move || {
+            let mut bytes = [0; 8];
+            rng.read(&mut bytes);
+            #[expect(
+                clippy::host_endian_bytes,
+                reason = "a random seed doesn't need to be portable"
+            )]
+            u64::from_ne_bytes(bytes)
+        },
+        wifi: wifi::Wifi {
             spawner,
             rng,
             timer: timg1.timer0.into(),
