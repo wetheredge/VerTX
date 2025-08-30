@@ -6,14 +6,14 @@ run = [
 ]
 
 [tasks.build]
-run = "NODE_ENV=production VERTX_SIMULATOR=false bun run -b astro build"
+run = "VERTX_SIMULATOR=false bun run -b astro build"
 
 [tasks."simulator:run"]
 desc = "Run a development server for use with vertx-simulator/run"
 run = "VERTX_SIMULATOR=true bun run -b astro dev"
 
 [tasks."simulator:build"]
-run = "NODE_ENV=production VERTX_SIMULATOR=true bun run -b astro build"
+run = "VERTX_SIMULATOR=true bun run -b astro build"
 
 [tasks."simulator:preview"]
 desc = "Preview the latest simulator build"

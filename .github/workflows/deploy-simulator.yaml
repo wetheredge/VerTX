@@ -78,7 +78,6 @@ jobs:
       - run: bun run -b astro build
         working-directory: vertx-configurator
         env:
-          NODE_ENV: production
           VERTX_SIMULATOR: true
       - run: bun run scripts/csp-nonce.ts out/simulator/configurator
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

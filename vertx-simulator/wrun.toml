@@ -14,7 +14,7 @@ run = [
     "rm -rf ../out/simulator",
     { task = "vertx-configurator/simulator:build" },
     { task = "vertx/simulator:build:release" },
-    "NODE_ENV=production bun run vite build",
+    "bun run vite build",
 ]
 
 [tasks.preview]
