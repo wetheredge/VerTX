@@ -8,5 +8,8 @@
 .env.*
 *.tsbuildinfo
 
+/.direnv
+/result
+
 /.helix
 /.vscode

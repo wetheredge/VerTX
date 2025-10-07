@@ -1,20 +1,38 @@
 name: Setup Bun
-description: Setup Bun using version from mise
+description: Setup Bun from versions config
 
 inputs:
   install:
     description: Install dependencies
     default: 'true'
+  packages:
+    description: Additional global packages to install based on versions config
+    default: ''
 
 runs:
   using: composite
   steps:
     - id: version
       shell: bash
-      run: .github/scripts/get-mise-version.sh bun >> "$GITHUB_OUTPUT"
+      run: .github/scripts/get-version.sh bun >> "$GITHUB_OUTPUT"
     - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
       with:
         bun-version: ${{ steps.version.outputs.version }}
     - run: bun install --frozen-lockfile
       shell: bash
       if: inputs.install == 'true'
+    - shell: bash
+      if: inputs.packages != ''
+      env:
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        IFS=','
+        read -ra PACKAGES <<< "$PACKAGES"
+        for package in "${PACKAGES[@]}"; do
+          version="$(jq --raw-output ".\"$package\"" .config/versions.json)"
+          if [[ -z "$version" ]]; then
+            echo "$package is not in versions config"
+            exit 1
+          fi
+          bun add --global "$package@$version"
+        done

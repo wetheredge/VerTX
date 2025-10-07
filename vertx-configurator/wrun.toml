@@ -1,8 +1,8 @@
 [tasks.check]
 run = [
-    "bun run biome ci",
+    "biome ci",
     "bun run -b astro check",
-    "bun run tsgo --project ./tsconfig.json",
+    "tsgo --project ./tsconfig.json",
 ]
 
 [tasks.build]

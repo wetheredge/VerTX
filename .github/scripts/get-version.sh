@@ -8,9 +8,9 @@ if [[ $# -ne 1 ]]; then
 fi
 tool="$1"
 
-version="$(sed -En "s:.*\b${tool//:/\\:}\"?\s*=\s*\"([^\"]+)\".*:\1:p" .config/mise.toml)"
+version="$(jq --raw-output ".\"$tool\"" .config/versions.json)"
 if [[ -z "$version" ]]; then
-	echo "::error::'$tool' is not in mise config"
+	echo "::error::'$tool' is not in versions config"
 	exit 1
 fi
 

@@ -23,11 +23,29 @@ run = [
     "@echo && echo 'Run `wrun target` to select a build target'",
 ]
 
+[tasks."setup:flake"]
+desc = "Same as /setup, but doesn't install dev tools. Meant to be used in the nix devShell"
+run = [
+    { task = "mark-caches" },
+    "bun install",
+    # Install dprint plugins:
+    "dprint output-file-paths --config=.config/dprint.json >/dev/null",
+    "@echo && echo 'Run `wrun target` to select a build target'",
+]
+
+[tasks.sync-versions]
+desc = "Sync versions config from nix flake"
+# Assume versions are the same on all platforms
+run = [
+    "nix eval --json ~/Projects/VerTX#versions.x86_64-linux > .config/versions.json",
+    "bun run scripts/sync-mise.ts",
+]
+
 [tasks.format]
 desc = "Format everything"
 run = [
     "dprint --config=.config/dprint.json fmt",
-    "bun run biome format --write",
+    "biome format --write",
     "cargo fmt --all",
 ]
 

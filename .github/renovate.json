@@ -36,6 +36,12 @@
 			"groupName": "GitHub runners"
 		}
 	],
+	"mise": {
+		"enabled": false
+	},
+	"nix": {
+		"enabled": true
+	},
 	"vulnerabilityAlerts": {
 		"enabled": false
 	}

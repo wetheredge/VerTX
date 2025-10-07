@@ -88,7 +88,7 @@ jobs:
           rm -rf out && mkdir out
           bun run src/generate.ts
           rustfmt --config-path=../rustfmt.toml out/config.rs out/current.rs out/old.rs
-          bun run biome format --write out/config.ts
+          biome format --write out/config.ts
       - run: git diff --exit-code
 
   rustfmt:
@@ -308,10 +308,12 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
+        with:
+          packages: '@typescript/native-preview'
       - run: bun run -b astro check
         working-directory: ${{ matrix.dir }}
         if: ${{ matrix.dir == 'vertx-configurator' }}
-      - run: bun run tsgo --project ${{ matrix.dir }}/tsconfig.json
+      - run: tsgo --project ${{ matrix.dir }}/tsconfig.json
 
   tsc-simulator:
     name: TypeScript (vertx-simulator)
@@ -324,13 +326,20 @@ jobs:
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - uses: ./.github/actions/setup-bun
+        with:
+          packages: '@typescript/native-preview'
       - uses: ./.github/actions/cargo-install
         with:
-          tool: wasm-bindgen-cli,wasm-opt
+          tool: wasm-bindgen-cli
+      - id: binaryen-version
+        run: .github/scripts/get-version.sh binaryen >> "$GITHUB_OUTPUT"
+      - uses: phi-ag/setup-binaryen@f0195f8eb354d070a0bd4bc068fc75a236c09a9a # v1.0.6
+        with:
+          version: ${{ steps.version.outputs.binaryen-version }}
       - run: bun run scripts/build-simulator.ts
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
-      - run: bun run tsgo --project vertx-simulator/tsconfig.json
+      - run: tsgo --project vertx-simulator/tsconfig.json
 
   biome:
     name: Biome
@@ -362,7 +371,7 @@ jobs:
         with:
           persist-credentials: false
       - id: version
-        run: .github/scripts/get-mise-version.sh dprint >> "$GITHUB_OUTPUT"
+        run: .github/scripts/get-version.sh dprint >> "$GITHUB_OUTPUT"
       - uses: dprint/check@2f1cf31537886c3bfb05591c031f7744e48ba8a1 # v2.2
         with:
           dprint-version: ${{ steps.version.outputs.version }}
@@ -376,7 +385,7 @@ jobs:
         with:
           persist-credentials: false
       - id: version
-        run: .github/scripts/get-mise-version.sh typos >> "$GITHUB_OUTPUT"
+        run: .github/scripts/get-version.sh typos >> "$GITHUB_OUTPUT"
       - uses: taiki-e/install-action@aa2649f25ee7099207734772f5393fd30167cb73 # v2.58.0
         with:
           tool: typos@${{ steps.version.outputs.version }}

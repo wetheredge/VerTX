@@ -2,8 +2,8 @@
 check.run = [
     "cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -F up",
     "cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -F down",
-    "bun run biome ci",
-    "bun run tsgo --project ./tsconfig.json",
+    "biome ci",
+    "tsgo --project ./tsconfig.json",
 ]
 
 build.run = [

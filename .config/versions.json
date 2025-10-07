@@ -1,0 +1,17 @@
+{
+	"@typescript/native-preview": "7.0.0-dev.20251003.1",
+	"actionlint": "1.7.7",
+	"binaryen": "124",
+	"biome": "2.2.5",
+	"bun": "1.2.23",
+	"cargo-nextest": "0.9.105",
+	"cargo-shear": "1.5.1",
+	"cargo-sort": "2.0.2",
+	"dprint": "0.50.2",
+	"gcc": "15.1.0_20250607",
+	"probe-rs-tools": "0.29.1",
+	"rust": "1.89.0.0",
+	"typos": "1.35.6",
+	"wasm-bindgen-cli": "0.2.100",
+	"wrun": "0.1.4"
+}

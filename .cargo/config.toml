@@ -2,7 +2,7 @@
 ESP_HAL_EMBASSY_CONFIG_TIMER_QUEUE = "multiple-integrated"
 
 [target.xtensa-esp32-none-elf]
-linker = ".tools/gcc/bin/xtensa-esp32-elf-gcc"
+linker = "xtensa-esp32-elf-gcc"
 
 [target.xtensa-esp32s3-none-elf]
-linker = ".tools/gcc/bin/xtensa-esp32s3-elf-gcc"
+linker = "xtensa-esp32s3-elf-gcc"

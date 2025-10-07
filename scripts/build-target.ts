@@ -34,12 +34,15 @@ export async function build(
 		.filter((s) => s && s.length > 0)
 		.join(' ');
 
+	const path = [join(repoRoot, '.tools/gcc/bin'), process.env.PATH].join(':');
+
 	await orExit(
 		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${release ? '--release' : ''} ${extraArgs}`
 			.nothrow()
 			.env({
 				CARGO_TERM_COLOR: 'always',
 				...process.env,
+				PATH: path,
 				RUSTFLAGS: rustflags,
 				VERTX_TARGET: targetName,
 			}),

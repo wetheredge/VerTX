@@ -1,5 +1,5 @@
 name: cargo-install
-description: cargo-install from mise
+description: cargo-install from version config
 
 inputs:
   tool:
@@ -18,9 +18,9 @@ runs:
         read -ra TOOLS <<< "$TOOLS"
         declare -a output
         for tool in "${TOOLS[@]}"; do
-          version="$(sed -En "s/.*\"cargo:$tool\"\s*=\s*\"([^\"]+)\".*/\1/p" .config/mise.toml)"
+          version="$(jq --raw-output ".\"$tool\"" .config/versions.json)"
           if [[ -z "$version" ]]; then
-            echo "$tool is not in mise config"
+            echo "$tool is not in versions config"
             exit 1
           fi
           output+=("$tool@$version")

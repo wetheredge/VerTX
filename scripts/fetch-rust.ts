@@ -3,7 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { $, fileURLToPath } from 'bun';
 import { Listr, type ListrTask } from 'listr2';
-import * as versions from '../.config/xtensa-toolchain.json';
+import * as versions from '../.config/versions.json';
 import { humanBytes, repoRoot } from './utils.ts';
 
 // See <https://github.com/espressif/crosstool-NG/releases/latest>
