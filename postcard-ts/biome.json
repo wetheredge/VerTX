@@ -1,4 +1,11 @@
 {
 	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
-	"extends": "//"
+	"extends": "//",
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noBitwiseOperators": "off"
+			}
+		}
+	}
 }

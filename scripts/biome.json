@@ -10,6 +10,9 @@
 			"correctness": {
 				"noNodejsModules": "off"
 			},
+			"performance": {
+				"noDynamicNamespaceImportAccess": "off"
+			},
 			"suspicious": {
 				"noConsole": "off"
 			}
@@ -18,6 +21,16 @@
 	"overrides": [
 		{
 			"includes": ["build-target.ts", "set-target.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useNamingConvention": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["splash-convert.ts"],
 			"linter": {
 				"rules": {
 					"style": {

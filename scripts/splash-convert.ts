@@ -27,17 +27,26 @@ for (let i = 0; i < WIDTH * HEIGHT; ) {
 
 	const bits: Array<number> = [];
 	for (; bits.length < 16; i++) {
-		// biome-ignore lint/style/noNonNullAssertion: known to be non-null after the image dimensions check above
+		// biome-ignore lint/style/noNonNullAssertion: known to be non-null after checking the image dimensions above
 		bits.push(Math.trunc(pixels.at(i)! / 255));
 	}
-	const chunk = bits
-		.reduce((acc, cur) => (acc << 1) | cur)
-		.toString(16)
-		.padStart(4, '0');
-	output.write(chunk);
+	output.write(bitsToHex(bits));
 
 	if (i % WIDTH === 0) {
 		output.write(',\n');
 	}
 }
 output.write('];\n');
+
+/** Collect (big-endian) bits into a hexadecimal string */
+function bitsToHex(bits: Array<number>): string {
+	const baseHex = 16;
+	const bitsPerHexChar = 4;
+	return (
+		bits
+			// biome-ignore lint/suspicious/noBitwiseOperators: yes collecting bits requires bitwise math
+			.reduce((acc, cur) => (acc << 1) | cur)
+			.toString(baseHex)
+			.padStart(bits.length / bitsPerHexChar, '0')
+	);
+}

@@ -1,0 +1,48 @@
+{
+	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+	"root": false,
+	"extends": "//",
+	"linter": {
+		"rules": {
+			"suspicious": {
+				"noConstEnum": "off",
+			},
+		},
+	},
+	"overrides": [
+		{
+			"includes": ["vite.config.ts"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off",
+					},
+				},
+			},
+		},
+		{
+			"includes": ["src/ui.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noNonNullAssertion": "off",
+					},
+				},
+			},
+		},
+		{
+			"includes": ["src/simulator.ts"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						// FIXME: remove after biome v2.2.6
+						"useImportExtensions": "off",
+					},
+					"suspicious": {
+						"noBitwiseOperators": "off",
+					},
+				},
+			},
+		},
+	],
+}

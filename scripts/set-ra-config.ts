@@ -2,11 +2,12 @@
 
 import { exists, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { argv } from 'node:process';
 import TOML from 'smol-toml';
 import { isMain, panic, repoRoot } from './utils.ts';
 
 if (isMain(import.meta.url)) {
-	const args = process.argv.slice(2);
+	const args = argv.slice(2);
 	if (args.length === 1 && args[0] === '--simulator') {
 		await setRustAnayzerConfig('wasm32-unknown-unknown', ['simulator'], {
 			// biome-ignore lint/style/useNamingConvention: environment variable

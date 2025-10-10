@@ -1,6 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { cwd } from 'node:process';
 import { $, fileURLToPath } from 'bun';
 import { Listr, type ListrTask } from 'listr2';
 import * as versions from '../.config/versions.json';
@@ -82,10 +83,12 @@ function rust(): ListrTask {
 						await fs.rm(dirs.out, { recursive: true, force: true });
 						const tempPrefix = '.rust-xtensa-install-';
 						const tempDir = await getTempDir(tempPrefix, toolsDir);
+						// biome-ignore-start lint/performance/noAwaitInLoops: avoid concurrent modifications
 						for (const dir of extracted) {
 							await $`${dir}/install.sh --prefix=${tempDir}`.quiet();
 							await fs.rm(dir, { recursive: true });
 						}
+						// biome-ignore-end lint/performance/noAwaitInLoops: _
 						fs.rename(tempDir, dirs.out);
 
 						await $`rustup toolchain link vertx ${dirs.out}`.quiet();
@@ -118,7 +121,7 @@ function gcc(): ListrTask {
 			const target = LLVM_TARGET_TO_GCC[llvmTarget];
 			if (target == null) {
 				const file = path.relative(
-					process.cwd(),
+					cwd(),
 					fileURLToPath(import.meta.url),
 				);
 				throw new Error(

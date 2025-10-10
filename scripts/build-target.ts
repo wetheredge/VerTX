@@ -2,6 +2,7 @@
 
 import * as fs from 'node:fs';
 import { join } from 'node:path';
+import { env } from 'node:process';
 import { parseArgs } from 'node:util';
 import { $, fileURLToPath } from 'bun';
 import * as chip2Target from '../.config/chips.json';
@@ -27,21 +28,18 @@ export async function build(
 
 	const features = getFeatures(target).join(' ');
 
-	const rustflags = [
-		process.env.RUSTFLAGS,
-		chip.cpu && `-Ctarget-cpu=${chip.cpu}`,
-	]
+	const rustflags = [env.RUSTFLAGS, chip.cpu && `-Ctarget-cpu=${chip.cpu}`]
 		.filter((s) => s && s.length > 0)
 		.join(' ');
 
-	const path = [join(repoRoot, '.tools/gcc/bin'), process.env.PATH].join(':');
+	const path = [join(repoRoot, '.tools/gcc/bin'), env.PATH].join(':');
 
 	await orExit(
 		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${release ? '--release' : ''} ${extraArgs}`
 			.nothrow()
 			.env({
 				CARGO_TERM_COLOR: 'always',
-				...process.env,
+				...env,
 				PATH: path,
 				RUSTFLAGS: rustflags,
 				VERTX_TARGET: targetName,

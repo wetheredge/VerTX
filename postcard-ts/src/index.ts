@@ -24,18 +24,21 @@ export class Reader {
 	}
 
 	f32(): number {
+		const bytesPerF32 = 4;
 		const float = this.#view.getFloat32(this.#index, true);
-		this.#index += 4;
+		this.#index += bytesPerF32;
 		return float;
 	}
 
 	varuint(): number {
+		const usableBitsPerByte = 7;
+
 		let int = 0;
 		let byte: number;
 		let i = 0;
 		do {
 			byte = this.u8();
-			int += (byte & 0x7f) << (7 * i++);
+			int += (byte & 0x7f) << (usableBitsPerByte * i++);
 		} while (byte & 0x80);
 		return int;
 	}
@@ -80,16 +83,19 @@ export class Writer {
 	}
 
 	rawU32(x: number) {
+		const bytesPerU32 = 4;
 		this.#view.setUint32(this.#index, x, true);
-		this.#index += 4;
+		this.#index += bytesPerU32;
 	}
 
 	varuint(x: number) {
+		const maxEncodedByte = 0x7f;
+
 		let remaining = x >>> 0;
 		let done: boolean;
 		do {
-			done = remaining <= 0x7f;
-			this.u8(done ? remaining : (remaining & 0x7f) | 0x80);
+			done = remaining <= maxEncodedByte;
+			this.u8(done ? remaining : (remaining & maxEncodedByte) | 0x80);
 			remaining >>>= 7;
 		} while (!done);
 	}

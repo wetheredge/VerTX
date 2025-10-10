@@ -9,6 +9,9 @@
 		"rules": {
 			"correctness": {
 				"noNodejsModules": "off"
+			},
+			"style": {
+				"noMagicNumbers": "off"
 			}
 		}
 	}

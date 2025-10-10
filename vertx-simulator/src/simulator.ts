@@ -5,7 +5,7 @@ import {
 	memoryName,
 } from '../../out/firmware/simulator/vertx.js';
 import wasmUrl from '../../out/firmware/simulator/vertx_bg.wasm?url';
-import { type ConfiguratorResponse, isRequest } from './common.js';
+import { type ConfiguratorResponse, isRequest } from './common.ts';
 
 const globalName = 'Vertx';
 const getFileKey = (path: string) => `file:${path}`;
@@ -36,11 +36,11 @@ export type Callbacks = {
 };
 
 export class Simulator {
-	#callbacks: Callbacks;
+	readonly #callbacks: Callbacks;
 	#configurator: MessageEventSource | null = null;
 
-	#memory: WebAssembly.Memory;
-	#display: CanvasRenderingContext2D;
+	readonly #memory: WebAssembly.Memory;
+	readonly #display: CanvasRenderingContext2D;
 
 	constructor(
 		module: SimulatorModule,
@@ -77,7 +77,7 @@ export class Simulator {
 			apiTx(request.id, request.route, request.method, body);
 		});
 
-		// @ts-ignore
+		// @ts-expect-error: globalName isn't declared as a property of globalThis
 		globalThis[globalName] = this;
 
 		const memory = initSync({ module })[memoryName];
@@ -202,17 +202,22 @@ export class Simulator {
 	private flushDisplay(ptr: number) {
 		const width = 128;
 		const height = 64;
+		const bitsPerByte = 8;
 
-		const sourceLength = (width / 8) * height;
+		// Pixels are stored as 1 bit per pixel
+		const sourceLength = (width / bitsPerByte) * height;
 		const source = new Uint8Array(this.#memory.buffer, ptr, sourceLength);
 		const output = this.#display.createImageData(width, height);
 
 		for (let i = 0; i < width * height; i++) {
-			// biome-ignore lint/style/noNonNullAssertion: for loop keeps this in bounds
-			const isSet = source[Math.floor(i / 8)]! & (1 << (i % 8));
-			const channel = isSet > 0 ? 255 : 0;
+			// Pixel `i` is within this byte …
+			const pixelByte = Math.floor(i / bitsPerByte);
+			// … at this bit offset
+			const subByteOffset = i % bitsPerByte;
 
-			output.data.set([channel, channel, channel, 255], i * 4);
+			// biome-ignore lint/style/noNonNullAssertion: for loop keeps this in bounds
+			const color = source[pixelByte]! & (1 << subByteOffset);
+			setBinaryColor(output.data, color > 0, i);
 		}
 
 		this.#display.putImageData(output, 0, 0);
@@ -231,4 +236,21 @@ function readFile(path: string): Uint8Array {
 function writeFile(path: string, contents: Uint8Array) {
 	const base64 = contents.toBase64();
 	localStorage.setItem(getFileKey(path), base64);
+}
+
+function setBinaryColor(
+	data: ImageDataArray,
+	isWhite: boolean,
+	pixelOffset: number,
+) {
+	const bytesPerColor = 4;
+	const byteOffset = pixelOffset * bytesPerColor;
+
+	// 8 bits per pixel channel range:
+	const min = 0;
+	const max = 255;
+
+	const raw = isWhite ? max : min;
+	// red, green, blue, alpha
+	data.set([raw, raw, raw, max], byteOffset);
 }

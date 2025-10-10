@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { join } from 'node:path';
-import { exit } from 'node:process';
+import { env, exit, stderr } from 'node:process';
 import { parseArgs } from 'node:util';
 import { $ } from 'bun';
 import {
@@ -19,7 +19,7 @@ export async function build(command: string, release?: boolean) {
 	// biome-ignore-start lint/style/useNamingConvention: env vars
 	const cargoEnv = {
 		CARGO_TERM_COLOR: 'always',
-		...process.env,
+		...env,
 		VERTX_TARGET: 'simulator',
 	};
 	// biome-ignore-end lint/style/useNamingConvention: env vars
@@ -72,7 +72,7 @@ export async function build(command: string, release?: boolean) {
 			}
 			const wasmOptResult = await wasmOpt;
 			if (wasmOptResult.exitCode !== 0) {
-				process.stderr.write(wasmOptResult.stderr);
+				stderr.write(wasmOptResult.stderr);
 				exit(wasmOptResult.exitCode);
 			}
 

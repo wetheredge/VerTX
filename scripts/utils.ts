@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 import { join } from 'node:path';
-import { exit } from 'node:process';
+import { argv, exit } from 'node:process';
 import { fileURLToPath } from 'bun';
 
 // NOTE: update this if this file ever gets moved out of (or deeper within) /scripts/
@@ -42,7 +42,9 @@ export async function orExit(cmd: Bun.$.ShellPromise) {
 }
 
 export function humanBytes(bytes: number): string {
-	if (bytes < 1024) {
+	const base = 1024;
+
+	if (bytes < base) {
 		return `${bytes} B`;
 	}
 
@@ -51,15 +53,15 @@ export function humanBytes(bytes: number): string {
 	let size = bytes;
 	let prefix = -1;
 	do {
-		size /= 1024;
+		size /= base;
 		prefix++;
-	} while (size >= 1024 && prefix + 1 < prefixes.length);
+	} while (size >= base && prefix + 1 < prefixes.length);
 
 	return `${size.toFixed(2)} ${prefixes[prefix]}iB`;
 }
 
 export function isMain(importMetaUrl: string): boolean {
-	return process.argv[1] === fileURLToPath(importMetaUrl);
+	return argv[1] === fileURLToPath(importMetaUrl);
 }
 
 export function panic(message: string): never {

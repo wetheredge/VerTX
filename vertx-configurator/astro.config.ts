@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+import { env } from 'node:process';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { minify } from '@zokki/astro-minify';
 import type { AstroIntegration, AstroUserConfig } from 'astro';
@@ -10,7 +11,7 @@ import { browserslistToTargets as lightningTargets } from 'lightningcss';
 
 const port = 8001;
 
-const isSimulator = process.env.VERTX_SIMULATOR === 'true';
+const isSimulator = env.VERTX_SIMULATOR === 'true';
 
 const assetsPrefix = isSimulator ? 'assets/' : '_';
 const outDir = fileURLToPath(

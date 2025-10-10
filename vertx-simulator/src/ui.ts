@@ -1,10 +1,23 @@
 import { Button } from './simulator.ts';
 
+// How many degrees either side of horizonal/vertical should count
+const ORTHO_SWIPE_TOLERANCE = 30;
+// Minimum swipe length to register expressed as a fraction of the virtual display height
+// biome-ignore lint/style/noMagicNumbers: it's a fraction…
+const MIN_SWIPE = 1 / 3;
+
+// biome-ignore lint/style/noMagicNumbers: common formula
+const DEGREES_PER_RADIAN = 180 / Math.PI;
+const QUADRANT_DEG = 90;
+
+const MIN_ORTHO = ORTHO_SWIPE_TOLERANCE;
+const MAX_ORTHO = QUADRANT_DEG - ORTHO_SWIPE_TOLERANCE;
+
 export class Ui {
-	#status: HTMLDivElement;
-	#power: HTMLButtonElement;
-	#display: HTMLCanvasElement;
-	#touches = new Map<number, [number, number]>();
+	readonly #status: HTMLDivElement;
+	readonly #power: HTMLButtonElement;
+	readonly #display: HTMLCanvasElement;
+	readonly #touches = new Map<number, [number, number]>();
 
 	constructor(callbacks: { power(): void; button(id: Button): void }) {
 		const app: HTMLDivElement = document.querySelector('#app')!;
@@ -35,19 +48,19 @@ export class Ui {
 				const changeY = endY - startY;
 
 				const distance = Math.sqrt(changeX ** 2 + changeY ** 2);
-				if (distance < this.#display.clientHeight / 3) {
+				if (distance < this.#display.clientHeight * MIN_SWIPE) {
 					return;
 				}
 
-				const angle = (Math.atan2(changeY, changeX) / Math.PI) * 180;
-				const angleRemainder = Math.abs(angle % 90);
-				if (30 < angleRemainder && angleRemainder < 60) {
+				const angle = Math.atan2(changeY, changeX) * DEGREES_PER_RADIAN;
+				const angleRemainder = Math.abs(angle % QUADRANT_DEG);
+				if (MIN_ORTHO < angleRemainder && angleRemainder < MAX_ORTHO) {
 					// Too diagonal
 					return;
 				}
 
 				let key = Button.Back;
-				switch (Math.round(angle / 90)) {
+				switch (Math.round(angle / QUADRANT_DEG)) {
 					case -1:
 						key = Button.Up;
 						break;
