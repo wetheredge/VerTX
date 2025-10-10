@@ -48,6 +48,7 @@ export async function build(command: string, release?: boolean) {
 		if (release) {
 			const passes = [
 				'--converge',
+				'--low-memory-unused',
 				'--const-hoisting',
 				'--dae-optimizing',
 				'--optimize-added-constants-propagate',
