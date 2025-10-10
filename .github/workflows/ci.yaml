@@ -332,11 +332,7 @@ jobs:
       - uses: ./.github/actions/cargo-install
         with:
           tool: wasm-bindgen-cli
-      - id: binaryen-version
-        run: .github/scripts/get-version.sh binaryen >> "$GITHUB_OUTPUT"
-      - uses: phi-ag/setup-binaryen@f0195f8eb354d070a0bd4bc068fc75a236c09a9a # v1.0.6
-        with:
-          version: ${{ steps.version.outputs.binaryen-version }}
+      - uses: ./.github/actions/setup-binaryen
       - run: bun run scripts/build-simulator.ts
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}

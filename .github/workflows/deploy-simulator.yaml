@@ -103,7 +103,8 @@ jobs:
           install: false
       - uses: ./.github/actions/cargo-install
         with:
-          tool: wasm-bindgen-cli,wasm-opt
+          tool: wasm-bindgen-cli
+      - uses: ./.github/actions/setup-binaryen
       - run: bun run scripts/build-simulator.ts --release
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
