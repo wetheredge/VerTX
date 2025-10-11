@@ -6,10 +6,10 @@
 	"license": "MIT",
 	"type": "module",
 	"devDependencies": {
-		"@inquirer/prompts": "7.8.0",
-		"listr2": "9.0.1",
-		"sharp": "0.34.3",
-		"smol-toml": "1.4.1",
-		"zod": "4.0.15"
+		"@inquirer/prompts": "7.8.6",
+		"listr2": "9.0.4",
+		"sharp": "0.34.4",
+		"smol-toml": "1.4.2",
+		"zod": "4.1.12"
 	}
 }
