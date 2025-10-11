@@ -7,8 +7,8 @@
 	"type": "module",
 	"devDependencies": {
 		"@inquirer/prompts": "7.8.0",
+		"fast-png": "7.0.1",
 		"listr2": "9.0.1",
-		"sharp": "0.34.3",
 		"smol-toml": "1.4.1",
 		"zod": "4.0.15"
 	}
