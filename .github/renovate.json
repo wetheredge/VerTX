@@ -15,9 +15,7 @@
 		{
 			"groupName": "all dependencies",
 			"groupSlug": "all",
-			"matchPackageNames": [
-				"*"
-			],
+			"matchPackageNames": ["*"],
 			"matchUpdateTypes": [
 				"major",
 				"minor",
@@ -29,15 +27,11 @@
 			]
 		},
 		{
-			"matchDepNames": [
-				"cargo:*"
-			],
+			"matchDepNames": ["cargo:*"],
 			"rangeStrategy": "bump"
 		},
 		{
-			"matchDatasources": [
-				"github-runners"
-			],
+			"matchDatasources": ["github-runners"],
 			"groupSlug": "runners",
 			"groupName": "GitHub runners"
 		}
