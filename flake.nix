@@ -54,6 +54,9 @@
   in {
     devShells.default = pkgs.mkShell {
       packages = devPackages;
+      shellHook = ''
+        wrun setup:flake
+      '';
     };
 
     inherit versions;
