@@ -7,6 +7,6 @@ runs:
     - id: version
       shell: bash
       run: .github/scripts/get-version.sh binaryen >> "$GITHUB_OUTPUT"
-    - uses: phi-ag/setup-binaryen@f0195f8eb354d070a0bd4bc068fc75a236c09a9a # v1.0.6
+    - uses: phi-ag/setup-binaryen@f0195f8eb354d070a0bd4bc068fc75a236c09a9a
       with:
         version: ${{ steps.version.outputs.version }}

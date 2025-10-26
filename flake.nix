@@ -8,6 +8,10 @@
     wrun.inputs.nixpkgs.follows = "nixpkgs";
     wrun.inputs.flake-utils.follows = "flake-utils";
 
+    galock.url = "git+https://tangled.org/wetheredge.com/galock";
+    galock.inputs.nixpkgs.follows = "nixpkgs";
+    galock.inputs.flake-utils.follows = "flake-utils";
+
     esp-rs-nix.url = "github:leighleighleigh/esp-rs-nix";
     esp-rs-nix.inputs.nixpkgs.follows = "nixpkgs";
     esp-rs-nix.inputs.flake-utils.follows = "flake-utils";
@@ -34,6 +38,7 @@
       wasm-bindgen-cli
 
       inputs.wrun.packages.${system}.default
+      inputs.galock.packages.${system}.default
       inputs.esp-rs-nix.package.${system}.esp-rs
     ];
 
