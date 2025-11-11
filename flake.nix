@@ -27,6 +27,7 @@
       cargo-sort
       dprint
       probe-rs-tools
+      rust-analyzer
       typescript-go
       typos
       wasm-bindgen-cli
