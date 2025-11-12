@@ -56,7 +56,7 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
             mut common, sm0, ..
         } = Pio::new(p.PIO0, Irqs);
         let pin = pins!(p, leds.status);
-        leds::StatusDriver::<_, 0>::new(&mut common, sm0, pin)
+        leds::StatusDriver::<_, 0>::new(&mut common, sm0, p.DMA_CH0, pin)
     };
 
     let spi = Spi::new(
@@ -64,8 +64,8 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
         pins!(p, spi.sclk),
         pins!(p, spi.mosi),
         pins!(p, spi.miso),
-        p.DMA_CH0,
         p.DMA_CH1,
+        p.DMA_CH2,
         spi::Config::default(),
     );
 
