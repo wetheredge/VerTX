@@ -148,10 +148,13 @@ struct WifiNetwork {
     password: heapless::String<16>,
 }
 
-#[cfg(feature = "network")]
+#[cfg(feature = "network-wifi")]
 impl WifiNetwork {
     #[expect(dead_code)]
-    fn new(ssid: &crate::network::Ssid, password: &crate::network::Password) -> Option<Self> {
+    fn new(
+        ssid: &crate::network::wifi::Ssid,
+        password: &crate::network::wifi::Password,
+    ) -> Option<Self> {
         if let Ok(ssid) = ssid.as_str().try_into()
             && let Ok(password) = password.as_str().try_into()
         {

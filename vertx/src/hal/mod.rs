@@ -33,12 +33,14 @@ pub(crate) type Storage =
     impl crate::storage::pal::Storage<Error = impl loog::DebugFormat + embedded_io_async::Error>;
 pub(crate) type StatusLed = impl crate::hal::traits::StatusLed;
 pub(crate) type Ui = impl crate::hal::traits::Ui;
+#[cfg(feature = "usb")]
+pub(crate) type Usb = impl embassy_usb::driver::Driver<'static>;
 #[cfg(all(feature = "configurator", not(feature = "network")))]
 pub(crate) type Configurator = impl crate::hal::traits::Configurator;
 #[cfg(feature = "network")]
-pub(crate) type Network = impl crate::hal::traits::Network;
-#[cfg(feature = "network")]
-pub type NetworkDriver = <Network as traits::Network>::Driver;
+pub(crate) type GetNetworkSeed = impl FnOnce() -> u64;
+#[cfg(feature = "network-wifi")]
+pub(crate) type Wifi = impl crate::hal::traits::Wifi;
 
 mod chip;
 
@@ -51,10 +53,14 @@ pub(crate) struct Init {
     pub(crate) status_led: StatusLed,
     pub(crate) storage: StorageFuture,
     pub(crate) ui: Ui,
+    #[cfg(feature = "usb")]
+    pub(crate) usb: Usb,
     #[cfg(all(feature = "configurator", not(feature = "network")))]
     pub(crate) configurator: Configurator,
     #[cfg(feature = "network")]
-    pub(crate) network: Network,
+    pub(crate) get_network_seed: GetNetworkSeed,
+    #[cfg(feature = "network-wifi")]
+    pub(crate) wifi: Wifi,
 }
 
 #[expect(unused_imports)]
@@ -63,8 +69,8 @@ pub(crate) mod prelude {
 
     #[cfg(all(feature = "configurator", not(feature = "network")))]
     pub(crate) use super::traits::Configurator as _;
-    #[cfg(feature = "network")]
-    pub(crate) use super::traits::Network as _;
+    #[cfg(feature = "network-wifi")]
+    pub(crate) use super::traits::Wifi as _;
     pub(crate) use super::traits::{Reset as _, StatusLed as _, Ui as _};
     pub(crate) use crate::storage::pal::{
         Directory as _, DirectoryIter as _, Entry as _, File as _, Storage as _,
@@ -92,19 +98,6 @@ pub(crate) mod traits {
         async fn receive(&mut self) -> (Self::Request, Self::Writer);
     }
 
-    #[cfg(feature = "network")]
-    pub(crate) trait Network {
-        type Driver: embassy_net::driver::Driver;
-
-        fn seed(&mut self) -> u64;
-
-        async fn start(
-            self,
-            sta: Option<crate::network::Credentials>,
-            ap: crate::network::Credentials,
-        ) -> (crate::network::Kind, Self::Driver);
-    }
-
     pub(crate) trait Reset {
         fn shut_down(&mut self) -> !;
         fn reboot(&mut self) -> !;
@@ -117,5 +110,15 @@ pub(crate) mod traits {
 
         async fn get_input(&mut self) -> crate::ui::Input;
         async fn flush(&mut self) -> Result<(), Self::Error>;
+    }
+
+    #[cfg(feature = "network-wifi")]
+    pub(crate) trait Wifi {
+        type Driver: embassy_net::driver::Driver;
+
+        async fn start(
+            self,
+            config: crate::network::wifi::Config,
+        ) -> (Self::Driver, crate::network::wifi::Kind);
     }
 }
