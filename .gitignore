@@ -6,7 +6,6 @@
 .astro/
 .env
 .env.*
-*.tsbuildinfo
 
 /.direnv
 /result

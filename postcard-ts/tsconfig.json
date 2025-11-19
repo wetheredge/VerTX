@@ -2,9 +2,9 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": "@tsconfig/strictest/tsconfig.json",
 	"compilerOptions": {
+		"tsBuildInfoFile": "../.cache/postcard.tsbuildinfo",
 		"target": "ESNext",
 		"composite": true,
-		"noEmit": true,
-		"outDir": "../.cache/postcard-ts"
+		"noEmit": true
 	}
 }
