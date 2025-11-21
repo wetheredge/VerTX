@@ -5,6 +5,12 @@
 	"version": "0.0.0",
 	"license": "MIT",
 	"type": "module",
+	"imports": {
+		"#utils/*": "./utils/*.ts"
+	},
+	"exports": {
+		"./*": "./utils/*.ts"
+	},
 	"devDependencies": {
 		"@inquirer/prompts": "7.8.0",
 		"fast-png": "7.0.1",

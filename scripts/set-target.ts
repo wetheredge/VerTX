@@ -4,10 +4,10 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { Glob } from 'bun';
+import { baseOutDir, repoRoot } from '#utils/fs';
 import { getChipInfo, getFeatures } from './build-target.ts';
 import { setRustAnayzerConfig } from './set-ra-config.ts';
 import type { Target } from './target-schema.ts';
-import { baseOutDir, repoRoot } from './utils.ts';
 
 const targetsDir = join(repoRoot, 'targets');
 const envFile = join(baseOutDir, 'target');

@@ -2,8 +2,8 @@
 
 import { exit } from 'node:process';
 import { Glob } from 'bun';
+import { repoRoot } from '#utils/fs';
 import { schema } from './target-schema.ts';
-import { repoRoot } from './utils.ts';
 
 const targets = new Glob('targets/*.toml').scan({ cwd: repoRoot });
 let allValid = true;

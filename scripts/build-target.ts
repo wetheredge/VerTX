@@ -5,16 +5,10 @@ import { join } from 'node:path';
 import { env } from 'node:process';
 import { parseArgs } from 'node:util';
 import { $, fileURLToPath } from 'bun';
+import { isMain, orExit, panic } from '#utils/cli';
+import { baseOutDir, fsReplaceSymlink, repoRoot } from '#utils/fs';
 import * as chip2Target from '../.config/chips.json';
 import { schema, type Target } from './target-schema.ts';
-import {
-	baseOutDir,
-	fsReplaceSymlink,
-	isMain,
-	orExit,
-	panic,
-	repoRoot,
-} from './utils.ts';
 
 export async function build(
 	command: string,

@@ -4,8 +4,8 @@ import * as path from 'node:path';
 import { cwd } from 'node:process';
 import { $, fileURLToPath } from 'bun';
 import { Listr, type ListrTask } from 'listr2';
+import { repoRoot } from '#utils/fs';
 import * as versions from '../.config/versions.json';
-import { humanBytes, repoRoot } from './utils.ts';
 
 // See <https://github.com/espressif/crosstool-NG/releases/latest>
 const LLVM_TARGET_TO_GCC: Record<string, string> = {
@@ -193,4 +193,23 @@ async function getLlvmTarget(): Promise<string> {
 
 function getTempDir(prefix: string, dir = os.tmpdir()): Promise<string> {
 	return fs.mkdtemp(path.join(dir, prefix));
+}
+
+function humanBytes(bytes: number): string {
+	const base = 1024;
+
+	if (bytes < base) {
+		return `${bytes} B`;
+	}
+
+	const prefixes = ['K', 'M', 'G', 'T'];
+
+	let size = bytes;
+	let prefix = -1;
+	do {
+		size /= base;
+		prefix++;
+	} while (size >= base && prefix + 1 < prefixes.length);
+
+	return `${size.toFixed(2)} ${prefixes[prefix]}iB`;
 }

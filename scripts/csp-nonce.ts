@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { Glob } from 'bun';
-import { panic } from './utils.ts';
+import { panic } from '#utils/cli';
 
 const dir = Bun.argv[2];
 if (!dir) {

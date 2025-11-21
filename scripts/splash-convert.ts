@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { type DecodedPng, decode } from 'fast-png';
-import { panic } from './utils.ts';
+import { panic } from '#utils/cli';
 
 const WIDTH = 128;
 const HEIGHT = 64;

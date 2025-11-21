@@ -4,14 +4,8 @@ import { join } from 'node:path';
 import { env, exit, stderr } from 'node:process';
 import { parseArgs } from 'node:util';
 import { $ } from 'bun';
-import {
-	baseOutDir,
-	fileAppend,
-	fsReplaceSymlink,
-	isMain,
-	orExit,
-	repoRoot,
-} from './utils.ts';
+import { isMain, orExit } from '#utils/cli';
+import { baseOutDir, fileAppend, fsReplaceSymlink, repoRoot } from '#utils/fs';
 
 const firmwareOutDir = join(baseOutDir, 'firmware');
 

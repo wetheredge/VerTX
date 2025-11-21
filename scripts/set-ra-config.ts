@@ -4,7 +4,8 @@ import { exists, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { argv } from 'node:process';
 import TOML from 'smol-toml';
-import { isMain, panic, repoRoot } from './utils.ts';
+import { isMain, panic } from '#utils/cli';
+import { repoRoot } from '#utils/fs';
 
 if (isMain(import.meta.url)) {
 	const args = argv.slice(2);

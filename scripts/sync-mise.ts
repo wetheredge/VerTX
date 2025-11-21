@@ -2,8 +2,9 @@
 
 import { join } from 'node:path';
 import TOML from 'smol-toml';
+import { panic } from '#utils/cli';
+import { repoRoot } from '#utils/fs';
 import * as versions from '../.config/versions.json';
-import { panic, repoRoot } from './utils.ts';
 
 const tools = {
 	'@typescript/native-preview': 'npm:@typescript/native-preview',
