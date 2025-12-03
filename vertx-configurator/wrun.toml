@@ -1,20 +1,37 @@
+[tasks.prebuild]
+internal = true
+run = "@cp ../vertx-config/out/config.ts src/generated/config.ts"
+
 [tasks.check]
 run = [
+    { task = "prebuild" },
     "biome ci",
-    "bun run -b astro check",
+    "pnpm astro check",
     "tsgo --project ./tsconfig.json",
 ]
 
 [tasks.build]
-run = "VERTX_SIMULATOR=false bun run -b astro build"
+run = [
+    { task = "prebuild" },
+    "VERTX_SIMULATOR=false pnpm astro build",
+]
 
 [tasks."simulator:run"]
 desc = "Run a development server for use with vertx-simulator/run"
-run = "VERTX_SIMULATOR=true bun run -b astro dev"
+run = [
+    { task = "prebuild" },
+    "VERTX_SIMULATOR=true pnpm astro dev",
+]
 
 [tasks."simulator:build"]
-run = "VERTX_SIMULATOR=true bun run -b astro build"
+run = [
+    { task = "prebuild" },
+    "VERTX_SIMULATOR=true pnpm astro build",
+]
 
 [tasks."simulator:preview"]
 desc = "Preview the latest simulator build"
-run = "VERTX_SIMULATOR=true bun run -b astro dev"
+run = [
+    { task = "prebuild" },
+    "VERTX_SIMULATOR=true pnpm astro dev",
+]

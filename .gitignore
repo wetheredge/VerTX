@@ -2,13 +2,13 @@
 /.tools/
 /target/
 /out/
-/node_modules/
-.astro/
-.env
-.env.*
 
 /.direnv
 /result
+
+node_modules/
+generated/
+.astro/
 
 /.helix
 /.vscode

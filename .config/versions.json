@@ -9,6 +9,8 @@
 	"cargo-sort": "2.0.2",
 	"dprint": "0.50.2",
 	"gcc": "15.1.0_20250607",
+	"nodejs-slim": "24.9.0",
+	"pnpm": "10.18.0",
 	"probe-rs-tools": "0.29.1",
 	"rust": "1.89.0.0",
 	"rust-analyzer": "2025-08-25",

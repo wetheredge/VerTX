@@ -8,9 +8,6 @@
 	"overrides": [
 		{
 			"includes": ["astro.config.ts"],
-			"javascript": {
-				"globals": ["Bun"]
-			},
 			"linter": {
 				"rules": {
 					"correctness": {

@@ -1,5 +1,7 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
+import { readFileSync, writeFileSync } from 'node:fs';
+import { argv, stdout } from 'node:process';
 import { type DecodedPng, decode } from 'fast-png';
 import { panic } from '#utils/cli';
 
@@ -9,35 +11,35 @@ const HEIGHT = 64;
 // Largest power of 2 that can safely be represented in a JS number
 const SAFE_BITS = 16;
 
-const path = Bun.argv[2];
+const path = argv[2];
 if (!path) {
 	panic('Missing input path');
 }
 
-const rawImage = await Bun.file(path).arrayBuffer();
+const rawImage = readFileSync(path);
 const image = decode(rawImage, { checkCrc: true });
 if (image.width !== WIDTH || image.height !== HEIGHT) {
 	panic('Incorrect dimensions');
 }
 
-const output = Bun.stdout.writer();
-output.write('static SPLASH: [u128;64] = [\n');
+const output = ['static SPLASH: [u128;64] = [\n'];
 for (let i = 0; i < WIDTH * HEIGHT; ) {
 	if (i % WIDTH === 0) {
-		output.write('    0x');
+		output.push('    0x');
 	}
 
 	const bits: Array<number> = [];
 	for (; bits.length < SAFE_BITS; i++) {
 		bits.push(getBinaryPixel(image, i));
 	}
-	output.write(bitsToHex(bits));
+	output.push(bitsToHex(bits));
 
 	if (i % WIDTH === 0) {
-		output.write(',\n');
+		output.push(',\n');
 	}
 }
-output.write('];\n');
+output.push('];\n');
+writeFileSync(stdout.fd, output.join(''));
 
 function getBinaryPixel(image: DecodedPng, pixel: number): number {
 	// Maximum channel value for source image bit depth

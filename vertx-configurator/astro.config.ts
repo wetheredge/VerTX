@@ -1,13 +1,17 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { env } from 'node:process';
+import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { minify } from '@zokki/astro-minify';
 import type { AstroIntegration, AstroUserConfig } from 'astro';
 import { envField } from 'astro/config';
 import browserslist from 'browserslist';
 import viteTarget from 'browserslist-to-esbuild';
-import { fileURLToPath, Glob } from 'bun';
 import { browserslistToTargets as lightningTargets } from 'lightningcss';
+import { lookup as getMime } from 'mime-types';
+import { glob } from 'tinyglobby';
 
 const port = 8001;
 
@@ -30,7 +34,7 @@ const config: AstroUserConfig = {
 		}),
 	],
 
-	base: isSimulator && import.meta.env.PROD ? '/configurator' : '',
+	base: isSimulator && env.NODE_ENV === 'production' ? '/configurator' : '',
 	env: {
 		schema: {
 			// biome-ignore lint/style/useNamingConvention: environment variable
@@ -92,7 +96,7 @@ function vertx(options: VertxOptions): undefined | AstroIntegration {
 	}
 
 	const assetPaths = (outDir: string) =>
-		new Glob(`${options.assetsPrefix}**`).scan({ cwd: outDir });
+		glob(`${options.assetsPrefix}**`, { cwd: outDir });
 
 	type AssetBase = {
 		route: string;
@@ -128,32 +132,37 @@ function vertx(options: VertxOptions): undefined | AstroIntegration {
 			},
 			'astro:build:done': async ({ dir }) => {
 				const outDir = fileURLToPath(dir);
-				for await (const path of assetPaths(outDir)) {
+				for (const path of await assetPaths(outDir)) {
 					baseAssets.push({ route: path, path: new URL(path, dir) });
 				}
 
 				const assets = await Promise.all(
 					baseAssets.map(
 						async ({ route, path: rawPath }): Promise<Asset> => {
-							const file = Bun.file(rawPath);
+							const mime = getMime(rawPath.pathname);
+							if (typeof mime !== 'string') {
+								throw new Error(
+									`failed to determine mime type of '${rawPath}'`,
+								);
+							}
+
 							const asset = {
 								route,
 								file: path.relative(
 									outDir,
 									fileURLToPath(rawPath),
 								),
-								mime: file.type,
+								mime,
 								gzip: false,
 							};
 
-							if (file.type.startsWith('text/')) {
-								const compressed = Bun.gzipSync(
-									await file.bytes(),
-								);
+							if (asset.mime.startsWith('text/')) {
+								const raw = await readFile(rawPath);
+								const compressed = gzipSync(raw);
 
-								if (compressed.byteLength < file.size) {
+								if (compressed.byteLength < raw.byteLength) {
 									const compressedPath = `${fileURLToPath(rawPath)}.gz`;
-									await Bun.write(compressedPath, compressed);
+									await writeFile(compressedPath, compressed);
 
 									asset.gzip = true;
 									asset.file += '.gz';
@@ -165,7 +174,7 @@ function vertx(options: VertxOptions): undefined | AstroIntegration {
 					),
 				);
 
-				await Bun.write(
+				await writeFile(
 					path.join(outDir, 'assets.json'),
 					JSON.stringify(assets),
 				);

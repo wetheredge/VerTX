@@ -1,41 +1,55 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
-import { join } from 'node:path';
-import { env, exit, stderr } from 'node:process';
+import { appendFile, readFile, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+import { argv, env, exit } from 'node:process';
 import { parseArgs } from 'node:util';
-import { $ } from 'bun';
-import { isMain, orExit } from '#utils/cli';
-import { baseOutDir, fileAppend, fsReplaceSymlink, repoRoot } from '#utils/fs';
+import { SubprocessError } from 'nano-spawn';
+import { cargoBuild } from '#utils/cargo';
+import { exec, isMain, orExit } from '#utils/cli';
+import { baseOutDir, fsReplaceSymlink, repoRoot } from '#utils/fs';
 
 const firmwareOutDir = join(baseOutDir, 'firmware');
 
 export async function build(command: string, release?: boolean) {
-	// biome-ignore-start lint/style/useNamingConvention: env vars
-	const cargoEnv = {
-		CARGO_TERM_COLOR: 'always',
-		...env,
-		VERTX_TARGET: 'simulator',
-	};
-	// biome-ignore-end lint/style/useNamingConvention: env vars
-	const cargo = $`cargo ${command} -p vertx -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown -F simulator ${release ? '--release' : ''}`;
-	await orExit(cargo.env(cargoEnv));
+	await cargoBuild({
+		command,
+		buildStd: 'std,panic_abort',
+		target: 'wasm32-unknown-unknown',
+		features: ['simulator'],
+		release,
+		env: {
+			...env,
+			// biome-ignore lint/style/useNamingConvention: env var
+			VERTX_TARGET: 'simulator',
+		},
+	});
 
 	if (command === 'build') {
 		const profile = release ? 'release' : 'debug';
 
 		const outName = `simulator_${profile}`;
 		const outDir = join(firmwareOutDir, outName);
-		const bindgen = $`wasm-bindgen --out-dir ${outDir} --target web target/wasm32-unknown-unknown/${profile}/vertx.wasm`;
-		await orExit(bindgen.cwd(repoRoot));
+		await orExit(
+			exec(
+				'wasm-bindgen',
+				`--out-dir=${outDir}`,
+				'--target=web',
+				`target/wasm32-unknown-unknown/${profile}/vertx.wasm`,
+				{ cwd: repoRoot },
+			),
+		);
 
 		await Promise.all([
-			fileAppend(
+			appendFile(
 				join(outDir, 'vertx.d.ts'),
 				'\nexport const memoryName: "memory";',
+				{ flush: true },
 			),
-			fileAppend(
+			appendFile(
 				join(outDir, 'vertx.js'),
 				'\nexport const memoryName = "memory";',
+				{ flush: true },
 			),
 		]);
 
@@ -54,50 +68,71 @@ export async function build(command: string, release?: boolean) {
 				'--minify-imports-and-exports-and-modules',
 			];
 			const wasm = 'vertx_bg.wasm';
-			const wasmOpt = $`wasm-opt -O3 ${passes} --output ${wasm} ${wasm}`
-				.cwd(outDir)
-				.nothrow();
+			const wasmOpt = exec(
+				'wasm-opt',
+				'-O3',
+				...passes,
+				`--output=${wasm}`,
+				wasm,
+				{ cwd: outDir, stdout: 'pipe' },
+			);
 
-			const renames = new Map();
-			for await (const line of wasmOpt.lines()) {
-				const [from, to] = line.split(' => ');
-				if (to && from !== to) {
-					renames.set(from, to);
+			const renames = new Map<string, string>();
+			try {
+				for await (const line of wasmOpt.stdout) {
+					const [from, to] = line.split(' => ');
+					if (to && from !== to) {
+						renames.set(from, to);
+					}
 				}
-			}
-			const wasmOptResult = await wasmOpt;
-			if (wasmOptResult.exitCode !== 0) {
-				stderr.write(wasmOptResult.stderr);
-				exit(wasmOptResult.exitCode);
+				await wasmOpt;
+			} catch (err) {
+				if (err instanceof SubprocessError && err.exitCode != null) {
+					console.error('wasm-opt failed');
+					exit(err.exitCode);
+				}
+				throw err;
 			}
 
-			const wasmDts = Bun.file(join(outDir, 'vertx_bg.wasm.d.ts'));
-			let wasmDtsContents = await wasmDts.text();
-			for (const [from, to] of renames) {
-				wasmDtsContents = wasmDtsContents.replaceAll(from, to);
-			}
-			await wasmDts.write(wasmDtsContents);
+			type Updates = Array<[from: string, to: string]>;
+			const updateFile = async (
+				file: string,
+				getUpdates: (from: string, to: string) => Updates,
+				once: Updates = [],
+			) => {
+				const path = join(outDir, file);
+				let contents = await readFile(path, { encoding: 'utf8' });
+				const apply = (updates: Updates) => {
+					for (const [from, to] of updates) {
+						contents = contents.replaceAll(from, to);
+					}
+				};
 
-			const dts = Bun.file(join(outDir, 'vertx.d.ts'));
-			let dtsContents = await dts.text();
-			for (const [from, to] of renames) {
-				dtsContents = dtsContents
-					.replaceAll(`readonly ${from}`, `readonly ${to}`)
-					.replaceAll(`'${from}'`, `'${to}'`)
-					.replaceAll(`"${from}"`, `"${to}"`);
-			}
-			await Bun.write(dts, dtsContents);
+				apply(once);
+				for (const [from, to] of renames) {
+					apply(getUpdates(from, to));
+				}
 
-			const js = Bun.file(join(outDir, 'vertx.js'));
-			let jsContents = await js.text();
-			jsContents = jsContents.replaceAll('imports.wbg', 'imports.a');
-			for (const [from, to] of renames) {
-				jsContents = jsContents
-					.replaceAll(`.${from}`, `.${to}`)
-					.replaceAll(`'${from}'`, `'${to}'`)
-					.replaceAll(`"${from}"`, `"${to}"`);
-			}
-			await Bun.write(js, jsContents);
+				await writeFile(path, contents);
+			};
+
+			await Promise.all([
+				updateFile('vertx_bg.wasm.d.ts', (from, to) => [[from, to]]),
+				updateFile('vertx.d.ts', (from, to) => [
+					[`readonly ${from}`, `readonly ${to}`],
+					[`'${from}'`, `'${to}'`],
+					[`"${from}"`, `"${to}"`],
+				]),
+				updateFile(
+					'vertx.js',
+					(from, to) => [
+						[`.${from}`, `.${to}`],
+						[`'${from}'`, `'${to}'`],
+						[`"${from}"`, `"${to}"`],
+					],
+					[['imports.wbg', 'imports.a']],
+				),
+			]);
 		}
 
 		await fsReplaceSymlink(outName, join(firmwareOutDir, 'simulator'));
@@ -105,10 +140,10 @@ export async function build(command: string, release?: boolean) {
 }
 
 if (isMain(import.meta.url)) {
-	const usage = `usage: scripts/${import.meta.file} [--command build/clippy/…] [...args]`;
+	const usage = `usage: scripts/${basename(import.meta.filename)} [--command build/clippy/…] [...args]`;
 
 	const { values } = parseArgs({
-		args: Bun.argv.slice(2),
+		args: argv.slice(2),
 		options: {
 			help: { short: 'h', type: 'boolean' },
 			command: { type: 'string', default: 'build' },

@@ -16,8 +16,8 @@ desc = "Setup needed after first clone and dependency updates"
 run = [
     { task = "mark-caches" },
     "mise install",
-    "bun install",
-    "bun run scripts/fetch-rust.ts",
+    "pnpm install",
+    "node scripts/fetch-rust.ts",
     # Install dprint plugins:
     "dprint output-file-paths --config=.config/dprint.json >/dev/null",
     "@echo && echo 'Run `wrun target` to select a build target'",
@@ -27,7 +27,7 @@ run = [
 desc = "Same as /setup, but doesn't install dev tools. Meant to be used in the nix devShell"
 run = [
     { task = "mark-caches" },
-    "bun install",
+    "pnpm install",
     # Install dprint plugins:
     "dprint output-file-paths --config=.config/dprint.json >/dev/null",
     "@echo && echo 'Run `wrun target` to select a build target'",
@@ -38,7 +38,7 @@ desc = "Sync versions config from nix flake"
 # Assume versions are the same on all platforms
 run = [
     "nix eval --json ~/Projects/VerTX#versions.x86_64-linux > .config/versions.json",
-    "bun run scripts/sync-mise.ts",
+    "node scripts/sync-mise.ts",
 ]
 
 [tasks.format]
@@ -63,11 +63,11 @@ run = "rm -rf .cache .tools out target node_modules"
 
 [tasks.target]
 desc = "Set the target to build firmware for"
-run = "@bun run scripts/set-target.ts"
+run = "@node scripts/set-target.ts"
 
 [tasks."targets:check"]
 desc = "Validate all target specifications"
-run = "bun run scripts/check-targets.ts"
+run = "node scripts/check-targets.ts"
 
 [tasks.check]
 desc = "Typecheck & lint almost everything. Skips `vertx/check`"

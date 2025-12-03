@@ -1,8 +1,9 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
-import { exists, mkdir } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { argv } from 'node:process';
+import { existsSync } from 'node:fs';
+import { type FileHandle, mkdir, open } from 'node:fs/promises';
+import { basename, dirname } from 'node:path';
+import { argv, env, exit } from 'node:process';
 import TOML from 'smol-toml';
 import { isMain, panic } from '#utils/cli';
 import { repoRoot } from '#utils/fs';
@@ -10,36 +11,17 @@ import { repoRoot } from '#utils/fs';
 if (isMain(import.meta.url)) {
 	const args = argv.slice(2);
 	if (args.length === 1 && args[0] === '--simulator') {
-		await setRustAnayzerConfig('wasm32-unknown-unknown', ['simulator'], {
-			// biome-ignore lint/style/useNamingConvention: environment variable
-			VERTX_TARGET: 'simulator',
+		await setRustAnayzerConfig({
+			triple: 'wasm32-unknown-unknown',
+			features: ['simulator'],
+			env: {
+				// biome-ignore lint/style/useNamingConvention: environment variable
+				VERTX_TARGET: 'simulator',
+			},
 		});
 	} else {
-		panic(`usage: ${import.meta.file} --simulator`);
+		panic(`usage: ${basename(import.meta.filename)} --simulator`);
 	}
-}
-
-export async function setRustAnayzerConfig(
-	triple: string,
-	features: Array<string>,
-	env: Record<string, string>,
-) {
-	const enable = import.meta.env.VERTX_SET_RA_FEATURES ?? 'true';
-	if (enable === 'false' || enable === '0') {
-		return;
-	}
-
-	const config = {
-		env,
-		triple,
-		features,
-	};
-
-	await Promise.all([
-		helix(config),
-		vscode(config),
-		// PRs for more are welcome!
-	]);
 }
 
 type Config = {
@@ -48,9 +30,23 @@ type Config = {
 	features: Array<string>;
 };
 
+export async function setRustAnayzerConfig(config: Config) {
+	const enable = env.VERTX_SET_RA_FEATURES ?? 'true';
+	if (enable === 'false' || enable === '0') {
+		exit(0);
+	}
+
+	await Promise.all([
+		helix(config),
+		vscode(config),
+		// PRs for more are welcome!
+	]);
+}
+
 async function helix({ env, triple, features }: Config) {
-	const file = await open('.helix/languages.toml');
-	const config = TOML.parse(await file.text());
+	const [file, raw] = await initFile('.helix/languages.toml');
+	const config = TOML.parse(raw);
+
 	const baseKey = ['language-server', 'rust-analyzer', 'config'];
 
 	const allEnv = get(config, [...baseKey, 'cargo', 'extraEnv'], {});
@@ -65,8 +61,7 @@ async function helix({ env, triple, features }: Config) {
 }
 
 async function vscode({ env, triple, features }: Config) {
-	const file = await open('.vscode/settings.json');
-	const raw = await file.text();
+	const [file, raw] = await initFile('.vscode/settings.json');
 	const config = JSON.parse(raw === '' ? '{}' : raw);
 
 	const allEnv = get(config, ['rust-analyzer.cargo.extraEnv'], {});
@@ -80,13 +75,14 @@ async function vscode({ env, triple, features }: Config) {
 	await file.write(JSON.stringify(config));
 }
 
-async function open(path: string) {
+async function initFile(path: string): Promise<[FileHandle, string]> {
 	const absolute = `${repoRoot}/${path}`;
-	if (!(await exists(absolute))) {
+	if (!existsSync(absolute)) {
 		await mkdir(dirname(absolute), { recursive: true });
-		await Bun.write(absolute, '');
 	}
-	return Bun.file(absolute);
+	const file = await open(absolute, 'w+');
+	const contents = await file.readFile({ encoding: 'utf8' });
+	return [file, contents];
 }
 
 /** Get a nested value from an object by path, creating missing objects along the way and assigning a default value if needed. */

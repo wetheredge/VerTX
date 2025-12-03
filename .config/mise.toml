@@ -3,7 +3,6 @@
 "aqua:rhysd/actionlint" = "1.7.7"
 "aqua:WebAssembly/binaryen" = "124"
 "aqua:biomejs/biome" = "2.2.5"
-"core:bun" = "1.2.23"
 "cargo:cargo-nextest" = "0.9.105"
 "cargo:cargo-shear" = "1.5.1"
 "cargo:cargo-sort" = "2.0.2"

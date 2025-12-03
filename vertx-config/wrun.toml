@@ -7,7 +7,7 @@ run = [
 [tasks.codegen]
 run = [
     "rm -rf out && mkdir out",
-    "bun run src/generate.ts",
+    "node src/generate.ts",
     "rustfmt --config-path=../rustfmt.toml out/config.rs out/current.rs out/old.rs",
     "biome format --write out/config.ts",
 ]

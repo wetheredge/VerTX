@@ -1,1 +1,0 @@
-../../vertx-config/out/config.ts

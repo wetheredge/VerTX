@@ -1,17 +1,16 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
-import { exit } from 'node:process';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { argv, exit, stdin, stdout } from 'node:process';
 
-const direction = Bun.argv[2];
+const direction = argv[2];
 
 if (direction == null || !['up', 'down'].includes(direction)) {
 	console.info('Usage: migrate.ts [up|down] < config.in > config.out');
 	exit(1);
 }
 
-const migrateFile = await Bun.file(
-	`../target/migrate-${direction}.wasm`,
-).bytes();
+const migrateFile = readFileSync(`../target/migrate-${direction}.wasm`);
 const { instance: migrate } = await WebAssembly.instantiate(migrateFile);
 const memory = migrate.exports.memory as WebAssembly.Memory;
 const dataOffset = migrate.exports.DATA as WebAssembly.Global;
@@ -19,8 +18,8 @@ const dataOffset = migrate.exports.DATA as WebAssembly.Global;
 const memoryView = new Uint8Array(memory.buffer, dataOffset.value);
 const run = migrate.exports.run as () => number;
 
-const input = await Bun.stdin.bytes();
-memoryView.set(input);
+memoryView.set(readFileSync(stdin.fd));
+
 let length: number;
 try {
 	length = run();
@@ -31,5 +30,4 @@ try {
 	exit(1);
 }
 
-const output = memoryView.slice(0, length);
-await Bun.write(Bun.stdout, output);
+writeFileSync(stdout.fd, memoryView.subarray(0, length));

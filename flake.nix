@@ -21,11 +21,12 @@
       actionlint
       binaryen # wasm-opt
       biome
-      bun
       cargo-nextest
       cargo-shear
       cargo-sort
       dprint
+      nodejs-slim_latest
+      pnpm
       probe-rs-tools
       rust-analyzer
       typescript-go
