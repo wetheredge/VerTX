@@ -29,6 +29,7 @@
       probe-rs-tools
       rust-analyzer
       typescript-go
+      typescript-language-server
       typos
       wasm-bindgen-cli
 

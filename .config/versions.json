@@ -11,6 +11,8 @@
 	"gcc": "15.1.0_20250607",
 	"probe-rs-tools": "0.29.1",
 	"rust": "1.89.0.0",
+	"rust-analyzer": "2025-08-25",
+	"typescript-language-server": "5.0.0",
 	"typos": "1.35.6",
 	"wasm-bindgen-cli": "0.2.100",
 	"wrun": "0.1.4"
