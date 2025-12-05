@@ -18,6 +18,7 @@ export function typescript({ config, version }: ConfigMeta, outFile: string) {
 				? 'varuint'
 				: 'varint';
 
+	// outln`// biome-ignore lint/correctness/noUndeclaredDependencies: won't resolve from`;
 	outln`import { type Reader, Writer } from "postcard";\n`;
 
 	outln`export const configKeys = {`;
