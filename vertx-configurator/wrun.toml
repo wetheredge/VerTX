@@ -1,6 +1,6 @@
 [tasks.prebuild]
 internal = true
-run = "@cp ../vertx-config/out/config.ts src/generated/config.ts"
+run = "@cp ../vertx-config/out/config.ts src/generated/"
 
 [tasks.check]
 run = [

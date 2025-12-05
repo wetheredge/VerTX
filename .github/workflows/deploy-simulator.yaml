@@ -75,6 +75,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-node
+      - run: cp vertx-config/out/config.ts vertx-configurator/src/generated/
       - run: pnpm astro build
         working-directory: vertx-configurator
         env:
