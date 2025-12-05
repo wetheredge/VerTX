@@ -304,7 +304,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dir: [postcard-ts, scripts, vertx-config, vertx-config-migrate, vertx-configurator]
+        dir: [postcard-ts, scripts, vertx-config, vertx-config-migrate]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -316,6 +316,23 @@ jobs:
         working-directory: ${{ matrix.dir }}
         if: ${{ matrix.dir == 'vertx-configurator' }}
       - run: tsgo --project ${{ matrix.dir }}/tsconfig.json*
+
+  tsc-configurator:
+    name: TypeScript (vertx-configurator)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: vertx-configurator
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-node
+        with:
+          packages: '@typescript/native-preview'
+      - run: cp ../vertx-config/out/config.ts src/generated/
+      - run: pnpm astro check
+      - run: tsgo --project tsconfig.json
 
   tsc-simulator:
     name: TypeScript (vertx-simulator)
@@ -406,6 +423,7 @@ jobs:
       - tests-vertx
       - build
       - tsc
+      - tsc-configurator
       - tsc-simulator
       - biome
       - dprint
