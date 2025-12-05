@@ -7,6 +7,8 @@
 "cargo:cargo-shear" = "1.5.1"
 "cargo:cargo-sort" = "2.0.2"
 "aqua:dprint/dprint" = "0.50.2"
+node = "24.9.0"
+pnpm = "10.18.0"
 "cargo:probe-rs-tools" = "0.29.1"
 "aqua:crate-ci/typos" = "1.35.6"
 "cargo:wasm-bindgen-cli" = "0.2.100"

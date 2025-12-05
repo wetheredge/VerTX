@@ -16,6 +16,8 @@ const tools = {
 	'cargo-shear': 'cargo:cargo-shear',
 	'cargo-sort': 'cargo:cargo-sort',
 	dprint: 'aqua:dprint/dprint',
+	nodejs: 'node',
+	pnpm: 'pnpm',
 	'probe-rs-tools': 'cargo:probe-rs-tools',
 	typos: 'aqua:crate-ci/typos',
 	'wasm-bindgen-cli': 'cargo:wasm-bindgen-cli',
