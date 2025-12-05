@@ -21,11 +21,12 @@
       actionlint
       binaryen # wasm-opt
       biome
-      bun
       cargo-nextest
       cargo-shear
       cargo-sort
       dprint
+      nodejs-slim_latest
+      pnpm
       probe-rs-tools
       rust-analyzer
       typescript-go
@@ -47,6 +48,7 @@
       lib.flatten
       (lib.map ({name, pname ? name, version, ...}:
         if pname == "typescript-go" then {name = "@typescript/native-preview"; value = tsgoNix2Npm version;}
+        else if pname == "nodejs-slim" then {name = "nodejs"; value = version;}
         else if pname == "esp-rs" then {name = "rust"; value = version;}
         else if pname == "esp-xtensa-gcc" then {name = "gcc"; value = version;}
         else {name = pname; value = version;}

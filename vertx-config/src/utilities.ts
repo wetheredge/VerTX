@@ -1,4 +1,4 @@
-import type { BunFile, FileSink } from 'bun';
+import { Utf8Stream } from 'node:fs';
 import * as types from './types.ts';
 
 export type ConfigMeta = {
@@ -10,24 +10,31 @@ type Out = (
 	s: TemplateStringsArray,
 	...args: Array<{ toString(): string }>
 ) => void;
-export function getWriter(outFile: BunFile): {
-	writer: FileSink;
+export function getWriter(path: string): {
+	stream: Utf8Stream;
 	out: Out;
 	outln: Out;
 } {
-	const writer = outFile.writer();
+	const stream = new Utf8Stream({
+		append: false,
+		dest: path,
+		sync: true,
+	});
+
 	const out: Out = (segments, ...args) =>
 		segments.forEach((s, i) => {
-			writer.write(s);
+			stream.write(s);
 			if (args[i] != null) {
-				writer.write(args[i].toString());
+				stream.write(args[i].toString());
 			}
 		});
+
 	const outln: Out = (segments, ...args) => {
 		out(segments, ...args);
-		out`\n`;
+		stream.write('\n');
 	};
-	return { writer, out, outln };
+
+	return { stream, out, outln };
 }
 
 export type Path = Array<string>;

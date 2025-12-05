@@ -1,5 +1,5 @@
-name: Setup Bun
-description: Setup Bun from versions config
+name: Setup Node + pnpm
+description: Setup Node + pnpm from versions config
 
 inputs:
   install:
@@ -12,13 +12,21 @@ inputs:
 runs:
   using: composite
   steps:
-    - id: version
+    - id: node
       shell: bash
-      run: .github/scripts/get-version.sh bun >> "$GITHUB_OUTPUT"
-    - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+      run: .github/scripts/get-version.sh nodejs >> "$GITHUB_OUTPUT"
+    - id: pnpm
+      shell: bash
+      run: .github/scripts/get-version.sh pnpm >> "$GITHUB_OUTPUT"
+    - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
       with:
-        bun-version: ${{ steps.version.outputs.version }}
-    - run: bun install --frozen-lockfile
+        version: ${{ steps.pnpm.outputs.version }}
+        run_install: false
+    - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      with:
+        node-version: ${{ steps.node.outputs.version }}
+        cache: pnpm
+    - run: pnpm install
       shell: bash
       if: inputs.install == 'true'
     - shell: bash
@@ -34,5 +42,5 @@ runs:
             echo "$package is not in versions config"
             exit 1
           fi
-          bun add --global "$package@$version"
+          pnpm add --global "$package@$version"
         done

@@ -1,0 +1,12 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "@tsconfig/node-lts/tsconfig.json",
+	"compilerOptions": {
+		"allowJs": false,
+		"composite": true,
+		"noEmit": false,
+		"noPropertyAccessFromIndexSignature": false,
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true
+	}
+}

@@ -69,8 +69,8 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
-      - run: bun run scripts/check-targets.ts
+      - uses: ./.github/actions/setup-node
+      - run: node scripts/check-targets.ts
 
   config-codegen:
     name: Check config codegen
@@ -81,13 +81,13 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-rust
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup-node
       - uses: ./.github/actions/setup-biome
       - name: Regenerate
         working-directory: vertx-config
         run: |
           rm -rf out && mkdir out
-          bun run src/generate.ts
+          node src/generate.ts
           rustfmt --config-path=../rustfmt.toml out/config.rs out/current.rs out/old.rs
           biome format --write out/config.ts
       - run: git diff --exit-code
@@ -143,8 +143,9 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
-      - run: bun run -b astro build
+      - uses: ./.github/actions/setup-node
+      - run: cp ../vertx-config/out/config.ts src/generated/
+      - run: pnpm astro build
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: configurator
@@ -168,14 +169,14 @@ jobs:
           persist-credentials: false
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup-node
       - name: Get pre-built configurator
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: configurator
           path: out
       - name: Run clippy
-        run: bun run scripts/build-target.ts --command=clippy --target=${{ matrix.target }}
+        run: node scripts/build-target.ts --command=clippy --target=${{ matrix.target }}
 
   clippy-vertx-simulator:
     name: Clippy (vertx simulator)
@@ -187,8 +188,8 @@ jobs:
           persist-credentials: false
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
-      - uses: ./.github/actions/setup-bun
-      - run: bun run scripts/build-simulator.ts --command=clippy
+      - uses: ./.github/actions/setup-node
+      - run: node scripts/build-simulator.ts --command=clippy
 
   tests:
     name: Tests
@@ -250,14 +251,14 @@ jobs:
           persist-credentials: false
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup-node
       - name: Get pre-built configurator
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: configurator
           path: out
       - name: Build
-        run: bun run scripts/build-target.ts --target=${{ matrix.target }} --release
+        run: node scripts/build-target.ts --target=${{ matrix.target }} --release
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: vertx-${{ matrix.target }}
@@ -303,18 +304,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dir: [postcard-ts, scripts, vertx-config, vertx-config-migrate, vertx-configurator]
+        dir: [postcard-ts, scripts, vertx-config, vertx-config-migrate]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup-node
         with:
           packages: '@typescript/native-preview'
-      - run: bun run -b astro check
+      - run: pnpm astro check
         working-directory: ${{ matrix.dir }}
         if: ${{ matrix.dir == 'vertx-configurator' }}
-      - run: tsgo --project ${{ matrix.dir }}/tsconfig.json
+      - run: tsgo --project ${{ matrix.dir }}/tsconfig.json*
+
+  tsc-configurator:
+    name: TypeScript (vertx-configurator)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: vertx-configurator
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-node
+        with:
+          packages: '@typescript/native-preview'
+      - run: cp ../vertx-config/out/config.ts src/generated/
+      - run: pnpm astro check
+      - run: tsgo --project tsconfig.json
 
   tsc-simulator:
     name: TypeScript (vertx-simulator)
@@ -326,14 +344,14 @@ jobs:
           persist-credentials: false
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup-node
         with:
           packages: '@typescript/native-preview'
       - uses: ./.github/actions/cargo-install
         with:
           tool: wasm-bindgen-cli
       - uses: ./.github/actions/setup-binaryen
-      - run: bun run scripts/build-simulator.ts
+      - run: node scripts/build-simulator.ts
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
       - run: tsgo --project vertx-simulator/tsconfig.json
@@ -405,6 +423,7 @@ jobs:
       - tests-vertx
       - build
       - tsc
+      - tsc-configurator
       - tsc-simulator
       - biome
       - dprint

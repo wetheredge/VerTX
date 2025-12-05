@@ -1,9 +1,11 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "../.config/tsconfig.bun.json",
+	"extends": "../.config/tsconfig.node.json",
 	"compilerOptions": {
+		// Needed for WebAssembly
+		"lib": ["dom"],
 		"tsBuildInfoFile": "../.cache/config-migrate.tsbuildinfo",
-		"noEmit": true
+		"noEmit": true,
 	},
-	"include": ["*.ts"]
+	"include": ["*.ts"],
 }

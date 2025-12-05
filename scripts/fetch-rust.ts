@@ -1,11 +1,15 @@
+import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { cwd } from 'node:process';
-import { $, fileURLToPath } from 'bun';
+import { Writable } from 'node:stream';
+import { fileURLToPath } from 'node:url';
 import { Listr, type ListrTask } from 'listr2';
+import { SubprocessError } from 'nano-spawn';
+import { exec } from '#utils/cli';
 import { repoRoot } from '#utils/fs';
-import * as versions from '../.config/versions.json';
+import versions from '../.config/versions.json' with { type: 'json' };
 
 // See <https://github.com/espressif/crosstool-NG/releases/latest>
 const LLVM_TARGET_TO_GCC: Record<string, string> = {
@@ -32,12 +36,10 @@ function rust(): ListrTask {
 
 	return {
 		title: `Xtensa Rust v${version}`,
-		async skip() {
-			const output = await $`${dirs.out}/bin/rustc --version`
-				.nothrow()
-				.text();
-			return output.trimEnd().endsWith(`(${version})`);
-		},
+		skip: () =>
+			testCommand([`${dirs.out}/bin/rustc`, '--version'], (stdout) =>
+				stdout.trimEnd().endsWith(`(${version})`),
+			),
 		async task(_ctx, task): Promise<Listr> {
 			await fs.mkdir(dirs.download, { recursive: true });
 
@@ -66,7 +68,7 @@ function rust(): ListrTask {
 								async task() {
 									const tempPrefix = `${asset.name}-`;
 									const dir = await getTempDir(tempPrefix);
-									await $`tar -xf ${downloadPath} -C ${dir} --strip-components 1`.quiet();
+									await untar(downloadPath, dir, 1);
 									extracted.push(dir);
 								},
 							},
@@ -85,13 +87,24 @@ function rust(): ListrTask {
 						const tempDir = await getTempDir(tempPrefix, toolsDir);
 						// biome-ignore-start lint/performance/noAwaitInLoops: avoid concurrent modifications
 						for (const dir of extracted) {
-							await $`${dir}/install.sh --prefix=${tempDir}`.quiet();
+							await exec(
+								`${dir}/install.sh`,
+								`--prefix=${tempDir}`,
+								{ quiet: true },
+							);
 							await fs.rm(dir, { recursive: true });
 						}
 						// biome-ignore-end lint/performance/noAwaitInLoops: _
 						fs.rename(tempDir, dirs.out);
 
-						await $`rustup toolchain link vertx ${dirs.out}`.quiet();
+						await exec(
+							'rustup',
+							'toolchain',
+							'link',
+							'vertx',
+							dirs.out,
+							{ quiet: true },
+						);
 					},
 				},
 			]);
@@ -107,13 +120,11 @@ function gcc(): ListrTask {
 
 	return {
 		title: `Xtensa GCC v${version}`,
-		async skip() {
-			const output =
-				await $`${dirs.out}/bin/xtensa-esp32s3-elf-gcc --version`
-					.nothrow()
-					.text();
-			return output.includes(version);
-		},
+		skip: () =>
+			testCommand(
+				[`${dirs.out}/bin/xtensa-esp32s3-elf-gcc`, '--version'],
+				(stdout) => stdout.includes(version),
+			),
 		async task(_ctx, task): Promise<Listr> {
 			await fs.mkdir(dirs.download, { recursive: true });
 
@@ -139,7 +150,7 @@ function gcc(): ListrTask {
 					async task() {
 						const tempPrefix = `.${namespace}-`;
 						const tempDir = await getTempDir(tempPrefix, toolsDir);
-						await $`tar -xf ${downloadPath} -C ${tempDir} --strip-components 1`.quiet();
+						await untar(downloadPath, tempDir, 1);
 
 						await fs.rm(dirs.out, { recursive: true, force: true });
 						await fs.rename(tempDir, dirs.out);
@@ -150,13 +161,29 @@ function gcc(): ListrTask {
 	};
 }
 
+async function testCommand(
+	cmd: [string, ...Array<string>],
+	checkStdout: (s: string) => boolean,
+): Promise<boolean> {
+	try {
+		const { stdout } = await exec(...cmd);
+		return checkStdout(stdout);
+	} catch (err) {
+		if (err instanceof SubprocessError) {
+			return false;
+		}
+
+		throw err;
+	}
+}
+
 function downloadTask(url: string, downloadPath: string): ListrTask {
 	return {
 		title: 'download',
-		skip: () => Bun.file(downloadPath).exists(),
+		skip: () => existsSync(downloadPath),
 		async task(_ctx, task) {
 			const response = await fetch(url);
-			const writer = Bun.file(downloadPath).writer();
+			const file = await fs.open(downloadPath);
 
 			if (!response.ok) {
 				throw new Error(`fetch failed: ${response.status}`);
@@ -166,25 +193,45 @@ function downloadTask(url: string, downloadPath: string): ListrTask {
 			const rawLength = Number.parseInt(contentLength, 10);
 			const length = rawLength ? humanBytes(rawLength) : null;
 
-			let downloaded = 0;
-			for await (const chunk of response.body ?? []) {
-				writer.write(chunk);
-				downloaded += chunk.byteLength;
-				if (rawLength) {
-					task.output = `${humanBytes(downloaded)} / ${length}`;
-				} else {
-					task.output = `${humanBytes(downloaded)}`;
-				}
+			if (response.body) {
+				const writeStream = file.createWriteStream();
+				const writer = Writable.toWeb(writeStream).getWriter();
+
+				let downloaded = 0;
+				const progressStream = new WritableStream<ArrayBufferLike>({
+					abort: (reason) => writer.abort(reason),
+					close: () => writer.close(),
+					async write(chunk) {
+						await writer.write(chunk);
+						downloaded += chunk.byteLength;
+						task.output = rawLength
+							? `${humanBytes(downloaded)} / ${length}`
+							: humanBytes(downloaded);
+					},
+				});
+
+				response.body.pipeTo(progressStream);
 			}
 
-			await writer.end();
+			await file.close();
 		},
 	};
 }
 
+async function untar(file: string, dir: string, strip: number) {
+	await exec(
+		'tar',
+		'--extract',
+		`--file=${file}`,
+		`--directory=${dir}`,
+		`--strip-components=${strip}`,
+		{ quiet: true },
+	);
+}
+
 async function getLlvmTarget(): Promise<string> {
-	const output = await $`rustc +stable -vV`.text();
-	const version = output.match(/host:\s*(.*)/)?.[1];
+	const { stdout } = await exec('rustc', '+stable', '-vV');
+	const version = stdout.match(/host:\s*(.*)/)?.[1];
 	if (version == null) {
 		throw new Error('failed to get llvm target');
 	}

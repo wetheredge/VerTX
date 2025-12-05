@@ -1,13 +1,15 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import * as fs from 'node:fs';
-import { join } from 'node:path';
-import { env } from 'node:process';
+import { basename, join } from 'node:path';
+import { argv, env } from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { $, fileURLToPath } from 'bun';
-import { isMain, orExit, panic } from '#utils/cli';
+import TOML from 'smol-toml';
+import { cargoBuild } from '#utils/cargo';
+import { isMain, panic } from '#utils/cli';
 import { baseOutDir, fsReplaceSymlink, repoRoot } from '#utils/fs';
-import * as chip2Target from '../.config/chips.json';
+import chip2Target from '../.config/chips.json' with { type: 'json' };
 import { schema, type Target } from './target-schema.ts';
 
 export async function build(
@@ -20,25 +22,26 @@ export async function build(
 	const target = schema.parse(rawTarget);
 	const chip = getChipInfo(target.chip);
 
-	const features = getFeatures(target).join(' ');
-
 	const rustflags = [env.RUSTFLAGS, chip.cpu && `-Ctarget-cpu=${chip.cpu}`]
 		.filter((s) => s && s.length > 0)
 		.join(' ');
 
 	const path = [join(repoRoot, '.tools/gcc/bin'), env.PATH].join(':');
 
-	await orExit(
-		$`cargo ${command} -p vertx -Zbuild-std=alloc,core --target ${chip.target} -F '${features}' ${release ? '--release' : ''} ${extraArgs}`
-			.nothrow()
-			.env({
-				CARGO_TERM_COLOR: 'always',
-				...env,
-				PATH: path,
-				RUSTFLAGS: rustflags,
-				VERTX_TARGET: targetName,
-			}),
-	);
+	await cargoBuild({
+		command,
+		buildStd: 'alloc,core',
+		target: chip.target,
+		features: getFeatures(target),
+		release,
+		extraArgs,
+		env: {
+			...env,
+			PATH: path,
+			RUSTFLAGS: rustflags,
+			VERTX_TARGET: targetName,
+		},
+	});
 
 	if (command === 'build') {
 		const profile = release ? 'release' : 'debug';
@@ -69,10 +72,10 @@ export function getChipInfo(chip: string): ChipInfo {
 }
 
 if (isMain(import.meta.url)) {
-	const usage = `usage: scripts/${import.meta.file} [--command=build/clippy/…] --target=<target> -- [...args]`;
+	const usage = `usage: scripts/${basename(import.meta.filename)} [--command=build/clippy/…] --target=<target> -- [...args]`;
 
 	const { values, positionals } = parseArgs({
-		args: Bun.argv.slice(2),
+		args: argv.slice(2),
 		options: {
 			help: { short: 'h', type: 'boolean' },
 			target: { type: 'string' },
@@ -98,11 +101,13 @@ if (isMain(import.meta.url)) {
 		panic(`Cannot find target '${targetName}'`);
 	}
 
-	const target = await import(targetPath);
+	const target = TOML.parse(
+		fs.readFileSync(targetPath, { encoding: 'utf8' }),
+	);
 	await build(
 		values.command,
 		targetName,
-		target.default,
+		target,
 		values.release,
 		positionals,
 	);

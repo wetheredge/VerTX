@@ -1,0 +1,17 @@
+{
+	"$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+	"root": false,
+	"extends": "//",
+	"linter": {
+		"rules": {
+			"correctness": {
+				// `linter.includes` & `overrides` both fail to silence resolution failure for generated postcard import
+				"noUndeclaredDependencies": "off",
+				"noNodejsModules": "off",
+			},
+			"style": {
+				"noMagicNumbers": "off",
+			},
+		},
+	},
+}

@@ -1,21 +1,23 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import TOML from 'smol-toml';
 import { panic } from '#utils/cli';
 import { repoRoot } from '#utils/fs';
-import * as versions from '../.config/versions.json';
+import versions from '../.config/versions.json' with { type: 'json' };
 
 const tools = {
 	'@typescript/native-preview': 'npm:@typescript/native-preview',
 	actionlint: 'aqua:rhysd/actionlint',
 	binaryen: 'aqua:WebAssembly/binaryen',
 	biome: 'aqua:biomejs/biome',
-	bun: 'core:bun',
 	'cargo-nextest': 'cargo:cargo-nextest',
 	'cargo-shear': 'cargo:cargo-shear',
 	'cargo-sort': 'cargo:cargo-sort',
 	dprint: 'aqua:dprint/dprint',
+	nodejs: 'node',
+	pnpm: 'pnpm',
 	'probe-rs-tools': 'cargo:probe-rs-tools',
 	typos: 'aqua:crate-ci/typos',
 	'wasm-bindgen-cli': 'cargo:wasm-bindgen-cli',
@@ -35,4 +37,4 @@ const miseConfig = {
 	tools: miseTools,
 };
 const miseConfigFile = join(repoRoot, '.config/mise.toml');
-await Bun.write(miseConfigFile, TOML.stringify(miseConfig));
+writeFileSync(miseConfigFile, TOML.stringify(miseConfig));

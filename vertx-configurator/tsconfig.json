@@ -12,7 +12,7 @@
 	"include": [".astro/types.d.ts", "src/**/*"],
 	"references": [
 		{
-			"path": "./tsconfig.bun.json"
+			"path": "./tsconfig.node.json"
 		}
 	]
 }

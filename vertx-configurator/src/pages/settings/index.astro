@@ -1,5 +1,5 @@
 ---
-import { configKeys } from '~/config.ts';
+import { configKeys } from '~/generated/config.ts';
 import Layout from '~/layouts/Layout.astro';
 import SettingInput from './_SettingInput.astro';
 ---
@@ -52,7 +52,7 @@ import SettingInput from './_SettingInput.astro';
 	<script>
 		import { Reader } from 'postcard';
 		import { getBinary, post } from '~/api/index.ts';
-		import { encodeConfig, parseConfig } from '~/config.ts';
+		import { encodeConfig, parseConfig } from '~/generated/config.ts';
 		import { getId } from './_utils.ts';
 
 		const rawConfig = await getBinary('config');

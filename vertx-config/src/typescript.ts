@@ -8,11 +8,8 @@ import {
 	visit,
 } from './utilities.ts';
 
-export async function typescript(
-	{ config, version }: ConfigMeta,
-	outFile: string,
-) {
-	const { writer, out, outln } = getWriter(Bun.file(outFile));
+export function typescript({ config, version }: ConfigMeta, outFile: string) {
+	const { stream, out, outln } = getWriter(outFile);
 
 	const integerToPostcard = (raw: types.RawInteger) =>
 		['u8', 'i8'].includes(raw)
@@ -21,7 +18,7 @@ export async function typescript(
 				? 'varuint'
 				: 'varint';
 
-	outln`// biome-ignore lint/correctness/noUndeclaredDependencies: the symlink breaks package.json resolution`;
+	// outln`// biome-ignore lint/correctness/noUndeclaredDependencies: won't resolve from`;
 	outln`import { type Reader, Writer } from "postcard";\n`;
 
 	outln`export const configKeys = {`;
@@ -118,5 +115,5 @@ export async function typescript(
 	}
 	outln``;
 
-	await writer.end();
+	stream.end();
 }

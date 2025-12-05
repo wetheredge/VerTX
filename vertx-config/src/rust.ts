@@ -8,12 +8,12 @@ import {
 	visit,
 } from './utilities.ts';
 
-export async function rust(
+export function rust(
 	{ config, version }: ConfigMeta,
 	outFile: string,
 	migration = false,
 ) {
-	const { writer, out, outln } = getWriter(Bun.file(outFile));
+	const { stream, out, outln } = getWriter(outFile);
 
 	const string = ({ length }: { length: number }) =>
 		`::heapless::String<${length}>`;
@@ -185,5 +185,5 @@ export async function rust(
 
 	outln`}`;
 
-	await writer.end();
+	stream.end();
 }

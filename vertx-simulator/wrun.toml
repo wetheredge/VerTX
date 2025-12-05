@@ -7,16 +7,16 @@ run = [
 
 [tasks.run]
 desc = "Run a development server"
-run = "bun run vite"
+run = "pnpm vite"
 
 [tasks.build]
 run = [
     "rm -rf ../out/simulator",
     { task = "vertx-configurator/simulator:build" },
     { task = "vertx/simulator:build:release" },
-    "bun run vite build",
+    "pnpm vite build",
 ]
 
 [tasks.preview]
 desc = "Preview the latest build"
-run = "bun run vite preview"
+run = "pnpm vite preview"
