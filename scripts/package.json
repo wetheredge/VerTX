@@ -12,7 +12,6 @@
 		"./*": "./utils/*.ts"
 	},
 	"devDependencies": {
-		"@dep/command": "jsr:2.5.0",
 		"@inquirer/prompts": "7.8.0",
 		"execa": "9.6.1",
 		"fast-png": "7.0.1",

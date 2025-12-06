@@ -30,9 +30,6 @@ importers:
 
   scripts:
     devDependencies:
-      '@dep/command':
-        specifier: jsr:2.5.0
-        version: '@jsr/dep__command@2.5.0'
       '@inquirer/prompts':
         specifier: 7.8.0
         version: 7.8.0(@types/node@24.10.1)
@@ -844,12 +841,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@jsr/dep__command@2.5.0':
-    resolution: {integrity: sha512-Rq++AQ3A6hWMlE9Le2FC5Yl7Orl4wCc9Z7u/X4LYpxh7pML7GujlhwSwUBkAZ23qnfeMtHdakJaHX9RyRcBDog==, tarball: https://npm.jsr.io/~/11/@jsr/dep__command/2.5.0.tgz}
-
-  '@jsr/dep__table@1.0.1':
-    resolution: {integrity: sha512-pBjWIdCLRj39yfez70GCzJaafIqKkJ5e9ADQ4pU/4QkB6RMRDlxn3huBmR4Z7OidgnWgA1KHc+xmB0JwUoAdqA==, tarball: https://npm.jsr.io/~/11/@jsr/dep__table/1.0.1.tgz}
 
   '@minify-html/node-darwin-x64@0.15.0':
     resolution: {integrity: sha512-D9M9UDku/8I5VEMS0gTLFFQK1DFXK8io+QZvR5cbya4u8NmdDQix/t3EyCR4Wgv/Gfk86gwIS+zfMSvuKcpb5A==}
@@ -3580,12 +3571,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  '@jsr/dep__command@2.5.0':
-    dependencies:
-      '@jsr/dep__table': 1.0.1
-
-  '@jsr/dep__table@1.0.1': {}
 
   '@minify-html/node-darwin-x64@0.15.0':
     optional: true
