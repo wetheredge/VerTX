@@ -3,7 +3,7 @@ check.run = [
     "cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -F up",
     "cargo clippy -Zbuild-std=core --target wasm32-unknown-unknown -F down",
     "biome ci",
-    "tsgo --project ./tsconfig.jsonc",
+    "pnpm tsgo --project ./tsconfig.jsonc",
 ]
 
 build.run = [

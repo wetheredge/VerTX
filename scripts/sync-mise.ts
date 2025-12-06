@@ -8,7 +8,6 @@ import { repoRoot } from '#utils/fs';
 import versions from '../.config/versions.json' with { type: 'json' };
 
 const tools = {
-	'@typescript/native-preview': 'npm:@typescript/native-preview',
 	actionlint: 'aqua:rhysd/actionlint',
 	binaryen: 'aqua:WebAssembly/binaryen',
 	biome: 'aqua:biomejs/biome',

@@ -1,5 +1,4 @@
 [tools]
-"npm:@typescript/native-preview" = "7.0.0-dev.20251003.1"
 "aqua:rhysd/actionlint" = "1.7.7"
 "aqua:WebAssembly/binaryen" = "124"
 "aqua:biomejs/biome" = "2.2.5"

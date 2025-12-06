@@ -29,7 +29,6 @@
       pnpm
       probe-rs-tools
       rust-analyzer
-      typescript-go
       typescript-language-server
       typos
       wasm-bindgen-cli
@@ -38,17 +37,11 @@
       inputs.esp-rs-nix.package.${system}.esp-rs
     ];
 
-    tsgoNix2Npm = v: lib.pipe v [
-      (lib.removePrefix "0-unstable-")
-      (lib.replaceString "-" "")
-      (date: "7.0.0-dev.${date}.1")
-    ];
     xtensaGcc = pkgs.callPackage "${inputs.esp-rs-nix}/esp-rs/xtensa-gcc.nix" {};
     versions = lib.pipe [devPackages xtensaGcc] [
       lib.flatten
       (lib.map ({name, pname ? name, version, ...}:
-        if pname == "typescript-go" then {name = "@typescript/native-preview"; value = tsgoNix2Npm version;}
-        else if pname == "nodejs-slim" then {name = "nodejs"; value = version;}
+        if pname == "nodejs-slim" then {name = "nodejs"; value = version;}
         else if pname == "esp-rs" then {name = "rust"; value = version;}
         else if pname == "esp-xtensa-gcc" then {name = "gcc"; value = version;}
         else {name = pname; value = version;}

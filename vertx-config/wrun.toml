@@ -1,7 +1,7 @@
 [tasks.check]
 run = [
     "biome ci",
-    "tsgo --project ./tsconfig.json",
+    "pnpm tsgo --project ./tsconfig.json",
 ]
 
 [tasks.codegen]

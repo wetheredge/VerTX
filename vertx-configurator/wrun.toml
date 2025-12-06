@@ -7,7 +7,7 @@ run = [
     { task = "prebuild" },
     "biome ci",
     "pnpm astro check",
-    "tsgo --project ./tsconfig.json",
+    "pnpm tsgo --project ./tsconfig.json",
 ]
 
 [tasks.build]

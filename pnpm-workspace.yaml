@@ -2,6 +2,7 @@ savePrefix: ''
 
 packages:
   - postcard-ts
+  - vertx-config
   - vertx-configurator
   - vertx-simulator
   - scripts

@@ -6,6 +6,6 @@
 	"devDependencies": {
 		"@tsconfig/node-lts": "24.0.0",
 		"@types/node": "24.10.1",
-		"typescript": "5.9.2"
+		"@typescript/native-preview": "7.0.0-dev.20251205.1"
 	}
 }

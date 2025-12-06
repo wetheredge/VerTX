@@ -2,7 +2,7 @@
 run = [
     "biome ci",
     { task = "vertx/simulator:build" },
-    "tsgo --project ./tsconfig.json",
+    "pnpm tsgo --project ./tsconfig.json",
 ]
 
 [tasks.run]

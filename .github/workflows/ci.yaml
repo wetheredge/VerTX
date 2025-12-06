@@ -310,12 +310,10 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-node
-        with:
-          packages: '@typescript/native-preview'
       - run: pnpm astro check
         working-directory: ${{ matrix.dir }}
         if: ${{ matrix.dir == 'vertx-configurator' }}
-      - run: tsgo --project ${{ matrix.dir }}/tsconfig.json*
+      - run: pnpm tsgo --project ${{ matrix.dir }}/tsconfig.json*
 
   tsc-configurator:
     name: TypeScript (vertx-configurator)
@@ -328,11 +326,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-node
-        with:
-          packages: '@typescript/native-preview'
       - run: cp ../vertx-config/out/config.ts src/generated/
       - run: pnpm astro check
-      - run: tsgo --project tsconfig.json
+      - run: pnpm tsgo --project tsconfig.json
 
   tsc-simulator:
     name: TypeScript (vertx-simulator)
@@ -345,8 +341,6 @@ jobs:
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
       - uses: ./.github/actions/setup-rust
       - uses: ./.github/actions/setup-node
-        with:
-          packages: '@typescript/native-preview'
       - uses: ./.github/actions/cargo-install
         with:
           tool: wasm-bindgen-cli
@@ -354,7 +348,7 @@ jobs:
       - run: node scripts/build-simulator.ts
         env:
           VERTX_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
-      - run: tsgo --project vertx-simulator/tsconfig.json
+      - run: pnpm tsgo --project vertx-simulator/tsconfig.json
 
   biome:
     name: Biome
