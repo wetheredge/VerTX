@@ -58,8 +58,8 @@ run = [
 ]
 
 [tasks.clean-all]
-desc = "Delete all build artifacts and downloaded tools/depedencies"
-run = "rm -rf .cache .tools out target node_modules"
+desc = "Delete all build artifacts and downloaded tools/dependencies"
+run = "rm -rf .cache .tools out target node_modules */node_modules"
 
 [tasks.target]
 desc = "Set the target to build firmware for"
