@@ -6,9 +6,9 @@ license = "MIT OR Apache-2.0"
 publish = false
 
 [dependencies]
-bitfield = "=0.19.1"
-crc = "=3.3.0"
-embedded-io = "=0.6.1"
+bitfield = "=0.19.4"
+crc = "=3.4.0"
+embedded-io = "=0.7.1"
 
 [lints]
 workspace = true
