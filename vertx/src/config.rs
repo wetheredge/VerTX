@@ -10,7 +10,6 @@ use core::{future, mem, task};
 
 use embassy_sync::blocking_mutex::Mutex;
 use portable_atomic::AtomicBool;
-use serde::{Deserialize, Serialize};
 use static_cell::StaticCell;
 
 use self::codegen::DeserializeError;
@@ -248,10 +247,4 @@ enum Subscription {
     None,
     Waiting(task::Waker),
     Updated,
-}
-
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
-pub enum UpdateError {
-    TooLarge { max: i64 },
-    TooSmall { min: i64 },
 }
