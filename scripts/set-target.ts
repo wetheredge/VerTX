@@ -7,11 +7,10 @@ import process from 'node:process';
 import { select } from '@inquirer/prompts';
 import { glob } from 'tinyglobby';
 import { baseOutDir, repoRoot } from '#utils/fs';
+import { loadTarget } from '#utils/target';
 import { getChipInfo, getFeatures } from './build-target.ts';
 import { setRustAnayzerConfig } from './set-ra-config.ts';
-import type { Target } from './target-schema.ts';
 
-const targetsDir = join(repoRoot, 'targets');
 const envFile = join(baseOutDir, 'target');
 
 const targets = await glob('*.toml', { cwd: join(repoRoot, 'targets') });
@@ -24,7 +23,7 @@ const targetName = await select({
 	choices,
 	default: process.env.VERTX_TARGET,
 });
-const target: Target = await import(`${targetsDir}/${targetName}.toml`);
+const target = await loadTarget(targetName);
 
 const features = getFeatures(target);
 const triple = getChipInfo(target.chip).target;

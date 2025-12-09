@@ -5,21 +5,19 @@ import { basename, join } from 'node:path';
 import { argv, env } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import TOML from 'smol-toml';
 import { cargoBuild } from '#utils/cargo';
 import { isMain, panic } from '#utils/cli';
 import { baseOutDir, fsReplaceSymlink, repoRoot } from '#utils/fs';
+import { loadTarget, type Target } from '#utils/target';
 import chip2Target from '../.config/chips.json' with { type: 'json' };
-import { schema, type Target } from './target-schema.ts';
 
 export async function build(
 	command: string,
 	targetName: string,
-	rawTarget: unknown,
 	release?: boolean,
 	extraArgs: Array<string> = [],
 ) {
-	const target = schema.parse(rawTarget);
+	const target = await loadTarget(targetName);
 	const chip = getChipInfo(target.chip);
 
 	const rustflags = [env.RUSTFLAGS, chip.cpu && `-Ctarget-cpu=${chip.cpu}`]
@@ -101,14 +99,5 @@ if (isMain(import.meta.url)) {
 		panic(`Cannot find target '${targetName}'`);
 	}
 
-	const target = TOML.parse(
-		fs.readFileSync(targetPath, { encoding: 'utf8' }),
-	);
-	await build(
-		values.command,
-		targetName,
-		target,
-		values.release,
-		positionals,
-	);
+	await build(values.command, targetName, values.release, positionals);
 }

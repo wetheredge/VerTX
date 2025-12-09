@@ -6,7 +6,7 @@ import { exit } from 'node:process';
 import * as toml from 'smol-toml';
 import { glob } from 'tinyglobby';
 import { repoRoot } from '#utils/fs';
-import { schema } from './target-schema.ts';
+import { schema } from '#utils/target';
 
 const targets = await glob('*.toml', {
 	cwd: join(repoRoot, 'targets'),

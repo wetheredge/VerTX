@@ -1,4 +1,15 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import TOML from 'smol-toml';
 import { z } from 'zod';
+import { repoRoot } from './fs.ts';
+
+export async function loadTarget(name: string): Promise<Target> {
+	const path = join(repoRoot, 'targets', `${name}.toml`);
+	const str = await readFile(path, { encoding: 'utf8' });
+	const raw = TOML.parse(str);
+	return schema.parseAsync(raw);
+}
 
 export type Target = z.infer<typeof schema>;
 
