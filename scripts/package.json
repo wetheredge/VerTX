@@ -12,14 +12,14 @@
 		"./*": "./utils/*.ts"
 	},
 	"devDependencies": {
-		"@inquirer/prompts": "7.8.0",
+		"@inquirer/prompts": "8.0.2",
 		"execa": "9.6.1",
 		"fast-png": "7.0.1",
-		"listr2": "9.0.1",
+		"listr2": "9.0.5",
 		"lol-html": "2.3.0",
 		"nano-spawn": "2.0.0",
-		"smol-toml": "1.4.1",
+		"smol-toml": "1.5.2",
 		"tinyglobby": "0.2.15",
-		"zod": "4.0.15"
+		"zod": "4.1.13"
 	}
 }

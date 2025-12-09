@@ -1,4 +1,6 @@
 ---
+import type { SvgComponent } from 'astro/types';
+
 export type IconProps = {
 	'aria-hidden'?: boolean;
 	width?: number | string;
@@ -6,10 +8,8 @@ export type IconProps = {
 	'stroke-width'?: number | string;
 };
 
-export type RawIcon = (props: IconProps) => unknown;
-
 export type Props = {
-	icon: RawIcon;
+	icon: SvgComponent;
 	size?: string | number;
 };
 

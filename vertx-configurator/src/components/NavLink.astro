@@ -1,10 +1,11 @@
 ---
-import Icon, { type RawIcon } from './Icon.astro';
+import type { SvgComponent } from 'astro/types';
+import Icon from './Icon.astro';
 
 export type Props = {
 	href: string;
 	label: string;
-	icon: RawIcon;
+	icon: SvgComponent;
 };
 
 const stripEndSlash = (s: string) => s.replace(/\/$/, '');
