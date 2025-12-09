@@ -110,5 +110,5 @@ run = [
     "pnpm install --no-frozen-lockfile",
     "rm Cargo.lock",
     # Last because it will likely fail due to crate features changing
-    "cargo update",
+    "cargo generate-lockfile",
 ]
