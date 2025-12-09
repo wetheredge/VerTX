@@ -19,6 +19,8 @@ use {defmt_rtt as _, esp_backtrace as _};
 
 use crate::hal;
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 #[define_opaque(
     hal::Network,
     hal::Reset,
@@ -33,16 +35,14 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
     let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
-    let rng = Rng::new(p.RNG);
+    let rng = Rng::new();
     let timg0 = timg::TimerGroup::new(p.TIMG0);
-    let timg1 = timg::TimerGroup::new(p.TIMG1);
 
-    esp_hal_embassy::init(timg0.timer0);
+    esp_rtos::start(timg0.timer0);
 
     let status_led = leds::StatusLed::new(rmt.channel0, pins!(p, leds.status));
 
     let spi = {
-        #[expect(clippy::manual_div_ceil)]
         let (rx_buffer, rx_descriptors, tx_buffer, tx_descriptors) = esp_hal::dma_buffers!(32000);
         let dma_rx = DmaRxBuf::new(rx_descriptors, rx_buffer).unwrap();
         let dma_tx = DmaTxBuf::new(tx_descriptors, tx_buffer).unwrap();
@@ -104,7 +104,6 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
         network: network::Network {
             spawner,
             rng,
-            timer: timg1.timer0.into(),
             wifi: p.WIFI,
         },
     }

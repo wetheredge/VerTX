@@ -6,6 +6,7 @@ extern crate std;
 
 mod block;
 mod buffer;
+mod error;
 mod file;
 mod header;
 #[cfg(test)]
@@ -15,11 +16,10 @@ use core::fmt;
 
 use aligned::Alignment;
 use block_device_driver::BlockDevice;
-#[cfg(feature = "defmt")]
-use loog::defmt;
 
 pub(crate) use self::block::Block;
 pub(crate) use self::buffer::Buffer;
+pub use self::error::{Error, InitError};
 pub use self::file::File;
 pub use self::header::Error as HeaderError;
 use self::header::Header;
@@ -40,48 +40,6 @@ pub(crate) const MODEL_BLOCKS: u32 = 4;
 pub(crate) const MODEL_NAME_BYTES: usize = 16;
 /// Chosen to fit 64 * 16 byte model names in blocks 1 & 2
 pub(crate) const MAX_MODELS: usize = 64;
-
-#[derive(Debug, Clone, PartialEq, Hash)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-#[non_exhaustive]
-pub enum Error<I> {
-    SeekOutOfBounds,
-    /// The operation would require allocating more backing blocks for the file,
-    /// which is (yet) supported.
-    FileFull,
-    TooManyModels,
-    ModelNameOverflow,
-    Io(I),
-}
-
-#[allow(clippy::match_same_arms)]
-impl<I: fmt::Debug + embedded_io_async::Error> embedded_io_async::Error for Error<I> {
-    fn kind(&self) -> embedded_io_async::ErrorKind {
-        use embedded_io_async::ErrorKind;
-        match self {
-            Self::SeekOutOfBounds => ErrorKind::InvalidInput,
-            Self::FileFull => ErrorKind::Unsupported,
-            Self::TooManyModels => ErrorKind::InvalidData,
-            Self::ModelNameOverflow => ErrorKind::InvalidInput,
-            Self::Io(err) => err.kind(),
-        }
-    }
-}
-
-impl<I> From<I> for Error<I> {
-    fn from(io: I) -> Self {
-        Self::Io(io)
-    }
-}
-
-pub enum InitError<'buf, D: BlockDevice<BLOCK_BYTES>> {
-    HeaderError {
-        kind: HeaderError,
-        device: D,
-        buffers: &'buf mut Buffers<D::Align>,
-    },
-    Io(D::Error),
-}
 
 pub struct Filesystem<'buf, D: BlockDevice<BLOCK_BYTES>> {
     device: D,
@@ -283,18 +241,6 @@ where
     D::Error: embedded_io_async::Error,
 {
     type Error = Error<D::Error>;
-}
-
-impl<D: BlockDevice<BLOCK_BYTES>> fmt::Debug for InitError<'_, D> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::HeaderError { kind: error, .. } => f
-                .debug_struct("HeaderError")
-                .field("kind", error)
-                .finish_non_exhaustive(),
-            Self::Io(io) => f.debug_tuple("Io").field(io).finish(),
-        }
-    }
 }
 
 impl<A> fmt::Debug for Buffers<A> {
