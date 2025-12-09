@@ -39,19 +39,9 @@ tag = "v2.6.0"
 commit = "454fa0d884737805f48d7dc236c1761a0ac3cc13"
 
 [[action]]
-repo = "cachix/install-nix-action"
-tag = "v31.8.4"
-commit = "0b0e072294b088b73964f1d72dfdac0951439dbd"
-
-[[action]]
 repo = "dprint/check"
 tag = "v2.2"
 commit = "2f1cf31537886c3bfb05591c031f7744e48ba8a1"
-
-[[action]]
-repo = "jaxxstorm/action-install-gh-release"
-tag = "v2.1.0"
-commit = "6096f2a2bbfee498ced520b6922ac2c06e990ed2"
 
 [[action]]
 repo = "mozilla-actions/sccache-action"
@@ -77,8 +67,3 @@ commit = "aa2649f25ee7099207734772f5393fd30167cb73"
 repo = "tailscale/github-action"
 tag = "v3.2.3"
 commit = "84a3f23bb4d843bcf4da6cf824ec1be473daf4de"
-
-[[action]]
-repo = "wetheredge/pupgrade"
-tag = "v0.1.0"
-commit = "fc615ac4f2207cc16e8950c9b33ce638d1a61164"

@@ -1,11 +1,6 @@
 name: Setup Node + pnpm
 description: Setup Node + pnpm from versions config
 
-inputs:
-  install:
-    description: Install dependencies
-    default: 'true'
-
 runs:
   using: composite
   steps:
@@ -25,4 +20,3 @@ runs:
         cache: pnpm
     - run: pnpm install
       shell: bash
-      if: inputs.install == 'true'

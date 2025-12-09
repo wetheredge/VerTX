@@ -94,3 +94,21 @@ run = [
     "cp out/CACHEDIR.TAG .cache/CACHEDIR.TAG",
     "cp out/CACHEDIR.TAG .tools/CACHEDIR.TAG",
 ]
+
+[tasks."pupgrade:init"]
+run = [
+    "PUPGRADE_LOG=info pupgrade init",
+    "biome format --write .pupgrade.json",
+]
+
+[tasks."pupgrade:apply"]
+run = [
+    "pupgrade apply",
+    "biome format --write",
+    "nix flake lock",
+    "rm pnpm-lock.yaml",
+    "pnpm install --no-frozen-lockfile",
+    "rm Cargo.lock",
+    # Last because it will likely fail due to crate features changing
+    "cargo update",
+]

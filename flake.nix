@@ -12,6 +12,11 @@
     galock.inputs.nixpkgs.follows = "nixpkgs";
     galock.inputs.flake-utils.follows = "flake-utils";
 
+    pupgrade.url = "git+https://tangled.org/wetheredge.com/pupgrade";
+    pupgrade.inputs.nixpkgs.follows = "nixpkgs";
+    pupgrade.inputs.flake-utils.follows = "flake-utils";
+    pupgrade.inputs.galock.follows = "galock";
+
     esp-rs-nix.url = "github:leighleighleigh/esp-rs-nix";
     esp-rs-nix.inputs.nixpkgs.follows = "nixpkgs";
     esp-rs-nix.inputs.flake-utils.follows = "flake-utils";
@@ -39,6 +44,7 @@
 
       inputs.wrun.packages.${system}.default
       inputs.galock.packages.${system}.default
+      inputs.pupgrade.packages.${system}.default
       inputs.esp-rs-nix.package.${system}.esp-rs
     ];
 

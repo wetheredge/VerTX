@@ -1,6 +1,37 @@
 {
   "nodes": {
+    "advisory-db": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1761631338,
+        "narHash": "sha256-F6dlUrDiShwhMfPR+WoVmaQguGdEwjW9SI4nKlkay7c=",
+        "owner": "rustsec",
+        "repo": "advisory-db",
+        "rev": "2e45336771e36acf5bcefe7c99280ab214719707",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rustsec",
+        "repo": "advisory-db",
+        "type": "github"
+      }
+    },
     "crane": {
+      "locked": {
+        "lastModified": 1760924934,
+        "narHash": "sha256-tuuqY5aU7cUkR71sO2TraVKK2boYrdW3gCSXUkF4i44=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "c6b4d5308293d0d04fcfeee92705017537cad02f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "crane_2": {
       "locked": {
         "lastModified": 1759691647,
         "narHash": "sha256-OnyPw3KaXL909I+FNyD6jfkAP/gdL/K0iitMHxo7ieM=",
@@ -153,12 +184,41 @@
         "type": "github"
       }
     },
+    "pupgrade": {
+      "inputs": {
+        "advisory-db": "advisory-db",
+        "crane": "crane",
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "galock": [
+          "galock"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1765256931,
+        "narHash": "sha256-bNhfoU+6q+4m45AmjCEA7/x/iQvTtSTsXx02g1F+ims=",
+        "ref": "refs/heads/main",
+        "rev": "fd7508cd99ad45a0649161594670208aad719c31",
+        "revCount": 42,
+        "type": "git",
+        "url": "https://tangled.org/wetheredge.com/pupgrade"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://tangled.org/wetheredge.com/pupgrade"
+      }
+    },
     "root": {
       "inputs": {
         "esp-rs-nix": "esp-rs-nix",
         "flake-utils": "flake-utils",
         "galock": "galock",
         "nixpkgs": "nixpkgs",
+        "pupgrade": "pupgrade",
         "wrun": "wrun"
       }
     },
@@ -194,7 +254,7 @@
     },
     "wrun": {
       "inputs": {
-        "crane": "crane",
+        "crane": "crane_2",
         "flake-utils": [
           "flake-utils"
         ],
