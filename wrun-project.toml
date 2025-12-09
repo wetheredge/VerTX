@@ -38,6 +38,7 @@ desc = "Sync versions config from nix flake"
 # Assume versions are the same on all platforms
 run = [
     "nix eval --json ~/Projects/VerTX#versions.x86_64-linux > .config/versions.json",
+    "biome format --write .config/versions.json",
     "node scripts/sync-mise.ts",
 ]
 
