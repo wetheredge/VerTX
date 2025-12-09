@@ -14,7 +14,7 @@ runs:
       shell: bash
       run: jq -r '"rust=\(.rust)\ngcc=\(.gcc)"' .config/versions.json >> "$GITHUB_OUTPUT"
     - id: restore
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         key: rust-xtensa-${{ runner.os}}-v${{ steps.version.outputs.rust }}-v2
         path: |
