@@ -88,11 +88,8 @@ impl Menu {
                 Category::Models => {
                     let mut items = Vec::new();
                     self.models
-                        .for_each(|raw_name, name| {
-                            items.push(ListItem::new(
-                                name.as_str().to_owned(),
-                                NextState::Model(raw_name),
-                            ));
+                        .for_each_name(|raw_name, name| {
+                            items.push(ListItem::new(name.to_owned(), NextState::Model(raw_name)));
                         })
                         .await;
                     Cow::Owned(items)

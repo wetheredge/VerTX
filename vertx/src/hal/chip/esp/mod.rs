@@ -14,11 +14,10 @@ use esp_hal::rng::Rng;
 use esp_hal::spi::master::{self as spi, Spi};
 use esp_hal::time::Rate;
 use esp_hal::timer::timg;
-use static_cell::StaticCell;
+use static_cell::ConstStaticCell;
 use {defmt_rtt as _, esp_backtrace as _};
 
 use crate::hal;
-use crate::storage::sd;
 
 #[define_opaque(
     hal::Network,
@@ -59,28 +58,21 @@ pub(crate) fn init(spawner: Spawner) -> hal::Init {
     };
 
     let storage = async {
-        // Using impl Trait hits the `item does not constrain but has it in its
-        // signature` error with the static below. Something neater would be nice, but
-        // this works :/
-        type Spi = embedded_hal_bus::spi::ExclusiveDevice<
-            spi::SpiDmaBus<'static, esp_hal::Async>,
-            gpio::Output<'static>,
-            embassy_time::Delay,
-        >;
-
-        static STORAGE: StaticCell<sd::Storage<Spi>> = StaticCell::new();
         let sd_cs = gpio::Output::new(
             pins!(p, sd.cs),
             gpio::Level::High,
             gpio::OutputConfig::default(),
         );
-        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, |spi, speed| {
+
+        static BUFFERS: ConstStaticCell<vertx_filesystem::Buffers<aligned::A1>> =
+            ConstStaticCell::new(vertx_filesystem::Buffers::new());
+        let buffers = BUFFERS.take();
+
+        crate::storage::sd_spi::new_exclusive_spi(buffers, spi, sd_cs, |spi, speed| {
             let config = spi::Config::default().with_frequency(Rate::from_hz(speed));
             spi.apply_config(&config).unwrap();
         })
-        .await;
-        let storage: &'static _ = STORAGE.init(storage);
-        storage
+        .await
     };
 
     let ui = {

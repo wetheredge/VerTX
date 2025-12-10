@@ -45,76 +45,48 @@ impl hal::traits::StatusLed for StatusLed {
 
 struct Storage;
 #[derive(Clone)]
-struct Directory(String);
-#[derive(Clone)]
-struct DirectoryIter;
-#[derive(Clone)]
-enum DirectoryEntry {}
-#[derive(Clone)]
 struct File(String);
 
 impl crate::storage::pal::Storage for Storage {
-    type Directory = Directory;
+    type File<'s>
+        = File
+    where
+        Self: 's;
 
-    fn root(&self) -> Self::Directory {
-        Directory(String::from("/"))
+    async fn read_config<'a>(&mut self, _buf: &'a mut [u8]) -> Result<&'a [u8], Self::Error> {
+        loog::trace!("Reading config");
+        Ok(&[])
     }
 
-    async fn flush(&self) -> Result<(), Self::Error> {
-        loog::trace!("Flushing storage");
+    async fn write_config(&mut self, config: &[u8]) -> Result<(), Self::Error> {
+        loog::trace!("Writing {} bytes to config", config.len());
         Ok(())
     }
-}
 
-impl crate::storage::pal::Directory for Directory {
-    type File = File;
-    type Iter = DirectoryIter;
-
-    async fn dir(&self, path: &str) -> Result<Self, Self::Error> {
-        Ok(Directory(format!("{}/{path}", self.0)))
+    async fn model_names<F>(&mut self, _f: F) -> Result<(), Self::Error>
+    where
+        F: FnMut(crate::models::Id, &str),
+    {
+        loog::trace!("Listing model names");
+        Ok(())
     }
 
-    async fn file(&self, path: &str) -> Result<Self::File, Self::Error> {
-        Ok(File(format!("{}/{path}", self.0)))
+    async fn model(
+        &mut self,
+        id: crate::models::Id,
+    ) -> Result<Option<Self::File<'_>>, Self::Error> {
+        loog::trace!("Opening model {id}");
+        Ok(Some(File(format!("model/{id}"))))
     }
 
-    fn iter(&self) -> Self::Iter {
-        DirectoryIter
-    }
-}
-
-impl crate::storage::pal::DirectoryIter for DirectoryIter {
-    type Directory = Directory;
-    type Entry = DirectoryEntry;
-    type File = File;
-
-    async fn next(&mut self) -> Option<Result<Self::Entry, Self::Error>> {
-        None
-    }
-}
-
-impl crate::storage::pal::Entry for DirectoryEntry {
-    type Directory = Directory;
-    type File = File;
-
-    fn name(&self) -> &[u8] {
-        unreachable!()
+    async fn delete_model(&mut self, id: crate::models::Id) -> Result<(), Self::Error> {
+        loog::trace!("Deleting model {id}");
+        Ok(())
     }
 
-    fn is_file(&self) -> bool {
-        unreachable!()
-    }
-
-    fn to_file(self) -> Option<Self::File> {
-        unreachable!()
-    }
-
-    fn is_dir(&self) -> bool {
-        unreachable!()
-    }
-
-    fn to_dir(self) -> Option<Self::Directory> {
-        unreachable!()
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        loog::trace!("Flushing storage");
+        Ok(())
     }
 }
 
@@ -140,30 +112,17 @@ impl embedded_io_async::Seek for File {
 }
 
 impl crate::storage::pal::File for File {
-    async fn truncate(&mut self) -> Result<(), Self::Error> {
-        loog::trace!("Truncating {}", self.0);
-        Ok(())
+    async fn len(&mut self) -> u64 {
+        0
     }
 
-    async fn close(self) -> Result<(), Self::Error> {
-        loog::trace!("Closing {}", self.0);
+    async fn truncate(&mut self) -> Result<(), Self::Error> {
+        loog::trace!("Truncating {}", self.0);
         Ok(())
     }
 }
 
 impl ErrorType for Storage {
-    type Error = Infallible;
-}
-
-impl ErrorType for Directory {
-    type Error = Infallible;
-}
-
-impl ErrorType for DirectoryIter {
-    type Error = Infallible;
-}
-
-impl ErrorType for DirectoryEntry {
     type Error = Infallible;
 }
 

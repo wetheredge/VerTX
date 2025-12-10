@@ -1,9 +1,8 @@
-use std::cmp::Ordering;
 use std::convert::Infallible;
 use std::string::String;
-use std::vec::{self, Vec};
+use std::vec::Vec;
 
-use embedded_io_async::{ErrorType, Read, Seek, SeekFrom, Write};
+use embedded_io_async::{ErrorType, Read, ReadExactError, Seek, SeekFrom, Write};
 
 use super::ipc;
 use crate::storage::pal;
@@ -11,94 +10,103 @@ use crate::storage::pal;
 #[derive(Debug, Clone, Copy)]
 pub(super) struct Storage;
 
-#[derive(Debug, Clone)]
-pub(super) struct Directory(String);
+impl Storage {
+    fn path<I: itoa::Integer>(&self, dir: &str, id: I) -> String {
+        let mut buffer = itoa::Buffer::new();
+        let id = buffer.format(id);
 
-#[derive(Debug, Clone)]
-pub(super) struct File {
-    path: String,
-    cursor: u64,
-}
-
-#[derive(Debug, Clone)]
-pub(super) struct DirectoryIter(vec::IntoIter<Entry>);
-
-#[derive(Debug, Clone)]
-pub(super) struct Entry {
-    path: String,
-    is_file: bool,
-}
-
-impl PartialOrd for Entry {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+        let mut path = String::from(dir);
+        path.push('/');
+        path.push_str(id);
+        path
     }
 }
-
-impl Ord for Entry {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.path.cmp(&other.path)
-    }
-}
-
-impl PartialEq for Entry {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
-    }
-}
-
-impl Eq for Entry {}
 
 impl ErrorType for Storage {
     type Error = Infallible;
 }
 
 impl pal::Storage for Storage {
-    type Directory = Directory;
+    type File<'s>
+        = File
+    where
+        Self: 's;
 
+    async fn read_config<'a>(&mut self, buf: &'a mut [u8]) -> Result<&'a [u8], Self::Error> {
+        let read = ipc::fs_read("config");
+        loog::debug!("config exists: {}", read.is_some());
+        let read = read.as_deref().unwrap_or_default();
 
-    fn root(&self) -> Self::Directory {
-        Directory(String::with_capacity(0))
+        let buf = &mut buf[0..read.len()];
+        buf.copy_from_slice(read);
+        Ok(buf)
     }
 
-    async fn flush(&self) -> Result<(), Self::Error> {
+    async fn write_config(&mut self, config: &[u8]) -> Result<(), Self::Error> {
+        ipc::fs_write("config", config);
+        Ok(())
+    }
+
+    async fn model_names<F>(&mut self, mut f: F) -> Result<(), Self::Error>
+    where
+        F: FnMut(crate::models::Id, &str),
+    {
+        for model_str in ipc::fs_list("model/name/") {
+            let (model, len) = atoi::FromRadix10::from_radix_10(model_str.as_bytes());
+            if len == 0 || len != model_str.len() {
+                loog::warn!("Skipping invalid model name: '{model_str}'");
+                continue;
+            }
+
+            let mut path = String::from("model/name/");
+            path.push_str(&model_str);
+
+            let name = ipc::fs_read(&path).unwrap();
+            let name = String::from_utf8(name).expect("model name is valid UTF-8");
+            f(model, &name);
+        }
+
+        Ok(())
+    }
+
+    async fn model(
+        &mut self,
+        id: crate::models::Id,
+    ) -> Result<Option<Self::File<'_>>, Self::Error> {
+        let path = self.path("model/data", id);
+        Ok(File::open(path))
+    }
+
+    async fn delete_model(&mut self, id: crate::models::Id) -> Result<(), Self::Error> {
+        ipc::fs_delete(&self.path("model/data", id));
+        ipc::fs_delete(&self.path("model/name", id));
+        Ok(())
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
         Ok(())
     }
 }
 
-impl Directory {
-    fn push_path(&self, segment: &str) -> String {
-        let mut path = self.0.clone();
-        path.push('/');
-        path.push_str(segment);
-        path
-    }
-}
-
-impl ErrorType for Directory {
-    type Error = Infallible;
-}
-
-impl pal::Directory for Directory {
-    type File = File;
-    type Iter = DirectoryIter;
-
-    async fn dir(&self, path: &str) -> Result<Self, Self::Error> {
-        Ok(Self(self.push_path(path)))
-    }
-
-    async fn file(&self, path: &str) -> Result<File, Self::Error> {
-        Ok(File::new(self.push_path(path)))
-    }
-
-    fn iter(&self) -> Self::Iter {
-        DirectoryIter::new(&self.0)
-    }
+#[derive(Debug)]
+pub(super) struct File {
+    path: String,
+    data: Vec<u8>,
+    cursor: usize,
 }
 
 impl File {
-    fn new(path: String) -> Self {
-        Self { path, cursor: 0 }
+    fn open(path: String) -> Option<Self> {
+        let data = ipc::fs_read(&path)?;
+        Some(Self {
+            path,
+            cursor: 0,
+            data,
+        })
+    }
+
+    fn remaining(&self) -> usize {
+        self.data.len() - self.cursor
     }
 }
 
@@ -109,112 +117,54 @@ impl ErrorType for File {
 impl Seek for File {
     async fn seek(&mut self, pos: SeekFrom) -> Result<u64, Self::Error> {
         self.cursor = match pos {
-            SeekFrom::Start(x) => x,
-            SeekFrom::End(x) => (ipc::storage_file_len(&self.path) as u64).saturating_add_signed(x),
-            SeekFrom::Current(x) => self.cursor.saturating_add_signed(x),
+            SeekFrom::Start(x) => x as usize,
+            SeekFrom::End(x) => self.data.len().saturating_add_signed(x as isize),
+            SeekFrom::Current(x) => self.cursor.saturating_add_signed(x as isize),
         };
-        Ok(self.cursor)
+        Ok(self.cursor as u64)
     }
 }
 
 impl Read for File {
     async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Self::Error> {
-        Ok(ipc::storage_read(&self.path, self.cursor as usize, buf))
+        let len = buf.len().min(self.remaining());
+        buf[0..len].copy_from_slice(&self.data[self.cursor..(self.cursor + len)]);
+        self.cursor += len;
+        Ok(len)
+    }
+
+    async fn read_exact(&mut self, buf: &mut [u8]) -> Result<(), ReadExactError<Self::Error>> {
+        if self.remaining() < buf.len() {
+            return Err(ReadExactError::UnexpectedEof);
+        }
+
+        let Ok(_) = self.read(buf).await;
+        Ok(())
     }
 }
 
 impl Write for File {
     async fn write(&mut self, buf: &[u8]) -> Result<usize, Self::Error> {
-        ipc::storage_write(&self.path, self.cursor as usize, buf);
+        let overwrite = buf.len().min(self.remaining());
+        self.data[self.cursor..(self.cursor + overwrite)].copy_from_slice(&buf[0..overwrite]);
+        self.data.extend_from_slice(&buf[overwrite..]);
+        self.cursor += buf.len();
         Ok(buf.len())
+    }
+
+    async fn flush(&mut self) -> Result<(), Self::Error> {
+        ipc::fs_write(&self.path, &self.data);
+        Ok(())
     }
 }
 
 impl pal::File for File {
+    async fn len(&mut self) -> u64 {
+        self.data.len() as u64
+    }
+
     async fn truncate(&mut self) -> Result<(), Self::Error> {
-        ipc::storage_truncate(&self.path, self.cursor as usize);
+        self.data.truncate(self.cursor);
         Ok(())
-    }
-
-    async fn close(self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-}
-
-impl DirectoryIter {
-    fn new(root: &str) -> Self {
-        let root = {
-            let mut s = String::from(root);
-            s.push('/');
-            s
-        };
-
-        let mut entries = ipc::storage_dir_entries(&root)
-            .into_iter()
-            .map(|mut path| {
-                if let Some((dir, _)) = path.split_once('/') {
-                    let mut path = root.clone();
-                    path.push_str(dir);
-                    path.push('/');
-                    Entry {
-                        path,
-                        is_file: false,
-                    }
-                } else {
-                    path.insert_str(0, &root);
-                    Entry {
-                        path,
-                        is_file: true,
-                    }
-                }
-            })
-            .collect::<Vec<_>>();
-        entries.sort_unstable();
-        entries.dedup();
-
-        Self(entries.into_iter())
-    }
-}
-
-impl ErrorType for DirectoryIter {
-    type Error = Infallible;
-}
-
-impl pal::DirectoryIter for DirectoryIter {
-    type Directory = Directory;
-    type Entry = Entry;
-    type File = File;
-
-    async fn next(&mut self) -> Option<Result<Self::Entry, Self::Error>> {
-        self.0.next().map(Ok)
-    }
-}
-
-impl ErrorType for Entry {
-    type Error = Infallible;
-}
-
-impl pal::Entry for Entry {
-    type Directory = Directory;
-    type File = File;
-
-    fn name(&self) -> &[u8] {
-        self.path.rsplit_once('/').unwrap().1.as_bytes()
-    }
-
-    fn is_file(&self) -> bool {
-        self.is_file
-    }
-
-    fn is_dir(&self) -> bool {
-        !self.is_file
-    }
-
-    fn to_file(self) -> Option<Self::File> {
-        self.is_file().then(|| File::new(self.path))
-    }
-
-    fn to_dir(self) -> Option<Self::Directory> {
-        self.is_dir().then_some(Directory(self.path))
     }
 }

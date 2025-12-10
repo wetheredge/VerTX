@@ -9,13 +9,10 @@ use core::marker::PhantomData;
 use core::{future, mem, task};
 
 use embassy_sync::blocking_mutex::Mutex;
-use portable_atomic::AtomicBool;
 use static_cell::StaticCell;
 
 use self::codegen::DeserializeError;
 pub(crate) use self::codegen::{BYTE_LENGTH, RawConfig};
-use crate::hal::prelude::*;
-use crate::storage::File;
 
 pub(crate) type RootConfig = View<codegen::key::Root>;
 
@@ -23,74 +20,54 @@ const SUBSCRIPTIONS: usize = 1;
 
 #[derive(Clone, Copy)]
 pub(crate) struct Manager {
-    init: &'static AtomicBool,
-    state: &'static Mutex<crate::mutex::SingleCore, RefCell<State>>,
+    storage: crate::storage::Config,
+    state: &'static Inner,
 }
+
+type Inner = Mutex<crate::mutex::SingleCore, RefCell<State>>;
 
 struct State {
     modified: bool,
     config: RawConfig,
-    file: Option<File>,
     subscriptions: heapless::Vec<(usize, Subscription), SUBSCRIPTIONS>,
 }
 
 impl Manager {
-    pub(crate) fn new() -> Self {
-        static INIT: AtomicBool = AtomicBool::new(false);
-        static STATE: StaticCell<Mutex<crate::mutex::SingleCore, RefCell<State>>> =
-            StaticCell::new();
+    pub(crate) async fn new(storage: crate::storage::Config) -> Self {
+        static STATE: StaticCell<Inner> = StaticCell::new();
 
-        Self {
-            init: &INIT,
-            state: STATE.init(Mutex::new(RefCell::new(State {
-                modified: false,
-                config: RawConfig::default(),
-                file: None,
-                subscriptions: heapless::Vec::new(),
-            }))),
-        }
-    }
+        let mut config = RawConfig::default();
 
-    pub(crate) async fn load(self, mut file: File) {
         let mut buffer = [0; BYTE_LENGTH];
-        let mut len = 0;
-        loop {
-            let chunk = loog::unwrap!(file.read(&mut buffer[len..]).await);
-            if chunk == 0 {
-                break;
-            }
-            len += chunk;
-        }
+        let raw = storage.read(&mut buffer).await.unwrap();
 
-        self.state.lock(|state| {
-            let mut state = state.borrow_mut();
-            if state.file.replace(file).is_some() {
-                loog::warn!("Called config::Manager::load() more than once");
-            }
-        });
-
-        if len == 0 {
+        if raw.is_empty() {
             loog::debug!("No saved configuration");
         } else {
             loog::debug!("Loading configuration");
 
-            let raw = match RawConfig::deserialize(&buffer[..len]) {
-                Ok(raw) => raw,
+            match RawConfig::deserialize(raw) {
+                Ok(loaded) => {
+                    config = loaded;
+                    loog::debug!("Successfully loaded configuration");
+                }
                 Err(DeserializeError::WrongVersion) => {
                     loog::error!("Invalid config version");
-                    return;
                 }
                 Err(DeserializeError::Postcard(err)) => {
                     loog::error!("Failed to load config: {err}");
-                    return;
                 }
-            };
-
-            self.replace_impl(raw).await;
-            loog::debug!("Finished loading configuration");
+            }
         }
 
-        self.init.store(true, portable_atomic::Ordering::Relaxed);
+        Self {
+            storage,
+            state: STATE.init(Mutex::new(RefCell::new(State {
+                modified: false,
+                config,
+                subscriptions: heapless::Vec::new(),
+            }))),
+        }
     }
 
     pub(crate) async fn replace(self, bytes: &[u8]) -> Result<(), ()> {
@@ -130,28 +107,22 @@ impl Manager {
     }
 
     pub(crate) async fn save(self) {
-        self.wait_for_init().await;
-
         loog::debug!("Writing configuration");
-        let mut buffer = [0; BYTE_LENGTH];
 
-        let to_write = self.state.lock(|state| {
+        let mut buffer = [0; BYTE_LENGTH];
+        let mut len = 0;
+
+        self.state.lock(|state| {
             let state = state.borrow();
             if !state.modified {
-                return None;
+                return;
             }
 
-            // Should be Some after self.wait_for_init() completes
-            let file = state.file.clone().unwrap();
-
-            let len = state.config.serialize(&mut buffer).unwrap();
-            Some((file, &buffer[0..len]))
+            len = state.config.serialize(&mut buffer).unwrap();
         });
 
-        if let Some((mut file, data)) = to_write {
-            loog::unwrap!(file.truncate().await);
-            loog::unwrap!(file.write_all(data).await);
-            loog::unwrap!(file.flush().await);
+        if len > 0 {
+            loog::unwrap!(self.storage.write(&buffer[0..len]).await);
         }
     }
 
@@ -162,13 +133,10 @@ impl Manager {
         }
     }
 
-    /// Try to serialize the config. If it has not been initialized yet, this
-    /// returns `None`.
-    pub(crate) fn serialize(self, buffer: &mut [u8]) -> Option<postcard::Result<usize>> {
-        self.is_initted().then(|| {
-            self.state
-                .lock(|state| state.borrow().config.serialize(buffer))
-        })
+    /// Try to serialize the config
+    pub(crate) fn serialize(self, buffer: &mut [u8]) -> postcard::Result<usize> {
+        self.state
+            .lock(|state| state.borrow().config.serialize(buffer))
     }
 
     pub(crate) fn subscribe(self, key: usize) -> Option<Subscriber> {
@@ -206,17 +174,6 @@ impl Manager {
                 }
             }
         })
-    }
-
-    fn is_initted(self) -> bool {
-        self.init.load(portable_atomic::Ordering::Relaxed)
-    }
-
-    /// Busy-wait until initialized
-    async fn wait_for_init(self) {
-        while !self.is_initted() {
-            embassy_futures::yield_now().await;
-        }
     }
 }
 

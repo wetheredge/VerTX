@@ -16,6 +16,7 @@ license = "MPL-2.0"
 
 [workspace.dependencies]
 aligned = "=0.4.2"
+block-device-driver = "=0.2.0"
 bytemuck = { version = "=1.23.1", features = ["const_zeroed", "min_const_generics", "must_cast"] }
 embedded-io-async = "=0.6.1"
 heapless = "=0.8.0"
@@ -94,7 +95,3 @@ opt-level = 3
 [profile.release]
 lto = true
 debug = 2
-
-[patch.crates-io]
-block-device-driver = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c" }
-sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c" }

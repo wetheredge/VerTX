@@ -38,23 +38,16 @@ pub async fn main(spawner: Spawner) {
     static INITS: InitCounter = InitCounter::new();
     let inits = &INITS;
 
+    let (storage, config, models) = storage::init(hal.storage).await;
+
+    let config_manager = config::Manager::new(config).await;
+    let config = config_manager.config();
+
+    let models = models::Manager::new(models);
+
     static MODE: crate::mode::Watch = Watch::new();
     let mode = &MODE;
     let mode_sender = mode.sender();
-
-    let config_manager = config::Manager::new();
-    let config = config_manager.config();
-
-    let models = models::Manager::new();
-
-    let storage = storage::Manager::new();
-    spawner.must_spawn(storage::run(
-        inits,
-        hal.storage,
-        storage,
-        config_manager,
-        models,
-    ));
 
     #[cfg(feature = "configurator")]
     let configurator = configurator::Manager::new();

@@ -55,12 +55,6 @@ where
         self.inner.write_all(respond::NOT_FOUND).await
     }
 
-    async fn service_unavailable(mut self) -> Result<(), Self::Error> {
-        self.inner
-            .write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length:0\r\n\r\n")
-            .await
-    }
-
     async fn ok_empty(mut self) -> Result<(), Self::Error> {
         self.inner
             .write_all(b"HTTP/1.1 200 Ok\r\nContent-Length:0\r\n\r\n")

@@ -29,20 +29,17 @@ mod ipc {
         #[wasm_bindgen(js_name = "apiRx")]
         pub(super) fn api_tx(id: u32, status: u16, json: bool, body: &[u8]);
 
-        #[wasm_bindgen(js_name = "storageFileLength")]
-        pub(super) fn storage_file_len(path: &str) -> usize;
+        #[wasm_bindgen(js_name = "fsList")]
+        pub(super) fn fs_list(prefix: &str) -> Vec<String>;
 
-        #[wasm_bindgen(js_name = "storageRead")]
-        pub(super) fn storage_read(path: &str, cursor: usize, buffer: &mut [u8]) -> usize;
+        #[wasm_bindgen(js_name = "fsRead")]
+        pub(super) fn fs_read(file: &str) -> Option<Vec<u8>>;
 
-        #[wasm_bindgen(js_name = "storageWrite")]
-        pub(super) fn storage_write(path: &str, cursor: usize, data: &[u8]);
+        #[wasm_bindgen(js_name = "fsWrite")]
+        pub(super) fn fs_write(file: &str, data: &[u8]);
 
-        #[wasm_bindgen(js_name = "storageTruncate")]
-        pub(super) fn storage_truncate(path: &str, cursor: usize);
-
-        #[wasm_bindgen(js_name = "storageDirEntries")]
-        pub(super) fn storage_dir_entries(path: &str) -> Vec<String>;
+        #[wasm_bindgen(js_name = "fsDelete")]
+        pub(super) fn fs_delete(file: &str);
 
         #[wasm_bindgen(js_name = "setStatusLed")]
         pub(super) fn set_status_led(r: u8, g: u8, b: u8);

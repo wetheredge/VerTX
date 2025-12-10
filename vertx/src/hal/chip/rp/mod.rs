@@ -8,11 +8,10 @@ use embassy_rp::spi::{self, Spi};
 use embassy_rp::watchdog::Watchdog;
 use embassy_rp::{bind_interrupts, gpio, peripherals};
 use embedded_alloc::TlsfHeap;
-use static_cell::StaticCell;
+use static_cell::{ConstStaticCell, StaticCell};
 use {defmt_rtt as _, panic_probe as _};
 
 use crate::hal;
-use crate::storage::sd;
 
 bind_interrupts!(struct Irqs {
     I2C0_IRQ => i2c::InterruptHandler<peripherals::I2C0>;
@@ -70,20 +69,12 @@ pub(crate) fn init(_spawner: Spawner) -> hal::Init {
     );
 
     let storage = async {
-        // Using impl Trait hits the `item does not constrain but has it in its
-        // signature` error with the static below. Something neater would be nice, but
-        // this works :/
-        type SpiDevice = embedded_hal_bus::spi::ExclusiveDevice<
-            Spi<'static, peripherals::SPI1, spi::Async>,
-            gpio::Output<'static>,
-            embassy_time::Delay,
-        >;
+        static BUFFERS: ConstStaticCell<vertx_filesystem::Buffers<aligned::A1>> =
+            ConstStaticCell::new(vertx_filesystem::Buffers::new());
+        let buffers = BUFFERS.take();
 
-        static STORAGE: StaticCell<sd::Storage<SpiDevice>> = StaticCell::new();
         let sd_cs = gpio::Output::new(pins!(p, sd.cs), gpio::Level::High);
-        let storage = sd::Storage::new_exclusive_spi(spi, sd_cs, Spi::set_frequency).await;
-        let storage: &'static _ = STORAGE.init(storage);
-        storage
+        crate::storage::sd_spi::new_exclusive_spi(buffers, spi, sd_cs, Spi::set_frequency).await
     };
 
     let ui = {

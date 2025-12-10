@@ -53,11 +53,10 @@ export class Simulator {
 
 		this.openConfigurator = this.openConfigurator.bind(this);
 		this.apiRx = this.apiRx.bind(this);
-		this.storageFileLength = this.storageFileLength.bind(this);
-		this.storageRead = this.storageRead.bind(this);
-		this.storageWrite = this.storageWrite.bind(this);
-		this.storageTruncate = this.storageTruncate.bind(this);
-		this.storageDirEntries = this.storageDirEntries.bind(this);
+		this.fsList = this.fsList.bind(this);
+		this.fsRead = this.fsRead.bind(this);
+		this.fsWrite = this.fsWrite.bind(this);
+		this.fsDelete = this.fsDelete.bind(this);
 		this.setStatusLed = this.setStatusLed.bind(this);
 		this.powerOff = this.powerOff.bind(this);
 		this.flushDisplay = this.flushDisplay.bind(this);
@@ -137,46 +136,7 @@ export class Simulator {
 		this.#configurator?.postMessage(response, options);
 	}
 
-	private storageFileLength(path: string): number {
-		return readFile(getFileKey(path)).byteLength;
-	}
-
-	private storageRead(
-		path: string,
-		cursor: number,
-		buffer: Uint8Array,
-	): number {
-		const remaining = readFile(path).slice(cursor);
-		const length = Math.min(remaining.byteLength, buffer.byteLength);
-		buffer.set(remaining.slice(0, length));
-		return length;
-	}
-
-	private storageWrite(
-		path: string,
-		cursor: number,
-		data: Uint8Array,
-	): number {
-		let contents = readFile(path);
-		const targetLength = cursor + data.byteLength;
-		if (contents.byteLength < targetLength) {
-			const resized = new Uint8Array(targetLength);
-			resized.set(contents);
-			contents = resized;
-		}
-
-		contents.set(data, cursor);
-		writeFile(path, contents);
-
-		return data.byteLength;
-	}
-
-	private storageTruncate(path: string, cursor: number) {
-		const contents = readFile(path).slice(0, cursor);
-		writeFile(path, contents);
-	}
-
-	private storageDirEntries(path: string): Array<string> {
+	private fsList(path: string): Array<string> {
 		if (!path.endsWith('/')) {
 			throw new Error('Missing trailing slash');
 		}
@@ -185,6 +145,24 @@ export class Simulator {
 		return Object.keys(localStorage)
 			.filter((key) => key.startsWith(dir))
 			.map((key) => key.replace(dir, ''));
+	}
+
+	private fsRead(path: string): Uint8Array | null {
+		const base64 = localStorage.getItem(getFileKey(path));
+		if (base64 == null) {
+			return null;
+		}
+
+		return Uint8Array.fromBase64(base64);
+	}
+
+	private fsWrite(path: string, data: Uint8Array) {
+		const base64 = data.toBase64();
+		localStorage.setItem(getFileKey(path), base64);
+	}
+
+	private fsDelete(path: string) {
+		localStorage.removeItem(getFileKey(path));
 	}
 
 	private setStatusLed(r: number, g: number, b: number) {
@@ -222,20 +200,6 @@ export class Simulator {
 
 		this.#display.putImageData(output, 0, 0);
 	}
-}
-
-function readFile(path: string): Uint8Array {
-	const base64 = localStorage.getItem(getFileKey(path));
-	if (base64 == null) {
-		return new Uint8Array();
-	}
-
-	return Uint8Array.fromBase64(base64);
-}
-
-function writeFile(path: string, contents: Uint8Array) {
-	const base64 = contents.toBase64();
-	localStorage.setItem(getFileKey(path), base64);
 }
 
 function setBinaryColor(
