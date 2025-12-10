@@ -41,7 +41,7 @@ pub(crate) async fn run(
     let kind = manager.0.wait().await;
 
     config.save().await;
-    storage.flush_before_reset().await;
+    storage.flush().await;
 
     match kind {
         Kind::Reboot => hal.reboot(),

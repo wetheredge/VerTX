@@ -77,13 +77,10 @@ impl Api {
             "config" => match method {
                 Method::Get => {
                     let mut buffer = [0; crate::config::BYTE_LENGTH];
-                    if let Some(len) = self.config.serialize(&mut buffer).transpose().unwrap() {
-                        let mut writer = writer.ok_with_len(ContentType::OctetStream, len).await?;
-                        writer.write_all(&buffer[0..len]).await?;
-                        writer.finish().await
-                    } else {
-                        writer.service_unavailable().await
-                    }
+                    let len = self.config.serialize(&mut buffer).unwrap();
+                    let mut writer = writer.ok_with_len(ContentType::OctetStream, len).await?;
+                    writer.write_all(&buffer[0..len]).await?;
+                    writer.finish().await
                 }
                 Method::Post => match self.config.replace(request.body()).await {
                     Ok(()) => {
@@ -203,9 +200,6 @@ pub(crate) trait WriteResponse {
 
     async fn method_not_allowed(self, allow: &'static str) -> Result<(), Self::Error>;
     async fn not_found(self) -> Result<(), Self::Error>;
-
-    /// 503 Service Unavailable
-    async fn service_unavailable(self) -> Result<(), Self::Error>;
 
     async fn ok_empty(self) -> Result<(), Self::Error>;
 
