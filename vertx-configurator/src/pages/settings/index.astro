@@ -36,12 +36,7 @@ import SettingInput from './_SettingInput.astro';
 
 	<h3>Home</h3>
 
-	<SettingInput
-		key={configKeys.network.home.ssid}
-		label="SSID"
-		type="text"
-		maxlength={32}
-	/>
+	<SettingInput key={configKeys.network.home.ssid} label="SSID" type="text" maxlength={32}/>
 	<SettingInput
 		key={configKeys.network.home.password}
 		label="Password"
@@ -53,12 +48,14 @@ import SettingInput from './_SettingInput.astro';
 		import { Reader } from 'postcard';
 		import { getBinary, post } from '~/api/index.ts';
 		import { encodeConfig, parseConfig } from '~/generated/config.ts';
+		import { getElementById } from '~/utils.ts';
 		import { getId } from './_utils.ts';
 
 		const rawConfig = await getBinary('config');
-		const config = parseConfig(new Reader(new DataView(rawConfig)))
+		const config = parseConfig(new Reader(new DataView(rawConfig)));
 
-		const getInput = (i: number) => document.getElementById(getId(i)) as (HTMLInputElement | null);
+		const getInput = (i: number) =>
+			document.getElementById(getId(i)) as HTMLInputElement | null;
 
 		for (let i = 0; i < config.length; i++) {
 			const input = getInput(i);
@@ -67,13 +64,13 @@ import SettingInput from './_SettingInput.astro';
 			}
 		}
 
-		(document.getElementById('save')! as HTMLButtonElement).addEventListener('click', async () => {
+		getElementById<HTMLButtonElement>('save').addEventListener('click', async () => {
 			for (let i = 0; i < config.length; i++) {
 				const input = getInput(i);
 				if (input) {
 					const value = input.value;
-					config[i] = typeof config[i] === 'number' ? parseInt(value) : value;
-				} 
+					config[i] = typeof config[i] === 'number' ? Number.parseInt(value, 10) : value;
+				}
 			}
 			// TODO: display success/error result
 			await post('config', encodeConfig(config));

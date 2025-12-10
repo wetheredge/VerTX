@@ -20,15 +20,10 @@ type TypeSpecificProps =
 			step?: number;
 	  };
 
-export type Props = SettingProps<StringSettings | IntegerSettings> &
-	TypeSpecificProps;
+export type Props = SettingProps<StringSettings | IntegerSettings> & TypeSpecificProps;
 
 const { key, ...props } = Astro.props;
-const [baseProps, inputProps] = split(props, [
-	'containerId',
-	'label',
-	'description',
-]);
+const [baseProps, inputProps] = split(props, ['containerId', 'label', 'description']);
 ---
 
 <SettingBase key={key} {...baseProps}>
@@ -37,5 +32,5 @@ const [baseProps, inputProps] = split(props, [
 		id={getId(key)}
 		class={styles.input}
 		aria-describedby={baseProps.description && getDescriptionId(key)}
-	/>
+	>
 </SettingBase>

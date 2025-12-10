@@ -15,15 +15,16 @@ import './Menu.css.ts';
 	role="button"
 	aria-label="Toggle navigation menu"
 >
-	<Icon icon={IconMenu} size={size.buttonIcon} />
-	<Icon icon={IconX} size={size.buttonIcon} />
+	<Icon icon={IconMenu} size={size.buttonIcon}/>
+	<Icon icon={IconX} size={size.buttonIcon}/>
 </label>
 
 <script>
+	import { getElementById, querySelector } from '~/utils.ts';
 	import { stateId } from './menu-selectors.ts';
 
-	const state: HTMLInputElement = document.querySelector(`#${stateId}`)!;
-	const button: HTMLLabelElement = document.querySelector(`[for="${stateId}"]`)!;
+	const state = getElementById<HTMLInputElement>(stateId);
+	const button = querySelector<HTMLLabelElement>(`[for="${stateId}"]`);
 
 	button.addEventListener('keypress', ({ key }) => {
 		if (key === ' ' || key === 'Enter') {

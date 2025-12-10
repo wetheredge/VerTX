@@ -13,23 +13,28 @@ import NavLink from './NavLink.astro';
 
 <div class={styles.root}>
 	<nav class={styles.nav}>
-		<NavLink href="/" label="About" icon={IconInfo} />
-		<NavLink href="/settings" label="Settings" icon={IconSettings} />
-		<NavLink href="/updates" label="Updates" icon={IconPackage} />
-		<NavLink href="/hardware" label="Hardware" icon={IconGamepad} />
-		<NavLink href="/models" label="Models" icon={IconPlane} />
+		<NavLink href="/" label="About" icon={IconInfo}/>
+		<NavLink href="/settings" label="Settings" icon={IconSettings}/>
+		<NavLink href="/updates" label="Updates" icon={IconPackage}/>
+		<NavLink href="/hardware" label="Hardware" icon={IconGamepad}/>
+		<NavLink href="/models" label="Models" icon={IconPlane}/>
 	</nav>
 	<div class={styles.powerButtonContainer}>
-		<button id="shut-down" class={styles.powerButton} type="button" title="Shut down"><IconPower /></button>
-		<button id="reboot" class={styles.powerButton} type="button" title="Reboot"><IconRotateCcw /></button>
+		<button id="shut-down" class={styles.powerButton} type="button" title="Shut down">
+			<IconPower/>
+		</button>
+		<button id="reboot" class={styles.powerButton} type="button" title="Reboot">
+			<IconRotateCcw/>
+		</button>
 	</div>
 </div>
 
 <script>
 	import { post } from '~/api/index.ts';
+	import { getElementById } from '~/utils.ts';
 
-	function powerButtonSetup(route: 'shut-down'|'reboot') {
-		(document.getElementById(route)! as HTMLButtonElement).addEventListener('click', async () => {
+	function powerButtonSetup(route: 'shut-down' | 'reboot') {
+		getElementById<HTMLButtonElement>(route).addEventListener('click', async () => {
 			await post(route);
 		});
 	}

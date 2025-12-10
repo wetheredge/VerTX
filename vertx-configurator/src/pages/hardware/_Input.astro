@@ -21,7 +21,7 @@ const id = customAlphabet('abcdefghijklmnopqrstuvwxyz', idLength)();
 // TODO: runtime --value via element.style.setProperty('--value', `${(value * 100).toFixed(2)}%`)
 ---
 
-<span aria-hidden=true>{name}</span>
+<span aria-hidden="true">{name}</span>
 <span
 	id={id}
 	class:list={[
@@ -34,11 +34,6 @@ const id = customAlphabet('abcdefghijklmnopqrstuvwxyz', idLength)();
 	aria-valuemin={center ? -100 : 0}
 	aria-valuemax={100}
 />
-<button
-	class={iconButton}
-	type="button"
-	title="Reverse"
-	aria-controls={id}
->
-	<Icon icon={IconFlipHorizontal} size={size.buttonIcon} />
+<button class={iconButton} type="button" title="Reverse" aria-controls={id}>
+	<Icon icon={IconFlipHorizontal} size={size.buttonIcon}/>
 </button>

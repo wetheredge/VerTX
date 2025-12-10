@@ -2,25 +2,26 @@
 import { stateId } from './menu-selectors.ts';
 ---
 
-<input id={stateId} type="checkbox" />
+<input id={stateId} type="checkbox">
 
 <script>
-	import { mediaIsMobile } from '~/styles/constants.ts'
+	import { mediaIsMobile } from '~/styles/constants.ts';
+	import { getElementById, querySelector } from '~/utils.ts';
 	import { stateId } from './menu-selectors.ts';
 
-	const state: HTMLInputElement = document.querySelector(`#${stateId}`)!;
+	const state = getElementById<HTMLInputElement>(stateId);
 
 	// Close menu when leaving mobile design
 	window.matchMedia(mediaIsMobile).addEventListener('change', ({ matches: isMobile }) => {
-	  if (!isMobile) {
-	    state.checked = false;
-	  }
+		if (!isMobile) {
+			state.checked = false;
+		}
 	});
 
 	// Disable interactions with the main page content when the mobile menu is open
-	const main = document.querySelector('main')!;
+	const main = querySelector('main');
 	state.addEventListener('change', ({ target }) => {
-	  main.inert = (target as typeof state).checked;
+		main.inert = (target as typeof state).checked;
 	});
 </script>
 

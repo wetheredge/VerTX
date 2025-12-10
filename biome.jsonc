@@ -114,14 +114,22 @@
 			},
 		},
 	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "single",
-		},
-	},
 	"css": {
 		"formatter": {
 			"enabled": true,
+		},
+	},
+	"html": {
+		"experimentalFullSupportEnabled": true,
+		"formatter": {
+			"enabled": true,
+			"indentScriptAndStyle": true,
+			"lineWidth": 100,
+		},
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
 		},
 	},
 	"overrides": [

@@ -12,7 +12,7 @@ import * as styles from './_models.css.ts';
 
 	<div id="models">
 		<div id="template" class={styles.model}>
-			<span class="name" />
+			<span class="name"/>
 			<button class={`menu ${iconButton}`} type="button" title="Menu">
 				<Icon icon={IconMenu} size={size.buttonIcon}/>
 			</button>
@@ -20,18 +20,25 @@ import * as styles from './_models.css.ts';
 	</div>
 
 	<menu id="model-menu" class={styles.menu} popover>
-		<ul><button class="rename">Rename</button></ul>
-		<ul><button class="copy">Duplicate</button></ul>
-		<ul><button class="mixer">Edit mixer</button></ul>
+		<ul>
+			<button class="rename">Rename</button>
+		</ul>
+		<ul>
+			<button class="copy">Duplicate</button>
+		</ul>
+		<ul>
+			<button class="mixer">Edit mixer</button>
+		</ul>
 	</menu>
 
 	<script>
 		import { getJson } from '~/api/index.ts';
+		import { getElementById, querySelector } from '~/utils.ts';
 
-		const container: HTMLDivElement = document.querySelector('#models')!;
-		const template: HTMLDivElement = document.querySelector('#template')!;
+		const container = getElementById<HTMLDivElement>('models');
+		const template = getElementById<HTMLDivElement>('template');
 
-		template.childNodes.forEach(child => {
+		template.childNodes.forEach((child) => {
 			if (child.nodeType !== Node.ELEMENT_NODE) {
 				template.removeChild(child);
 			}
@@ -43,12 +50,14 @@ import * as styles from './_models.css.ts';
 			node.id = '';
 			node.dataset.id = id;
 
-			node.childNodes.forEach(rawNode => {
+			node.childNodes.forEach((rawNode) => {
 				const child = rawNode as HTMLElement;
 				if (child.classList.contains('name')) {
 					child.innerText = name;
 				} else if (child.classList.contains('menu')) {
-					(child as HTMLButtonElement).addEventListener('click', (event) => showMenu(event.currentTarget as HTMLButtonElement, id));
+					(child as HTMLButtonElement).addEventListener('click', (event) => {
+						showMenu(event.currentTarget as HTMLButtonElement, id);
+					});
 				}
 			});
 
@@ -57,7 +66,7 @@ import * as styles from './_models.css.ts';
 
 		let targetModel: string | null;
 		let menuOpener: HTMLButtonElement | null;
-		const menu: HTMLMenuElement = document.querySelector('#model-menu')!;
+		const menu = getElementById<HTMLMenuElement>('model-menu');
 		menu.addEventListener('toggle', (event) => {
 			if (event.newState === 'closed' && menuOpener != null) {
 				menuOpener.disabled = false;
@@ -79,10 +88,13 @@ import * as styles from './_models.css.ts';
 		}
 
 		function menuItem(selector: string, handler: () => void) {
-			(document.querySelector(`#model-menu .${selector}`) as HTMLButtonElement).addEventListener('click', () => {
-				menu.hidePopover();
-				handler();
-			});
+			querySelector<HTMLButtonElement>(`#model-menu .${selector}`).addEventListener(
+				'click',
+				() => {
+					menu.hidePopover();
+					handler();
+				},
+			);
 		}
 
 		menuItem('rename', () => {
