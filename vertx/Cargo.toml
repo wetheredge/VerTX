@@ -158,7 +158,7 @@ esp-backtrace = { version = "=0.18.1", features = ["defmt", "colors", "panic-han
 esp-hal = { version = "=1.0.0", features = ["unstable"], optional = true }
 esp-radio = { version = "=0.17.0", features = ["defmt", "wifi"], optional = true }
 esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio"], optional = true }
-esp-storage = { version = "=0.8.1", features = ["critical-section"], optional = true }
+esp-storage = { version = "=0.8.1", features = ["defmt", "critical-section"], optional = true }
 
 # chip-rp
 # TODO: flip-link

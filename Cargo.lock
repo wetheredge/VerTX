@@ -1084,6 +1084,7 @@ checksum = "641e43d6a60244429117ef2fa7a47182120c7561336ea01f6fb08d634f46bae1"
 dependencies = [
  "allocator-api2",
  "cfg-if",
+ "defmt 1.0.1",
  "document-features",
  "enumset",
  "esp-config",
@@ -1318,6 +1319,7 @@ version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1495fc1f5549bdd840b52d9ceb201746200e1620d2636f46958c11e765623b80"
 dependencies = [
+ "defmt 1.0.1",
  "document-features",
  "embedded-storage",
  "esp-hal",
