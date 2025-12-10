@@ -69,6 +69,7 @@ chip-esp = [
 ]
 chip-esp32s3 = [
     "chip-esp",
+    "esp-alloc/esp32s3",
     "esp-backtrace/esp32s3",
     "esp-hal/esp32s3",
     "esp-rtos/esp32s3",
@@ -152,7 +153,7 @@ block-device-adapters = { git = "https://github.com/MabezDev/embedded-fatfs.git"
 sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c", optional = true }
 
 # chip-esp
-esp-alloc = { version = "=0.9.0", optional = true }
+esp-alloc = { version = "=0.9.0", features = ["defmt"], optional = true }
 esp-backtrace = { version = "=0.18.1", features = ["defmt", "colors", "panic-handler"], optional = true }
 esp-hal = { version = "=1.0.0", features = ["unstable"], optional = true }
 esp-radio = { version = "=0.17.0", features = ["defmt", "wifi"], optional = true }
