@@ -1,5 +1,7 @@
 // Derived from Bun's type declarations under the MIT license
 
+// biome-ignore-all lint/style: copied from Bun
+
 // Source: <https://github.com/oven-sh/bun/blob/c7327d62c24aaa8951b64a9e0e3b70c27f228582/packages/bun-types/globals.d.ts#L1470-L1482>
 interface Uint8ArrayConstructor {
 	/**

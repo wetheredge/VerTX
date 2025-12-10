@@ -8,8 +8,8 @@
 #app {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
 	gap: 0.5em;
+	align-items: center;
 }
 
 #status-led {
@@ -17,9 +17,9 @@
 	width: 1em;
 	height: 1em;
 	margin: var(--glow-size);
-	border-radius: 100%;
 	color: black;
 	background-color: currentColor;
+	border-radius: 100%;
 	box-shadow: 0 0 var(--glow-size) 0 currentColor;
 }
 

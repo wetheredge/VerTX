@@ -15,6 +15,7 @@ export type Props = {
 const { name, label, center } = Astro.props;
 
 const idLength = 6;
+// biome-ignore lint/security/noSecrets: not a secret
 const id = customAlphabet('abcdefghijklmnopqrstuvwxyz', idLength)();
 
 // TODO: runtime --value via element.style.setProperty('--value', `${(value * 100).toFixed(2)}%`)

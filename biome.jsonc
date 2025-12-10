@@ -6,6 +6,13 @@
 		"clientKind": "git",
 		"useIgnoreFile": true,
 	},
+	"assist": {
+		"actions": {
+			"source": {
+				"useSortedProperties": "on",
+			},
+		},
+	},
 	"formatter": {
 		"indentWidth": 4,
 	},
@@ -32,6 +39,7 @@
 				"noDynamicNamespaceImportAccess": "on",
 				"noReExportAll": "on",
 			},
+			"security": "on",
 			"style": {
 				"noCommonJs": "error",
 				"noDefaultExport": "on",
@@ -61,6 +69,12 @@
 				"useConsistentBuiltinInstantiation": "on",
 				"useConsistentMemberAccessibility": "on",
 				"useConsistentObjectDefinitions": "on",
+				"useConsistentTypeDefinitions": {
+					"level": "on",
+					"options": {
+						"style": "type",
+					},
+				},
 				"useDefaultParameterLast": "on",
 				"useExplicitLengthCheck": "on",
 				"useFilenamingConvention": {
