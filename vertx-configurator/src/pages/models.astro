@@ -33,10 +33,10 @@ import * as styles from './_models.css.ts';
 
 	<script>
 		import { getJson } from '~/api/index.ts';
-		import { getElementById, querySelector } from '~/utils.ts';
+		import { typedGetElementById, typedQuerySelector } from '~/utils.ts';
 
-		const container = getElementById<HTMLDivElement>('models');
-		const template = getElementById<HTMLDivElement>('template');
+		const container = typedGetElementById<HTMLDivElement>('models');
+		const template = typedGetElementById<HTMLDivElement>('template');
 
 		template.childNodes.forEach((child) => {
 			if (child.nodeType !== Node.ELEMENT_NODE) {
@@ -66,7 +66,7 @@ import * as styles from './_models.css.ts';
 
 		let targetModel: string | null;
 		let menuOpener: HTMLButtonElement | null;
-		const menu = getElementById<HTMLMenuElement>('model-menu');
+		const menu = typedGetElementById<HTMLMenuElement>('model-menu');
 		menu.addEventListener('toggle', (event) => {
 			if (event.newState === 'closed' && menuOpener != null) {
 				menuOpener.disabled = false;
@@ -88,7 +88,7 @@ import * as styles from './_models.css.ts';
 		}
 
 		function menuItem(selector: string, handler: () => void) {
-			querySelector<HTMLButtonElement>(`#model-menu .${selector}`).addEventListener(
+			typedQuerySelector<HTMLButtonElement>(`#model-menu .${selector}`).addEventListener(
 				'click',
 				() => {
 					menu.hidePopover();

@@ -6,10 +6,10 @@ import { stateId } from './menu-selectors.ts';
 
 <script>
 	import { mediaIsMobile } from '~/styles/constants.ts';
-	import { getElementById, querySelector } from '~/utils.ts';
+	import { typedGetElementById, typedQuerySelector } from '~/utils.ts';
 	import { stateId } from './menu-selectors.ts';
 
-	const state = getElementById<HTMLInputElement>(stateId);
+	const state = typedGetElementById<HTMLInputElement>(stateId);
 
 	// Close menu when leaving mobile design
 	window.matchMedia(mediaIsMobile).addEventListener('change', ({ matches: isMobile }) => {
@@ -19,7 +19,7 @@ import { stateId } from './menu-selectors.ts';
 	});
 
 	// Disable interactions with the main page content when the mobile menu is open
-	const main = querySelector('main');
+	const main = typedQuerySelector('main');
 	state.addEventListener('change', ({ target }) => {
 		main.inert = (target as typeof state).checked;
 	});

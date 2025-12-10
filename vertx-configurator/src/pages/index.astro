@@ -16,10 +16,10 @@ import * as styles from './_index.css.ts';
 
 	<script>
 		import { getJson } from '~/api/index.ts';
-		import { getElementById } from '~/utils.ts';
+		import { typedGetElementById } from '~/utils.ts';
 
 		const version = await getJson('version');
-		const table = getElementById<HTMLTableElement>('build');
+		const table = typedGetElementById<HTMLTableElement>('build');
 
 		function pushRow(name: string, value: string) {
 			const tr = document.createElement('tr');

@@ -48,7 +48,7 @@ import SettingInput from './_SettingInput.astro';
 		import { Reader } from 'postcard';
 		import { getBinary, post } from '~/api/index.ts';
 		import { encodeConfig, parseConfig } from '~/generated/config.ts';
-		import { getElementById } from '~/utils.ts';
+		import { typedGetElementById } from '~/utils.ts';
 		import { getId } from './_utils.ts';
 
 		const rawConfig = await getBinary('config');
@@ -64,7 +64,7 @@ import SettingInput from './_SettingInput.astro';
 			}
 		}
 
-		getElementById<HTMLButtonElement>('save').addEventListener('click', async () => {
+		typedGetElementById<HTMLButtonElement>('save').addEventListener('click', async () => {
 			for (let i = 0; i < config.length; i++) {
 				const input = getInput(i);
 				if (input) {

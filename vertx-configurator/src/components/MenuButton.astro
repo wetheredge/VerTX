@@ -20,11 +20,11 @@ import './Menu.css.ts';
 </label>
 
 <script>
-	import { getElementById, querySelector } from '~/utils.ts';
+	import { typedGetElementById, typedQuerySelector } from '~/utils.ts';
 	import { stateId } from './menu-selectors.ts';
 
-	const state = getElementById<HTMLInputElement>(stateId);
-	const button = querySelector<HTMLLabelElement>(`[for="${stateId}"]`);
+	const state = typedGetElementById<HTMLInputElement>(stateId);
+	const button = typedQuerySelector<HTMLLabelElement>(`[for="${stateId}"]`);
 
 	button.addEventListener('keypress', ({ key }) => {
 		if (key === ' ' || key === 'Enter') {

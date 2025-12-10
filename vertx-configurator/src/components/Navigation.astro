@@ -31,10 +31,10 @@ import NavLink from './NavLink.astro';
 
 <script>
 	import { post } from '~/api/index.ts';
-	import { getElementById } from '~/utils.ts';
+	import { typedGetElementById } from '~/utils.ts';
 
 	function powerButtonSetup(route: 'shut-down' | 'reboot') {
-		getElementById<HTMLButtonElement>(route).addEventListener('click', async () => {
+		typedGetElementById<HTMLButtonElement>(route).addEventListener('click', async () => {
 			await post(route);
 		});
 	}
