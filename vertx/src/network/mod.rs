@@ -73,7 +73,7 @@ pub(crate) async fn init(
         Kind::AccessPoint => embassy_net::Config::ipv4_static(embassy_net::StaticConfigV4 {
             address: embassy_net::Ipv4Cidr::new(STATIC_ADDRESS, 24),
             gateway: Some(STATIC_ADDRESS),
-            dns_servers: heapless::Vec::new(),
+            dns_servers: Default::default(),
         }),
     };
 
