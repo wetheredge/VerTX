@@ -3,6 +3,7 @@ macro_rules! select_mod {
         #[cfg(feature = $feat)]
         mod $mod;
         #[cfg(feature = $feat)]
+        #[allow(unused_imports)]
         pub(crate) use $mod::*;
     )+};
     (
@@ -13,11 +14,13 @@ macro_rules! select_mod {
             #[cfg(feature = $feat)]
             mod $mod;
             #[cfg(all(feature = $feat, not(test)))]
+            #[allow(unused_imports)]
             pub(crate) use $mod::*;
         )+
         #[cfg(test)]
         mod $test;
         #[cfg(test)]
+        #[allow(unused_imports)]
         pub(crate) use $test::*;
     };
 }
@@ -38,7 +41,7 @@ pub(crate) type Configurator = impl crate::hal::traits::Configurator;
 #[cfg(feature = "network")]
 pub(crate) type Network = impl crate::hal::traits::Network;
 #[cfg(feature = "network")]
-pub type NetworkDriver = <Network as traits::Network>::Driver;
+pub(crate) type NetworkDriver = <Network as traits::Network>::Driver;
 
 mod chip;
 

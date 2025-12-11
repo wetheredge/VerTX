@@ -22,7 +22,7 @@ pub(crate) type RootConfig = View<codegen::key::Root>;
 const SUBSCRIPTIONS: usize = 1;
 
 #[derive(Clone, Copy)]
-pub struct Manager {
+pub(crate) struct Manager {
     init: &'static AtomicBool,
     state: &'static Mutex<crate::mutex::SingleCore, RefCell<State>>,
 }
@@ -35,7 +35,7 @@ struct State {
 }
 
 impl Manager {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         static INIT: AtomicBool = AtomicBool::new(false);
         static STATE: StaticCell<Mutex<crate::mutex::SingleCore, RefCell<State>>> =
             StaticCell::new();
@@ -51,7 +51,7 @@ impl Manager {
         }
     }
 
-    pub async fn load(self, mut file: File) {
+    pub(crate) async fn load(self, mut file: File) {
         let mut buffer = [0; BYTE_LENGTH];
         let mut len = 0;
         loop {
@@ -93,7 +93,7 @@ impl Manager {
         self.init.store(true, portable_atomic::Ordering::Relaxed);
     }
 
-    pub async fn replace(self, bytes: &[u8]) -> Result<(), ()> {
+    pub(crate) async fn replace(self, bytes: &[u8]) -> Result<(), ()> {
         let Ok(config) = RawConfig::deserialize(bytes) else {
             return Err(());
         };
@@ -102,7 +102,7 @@ impl Manager {
         Ok(())
     }
 
-    pub async fn reset(self) {
+    pub(crate) async fn reset(self) {
         self.replace_impl(RawConfig::default()).await;
     }
 
@@ -129,7 +129,7 @@ impl Manager {
         });
     }
 
-    pub async fn save(self) {
+    pub(crate) async fn save(self) {
         self.wait_for_init().await;
 
         loog::debug!("Writing configuration");
@@ -155,7 +155,7 @@ impl Manager {
         }
     }
 
-    pub const fn config(self) -> RootConfig {
+    pub(crate) const fn config(self) -> RootConfig {
         View {
             manager: self,
             _key: PhantomData,
@@ -164,14 +164,14 @@ impl Manager {
 
     /// Try to serialize the config. If it has not been initialized yet, this
     /// returns `None`.
-    pub fn serialize(self, buffer: &mut [u8]) -> Option<postcard::Result<usize>> {
+    pub(crate) fn serialize(self, buffer: &mut [u8]) -> Option<postcard::Result<usize>> {
         self.is_initted().then(|| {
             self.state
                 .lock(|state| state.borrow().config.serialize(buffer))
         })
     }
 
-    pub fn subscribe(self, key: usize) -> Option<Subscriber> {
+    pub(crate) fn subscribe(self, key: usize) -> Option<Subscriber> {
         self.state.lock(|state| {
             let mut state = state.borrow_mut();
             (state.subscriptions.len() < SUBSCRIPTIONS).then(|| {
@@ -226,7 +226,7 @@ pub(crate) struct Subscriber {
 }
 
 impl Subscriber {
-    pub fn updated(&self) -> impl Future<Output = ()> {
+    pub(crate) fn updated(&self) -> impl Future<Output = ()> {
         future::poll_fn(move |ctx| self.manager.poll(self.subscription, ctx))
     }
 }

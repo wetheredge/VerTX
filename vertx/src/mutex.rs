@@ -1,4 +1,4 @@
 use embassy_sync::blocking_mutex::raw;
 
-pub type SingleCore = raw::NoopRawMutex;
-pub type MultiCore = raw::CriticalSectionRawMutex;
+pub(crate) type SingleCore = raw::NoopRawMutex;
+pub(crate) type MultiCore = raw::CriticalSectionRawMutex;

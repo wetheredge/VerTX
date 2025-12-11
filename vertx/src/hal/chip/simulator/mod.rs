@@ -24,34 +24,34 @@ mod ipc {
     #[wasm_bindgen(js_namespace = Vertx)]
     extern "C" {
         #[wasm_bindgen(js_name = "openConfigurator")]
-        pub fn open_configurator();
+        pub(super) fn open_configurator();
 
         #[wasm_bindgen(js_name = "apiRx")]
-        pub fn api_tx(id: u32, status: u16, json: bool, body: &[u8]);
+        pub(super) fn api_tx(id: u32, status: u16, json: bool, body: &[u8]);
 
         #[wasm_bindgen(js_name = "storageFileLength")]
-        pub fn storage_file_len(path: &str) -> usize;
+        pub(super) fn storage_file_len(path: &str) -> usize;
 
         #[wasm_bindgen(js_name = "storageRead")]
-        pub fn storage_read(path: &str, cursor: usize, buffer: &mut [u8]) -> usize;
+        pub(super) fn storage_read(path: &str, cursor: usize, buffer: &mut [u8]) -> usize;
 
         #[wasm_bindgen(js_name = "storageWrite")]
-        pub fn storage_write(path: &str, cursor: usize, data: &[u8]);
+        pub(super) fn storage_write(path: &str, cursor: usize, data: &[u8]);
 
         #[wasm_bindgen(js_name = "storageTruncate")]
-        pub fn storage_truncate(path: &str, cursor: usize);
+        pub(super) fn storage_truncate(path: &str, cursor: usize);
 
         #[wasm_bindgen(js_name = "storageDirEntries")]
-        pub fn storage_dir_entries(path: &str) -> Vec<String>;
+        pub(super) fn storage_dir_entries(path: &str) -> Vec<String>;
 
         #[wasm_bindgen(js_name = "setStatusLed")]
-        pub fn set_status_led(r: u8, g: u8, b: u8);
+        pub(super) fn set_status_led(r: u8, g: u8, b: u8);
 
         #[wasm_bindgen(js_name = "powerOff")]
-        pub fn power_off(restart: bool);
+        pub(super) fn power_off(restart: bool);
 
         #[wasm_bindgen(js_name = "flushDisplay")]
-        pub fn flush_display(data: *const u8);
+        pub(super) fn flush_display(data: *const u8);
     }
 
     #[wasm_bindgen(js_name = "apiTx")]

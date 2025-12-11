@@ -15,13 +15,13 @@ const T0L_NS: u32 = PERIOD - T0H_NS;
 const T1H_NS: u32 = 850; // 900ns per SK6812 datasheet, 850 per WS2812. > 550ns is sometimes enough. Some require T1H >= 2 * T0H. Some require > 300ns T1L.
 const T1L_NS: u32 = PERIOD - T1H_NS;
 
-pub struct StatusLed {
+pub(super) struct StatusLed {
     channel: rmt::AnyTxChannel<esp_hal::Async>,
     pulses: (u32, u32),
 }
 
 impl StatusLed {
-    pub fn new<'d, C, R>(channel: C, pin: impl OutputPin + 'd) -> Self
+    pub(super) fn new<'d, C, R>(channel: C, pin: impl OutputPin + 'd) -> Self
     where
         C: rmt::TxChannelCreator<'d, esp_hal::Async, Raw = R>,
         R: rmt::RawChannelAccess<Dir = rmt::Tx>,

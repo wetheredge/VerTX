@@ -28,7 +28,7 @@ pub(crate) struct Credentials {
     pub(crate) password: Password,
 }
 
-pub async fn init(
+pub(crate) async fn init(
     spawner: Spawner,
     config: crate::Config,
     api: &'static crate::configurator::Api,

@@ -41,7 +41,7 @@ impl RawName {
 }
 
 #[derive(Clone, Copy)]
-pub struct Manager {
+pub(crate) struct Manager {
     init: &'static AtomicBool,
     state: &'static Mutex<crate::mutex::MultiCore, RefCell<MaybeUninit<State>>>,
 }
@@ -51,7 +51,7 @@ struct State {
 }
 
 impl Manager {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         static INIT: AtomicBool = AtomicBool::new(false);
         static STATE: StaticCell<Mutex<crate::mutex::MultiCore, RefCell<MaybeUninit<State>>>> =
             StaticCell::new();
@@ -61,7 +61,7 @@ impl Manager {
         Self { init: &INIT, state }
     }
 
-    pub fn init(self, dir: Directory) {
+    pub(crate) fn init(self, dir: Directory) {
         if self.init.load(Ordering::Relaxed) {
             loog::warn!("models::Manager::init() called multiple times");
             return;
@@ -73,7 +73,7 @@ impl Manager {
         self.init.store(true, Ordering::Relaxed);
     }
 
-    pub async fn for_each(
+    pub(crate) async fn for_each(
         self,
         mut callback: impl FnMut(RawName, Name),
     ) -> Result<(), StorageError> {
@@ -101,7 +101,7 @@ impl Manager {
         Ok(())
     }
 
-    pub async fn open(self, raw: RawName) -> Result<Model, crate::storage::Error> {
+    pub(crate) async fn open(self, raw: RawName) -> Result<Model, crate::storage::Error> {
         let raw = core::str::from_utf8(&raw.bytes).unwrap();
         let dir = self.state(|state| state.dir.clone()).await;
         let mut file = dir.file(raw).await?;
@@ -134,12 +134,12 @@ impl fmt::Debug for Manager {
 }
 
 #[derive(Debug)]
-pub struct Model {
+pub(crate) struct Model {
     name: Name,
 }
 
 impl Model {
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
 }

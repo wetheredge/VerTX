@@ -12,7 +12,7 @@ static REQUESTS: Channel<crate::mutex::MultiCore, Request, 10> = Channel::new();
 
 #[wasm_bindgen(js_name = "Method")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WasmMethod {
+pub(super) enum WasmMethod {
     Get = "GET",
     Post = "POST",
     Delete = "DELETE",

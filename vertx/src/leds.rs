@@ -130,7 +130,7 @@ impl Effect {
 }
 
 #[task]
-pub async fn run(
+pub(crate) async fn run(
     init: &'static crate::InitCounter,
     config: crate::Config,
     mut driver: crate::hal::StatusLed,

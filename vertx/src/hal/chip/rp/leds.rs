@@ -8,12 +8,12 @@ use embassy_time::Timer;
 use fixed::types::U24F8;
 use fixed_macro::types::U24F8;
 
-pub struct StatusDriver<'d, P: PioInstance, const SM: usize> {
+pub(super) struct StatusDriver<'d, P: PioInstance, const SM: usize> {
     sm: StateMachine<'d, P, SM>,
 }
 
 impl<'d, P: PioInstance, const SM: usize> StatusDriver<'d, P, SM> {
-    pub fn new(
+    pub(super) fn new(
         pio: &mut embassy_rp::pio::Common<'d, P>,
         mut sm: StateMachine<'d, P, SM>,
         pin: Peri<'d, impl PioPin>,

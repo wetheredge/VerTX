@@ -107,7 +107,7 @@ impl Partition {
         self.size / 4
     }
 
-    pub const fn sectors(&self) -> u32 {
+    pub(super) const fn sectors(&self) -> u32 {
         self.size / SECTOR_BYTES
     }
 
@@ -224,7 +224,7 @@ macro_rules! byte_enum {
 
 byte_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum AppPartitionKind {
+    pub(super) enum AppPartitionKind {
         Factory = 0x00,
         Ota0 = 0x10,
         Ota1 = 0x11,
@@ -254,7 +254,7 @@ impl AppPartitionKind {
 
 byte_enum! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub enum DataPartitionKind {
+    pub(super) enum DataPartitionKind {
         Ota = 0x00,
         Phy = 0x01,
         Nvs = 0x02,
