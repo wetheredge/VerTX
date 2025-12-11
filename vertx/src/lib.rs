@@ -10,7 +10,6 @@ mod build_info;
 mod config;
 #[cfg(feature = "configurator")]
 mod configurator;
-mod crsf;
 mod hal;
 mod init_counter;
 mod leds;
