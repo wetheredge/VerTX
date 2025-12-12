@@ -53,11 +53,13 @@ export class Simulator {
 
 		this.openConfigurator = this.openConfigurator.bind(this);
 		this.apiRx = this.apiRx.bind(this);
-		this.storageFileLength = this.storageFileLength.bind(this);
+		this.storageEntries = this.storageEntries.bind(this);
+		this.storageExists = this.storageExists.bind(this);
+		this.storageLength = this.storageLength.bind(this);
 		this.storageRead = this.storageRead.bind(this);
 		this.storageWrite = this.storageWrite.bind(this);
 		this.storageTruncate = this.storageTruncate.bind(this);
-		this.storageDirEntries = this.storageDirEntries.bind(this);
+		this.storageDelete = this.storageDelete.bind(this);
 		this.setStatusLed = this.setStatusLed.bind(this);
 		this.powerOff = this.powerOff.bind(this);
 		this.flushDisplay = this.flushDisplay.bind(this);
@@ -137,8 +139,23 @@ export class Simulator {
 		this.#configurator?.postMessage(response, options);
 	}
 
-	private storageFileLength(path: string): number {
-		return readFile(getFileKey(path)).byteLength;
+	private storageEntries(path: string): Array<string> {
+		if (!path.endsWith('/')) {
+			throw new Error('Missing trailing slash');
+		}
+
+		const dir = getFileKey(path);
+		return Object.keys(localStorage)
+			.filter((key) => key.startsWith(dir))
+			.map((key) => key.replace(dir, ''));
+	}
+
+	private storageExists(path: string): boolean {
+		return localStorage.getItem(getFileKey(path)) != null;
+	}
+
+	private storageLength(path: string): number {
+		return readFile(path).byteLength;
 	}
 
 	private storageRead(
@@ -176,15 +193,8 @@ export class Simulator {
 		writeFile(path, contents);
 	}
 
-	private storageDirEntries(path: string): Array<string> {
-		if (!path.endsWith('/')) {
-			throw new Error('Missing trailing slash');
-		}
-
-		const dir = getFileKey(path);
-		return Object.keys(localStorage)
-			.filter((key) => key.startsWith(dir))
-			.map((key) => key.replace(dir, ''));
+	private storageDelete(path: string) {
+		localStorage.removeItem(getFileKey(path));
 	}
 
 	private setStatusLed(r: number, g: number, b: number) {

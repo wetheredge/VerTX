@@ -49,7 +49,7 @@ impl pal::Storage for Storage {
     where
         F: AsyncFnMut(crate::models::Id, &mut Self::File) -> Result<(), Self::Error>,
     {
-        for model in ipc::storage_entries("model") {
+        for model in ipc::storage_entries("model/") {
             let (model, read) = atoi::FromRadix10::from_radix_10(model.as_bytes());
             if read == 0 {
                 loog::warn!("Skipping invalid model name: '{model}'");
