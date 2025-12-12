@@ -21,8 +21,6 @@ pub(crate) mod pal {
             F: AsyncFnMut(crate::models::Id, &mut Self::File) -> Result<(), Self::Error>;
         async fn model(&self, id: crate::models::Id) -> Result<Option<Self::File>, Self::Error>;
         async fn delete_model(&self, id: crate::models::Id) -> Result<(), Self::Error>;
-
-        async fn flush(&self) -> Result<(), Self::Error>;
     }
 
     pub(crate) trait File: ErrorType + Read + Write + Seek {
@@ -38,33 +36,20 @@ pub(crate) type File = <crate::hal::Storage as pal::Storage>::File;
 
 type Inner = Mutex<crate::mutex::MultiCore, crate::hal::Storage>;
 
-pub(crate) async fn init(storage: crate::hal::StorageFuture) -> (Manager, Config, Models) {
+pub(crate) async fn init(storage: crate::hal::StorageFuture) -> (Config, Models) {
     static INNER: StaticCell<Inner> = StaticCell::new();
 
     let storage = storage.await;
     let inner = INNER.init_with(|| Mutex::new(storage));
 
-    (Manager(&*inner), Config(&*inner), Models(&*inner))
+    (Config(&*inner), Models(&*inner))
 }
-
-pub(crate) struct Manager(&'static Inner);
 
 #[derive(Clone, Copy)]
 pub(crate) struct Config(&'static Inner);
 
 #[derive(Clone, Copy)]
 pub(crate) struct Models(&'static Inner);
-
-impl Manager {
-    /// Attempt to flush data before resetting, logging any errors
-    pub(crate) async fn flush(self) {
-        let storage = self.0.lock().await;
-
-        if let Err(err) = storage.flush().await {
-            loog::warn!("Failed to flush: {err:?}");
-        }
-    }
-}
 
 impl Config {
     pub(crate) async fn read(self, buf: &mut [u8]) -> Result<&[u8], Error> {

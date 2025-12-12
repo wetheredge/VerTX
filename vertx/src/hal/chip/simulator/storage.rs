@@ -77,10 +77,6 @@ impl pal::Storage for Storage {
         ipc::storage_delete(&self.path("model", id));
         Ok(())
     }
-
-    async fn flush(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
 }
 
 impl File {

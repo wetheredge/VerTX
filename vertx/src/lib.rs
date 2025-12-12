@@ -38,7 +38,7 @@ pub async fn main(spawner: Spawner) {
     static INITS: InitCounter = InitCounter::new();
     let inits = &INITS;
 
-    let (storage, config, models) = storage::init(hal.storage).await;
+    let (config, models) = storage::init(hal.storage).await;
 
     let config_manager = config::Manager::new(config).await;
     let config = config_manager.config();
@@ -68,7 +68,7 @@ pub async fn main(spawner: Spawner) {
     ));
 
     let reset = reset::Manager::new();
-    spawner.must_spawn(reset::run(reset, hal.reset, config_manager, storage));
+    spawner.must_spawn(reset::run(reset, hal.reset, config_manager));
 
     INITS.wait().await;
     loog::info!("Initialized");
