@@ -1,0 +1,28 @@
+[package]
+name = "vertx-filesystem"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+publish = false
+
+[features]
+defmt = ["loog/defmt"]
+
+[dependencies]
+aligned = { workspace = true }
+bitfield = "=0.19.1"
+block-device-driver = "=0.2.0"
+bytemuck = { workspace = true, features = ["derive"] }
+crc = "=3.3.0"
+embedded-io-async = { workspace = true }
+loog = { workspace = true }
+
+[dev-dependencies]
+loog = { workspace = true, features = ["std", "log"] }
+test-log = "0.2.19"
+tokio = { workspace = true, features = ["macros", "test-util"] }
+
+[lints]
+workspace = true

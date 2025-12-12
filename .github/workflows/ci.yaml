@@ -200,6 +200,7 @@ jobs:
       matrix:
         crate:
           - vertx-crsf
+          - vertx-filesystem
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
         with:
@@ -210,6 +211,8 @@ jobs:
       - uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad
       - uses: ./.github/actions/setup-rust
       - run: cargo nextest run -p ${{ matrix.crate }}
+        env:
+          RUST_LOG: trace
 
   tests-vertx:
     name: Tests (vertx)

@@ -8,6 +8,7 @@ packages = [
     "vertx-config-migrate",
     "vertx-configurator",
     "vertx-crsf",
+    "vertx-filesystem",
     "vertx-simulator",
 ]
 
@@ -79,6 +80,7 @@ run = [
     { task = "vertx-crsf/check" },
     { task = "vertx-config/check" },
     { task = "vertx-config-migrate/check" },
+    { task = "vertx-filesystem/check" },
     { task = "vertx/simulator:check" },
     { task = "vertx-configurator/check" },
     { task = "vertx-simulator/check" },

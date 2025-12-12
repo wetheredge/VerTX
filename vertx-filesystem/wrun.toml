@@ -1,0 +1,3 @@
+[tasks]
+check.run = "cargo clippy"
+test.run = "RUST_LOG=trace cargo nextest run"

@@ -4,6 +4,7 @@ members = [
     "vertx",
     "vertx-config-migrate",
     "vertx-crsf",
+    "vertx-filesystem",
 ]
 
 [workspace.package]
@@ -14,10 +15,15 @@ homepage = "https://vertx.cc"
 license = "MPL-2.0"
 
 [workspace.dependencies]
+aligned = "=0.4.2"
+bytemuck = { version = "=1.23.1", features = ["const_zeroed", "min_const_generics", "must_cast"] }
+embedded-io-async = "=0.6.1"
 heapless = "=0.8.0"
 loog = { git = "https://github.com/wetheredge/loog.git", rev = "4785bb8f607191354e7d3d9df8790fe998392cbc" }
 postcard = { version = "=1.1.3", default-features = false }
 serde = { version = "=1.0.219", default-features = false }
+tokio = "=1.47.1"
+vertx-filesystem = { path = "./vertx-filesystem" }
 
 [workspace.lints.rust]
 absolute-paths-not-starting-with-crate = "warn"
@@ -88,3 +94,7 @@ opt-level = 3
 [profile.release]
 lto = true
 debug = 2
+
+[patch.crates-io]
+block-device-driver = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c" }
+sdspi = { git = "https://github.com/MabezDev/embedded-fatfs.git", rev = "4d2a2dbf85ede27c4b3190ded3ab61b700e8e76c" }
