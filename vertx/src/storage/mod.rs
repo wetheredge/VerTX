@@ -1,8 +1,8 @@
 #[cfg(feature = "storage-sd")]
 pub(crate) mod sd;
 
-use embassy_executor::task;
-use embassy_sync::once_lock::OnceLock;
+use embassy_sync::mutex::Mutex;
+use static_cell::StaticCell;
 
 use crate::hal::prelude::*;
 
@@ -11,99 +11,111 @@ pub(crate) mod pal {
     use embedded_io_async::{Read, Seek, Write};
 
     pub(crate) trait Storage: ErrorType {
-        type Directory: Directory<Error = Self::Error>;
-
-        fn root(&self) -> Self::Directory;
-        async fn flush(&self) -> Result<(), Self::Error>;
-    }
-
-    pub(crate) trait Directory: Clone + ErrorType {
         type File: File<Error = Self::Error>;
-        type Iter: DirectoryIter<Error = Self::Error, File = Self::File>;
 
-        async fn dir(&self, path: &str) -> Result<Self, Self::Error>;
-        async fn file(&self, path: &str) -> Result<Self::File, Self::Error>;
-        fn iter(&self) -> Self::Iter;
+        async fn read_config<'a>(&self, buf: &'a mut [u8]) -> Result<&'a [u8], Self::Error>;
+        async fn write_config(&self, config: &[u8]) -> Result<(), Self::Error>;
+
+        async fn for_each_model<F>(&self, f: F) -> Result<(), Self::Error>
+        where
+            F: AsyncFnMut(crate::models::Id, &mut Self::File) -> Result<(), Self::Error>;
+        async fn model(&self, id: crate::models::Id) -> Result<Option<Self::File>, Self::Error>;
+        async fn delete_model(&self, id: crate::models::Id) -> Result<(), Self::Error>;
     }
 
-    pub(crate) trait File: Clone + ErrorType + Read + Write + Seek {
+    pub(crate) trait File: ErrorType + Read + Write + Seek {
+        #[expect(unused)]
+        async fn len(&mut self) -> u64;
+        #[expect(unused)]
         async fn truncate(&mut self) -> Result<(), Self::Error>;
-        async fn close(self) -> Result<(), Self::Error>;
-    }
-
-    pub(crate) trait DirectoryIter: Clone + ErrorType {
-        type File: File<Error = Self::Error>;
-        type Directory: Directory<Error = Self::Error>;
-        type Entry: Entry<Error = Self::Error, File = Self::File>;
-
-        async fn next(&mut self) -> Option<Result<Self::Entry, Self::Error>>;
-    }
-
-    pub(crate) trait Entry: ErrorType {
-        type File: File<Error = Self::Error>;
-        type Directory: Directory<Error = Self::Error>;
-
-        fn name(&self) -> &[u8];
-        fn is_file(&self) -> bool;
-        fn to_file(self) -> Option<Self::File>;
-        #[expect(unused)]
-        fn is_dir(&self) -> bool;
-        #[expect(unused)]
-        fn to_dir(self) -> Option<Self::Directory>;
     }
 }
 
 pub(crate) type Error = <crate::hal::Storage as embedded_io_async::ErrorType>::Error;
-pub(crate) type Directory = <crate::hal::Storage as pal::Storage>::Directory;
-pub(crate) type File = <Directory as pal::Directory>::File;
+pub(crate) type File = <crate::hal::Storage as pal::Storage>::File;
 
-#[derive(Clone, Copy)]
-pub(crate) struct Manager(&'static OnceLock<crate::hal::Storage>);
+type Inner = Mutex<crate::mutex::MultiCore, crate::hal::Storage>;
 
-impl Manager {
-    pub(crate) const fn new() -> Self {
-        static INNER: OnceLock<crate::hal::Storage> = OnceLock::new();
-        Self(&INNER)
-    }
-
-    /// Attempt to flush data before resetting, logging any errors
-    pub(crate) async fn flush_before_reset(self) {
-        let Some(storage) = self.0.try_get() else {
-            loog::warn!("Skipping flush since it was not initialized");
-            return;
-        };
-
-        if let Err(err) = storage.flush().await {
-            loog::warn!("Failed to flush: {err:?}");
-        }
-    }
-}
-
-#[task]
-pub(crate) async fn run(
-    init: &'static crate::InitCounter,
-    storage: crate::hal::StorageFuture,
-    manager: Manager,
-    config_manager: crate::config::Manager,
-    models: crate::models::Manager,
-) -> ! {
-    let init = init.start(loog::intern!("storage"));
+pub(crate) async fn init(storage: crate::hal::StorageFuture) -> (Config, Models) {
+    static INNER: StaticCell<Inner> = StaticCell::new();
 
     let storage = storage.await;
-    let storage = manager.0.get_or_init(|| storage);
-    let root = storage.root();
+    let inner = INNER.init_with(|| Mutex::new(storage));
 
-    let config = match root.file("config.bin").await {
-        Ok(file) => file,
-        Err(err) => loog::panic!("Failed to open config file: {err:?}"),
-    };
-    config_manager.load(config).await;
+    (Config(&*inner), Models(&*inner))
+}
 
-    match root.dir("models").await {
-        Ok(dir) => models.init(dir),
-        Err(err) => loog::panic!("Failed to open models dir: {err:?}"),
+#[derive(Clone, Copy)]
+pub(crate) struct Config(&'static Inner);
+
+#[derive(Clone, Copy)]
+pub(crate) struct Models(&'static Inner);
+
+impl Config {
+    pub(crate) async fn read(self, buf: &mut [u8]) -> Result<&[u8], Error> {
+        let storage = self.0.lock().await;
+        storage.read_config(buf).await
     }
 
-    init.finish();
-    core::future::pending().await
+    pub(crate) async fn write(self, config: &[u8]) -> Result<(), Error> {
+        let storage = self.0.lock().await;
+        storage.write_config(config).await
+    }
 }
+
+impl Models {
+    pub(crate) async fn for_each<F>(&self, f: F) -> Result<(), Error>
+    where
+        F: AsyncFnMut(crate::models::Id, &mut File) -> Result<(), Error>,
+    {
+        let storage = self.0.lock().await;
+        storage.for_each_model(f).await
+    }
+
+    pub(crate) async fn model<T>(
+        &self,
+        id: crate::models::Id,
+        mut f: impl AsyncFnMut(&mut File) -> Result<T, Error>,
+    ) -> Result<Option<T>, Error> {
+        let storage = self.0.lock().await;
+        match storage.model(id).await {
+            Ok(Some(mut file)) => Ok(Some(f(&mut file).await?)),
+            Ok(None) => Ok(None),
+            Err(err) => Err(err),
+        }
+    }
+
+    #[expect(unused)]
+    pub(crate) async fn delete(&self, id: crate::models::Id) -> Result<(), Error> {
+        let storage = self.0.lock().await;
+        storage.delete_model(id).await
+    }
+}
+
+// #[task]
+// pub(crate) async fn run(
+//     init: &'static crate::InitCounter,
+//     storage: crate::hal::StorageFuture,
+//     manager: Manager,
+//     config_manager: crate::config::Manager,
+//     models: crate::models::Manager,
+// ) -> ! {
+//     let init = init.start(loog::intern!("storage"));
+//
+//     let storage = storage.await;
+//     let storage = manager.0.get_or_init(|| storage);
+//
+//     let config = match storage.file("config.bin").await {
+//         Ok(file) => file,
+//         Err(err) => loog::panic!("Failed to open config file: {err:?}"),
+//     };
+//     config_manager.load(config).await;
+//
+//     match root.dir("models").await {
+//         Ok(dir) => models.init(dir),
+//         Err(err) => loog::panic!("Failed to open models dir: {err:?}"),
+//     }
+//
+//     init.finish();
+//     core::future::pending().await
+// }

@@ -131,12 +131,6 @@ impl api::WriteResponse for Response {
         Ok(())
     }
 
-    async fn service_unavailable(mut self) -> Result<(), Self::Error> {
-        self.status = 503;
-        self.send();
-        Ok(())
-    }
-
     async fn ok_empty(mut self) -> Result<(), Self::Error> {
         self.status = 200;
         self.send();

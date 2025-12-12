@@ -132,7 +132,7 @@ enum State {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum NextState {
-    Model(crate::models::RawName),
+    Model(crate::models::Id),
     #[cfg(feature = "configurator")]
     Configurator,
     ElrsConfig,

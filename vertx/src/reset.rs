@@ -36,12 +36,10 @@ pub(crate) async fn run(
     manager: Manager,
     mut hal: crate::hal::Reset,
     config: crate::config::Manager,
-    storage: crate::storage::Manager,
 ) -> ! {
     let kind = manager.0.wait().await;
 
     config.save().await;
-    storage.flush_before_reset().await;
 
     match kind {
         Kind::Reboot => hal.reboot(),

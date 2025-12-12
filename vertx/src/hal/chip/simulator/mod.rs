@@ -29,8 +29,14 @@ mod ipc {
         #[wasm_bindgen(js_name = "apiRx")]
         pub(super) fn api_tx(id: u32, status: u16, json: bool, body: &[u8]);
 
-        #[wasm_bindgen(js_name = "storageFileLength")]
-        pub(super) fn storage_file_len(path: &str) -> usize;
+        #[wasm_bindgen(js_name = "storageEntries")]
+        pub(super) fn storage_entries(path: &str) -> Vec<String>;
+
+        #[wasm_bindgen(js_name = "storageExists")]
+        pub(super) fn storage_exists(path: &str) -> bool;
+
+        #[wasm_bindgen(js_name = "storageLength")]
+        pub(super) fn storage_len(path: &str) -> usize;
 
         #[wasm_bindgen(js_name = "storageRead")]
         pub(super) fn storage_read(path: &str, cursor: usize, buffer: &mut [u8]) -> usize;
@@ -41,8 +47,8 @@ mod ipc {
         #[wasm_bindgen(js_name = "storageTruncate")]
         pub(super) fn storage_truncate(path: &str, cursor: usize);
 
-        #[wasm_bindgen(js_name = "storageDirEntries")]
-        pub(super) fn storage_dir_entries(path: &str) -> Vec<String>;
+        #[wasm_bindgen(js_name = "storageDelete")]
+        pub(super) fn storage_delete(path: &str);
 
         #[wasm_bindgen(js_name = "setStatusLed")]
         pub(super) fn set_status_led(r: u8, g: u8, b: u8);
