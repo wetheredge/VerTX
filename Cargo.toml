@@ -16,8 +16,10 @@ license = "MPL-2.0"
 
 [workspace.dependencies]
 aligned = "=0.4.2"
+bitfield = "=0.19.1"
 block-device-driver = "=0.2.0"
 bytemuck = { version = "=1.23.1", features = ["const_zeroed", "min_const_generics", "must_cast"] }
+crc = "=3.3.0"
 embedded-io-async = "=0.6.1"
 heapless = "=0.8.0"
 loog = { git = "https://github.com/wetheredge/loog.git", rev = "4785bb8f607191354e7d3d9df8790fe998392cbc" }

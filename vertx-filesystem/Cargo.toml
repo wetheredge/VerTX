@@ -12,10 +12,10 @@ defmt = ["loog/defmt"]
 
 [dependencies]
 aligned = { workspace = true }
-bitfield = "=0.19.1"
+bitfield = { workspace = true }
 block-device-driver = "=0.2.0"
 bytemuck = { workspace = true, features = ["derive"] }
-crc = "=3.3.0"
+crc = { workspace = true }
 embedded-io-async = { workspace = true }
 loog = { workspace = true }
 
