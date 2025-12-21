@@ -8,7 +8,7 @@ license.workspace = true
 publish = false
 
 [package.metadata.cargo-shear]
-ignored = ["cortex-m-rt"]
+ignored = ["critical-section", "cortex-m-rt"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -60,18 +60,21 @@ chip-esp = [
     "storage-sd-spi",
     "dep:esp-alloc",
     "dep:esp-backtrace",
+    "dep:esp-bootloader-esp-idf",
     "dep:esp-hal",
-    "dep:esp-hal-embassy",
+    "dep:esp-rtos",
     "dep:esp-storage",
-    "dep:esp-wifi",
+    "dep:esp-radio",
 ]
 chip-esp32s3 = [
     "chip-esp",
+    "esp-alloc/esp32s3",
     "esp-backtrace/esp32s3",
+    "esp-bootloader-esp-idf/esp32s3",
     "esp-hal/esp32s3",
-    "esp-hal-embassy/esp32s3",
+    "esp-rtos/esp32s3",
     "esp-storage/esp32s3",
-    "esp-wifi/esp32s3",
+    "esp-radio/esp32s3",
 ]
 
 chip-rp = [
@@ -112,21 +115,21 @@ simulator = [
 [dependencies]
 aligned = { workspace = true }
 bytemuck = { workspace = true }
-const_format = "=0.2.34"
-defmt-rtt = "=1.0.0"
-delegate = "=0.13.4"
+const_format = "=0.2.35"
+defmt-rtt = "=1.1.0"
+delegate = "=0.13.5"
 display-interface = "=0.5.0"
-embassy-executor = { version = "=0.7.0", features = ["nightly"] }
-embassy-futures = "=0.1.1"
-embassy-sync = "=0.7.0"
-embassy-time = { version = "=0.4.0", features = ["generic-queue-8"] }
+embassy-executor = { version = "=0.9.1", features = ["nightly"] }
+embassy-futures = "=0.1.2"
+embassy-sync = "=0.7.2"
+embassy-time = { version = "=0.5.0", features = ["generic-queue-8"] }
 embedded-graphics = "=0.8.1"
 embedded-hal = "=1.0.0"
 embedded-hal-async = "=1.0.0"
 embedded-hal-bus = { version = "=0.3.0", features = ["async"] }
 embedded-io-async = { workspace = true, features = ["defmt-03"] }
 embedded-mogeefont = "=0.1.0"
-embedded-text = "=0.7.2"
+embedded-text = "=0.7.3"
 heapless = { workspace = true, features = ["serde"] }
 loog = { workspace = true }
 portable-atomic = { version = "=1.11.1", features = ["critical-section"] }
@@ -144,7 +147,7 @@ ssd1306 = { version = "=0.10.0", features = ["async"], optional = true }
 
 # network
 edge-dhcp = { version = "=0.6.0", optional = true }
-embassy-net = { version = "=0.7.0", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
+embassy-net = { version = "=0.7.1", features = ["dhcpv4", "dhcpv4-hostname", "tcp", "udp"], optional = true }
 faster-hex = { version = "=0.10.0", default-features = false, optional = true }
 httparse = { version = "=1.10.1", default-features = false, optional = true }
 
@@ -154,17 +157,18 @@ sdspi = { git = "https://github.com/wetheredge/embedded-fatfs.git", rev = "37a38
 vertx-filesystem = { workspace = true, optional = true }
 
 # chip-esp
-esp-alloc = { version = "=0.8.0", optional = true }
-esp-backtrace = { version = "=0.17.0", features = ["defmt", "colors", "panic-handler", "exception-handler"], optional = true }
-esp-hal = { version = "=1.0.0-rc.0", features = ["unstable"], optional = true }
-esp-hal-embassy = { version = "=0.9.0", default-features = false, features = ["executors"], optional = true }
-esp-storage = { version = "=0.7.0", features = ["critical-section"], optional = true }
-esp-wifi = { version = "=0.15.0", features = ["defmt", "wifi"], optional = true }
+esp-alloc = { version = "=0.9.0", features = ["defmt"], optional = true }
+esp-backtrace = { version = "=0.18.1", features = ["defmt", "colors", "panic-handler"], optional = true }
+esp-bootloader-esp-idf = { version = "=0.4.0", features = ["defmt"], optional = true }
+esp-hal = { version = "=1.0.0", features = ["unstable"], optional = true }
+esp-radio = { version = "=0.17.0", features = ["defmt", "wifi"], optional = true }
+esp-rtos = { version = "0.2.0", features = ["defmt", "embassy", "esp-radio"], optional = true }
+esp-storage = { version = "=0.8.1", features = ["defmt", "critical-section"], optional = true }
 
 # chip-rp
 # TODO: flip-link
 cortex-m-rt = { version = "=0.7.5", optional = true }
-embassy-rp = { version = "=0.6.0", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
+embassy-rp = { version = "=0.9.0", features = ["defmt", "critical-section-impl", "time-driver"], optional = true }
 embedded-alloc = { version = "=0.6.0", optional = true }
 fixed = { version = "=1.29.0", optional = true }
 fixed-macro = { version = "=1.2.0", optional = true }
@@ -173,6 +177,7 @@ pio = { version = "=0.3.0", optional = true }
 
 [target.wasm32-unknown-unknown.dependencies]
 console_error_panic_hook = "=0.1.7"
+critical-section = { version = "=1.2.0", features = ["std"] }
 talc = "=4.4.3"
 wasm-bindgen = "=0.2.105"
 wasm-logger = "=0.2.0"
@@ -180,7 +185,7 @@ wasm-logger = "=0.2.0"
 [build-dependencies]
 basic-toml = "=0.1.10"
 serde = { workspace = true, features = ["derive"] }
-serde_json = "=1.0.142"
+serde_json = "=1.0.145"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "test-util"] }

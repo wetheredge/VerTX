@@ -4,9 +4,7 @@ use embassy_executor::{Spawner, task};
 use embassy_time::{Duration, Timer, with_timeout};
 use esp_hal::peripherals;
 use esp_hal::rng::Rng;
-use esp_hal::timer::AnyTimer;
-use esp_wifi::EspWifiController;
-use esp_wifi::wifi::{self, WifiController, WifiError, WifiEvent, WifiState};
+use esp_radio::wifi::{self, WifiApState, WifiController, WifiError, WifiEvent, WifiStaState};
 use static_cell::StaticCell;
 
 use crate::network::{Credentials, Kind};
@@ -14,7 +12,6 @@ use crate::network::{Credentials, Kind};
 pub(super) struct Network {
     pub(super) spawner: Spawner,
     pub(super) rng: Rng,
-    pub(super) timer: AnyTimer<'static>,
     pub(super) wifi: peripherals::WIFI<'static>,
 }
 
@@ -33,10 +30,11 @@ impl crate::hal::traits::Network for Network {
         sta: Option<crate::network::Credentials>,
         ap: crate::network::Credentials,
     ) -> (Kind, Self::Driver) {
-        static CONTROLLER: StaticCell<EspWifiController> = StaticCell::new();
-        let initted = CONTROLLER.init(esp_wifi::init(self.timer, self.rng).unwrap());
+        static CONTROLLER: StaticCell<esp_radio::Controller<'static>> = StaticCell::new();
+        let initted = CONTROLLER.init(esp_radio::init().unwrap());
 
-        let (mut controller, interfaces) = wifi::new(initted, self.wifi).unwrap();
+        let (mut controller, interfaces) =
+            wifi::new(initted, self.wifi, Default::default()).unwrap();
 
         let mut home_connected = false;
         if let Some(sta) = sta {
@@ -51,19 +49,12 @@ impl crate::hal::traits::Network for Network {
         } else {
             // Failed to connect to home network, start AP instead
 
-            let ap_config = wifi::AccessPointConfiguration {
-                ssid: ap.ssid.to_string(),
-                ssid_hidden: false,
-                channel: 1,
-                secondary_channel: None,
-                // auth_method: wifi::AuthMethod::WPA2Personal,
-                // password: password.clone(),
-                // max_connections: 1,
-                ..Default::default()
-            };
+            let ap_config = wifi::AccessPointConfig::default()
+                .with_ssid(ap.ssid.to_string())
+                .with_channel(1);
 
             controller
-                .set_configuration(&wifi::Configuration::AccessPoint(ap_config))
+                .set_config(&wifi::ModeConfig::AccessPoint(ap_config))
                 .unwrap();
 
             // AP will get started by `connection()` below
@@ -84,15 +75,12 @@ async fn connect_to_sta(
         &credentials.ssid
     );
 
-    let config = wifi::ClientConfiguration {
-        ssid: credentials.ssid.to_string(),
-        bssid: None,
-        auth_method: wifi::AuthMethod::WPA2Personal,
-        password: credentials.password.to_string(),
-        channel: None,
-    };
+    let config = wifi::ClientConfig::default()
+        .with_ssid(credentials.ssid.to_string())
+        .with_auth_method(wifi::AuthMethod::Wpa2Personal)
+        .with_password(credentials.password.to_string());
 
-    controller.set_configuration(&wifi::Configuration::Client(config))?;
+    controller.set_config(&wifi::ModeConfig::Client(config))?;
     controller.start_async().await?;
 
     let connecting = with_timeout(Duration::from_secs(30), controller.connect_async());
@@ -113,7 +101,7 @@ async fn connect_to_sta(
 async fn connection(mut controller: WifiController<'static>, kind: Kind) {
     match kind {
         Kind::Station => loop {
-            if wifi::sta_state() == WifiState::StaConnected {
+            if wifi::sta_state() == WifiStaState::Connected {
                 controller.wait_for_event(WifiEvent::StaDisconnected).await;
                 loog::info!("WiFi disconnected");
             }
@@ -125,7 +113,7 @@ async fn connection(mut controller: WifiController<'static>, kind: Kind) {
         },
 
         Kind::AccessPoint => loop {
-            if wifi::ap_state() == WifiState::ApStarted {
+            if wifi::ap_state() == WifiApState::Started {
                 controller.wait_for_event(WifiEvent::ApStop).await;
                 Timer::after_secs(1).await;
             }
