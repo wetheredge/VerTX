@@ -30,7 +30,9 @@ esp_bootloader_esp_idf::esp_app_desc!();
     hal::Ui
 )]
 pub(crate) fn init(spawner: Spawner) -> hal::Init {
-    esp_alloc::heap_allocator!(size: 100 * 1024);
+    #[cfg(feature = "chip-esp32s3")]
+    const HEAP_SIZE: usize = 73744;
+    esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: HEAP_SIZE);
 
     let p = esp_hal::init(esp_hal::Config::default().with_cpu_clock(CpuClock::max()));
 
