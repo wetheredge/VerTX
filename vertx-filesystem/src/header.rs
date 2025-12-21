@@ -3,6 +3,8 @@ use core::mem;
 use aligned::Alignment;
 use bytemuck::{Pod, Zeroable};
 use crc::Crc;
+#[cfg(feature = "defmt")]
+use loog::defmt;
 
 use crate::{BLOCK_BYTES, Block, MAX_MODELS, MODEL_BLOCKS, MODELS_START};
 
@@ -32,6 +34,7 @@ bitfield::bitfield! {
 const _: () = assert!(mem::size_of::<Header>() == BLOCK_BYTES);
 
 #[derive(Debug, Clone, PartialEq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive]
 pub enum Error {
     Missing,
